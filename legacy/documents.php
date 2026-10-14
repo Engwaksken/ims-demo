@@ -94,9 +94,99 @@ $autoOpenUpload = (
     &&
     $canCreateHere
 );
+
+$hasFilters = ($search !== '' || $filterProject > 0 || $filterProgram > 0);
+$folderCount = count($folders);
+$docCount = count($documents);
+
+/*
+ * Presentation helpers for the file explorer (display only, no queries).
+ */
+if (!function_exists('doc_ui_file_kind')) {
+    /**
+     * File-type info for icons/colours: kind (CSS modifier), Font Awesome
+     * icon and a short extension label. Prefers the original extension so
+     * compressed (.gz) uploads still show their real type.
+     */
+    function doc_ui_file_kind(array $doc): array
+    {
+        $ext = strtolower(trim((string)($doc['original_extension'] ?? ''), ". \t"));
+
+        if ($ext === '') {
+            $name = (string)($doc['original_filename'] ?? '');
+
+            if ($name === '') {
+                $name = (string)($doc['file_path'] ?? '');
+            }
+
+            if (substr(strtolower($name), -3) === '.gz') {
+                $name = substr($name, 0, -3);
+            }
+
+            $ext = strtolower((string)pathinfo($name, PATHINFO_EXTENSION));
+        }
+
+        $map = [
+            'pdf'     => [['pdf'], 'fa-file-pdf'],
+            'word'    => [['doc', 'docx', 'odt', 'rtf'], 'fa-file-word'],
+            'excel'   => [['xls', 'xlsx', 'ods'], 'fa-file-excel'],
+            'csv'     => [['csv'], 'fa-file-csv'],
+            'ppt'     => [['ppt', 'pptx', 'odp'], 'fa-file-powerpoint'],
+            'image'   => [['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tif', 'tiff', 'heic'], 'fa-file-image'],
+            'video'   => [['mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv'], 'fa-file-video'],
+            'audio'   => [['mp3', 'wav', 'm4a', 'ogg', 'aac'], 'fa-file-audio'],
+            'archive' => [['zip', 'rar', '7z', 'tar', 'gz'], 'fa-file-zipper'],
+            'text'    => [['txt', 'md', 'log', 'json', 'xml'], 'fa-file-lines'],
+        ];
+
+        foreach ($map as $kind => [$exts, $icon]) {
+            if (in_array($ext, $exts, true)) {
+                return ['kind' => $kind, 'icon' => $icon, 'label' => strtoupper($ext)];
+            }
+        }
+
+        return [
+            'kind' => 'generic',
+            'icon' => 'fa-file',
+            'label' => $ext !== '' ? strtoupper(substr($ext, 0, 5)) : 'FILE',
+        ];
+    }
+}
+
+if (!function_exists('doc_ui_date')) {
+    /** Short display date ("12 Mar 2026"), or '' when unknown. */
+    function doc_ui_date(mixed $value): string
+    {
+        $value = trim((string)($value ?? ''));
+
+        if ($value === '' || str_starts_with($value, '0000')) {
+            return '';
+        }
+
+        $ts = strtotime($value);
+
+        return $ts ? date('j M Y', $ts) : '';
+    }
+}
+
+if (!function_exists('doc_ui_initials')) {
+    /** One or two initials for an owner avatar. */
+    function doc_ui_initials(string $name): string
+    {
+        $parts = preg_split('/\s+/', trim($name)) ?: [];
+        $initials = '';
+
+        foreach (array_slice($parts, 0, 2) as $part) {
+            $initials .= mb_strtoupper(mb_substr($part, 0, 1));
+        }
+
+        return $initials !== '' ? $initials : '?';
+    }
+}
 ?>
 
 <link rel="stylesheet" href="css/opportunities.css">
+<link rel="stylesheet" href="css/documents.css">
 
 <style>
 .doc-toolbar{
@@ -106,14 +196,7 @@ $autoOpenUpload = (
 .doc-toolbar-left,.doc-toolbar-right{
     display:flex;align-items:center;gap:8px;flex-wrap:wrap
 }
-.doc-breadcrumbs{
-    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
-    margin-bottom:14px;font-size:12px;color:var(--ink-300)
-}
-.doc-breadcrumbs a{
-    color:var(--brand-600);font-weight:700;text-decoration:none
-}
-.doc-breadcrumbs i{font-size:9px;color:var(--ink-200)}
+/* Breadcrumbs, explorer, items, context menu, drag-and-drop: css/documents.css */
 
 .doc-repo-grid{
     display:grid;
@@ -166,18 +249,6 @@ $autoOpenUpload = (
     display:inline-flex;align-items:center;gap:4px;
     margin-top:5px;color:#64748b;font-size:10px;font-weight:700
 }
-.doc-empty{
-    grid-column:1/-1;text-align:center;padding:55px 20px;color:var(--ink-300)
-}
-.doc-empty i{font-size:34px;opacity:.45;margin-bottom:10px}
-/* Filter row: layout from .filters-bar (style.css) */
-.doc-filter-row{margin-bottom:16px}
-.doc-filter-search{position:relative}
-.doc-filter-search i{
-    position:absolute;left:11px;top:50%;transform:translateY(-50%);
-    font-size:11px;color:var(--ink-200)
-}
-.doc-filter-search input{padding-left:30px}
 .doc-tabs{
     display:flex;gap:0;overflow-x:auto;margin-bottom:16px;border-bottom:2px solid var(--ink-100)
 }
@@ -428,56 +499,6 @@ $autoOpenUpload = (
     font-weight: 800;
 }
 
-.doc-current-folder-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 12px;
-
-    margin-bottom: 14px;
-    padding: 11px 13px;
-
-    border: 1px solid #fed7aa;
-    border-left: 4px solid #f97316;
-    border-radius: 9px;
-
-    background: #fff7ed;
-}
-
-.doc-current-folder-main {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-
-    min-width: 0;
-}
-
-.doc-current-folder-main i {
-    color: #ea580c;
-    font-size: 18px;
-}
-
-.doc-current-folder-name {
-    min-width: 0;
-
-    color: #9a3412;
-
-    font-size: 12px;
-    font-weight: 800;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.doc-current-folder-note {
-    margin-top: 2px;
-
-    color: #c2410c;
-
-    font-size: 10px;
-}
 
 .doc-section-empty {
     padding: 24px 16px;
@@ -608,158 +629,7 @@ $autoOpenUpload = (
 }
 
 
-/* ==========================================================================
-   ONEDRIVE-STYLE LIBRARY
-   ========================================================================== */
-
-.doc-drive-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-
-.doc-drive-actions {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
-}
-
-.doc-drive-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-}
-
-.doc-drive-item {
-    position: relative;
-    min-width: 0;
-    min-height: 108px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--ink-100);
-    border-radius: 10px;
-    background: var(--surface-card);
-    box-shadow: 0 1px 4px rgba(15,23,42,.04);
-    cursor: default;
-    user-select: none;
-    transition: .15s ease;
-}
-
-.doc-drive-item:hover,
-.doc-drive-item.selected {
-    border-color: #fdba74;
-    background: #fffaf5;
-    box-shadow: 0 5px 14px rgba(15,23,42,.07);
-}
-
-.doc-drive-item.folder {
-    cursor: pointer;
-}
-
-.doc-drive-icon {
-    width: 48px;
-    height: 48px;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    border-radius: 9px;
-    font-size: 21px;
-}
-
-.doc-drive-item.folder .doc-drive-icon {
-    background: #fff7ed;
-    color: #ea580c;
-}
-
-.doc-drive-main {
-    flex: 1;
-    min-width: 0;
-}
-
-.doc-drive-name {
-    color: var(--ink-700);
-    font-size: 12.5px;
-    font-weight: 800;
-    line-height: 1.35;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.doc-drive-meta {
-    margin-top: 5px;
-    color: var(--ink-300);
-    font-size: 10.5px;
-    line-height: 1.4;
-}
-
-.doc-drive-more {
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    border: 0;
-    border-radius: 7px;
-    background: transparent;
-    color: var(--ink-300);
-    cursor: pointer;
-}
-
-.doc-drive-more:hover {
-    background: var(--ink-50);
-    color: var(--ink-600);
-}
-
-.doc-context-menu {
-    display: none;
-    position: fixed;
-    z-index: 100000;
-    width: 205px;
-    overflow: hidden;
-    border: 1px solid var(--ink-100);
-    border-radius: 10px;
-    background: #fff;
-    box-shadow: 0 16px 40px rgba(15,23,42,.20);
-}
-
-.doc-context-menu.open {
-    display: block;
-}
-
-.doc-context-item {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 10px 12px;
-    border: 0;
-    background: transparent;
-    color: var(--ink-600);
-    font-family: inherit;
-    font-size: 11.5px;
-    font-weight: 700;
-    text-align: left;
-    cursor: pointer;
-}
-
-.doc-context-item:hover {
-    background: var(--ink-50);
-}
-
-.doc-context-item.danger {
-    color: #b91c1c;
-}
-
-.doc-context-sep {
-    height: 1px;
-    background: var(--ink-50);
-}
+/* Library grid/list + context menu styles moved to css/documents.css */
 
 .doc-upload-simple {
     padding: 12px;
@@ -823,20 +693,7 @@ $autoOpenUpload = (
     font-size: 10.5px;
 }
 
-@media (max-width: 1200px) {
-    .doc-drive-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 900px) {
-    .doc-drive-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
 @media (max-width: 620px) {
-    .doc-drive-grid,
     .doc-upload-choice-grid {
         grid-template-columns: 1fr;
     }
@@ -847,101 +704,7 @@ $autoOpenUpload = (
 }
 
 
-/* ==========================================================================
-   DRAG AND DROP
-   ========================================================================== */
-
-.doc-drive-item[draggable="true"] {
-    cursor: grab;
-}
-
-.doc-drive-item.dragging {
-    opacity: .45;
-}
-
-.doc-drive-item.folder.doc-drop-target-active,
-.doc-breadcrumbs a.doc-drop-target-active {
-    outline: 2px dashed var(--brand-500);
-    outline-offset: 2px;
-    background: var(--brand-50);
-    border-radius: 8px;
-}
-
-.doc-drop-overlay {
-    display: none;
-
-    position: fixed;
-    inset: 0;
-
-    z-index: 999998;
-
-    align-items: center;
-    justify-content: center;
-
-    background: rgba(37, 99, 235, .10);
-    border: 3px dashed #2563eb;
-
-    pointer-events: none;
-}
-
-.doc-drop-overlay.active {
-    display: flex;
-}
-
-.doc-drop-overlay-card {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    padding: 16px 24px;
-
-    border-radius: 14px;
-
-    background: #fff;
-    color: #1d4ed8;
-
-    font-size: 14px;
-    font-weight: 800;
-
-    box-shadow: 0 12px 30px rgba(15,23,42,.18);
-}
-
-.doc-drop-overlay-card i {
-    font-size: 20px;
-}
-
-.doc-upload-progress-toast {
-    display: none;
-
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-
-    z-index: 999998;
-
-    align-items: center;
-    gap: 10px;
-
-    padding: 12px 16px;
-
-    border-radius: 12px;
-
-    background: #1f2937;
-    color: #fff;
-
-    font-size: 12px;
-    font-weight: 700;
-
-    box-shadow: 0 12px 30px rgba(15,23,42,.25);
-}
-
-.doc-upload-progress-toast.active {
-    display: flex;
-}
-
-.doc-upload-progress-toast i {
-    color: #93c5fd;
-}
+/* Drag-and-drop, drop overlay and upload toast styles: css/documents.css */
 
 
 /* ==========================================================================
@@ -1297,313 +1060,480 @@ $autoOpenUpload = (
 
 </style>
 
-<div class="opp-hero" style="margin-bottom:18px;">
+<div class="opp-hero doc-hero">
     <div class="opp-hero-left">
-        <div class="opp-eyebrow"><span class="opp-dot"></span> Repository</div>
+        <div class="opp-eyebrow"><span class="opp-dot" aria-hidden="true"></span> Repository</div>
         <h1>Documents</h1>
         <p>Organise documents in folders, share access and manage file permissions.</p>
     </div>
 
-    <div class="opp-hero-actions" style="position:relative;">
-        <?php if ($canCreateHere): ?>
+    <?php if ($canCreateHere): ?>
+        <div class="opp-hero-actions">
             <button
                 type="button"
                 class="btn btn-white"
                 onclick="openModal('addNewModal')"
             >
-                <i class="fas fa-plus"></i>
+                <i class="fas fa-plus" aria-hidden="true"></i>
                 New
             </button>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<div class="opp-stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:18px;">
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon brand"><i class="fas fa-folder"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Folders</span>
-            <span class="opp-stat-value"><?= (int)$stats['folders'] ?></span>
-        </div>
-    </div>
-
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon" style="background:var(--blue-bg);color:var(--blue-fg);"><i class="fas fa-file"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Files</span>
-            <span class="opp-stat-value"><?= (int)$stats['files'] ?></span>
-        </div>
-    </div>
-
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon green"><i class="fas fa-share-nodes"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Shared With Me</span>
-            <span class="opp-stat-value"><?= (int)$stats['shared'] ?></span>
-        </div>
-    </div>
-
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon amber"><i class="fas fa-hard-drive"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Storage</span>
-            <span class="opp-stat-value"><?= h(doc_format_bytes((int)$stats['bytes'])) ?></span>
-        </div>
-    </div>
-</div>
-
-<div class="doc-breadcrumbs">
-    <a href="documents"><i class="fas fa-house"></i> Documents</a>
-
-    <?php foreach ($folderPath as $crumb): ?>
-        <i class="fas fa-chevron-right"></i>
-        <a href="documents?folder=<?= (int)$crumb['folder_id'] ?>">
-            <?= h($crumb['folder_name']) ?>
-        </a>
-    <?php endforeach; ?>
-</div>
-
-<?php if ($currentFolder): ?>
-    <div class="doc-current-folder-banner">
-        <div class="doc-current-folder-main">
-            <i class="fas fa-folder-open"></i>
-
-            <div style="min-width:0;">
-                <div class="doc-current-folder-name">
-                    <?= h($currentFolder['folder_name']) ?>
-                </div>
-
-                <div class="doc-current-folder-note">
-                    Add subfolders and files directly inside this folder.
-                </div>
-            </div>
-        </div>
-
-        <?php if ($canCreateHere): ?>
-            <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                onclick="openModal('addNewModal')"
-            >
-                <i class="fas fa-plus"></i>
-                Add New
-            </button>
-        <?php endif; ?>
-    </div>
-<?php endif; ?>
-
-<form method="GET" action="documents" class="doc-filter-row filters-bar" role="search" aria-label="Filter documents">
-    <?php if ($currentFolderId > 0): ?>
-        <input type="hidden" name="folder" value="<?= $currentFolderId ?>">
-    <?php endif; ?>
-
-    <div class="doc-filter-search filters-grow">
-        <i class="fas fa-search"></i>
-        <input
-            type="text"
-            name="search"
-            value="<?= h($search) ?>"
-            class="form-control"
-            placeholder="Search this location..."
-        >
-    </div>
-
-    <select name="project" class="form-control">
-        <option value="">All Projects</option>
-        <?php foreach ($projects as $project): ?>
-            <option
-                value="<?= (int)$project['project_id'] ?>"
-                <?= $filterProject === (int)$project['project_id'] ? 'selected' : '' ?>
-            >
-                <?= h(($project['project_code'] ?? '') . ' - ' . ($project['project_name'] ?? '')) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-
-    <select name="program" class="form-control">
-        <option value="">All Programs</option>
-        <?php foreach ($programs as $program): ?>
-            <option
-                value="<?= (int)$program['id'] ?>"
-                <?= $filterProgram === (int)$program['id'] ? 'selected' : '' ?>
-            >
-                <?= h(($program['program_code'] ?? '') . ' - ' . ($program['program_name'] ?? '')) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-
-    <div class="filters-actions">
-        <button type="submit" class="btn btn-primary btn-sm">
-            <i class="fas fa-filter"></i> Filter
-        </button>
-
-        <a
-            href="<?= $currentFolderId > 0 ? 'documents?folder=' . $currentFolderId : 'documents' ?>"
-            class="btn btn-secondary btn-sm"
-        >
-            Clear
-        </a>
-    </div>
-</form>
-
-
-
-<div class="doc-drive-toolbar">
-    <div style="font-size:12px;font-weight:800;color:var(--ink-600);">
-        <i class="fas fa-folder-open" style="color:#ea580c;margin-right:6px;"></i>
-        <?= h($currentFolder['folder_name'] ?? 'Documents') ?>
-    </div>
-
-    <div class="doc-drive-actions">
-        <?php if ($canCreateHere): ?>
-            <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                onclick="openModal('addNewModal')"
-            >
-                <i class="fas fa-plus"></i>
-                New
-            </button>
-        <?php endif; ?>
-    </div>
-</div>
-
-<div class="doc-drive-grid">
-    <?php if (!$folders && !$documents): ?>
-        <div class="doc-empty">
-            <i class="fas fa-folder-open"></i>
-            <div>This folder is empty.</div>
         </div>
     <?php endif; ?>
-
-    <?php foreach ($folders as $folder): ?>
-        <?php
-        $folderId = (int)$folder['folder_id'];
-        $canEditFolder = doc_can(
-            $conn,
-            'folder',
-            $folderId,
-            $userId,
-            $userRole,
-            'edit'
-        );
-        ?>
-
-        <article
-            class="doc-drive-item folder"
-            data-resource-type="folder"
-            data-resource-id="<?= $folderId ?>"
-            data-resource-name="<?= h($folder['folder_name']) ?>"
-            data-can-edit="<?= ($canEditFolder || $isAdmin) ? '1' : '0' ?>"
-            data-parent-folder-id="<?= (int)($folder['parent_folder_id'] ?? 0) ?>"
-            draggable="<?= ($canEditFolder || $isAdmin) ? 'true' : 'false' ?>"
-            data-folder-edit='<?= h(json_encode([
-                "folder_id" => $folderId,
-                "folder_name" => (string)($folder["folder_name"] ?? ""),
-                "document_type" => (string)($folder["document_type"] ?? ""),
-                "description" => (string)($folder["description"] ?? ""),
-                "project_id" => (int)($folder["project_id"] ?? 0),
-                "program_id" => (int)($folder["program_id"] ?? 0),
-                "parent_folder_id" => (int)($folder["parent_folder_id"] ?? 0),
-            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>'
-            ondblclick="window.location.href='documents?folder=<?= $folderId ?>'"
-            oncontextmenu="docShowContextMenu(event, this)"
-        >
-            <div class="doc-drive-icon">
-                <i class="fas fa-folder"></i>
-            </div>
-
-            <div class="doc-drive-main">
-                <div class="doc-drive-name">
-                    <?= h($folder['folder_name']) ?>
-                </div>
-
-                <div class="doc-drive-meta">
-                    Folder . <?= (int)$folder['file_count'] ?> file<?= (int)$folder['file_count'] === 1 ? '' : 's' ?>
-                </div>
-            </div>
-
-            <button
-                type="button"
-                class="doc-drive-more"
-                onclick="docShowContextMenu(event, this.closest('.doc-drive-item'))"
-                title="More actions"
-            >
-                <i class="fas fa-ellipsis"></i>
-            </button>
-        </article>
-    <?php endforeach; ?>
-
-    <?php foreach ($documents as $doc): ?>
-        <?php
-        $docId = (int)$doc['document_id'];
-        $icon = docIconStyle((string)($doc['file_path'] ?? ''));
-        [$faIcon, $iconColor, $iconBg] = $icon;
-
-        $canView = doc_can($conn, 'document', $docId, $userId, $userRole, 'view');
-        $canEdit = doc_can($conn, 'document', $docId, $userId, $userRole, 'edit');
-        $canDownload = doc_can($conn, 'document', $docId, $userId, $userRole, 'download');
-        ?>
-
-        <article
-            class="doc-drive-item"
-            data-resource-type="document"
-            data-resource-id="<?= $docId ?>"
-            data-resource-name="<?= h($doc['document_name']) ?>"
-            data-can-view="<?= $canView ? '1' : '0' ?>"
-            data-can-edit="<?= ($canEdit || $isAdmin) ? '1' : '0' ?>"
-            data-can-download="<?= $canDownload ? '1' : '0' ?>"
-            data-folder-id="<?= (int)($doc['folder_id'] ?? 0) ?>"
-            draggable="<?= ($canEdit || $isAdmin) ? 'true' : 'false' ?>"
-            data-edit='<?= h(json_encode([
-                "document_id" => $docId,
-                "document_name" => (string)($doc["document_name"] ?? ""),
-                "document_type" => (string)($doc["document_type"] ?? ""),
-                "description" => (string)($doc["description"] ?? ""),
-                "tags" => (string)($doc["tags"] ?? ""),
-                "project_id" => (int)($doc["project_id"] ?? 0),
-                "program_id" => (int)($doc["program_id"] ?? 0),
-                "folder_id" => (int)($doc["folder_id"] ?? 0),
-            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>'
-            ondblclick="if(this.dataset.canView==='1') window.open('includes/documents-handler.php?action=view&id=<?= $docId ?>','_blank')"
-            oncontextmenu="docShowContextMenu(event, this)"
-        >
-            <div
-                class="doc-drive-icon"
-                style="background:<?= h($iconBg) ?>;color:<?= h($iconColor) ?>;"
-            >
-                <i class="fas <?= h($faIcon) ?>"></i>
-            </div>
-
-            <div class="doc-drive-main">
-                <div class="doc-drive-name">
-                    <?= h($doc['document_name']) ?>
-                </div>
-
-                <div class="doc-drive-meta">
-                    <?= h(doc_format_bytes((int)($doc['file_size'] ?? 0))) ?>
-                    <?php if (!empty($doc['is_compressed'])): ?>
-                        . <i class="fas fa-box-archive"></i> Compressed
-                    <?php endif; ?>
-
-                    <?php if (!empty($doc['uploaded_by_name'])): ?>
-                        . <?= h($doc['uploaded_by_name']) ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <button
-                type="button"
-                class="doc-drive-more"
-                onclick="docShowContextMenu(event, this.closest('.doc-drive-item'))"
-                title="More actions"
-            >
-                <i class="fas fa-ellipsis"></i>
-            </button>
-        </article>
-    <?php endforeach; ?>
 </div>
+
+<div class="stats-grid reports-stats doc-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-folder" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Folders</div>
+            <div class="stat-value"><?= number_format((int)$stats['folders']) ?></div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fas fa-file-lines" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Files</div>
+            <div class="stat-value"><?= number_format((int)$stats['files']) ?></div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-share-nodes" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Shared With Me</div>
+            <div class="stat-value"><?= number_format((int)$stats['shared']) ?></div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-amber"><i class="fas fa-hard-drive" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Storage Used</div>
+            <div class="stat-value doc-stat-storage"><?= h(doc_format_bytes((int)$stats['bytes'])) ?></div>
+        </div>
+    </div>
+</div>
+
+<section class="panel doc-explorer" id="docExplorer" aria-labelledby="docLocationTitle">
+
+    <div class="doc-explorer-head">
+        <div class="doc-explorer-loc">
+            <nav class="doc-breadcrumbs" aria-label="Folder path">
+                <ol>
+                    <li>
+                        <a href="documents"<?= $folderPath ? '' : ' aria-current="page"' ?>>
+                            <i class="fas fa-house" aria-hidden="true"></i>
+                            <span>Documents</span>
+                        </a>
+                    </li>
+
+                    <?php $crumbTotal = count($folderPath); ?>
+                    <?php if ($crumbTotal > 2): ?>
+                        <li class="doc-crumb-more" aria-hidden="true">
+                            <i class="fas fa-chevron-right doc-crumb-sep"></i>
+                            <span>&hellip;</span>
+                        </li>
+                    <?php endif; ?>
+                    <?php foreach (array_values($folderPath) as $crumbIndex => $crumb): ?>
+                        <li<?= $crumbIndex < $crumbTotal - 2 ? ' class="doc-crumb-mid"' : '' ?>>
+                            <i class="fas fa-chevron-right doc-crumb-sep" aria-hidden="true"></i>
+                            <a
+                                href="documents?folder=<?= (int)$crumb['folder_id'] ?>"
+                                title="<?= h($crumb['folder_name']) ?>"
+                                <?= $crumbIndex === $crumbTotal - 1 ? 'aria-current="page"' : '' ?>
+                            ><?= h($crumb['folder_name']) ?></a>
+                        </li>
+                    <?php endforeach; ?>
+                </ol>
+            </nav>
+
+            <h2 class="doc-location-title" id="docLocationTitle">
+                <span class="doc-location-icon" aria-hidden="true">
+                    <i class="fas <?= $currentFolder ? 'fa-folder-open' : 'fa-box-archive' ?>"></i>
+                </span>
+                <span class="doc-location-name"><?= h($currentFolder['folder_name'] ?? 'All documents') ?></span>
+            </h2>
+
+            <p class="doc-location-sub">
+                <?= $folderCount ?> folder<?= $folderCount === 1 ? '' : 's' ?>
+                &middot;
+                <?= $docCount ?> file<?= $docCount === 1 ? '' : 's' ?>
+                <?php if ($hasFilters): ?>
+                    &middot; <span class="doc-filter-flag"><i class="fas fa-filter" aria-hidden="true"></i> Filtered</span>
+                <?php endif; ?>
+            </p>
+        </div>
+
+        <div class="doc-explorer-actions">
+            <div class="doc-view-toggle" role="group" aria-label="Layout">
+                <button
+                    type="button"
+                    class="doc-view-btn is-active"
+                    data-doc-view="grid"
+                    aria-pressed="true"
+                    title="Grid view"
+                >
+                    <i class="fas fa-grip" aria-hidden="true"></i>
+                    <span class="sr-only">Grid view</span>
+                </button>
+
+                <button
+                    type="button"
+                    class="doc-view-btn"
+                    data-doc-view="list"
+                    aria-pressed="false"
+                    title="List view"
+                >
+                    <i class="fas fa-list" aria-hidden="true"></i>
+                    <span class="sr-only">List view</span>
+                </button>
+            </div>
+
+            <?php if ($canCreateHere): ?>
+                <button
+                    type="button"
+                    class="btn btn-primary doc-new-btn"
+                    onclick="openModal('addNewModal')"
+                >
+                    <i class="fas fa-plus" aria-hidden="true"></i>
+                    New
+                </button>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <form method="GET" action="documents" class="doc-filter-row filters-bar" role="search" aria-label="Filter documents">
+        <?php if ($currentFolderId > 0): ?>
+            <input type="hidden" name="folder" value="<?= $currentFolderId ?>">
+        <?php endif; ?>
+
+        <div class="doc-filter-search filters-grow">
+            <label for="docSearchInput" class="sr-only">Search this location</label>
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <input
+                type="text"
+                id="docSearchInput"
+                name="search"
+                value="<?= h($search) ?>"
+                class="form-control"
+                placeholder="Search this location..."
+            >
+        </div>
+
+        <label for="docFilterProject" class="sr-only">Project</label>
+        <select name="project" id="docFilterProject" class="form-control">
+            <option value="">All Projects</option>
+            <?php foreach ($projects as $project): ?>
+                <option
+                    value="<?= (int)$project['project_id'] ?>"
+                    <?= $filterProject === (int)$project['project_id'] ? 'selected' : '' ?>
+                >
+                    <?= h(($project['project_code'] ?? '') . ' - ' . ($project['project_name'] ?? '')) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <label for="docFilterProgram" class="sr-only">Program</label>
+        <select name="program" id="docFilterProgram" class="form-control">
+            <option value="">All Programs</option>
+            <?php foreach ($programs as $program): ?>
+                <option
+                    value="<?= (int)$program['id'] ?>"
+                    <?= $filterProgram === (int)$program['id'] ? 'selected' : '' ?>
+                >
+                    <?= h(($program['program_code'] ?? '') . ' - ' . ($program['program_name'] ?? '')) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+
+        <div class="filters-actions">
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-filter" aria-hidden="true"></i> Filter
+            </button>
+
+            <a
+                href="<?= $currentFolderId > 0 ? 'documents?folder=' . $currentFolderId : 'documents' ?>"
+                class="btn btn-secondary btn-sm"
+            >
+                Clear
+            </a>
+        </div>
+    </form>
+
+    <div class="doc-explorer-body">
+        <?php if (!$folders && !$documents): ?>
+            <div class="doc-empty">
+                <div class="doc-empty-art" aria-hidden="true">
+                    <i class="fas <?= $hasFilters ? 'fa-magnifying-glass' : 'fa-folder-open' ?>"></i>
+                </div>
+
+                <?php if ($hasFilters): ?>
+                    <h3 class="doc-empty-title">No matching folders or files</h3>
+                    <p class="doc-empty-text">
+                        Nothing in this location matches your search or filters.
+                    </p>
+                    <a
+                        href="<?= $currentFolderId > 0 ? 'documents?folder=' . $currentFolderId : 'documents' ?>"
+                        class="btn btn-secondary btn-sm"
+                    >
+                        Clear filters
+                    </a>
+                <?php else: ?>
+                    <h3 class="doc-empty-title">This folder is empty.</h3>
+                    <p class="doc-empty-text">
+                        <?php if ($canCreateHere): ?>
+                            Create a folder or upload files to get started. You can also drag files here.
+                        <?php else: ?>
+                            Nothing has been shared with you here yet.
+                        <?php endif; ?>
+                    </p>
+                    <?php if ($canCreateHere): ?>
+                        <button
+                            type="button"
+                            class="btn btn-primary btn-sm"
+                            onclick="openModal('addNewModal')"
+                        >
+                            <i class="fas fa-plus" aria-hidden="true"></i>
+                            New
+                        </button>
+                    <?php endif; ?>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($folders): ?>
+            <div class="doc-section">
+                <h3 class="doc-section-title">
+                    Folders
+                    <span class="doc-section-count"><?= $folderCount ?></span>
+                </h3>
+
+                <div class="doc-list-head" aria-hidden="true">
+                    <span class="doc-lh-name">Name</span>
+                    <span>Owner</span>
+                    <span>Created</span>
+                    <span>Contents</span>
+                    <span></span>
+                </div>
+
+                <div class="doc-drive-grid doc-grid-folders">
+                    <?php foreach ($folders as $folder): ?>
+                        <?php
+                        $folderId = (int)$folder['folder_id'];
+                        $canEditFolder = doc_can(
+                            $conn,
+                            'folder',
+                            $folderId,
+                            $userId,
+                            $userRole,
+                            'edit'
+                        );
+                        $folderFiles = (int)$folder['file_count'];
+                        $folderFilesLabel = $folderFiles . ' file' . ($folderFiles === 1 ? '' : 's');
+                        $folderType = trim((string)($folder['document_type'] ?? ''));
+                        $folderOwner = trim((string)($folder['owner_name'] ?? ''));
+                        $folderDate = doc_ui_date($folder['created_at'] ?? null);
+                        ?>
+
+                        <article
+                            class="doc-drive-item folder"
+                            data-resource-type="folder"
+                            data-resource-id="<?= $folderId ?>"
+                            data-resource-name="<?= h($folder['folder_name']) ?>"
+                            data-can-edit="<?= ($canEditFolder || $isAdmin) ? '1' : '0' ?>"
+                            data-parent-folder-id="<?= (int)($folder['parent_folder_id'] ?? 0) ?>"
+                            draggable="<?= ($canEditFolder || $isAdmin) ? 'true' : 'false' ?>"
+                            data-folder-edit='<?= h(json_encode([
+                                "folder_id" => $folderId,
+                                "folder_name" => (string)($folder["folder_name"] ?? ""),
+                                "document_type" => (string)($folder["document_type"] ?? ""),
+                                "description" => (string)($folder["description"] ?? ""),
+                                "project_id" => (int)($folder["project_id"] ?? 0),
+                                "program_id" => (int)($folder["program_id"] ?? 0),
+                                "parent_folder_id" => (int)($folder["parent_folder_id"] ?? 0),
+                            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>'
+                            ondblclick="window.location.href='documents?folder=<?= $folderId ?>'"
+                            oncontextmenu="docShowContextMenu(event, this)"
+                        >
+                            <div class="doc-drive-icon" aria-hidden="true">
+                                <i class="fas fa-folder"></i>
+                            </div>
+
+                            <div class="doc-drive-main">
+                                <a
+                                    href="documents?folder=<?= $folderId ?>"
+                                    class="doc-drive-name doc-item-link"
+                                    draggable="false"
+                                    title="<?= h($folder['folder_name']) ?>"
+                                ><?= h($folder['folder_name']) ?></a>
+
+                                <div class="doc-drive-meta">
+                                    <?= h($folderFilesLabel) ?><?php if ($folderType !== ''): ?> &middot; <?= h($folderType) ?><?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="doc-col doc-col-owner">
+                                <?php if ($folderOwner !== ''): ?>
+                                    <span class="doc-avatar" aria-hidden="true"><?= h(doc_ui_initials($folderOwner)) ?></span>
+                                    <span class="doc-col-text"><?= h($folderOwner) ?></span>
+                                <?php else: ?>
+                                    <span class="doc-col-empty">&mdash;</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="doc-col doc-col-date">
+                                <?= $folderDate !== '' ? h($folderDate) : '<span class="doc-col-empty">&mdash;</span>' ?>
+                            </div>
+
+                            <div class="doc-col doc-col-size"><?= h($folderFilesLabel) ?></div>
+
+                            <button
+                                type="button"
+                                class="doc-drive-more"
+                                onclick="docShowContextMenu(event, this.closest('.doc-drive-item'))"
+                                title="More actions"
+                                aria-label="More actions for <?= h($folder['folder_name']) ?>"
+                                aria-haspopup="menu"
+                                aria-controls="docContextMenu"
+                                aria-expanded="false"
+                            >
+                                <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+                            </button>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($documents): ?>
+            <div class="doc-section">
+                <h3 class="doc-section-title">
+                    Files
+                    <span class="doc-section-count"><?= $docCount ?></span>
+                </h3>
+
+                <div class="doc-list-head" aria-hidden="true">
+                    <span class="doc-lh-name">Name</span>
+                    <span>Uploaded by</span>
+                    <span>Uploaded</span>
+                    <span>Size</span>
+                    <span></span>
+                </div>
+
+                <div class="doc-drive-grid doc-grid-files">
+                    <?php foreach ($documents as $doc): ?>
+                        <?php
+                        $docId = (int)$doc['document_id'];
+                        $fileKind = doc_ui_file_kind($doc);
+
+                        $canView = doc_can($conn, 'document', $docId, $userId, $userRole, 'view');
+                        $canEdit = doc_can($conn, 'document', $docId, $userId, $userRole, 'edit');
+                        $canDownload = doc_can($conn, 'document', $docId, $userId, $userRole, 'download');
+
+                        $docSize = doc_format_bytes((int)($doc['file_size'] ?? 0));
+                        $docDate = doc_ui_date($doc['upload_date'] ?? null);
+                        $docOwner = trim((string)($doc['uploaded_by_name'] ?? ''));
+                        $docCompressed = !empty($doc['is_compressed']);
+                        ?>
+
+                        <article
+                            class="doc-drive-item file"
+                            data-resource-type="document"
+                            data-resource-id="<?= $docId ?>"
+                            data-resource-name="<?= h($doc['document_name']) ?>"
+                            data-can-view="<?= $canView ? '1' : '0' ?>"
+                            data-can-edit="<?= ($canEdit || $isAdmin) ? '1' : '0' ?>"
+                            data-can-download="<?= $canDownload ? '1' : '0' ?>"
+                            data-folder-id="<?= (int)($doc['folder_id'] ?? 0) ?>"
+                            draggable="<?= ($canEdit || $isAdmin) ? 'true' : 'false' ?>"
+                            data-edit='<?= h(json_encode([
+                                "document_id" => $docId,
+                                "document_name" => (string)($doc["document_name"] ?? ""),
+                                "document_type" => (string)($doc["document_type"] ?? ""),
+                                "description" => (string)($doc["description"] ?? ""),
+                                "tags" => (string)($doc["tags"] ?? ""),
+                                "project_id" => (int)($doc["project_id"] ?? 0),
+                                "program_id" => (int)($doc["program_id"] ?? 0),
+                                "folder_id" => (int)($doc["folder_id"] ?? 0),
+                            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>'
+                            ondblclick="if(event.target.closest('a,button')) return; if(this.dataset.canView==='1') window.open('includes/documents-handler.php?action=view&id=<?= $docId ?>','_blank')"
+                            oncontextmenu="docShowContextMenu(event, this)"
+                        >
+                            <div class="doc-drive-icon doc-ft doc-ft-<?= h($fileKind['kind']) ?>" aria-hidden="true">
+                                <i class="fas <?= h($fileKind['icon']) ?>"></i>
+                                <span class="doc-ext"><?= h($fileKind['label']) ?></span>
+                            </div>
+
+                            <div class="doc-drive-main">
+                                <?php if ($canView): ?>
+                                    <a
+                                        href="includes/documents-handler.php?action=view&amp;id=<?= $docId ?>"
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="doc-drive-name doc-item-link"
+                                        draggable="false"
+                                        title="<?= h($doc['document_name']) ?>"
+                                    ><?= h($doc['document_name']) ?></a>
+                                <?php else: ?>
+                                    <span class="doc-drive-name" title="<?= h($doc['document_name']) ?>"><?= h($doc['document_name']) ?></span>
+                                <?php endif; ?>
+
+                                <div class="doc-drive-meta">
+                                    <span class="doc-ext-inline"><?= h($fileKind['label']) ?> &middot;</span>
+                                    <?= h($docSize) ?><?php if ($docDate !== ''): ?> &middot; <?= h($docDate) ?><?php endif; ?>
+                                    <?php if ($docCompressed): ?>
+                                        <i class="fas fa-box-archive doc-compressed" title="Compressed" aria-hidden="true"></i><span class="sr-only">Compressed</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <div class="doc-col doc-col-owner">
+                                <?php if ($docOwner !== ''): ?>
+                                    <span class="doc-avatar" aria-hidden="true"><?= h(doc_ui_initials($docOwner)) ?></span>
+                                    <span class="doc-col-text"><?= h($docOwner) ?></span>
+                                <?php else: ?>
+                                    <span class="doc-col-empty">&mdash;</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="doc-col doc-col-date">
+                                <?= $docDate !== '' ? h($docDate) : '<span class="doc-col-empty">&mdash;</span>' ?>
+                            </div>
+
+                            <div class="doc-col doc-col-size">
+                                <?= h($docSize) ?>
+                                <?php if ($docCompressed): ?>
+                                    <i class="fas fa-box-archive doc-compressed" title="Compressed" aria-hidden="true"></i>
+                                <?php endif; ?>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="doc-drive-more"
+                                onclick="docShowContextMenu(event, this.closest('.doc-drive-item'))"
+                                title="More actions"
+                                aria-label="More actions for <?= h($doc['document_name']) ?>"
+                                aria-haspopup="menu"
+                                aria-controls="docContextMenu"
+                                aria-expanded="false"
+                            >
+                                <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+                            </button>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($canCreateHere && ($folders || $documents)): ?>
+            <p class="doc-drop-hint">
+                <i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>
+                Drag files or folders onto this page to upload them here.
+            </p>
+        <?php endif; ?>
+    </div>
+</section>
 
 <div id="docDropOverlay" class="doc-drop-overlay">
     <div class="doc-drop-overlay-card">
@@ -1622,43 +1552,47 @@ $autoOpenUpload = (
     <span id="docUploadToastText">Uploading...</span>
 </div>
 
-<div id="docContextMenu" class="doc-context-menu">
-    <button type="button" class="doc-context-item" data-action="open">
-        <i class="fas fa-folder-open"></i>
+<div id="docContextBackdrop" class="doc-context-backdrop" aria-hidden="true"></div>
+
+<div id="docContextMenu" class="doc-context-menu" role="menu" aria-label="Item actions">
+    <div class="doc-context-title" id="docContextTitle" aria-hidden="true"></div>
+
+    <button type="button" class="doc-context-item" data-action="open" role="menuitem">
+        <i class="fas fa-folder-open" aria-hidden="true"></i>
         Open
     </button>
 
-    <button type="button" class="doc-context-item" data-action="view">
-        <i class="fas fa-eye"></i>
+    <button type="button" class="doc-context-item" data-action="view" role="menuitem">
+        <i class="fas fa-eye" aria-hidden="true"></i>
         View
     </button>
 
-    <button type="button" class="doc-context-item" data-action="download">
-        <i class="fas fa-download"></i>
+    <button type="button" class="doc-context-item" data-action="download" role="menuitem">
+        <i class="fas fa-download" aria-hidden="true"></i>
         Download
     </button>
 
-    <div class="doc-context-sep"></div>
+    <div class="doc-context-sep" role="separator"></div>
 
-    <button type="button" class="doc-context-item" data-action="edit">
-        <i class="fas fa-pen"></i>
+    <button type="button" class="doc-context-item" data-action="edit" role="menuitem">
+        <i class="fas fa-pen" aria-hidden="true"></i>
         Edit
     </button>
 
-    <button type="button" class="doc-context-item" data-action="move">
-        <i class="fas fa-arrows-up-down-left-right"></i>
+    <button type="button" class="doc-context-item" data-action="move" role="menuitem">
+        <i class="fas fa-arrows-up-down-left-right" aria-hidden="true"></i>
         Move
     </button>
 
-    <button type="button" class="doc-context-item" data-action="permissions">
-        <i class="fas fa-user-shield"></i>
+    <button type="button" class="doc-context-item" data-action="permissions" role="menuitem">
+        <i class="fas fa-user-shield" aria-hidden="true"></i>
         Manage Access
     </button>
 
-    <div class="doc-context-sep"></div>
+    <div class="doc-context-sep" role="separator"></div>
 
-    <button type="button" class="doc-context-item danger" data-action="delete">
-        <i class="fas fa-trash"></i>
+    <button type="button" class="doc-context-item danger" data-action="delete" role="menuitem">
+        <i class="fas fa-trash" aria-hidden="true"></i>
         Delete
     </button>
 </div>
@@ -3320,10 +3254,21 @@ $autoOpenUpload = (
 
 
     let docContextTarget = null;
+    let docContextTrigger = null;
+
+    function docVisibleMenuItems(menu){
+        return Array.from(menu.querySelectorAll('.doc-context-item')).filter(function(item){
+            return item.style.display !== 'none';
+        });
+    }
 
     window.docShowContextMenu = function(event, target){
         event.preventDefault();
         event.stopPropagation();
+
+        if (!target) {
+            return;
+        }
 
         docContextTarget = target;
 
@@ -3358,14 +3303,63 @@ $autoOpenUpload = (
         actionPermissions.style.display = canEdit ? 'flex' : 'none';
         actionDelete.style.display = canEdit ? 'flex' : 'none';
 
+        /* Hide a separator unless visible items sit on both sides of it. */
+        const children = Array.from(menu.children);
+        children.forEach(function(el, index){
+            if (!el.classList.contains('doc-context-sep')) return;
+
+            const isShownItem = function(node){
+                return node.classList.contains('doc-context-item') && node.style.display !== 'none';
+            };
+
+            const before = children.slice(0, index).some(isShownItem);
+            const after = children.slice(index + 1).some(isShownItem);
+
+            el.style.display = before && after ? '' : 'none';
+        });
+
+        const title = document.getElementById('docContextTitle');
+        if (title) {
+            title.textContent = target.dataset.resourceName || '';
+        }
+
+        /* Remember what opened the menu so focus can return to it. */
+        const moreBtn = event.target && event.target.closest
+            ? event.target.closest('.doc-drive-more')
+            : null;
+
+        docContextTrigger = moreBtn || target.querySelector('.doc-drive-more');
+
+        document.querySelectorAll('.doc-drive-more[aria-expanded="true"]').forEach(function(btn){
+            btn.setAttribute('aria-expanded', 'false');
+        });
+        docContextTrigger?.setAttribute('aria-expanded', 'true');
+
         menu.classList.add('open');
+        document.getElementById('docContextBackdrop')?.classList.add('open');
 
         const rect = menu.getBoundingClientRect();
+        const menuWidth = rect.width || 220;
         let x = event.clientX;
         let y = event.clientY;
 
-        if (x + 220 > window.innerWidth) {
-            x = window.innerWidth - 220;
+        /*
+         * Opened from the "more" button, or from the keyboard (no pointer
+         * position): anchor the menu to the button instead of the pointer.
+         */
+        if (moreBtn || (!event.clientX && !event.clientY)) {
+            const anchor = (moreBtn || docContextTrigger || target).getBoundingClientRect();
+
+            x = anchor.right - menuWidth;
+            y = anchor.bottom + 6;
+
+            if (y + rect.height > window.innerHeight) {
+                y = anchor.top - rect.height - 6;
+            }
+        }
+
+        if (x + menuWidth + 8 > window.innerWidth) {
+            x = window.innerWidth - menuWidth - 8;
         }
 
         if (y + rect.height > window.innerHeight) {
@@ -3374,15 +3368,33 @@ $autoOpenUpload = (
 
         menu.style.left = Math.max(8, x) + 'px';
         menu.style.top = Math.max(8, y) + 'px';
+
+        /* Keyboard users land on the first action (event.detail is 0 for keyboard clicks). */
+        if (event.type === 'contextmenu' ? (!event.clientX && !event.clientY) : event.detail === 0) {
+            const first = docVisibleMenuItems(menu)[0];
+            first?.focus();
+        }
     };
 
 
-    function docHideContextMenu(){
-        document.getElementById('docContextMenu')?.classList.remove('open');
+    function docHideContextMenu(restoreFocus){
+        const menu = document.getElementById('docContextMenu');
+        const wasOpen = menu?.classList.contains('open');
+
+        menu?.classList.remove('open');
+        document.getElementById('docContextBackdrop')?.classList.remove('open');
 
         document.querySelectorAll('.doc-drive-item').forEach(function(item){
             item.classList.remove('selected');
         });
+
+        document.querySelectorAll('.doc-drive-more[aria-expanded="true"]').forEach(function(btn){
+            btn.setAttribute('aria-expanded', 'false');
+        });
+
+        if (wasOpen && restoreFocus && docContextTrigger) {
+            docContextTrigger.focus();
+        }
     }
 
 
@@ -3395,9 +3407,75 @@ $autoOpenUpload = (
 
     document.addEventListener('keydown', function(event){
         if (event.key === 'Escape') {
-            docHideContextMenu();
+            docHideContextMenu(true);
         }
     });
+
+
+    /* Arrow-key navigation inside the action menu. */
+    document.getElementById('docContextMenu')?.addEventListener('keydown', function(event){
+        const items = docVisibleMenuItems(this);
+
+        if (!items.length) return;
+
+        const index = items.indexOf(document.activeElement);
+        let next = null;
+
+        if (event.key === 'ArrowDown') next = items[(index + 1) % items.length];
+        if (event.key === 'ArrowUp') next = items[(index - 1 + items.length) % items.length];
+        if (event.key === 'Home') next = items[0];
+        if (event.key === 'End') next = items[items.length - 1];
+
+        if (next) {
+            event.preventDefault();
+            next.focus();
+            return;
+        }
+
+        if (event.key === 'Tab') {
+            docHideContextMenu(true);
+        }
+    });
+
+
+    /*
+     * Grid / list layout toggle (presentation only; remembered per browser).
+     */
+    (function(){
+        const explorer = document.getElementById('docExplorer');
+        const buttons = document.querySelectorAll('.doc-view-btn[data-doc-view]');
+
+        if (!explorer || !buttons.length) return;
+
+        function apply(view){
+            const isList = view === 'list';
+
+            explorer.classList.toggle('is-list', isList);
+
+            buttons.forEach(function(btn){
+                const active = btn.dataset.docView === (isList ? 'list' : 'grid');
+                btn.classList.toggle('is-active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+
+        let saved = 'grid';
+        try {
+            saved = localStorage.getItem('ims.documents.view') || 'grid';
+        } catch (e) {}
+
+        apply(saved);
+
+        buttons.forEach(function(btn){
+            btn.addEventListener('click', function(){
+                apply(btn.dataset.docView);
+
+                try {
+                    localStorage.setItem('ims.documents.view', btn.dataset.docView);
+                } catch (e) {}
+            });
+        });
+    })();
 
 
     document.querySelectorAll('#docContextMenu [data-action]').forEach(function(button){
