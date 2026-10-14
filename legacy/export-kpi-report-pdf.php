@@ -25,7 +25,7 @@ require_once __DIR__ . '/includes/auth.php';
 require_login('login');
 
 $session_user_id = (int)($_SESSION['user_id'] ?? 0);
-$is_hr = auth_has_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR']);
+$is_hr = ims_allowed('kpi_reports.export_all', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR'], 'Export KPI reports for everyone (not just their own)');
 
 $filter_year = isset($_GET['year']) && (int)$_GET['year'] > 0 ? (int)$_GET['year'] : (int)date('Y');
 $filter_department = isset($_GET['department']) ? max(0, (int)$_GET['department']) : 0;

@@ -9,7 +9,7 @@ require_login();
 // Only Administrators allowed
 $allowed_roles = ['Administrator', 'Operations/Admin'];
 
-if (!in_array($_SESSION['role'], $allowed_roles, true)) {
+if (!ims_allowed('feedback.respond', ['Administrator', 'Operations/Admin'], 'Respond to member feedback')) {
     $_SESSION['error'] = 'Access denied. Admin privileges required.';
     redirect_by_role($_SESSION['role']);
 }
@@ -360,7 +360,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete_response') {
     csrf_protect(true); // state-changing GET link must carry the CSRF token
     
     // Extra admin check
-    if ($_SESSION['role'] != 'Administrator') {
+    if (!ims_allowed('feedback.delete_response', ['Administrator'], 'Delete feedback responses')) {
         $_SESSION['error'] = "Only administrators can delete responses.";
         header("Location: dashboard");
         exit();

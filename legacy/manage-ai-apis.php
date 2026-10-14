@@ -13,13 +13,7 @@ if (!function_exists('h')) {
     }
 }
 
-$adminRoles = ['Administrator', 'Operations/Admin'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $adminRoles, true)
-) {
+if (!ims_allowed('ai_apis.manage', ['Administrator', 'Operations/Admin'], 'Manage AI API connections')) {
     $_SESSION['error'] = 'Access denied. Admin only.';
     header('Location: dashboard');
     exit;

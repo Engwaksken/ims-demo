@@ -12,20 +12,7 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
-$allowedRoles = [
-    'Administrator',
-    'Finance',
-    'Accountant',
-    'Meal Lead',
-];
-
-if (
-    !in_array(
-        (string)($_SESSION['role'] ?? ''),
-        $allowedRoles,
-        true
-    )
-) {
+if (!ims_allowed('vouchers.view', ['Administrator', 'Finance', 'Accountant'], 'View, print and download payment vouchers')) {
     http_response_code(403);
     exit('Access denied.');
 }

@@ -36,10 +36,7 @@ function booking_email_json(
 if (
     !isset($_SESSION['user_id'])
     ||
-    !auth_has_role([
-        'Administrator',
-        'Operations/Admin',
-    ])
+    !ims_allowed('bookings.send_email', ['Administrator', 'Operations/Admin'], 'Send booking emails')
 ) {
     booking_email_json(
         false,

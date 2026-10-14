@@ -172,7 +172,7 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
 
         // Startup / programme applications: reviewers + the applicant.
         case 'applications':
-            if (auth_has_role(IMS_STAFF_ROLES)) {
+            if (ims_allowed('downloads.application_files', IMS_STAFF_ROLES, 'Download any application file (not just their own)')) {
                 return true;
             }
 
@@ -196,7 +196,7 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
 
         // uploads/startup-evidence/{application_id}/{milestone_id}/...
         case 'startup-evidence':
-            if (auth_has_role(IMS_STAFF_ROLES)) {
+            if (ims_allowed('downloads.startup_evidence', IMS_STAFF_ROLES, 'Download any startup milestone evidence (not just their own)')) {
                 return true;
             }
 
@@ -204,7 +204,7 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
 
         // uploads/job_applications/{user_id}/... (CVs, cover letters)
         case 'job_applications':
-            if (auth_has_role(array_merge(IMS_ADMIN_ROLES, ['HR']))) {
+            if (ims_allowed('downloads.job_applications', ['Administrator', 'Executive Director', 'Operations/Admin', 'IT Officer', 'HR'], 'Download any job application CV or cover letter')) {
                 return true;
             }
 
@@ -213,7 +213,7 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
         // uploads/employees/{user_id}/... (national IDs, contracts, signatures)
         // Same reviewer roles as employee-profile-view.php.
         case 'employees':
-            if (auth_has_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR', 'Executive Director'])) {
+            if (ims_allowed('downloads.employee_files', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR', 'Executive Director'], 'Download any employee file (IDs, contracts, signatures)')) {
                 return true;
             }
 
@@ -235,7 +235,7 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
 
         // Payment receipts / invoices (members, hub operations, internet).
         case 'receipts':
-            if (auth_has_role(array_merge(IMS_ADMIN_ROLES, IMS_FINANCE_ROLES))) {
+            if (ims_allowed('downloads.receipts', ['Administrator', 'Executive Director', 'Operations/Admin', 'IT Officer', 'Finance', 'Accountant', 'Procurement Officer'], 'Download any payment receipt or invoice')) {
                 return true;
             }
 
@@ -271,7 +271,7 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
 
         // Member feedback attachments (stored as a JSON list on member_feedback).
         case 'feedback':
-            if (auth_has_role(IMS_ADMIN_ROLES)) {
+            if (ims_allowed('downloads.feedback_attachments', IMS_ADMIN_ROLES, 'Download any member feedback attachment')) {
                 return true;
             }
 
@@ -287,14 +287,14 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
 
         // Partner recommendation letters (donors-partners.php roles).
         case 'recommendations':
-            return auth_has_role(array_merge(IMS_ADMIN_ROLES, ['Programs Lead', 'Program Director', 'MEAL Lead']));
+            return ims_allowed('downloads.recommendation_letters', ['Administrator', 'Executive Director', 'Operations/Admin', 'IT Officer', 'Programs Lead', 'Program Director', 'MEAL Lead'], 'Download partner recommendation letters');
 
         // Procurement quotations (manage_quotations / manage_quotation_reviews roles).
         case 'quotations':
-            return auth_has_role([
+            return ims_allowed('downloads.quotations', [
                 'Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer', 'Finance',
                 'Executive Director', 'Programs Lead', 'Program Manager', 'Program Officer', 'Staff',
-            ]);
+            ], 'Download procurement quotations');
 
         // Internal programme / M&E / finance material: staff only.
         case 'milestones':
@@ -307,12 +307,12 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
         case 'voucher_logos':
         case 'voucher_branding':
         case 'voucher':
-            return auth_has_role(IMS_STAFF_ROLES);
+            return ims_allowed('downloads.internal_files', IMS_STAFF_ROLES, 'Download internal programme, M&E and finance files (milestones, risk reports, templates, logos, vouchers)');
 
         // Documents without a documents-module record (orphans): admins.
         case 'documents':
         default:
-            return auth_has_role(IMS_ADMIN_ROLES);
+            return ims_allowed('downloads.other_files', IMS_ADMIN_ROLES, 'Download unlinked documents and other uncategorised uploads');
     }
 }
 

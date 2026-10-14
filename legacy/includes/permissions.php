@@ -48,6 +48,7 @@ if (!function_exists('ims_perm_ensure_tables')) {
                     perm_key VARCHAR(190) NOT NULL,
                     source_file VARCHAR(255) NOT NULL,
                     default_roles TEXT NOT NULL,
+                    label VARCHAR(190) NULL,
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (perm_key),
                     KEY idx_ims_permissions_file (source_file)
@@ -61,6 +62,14 @@ if (!function_exists('ims_perm_ensure_tables')) {
                     KEY idx_ims_role_permissions_key (perm_key)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
+
+            // Tables created before named actions existed lack the label column.
+            if ($ready) {
+                $col = $conn->query("SHOW COLUMNS FROM ims_permissions LIKE 'label'");
+                if ($col && $col->num_rows === 0) {
+                    $conn->query('ALTER TABLE ims_permissions ADD COLUMN label VARCHAR(190) NULL AFTER default_roles');
+                }
+            }
         } catch (Throwable $e) {
             error_log('Permission tables unavailable: ' . $e->getMessage());
             $ready = false;
@@ -124,13 +133,14 @@ if (!function_exists('ims_perm_registry')) {
         }
 
         $cache = [];
-        $result = $conn->query('SELECT perm_key, source_file, default_roles FROM ims_permissions ORDER BY source_file, perm_key');
+        $result = $conn->query('SELECT perm_key, source_file, default_roles, label FROM ims_permissions ORDER BY source_file, perm_key');
         if ($result) {
             while ($row = $result->fetch_assoc()) {
                 $roles = json_decode((string)$row['default_roles'], true);
                 $cache[$row['perm_key']] = [
                     'source_file' => (string)$row['source_file'],
                     'default_roles' => is_array($roles) ? $roles : [],
+                    'label' => (string)($row['label'] ?? ''),
                 ];
             }
             $result->close();
@@ -199,17 +209,17 @@ if (!function_exists('ims_perm_default_grantees')) {
 
 /** Register a permission (once) and grant it to its default roles. */
 if (!function_exists('ims_perm_register')) {
-    function ims_perm_register(mysqli $conn, string $relFile, array $codeRoles): string
+    function ims_perm_register(mysqli $conn, string $relFile, array $codeRoles, ?string $key = null, string $label = ''): string
     {
         $codeRoles = ims_perm_clean_roles($codeRoles);
-        $key = ims_perm_key($relFile, $codeRoles);
+        $key = $key ?? ims_perm_key($relFile, $codeRoles);
         $json = json_encode($codeRoles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        $stmt = $conn->prepare('INSERT IGNORE INTO ims_permissions (perm_key, source_file, default_roles) VALUES (?, ?, ?)');
+        $stmt = $conn->prepare("INSERT IGNORE INTO ims_permissions (perm_key, source_file, default_roles, label) VALUES (?, ?, ?, NULLIF(?, ''))");
         if (!$stmt) {
             return $key;
         }
-        $stmt->bind_param('sss', $key, $relFile, $json);
+        $stmt->bind_param('ssss', $key, $relFile, $json, $label);
         $stmt->execute();
         $isNew = $stmt->affected_rows === 1;
         $stmt->close();
@@ -316,13 +326,85 @@ if (!function_exists('ims_perm_caller_file')) {
 }
 
 /* ---------------------------------------------------------------------
+   Named actions inside pages
+   --------------------------------------------------------------------- */
+
+/** Permission key for a named action, e.g. "action:events.delete". */
+if (!function_exists('ims_action_key')) {
+    function ims_action_key(string $permission): string
+    {
+        $permission = strtolower(trim($permission));
+        $permission = preg_replace('/[^a-z0-9._-]+/', '_', $permission) ?? $permission;
+
+        return 'action:' . substr($permission, 0, 180);
+    }
+}
+
+/**
+ * Can the current user perform a named action? Use for checks inside pages
+ * (show a button, allow a handler, see all records instead of only their own):
+ *
+ *     if (ims_allowed('events.delete', ['Administrator', 'Operations/Admin'], 'Delete events')) { ... }
+ *
+ * Use the same name (and the same default roles) for the button on the page
+ * and the code that handles it, so the administrator ticks it once. The roles
+ * listed are the defaults; the Role Permissions page decides after that.
+ * Unlike check_role() this never redirects.
+ */
+if (!function_exists('ims_allowed')) {
+    function ims_allowed(string $permission, array $defaultRoles, string $label = ''): bool
+    {
+        static $decided = [];
+
+        $role = trim((string)($_SESSION['role'] ?? ''));
+        if ($role === '' || empty($_SESSION['user_id'])) {
+            return false;
+        }
+
+        $key = ims_action_key($permission);
+
+        try {
+            $conn = function_exists('db_connect') ? db_connect() : ($GLOBALS['conn'] ?? null);
+            if ($conn instanceof mysqli && ims_perm_ensure_tables($conn)) {
+                $current = ims_perm_current_role($conn);
+                $cacheKey = $current . '|' . $key;
+                if (isset($decided[$cacheKey])) {
+                    return $decided[$cacheKey];
+                }
+
+                if (!isset(ims_perm_registry($conn)[$key])) {
+                    $file = ims_perm_relative_file(ims_perm_caller_file(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)));
+                    ims_perm_register($conn, $file, $defaultRoles, $key, $label);
+                    ims_perm_registry($conn, true);
+                    ims_perm_role_grants($conn, $current, true);
+                }
+
+                return $decided[$cacheKey] = isset(ims_perm_role_grants($conn, $current)[$key]);
+            }
+        } catch (Throwable $e) {
+            error_log('ims_allowed(' . $permission . ') failed, using role names: ' . $e->getMessage());
+        }
+
+        // Permission tables unavailable: original role-name behaviour.
+        $lower = mb_strtolower($role, 'UTF-8');
+        foreach ($defaultRoles as $allowed) {
+            if (is_string($allowed) && mb_strtolower(trim($allowed), 'UTF-8') === $lower) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+/* ---------------------------------------------------------------------
    Code scan: find every check_role(...) so the admin screen lists all
    pages, including ones nobody has opened since this was installed.
    --------------------------------------------------------------------- */
 
 /** Roles in a check_role() argument, or null if it isn't a literal/constant. */
 if (!function_exists('ims_perm_parse_argument')) {
-    function ims_perm_parse_argument(array $tokens, int $start, array $localConsts = []): ?array
+    function ims_perm_parse_argument(array $tokens, int $start, array $localConsts = [], ?int &$end = null): ?array
     {
         $count = count($tokens);
         $i = $start;
@@ -339,6 +421,7 @@ if (!function_exists('ims_perm_parse_argument')) {
 
         // Constant: one declared in the same file, or a global such as IMS_STAFF_ROLES.
         if (is_array($tok) && $tok[0] === T_STRING) {
+            $end = $i;
             if (isset($localConsts[$tok[1]])) {
                 return $localConsts[$tok[1]];
             }
@@ -351,6 +434,7 @@ if (!function_exists('ims_perm_parse_argument')) {
 
         // Single string: check_role('Administrator').
         if (is_array($tok) && $tok[0] === T_CONSTANT_ENCAPSED_STRING) {
+            $end = $i;
             return [stripcslashes(substr($tok[1], 1, -1))];
         }
 
@@ -381,6 +465,7 @@ if (!function_exists('ims_perm_parse_argument')) {
             if ($t === $close) {
                 $depth--;
                 if ($depth === 0) {
+                    $end = $i;
                     return $roles;
                 }
                 continue;
@@ -392,6 +477,39 @@ if (!function_exists('ims_perm_parse_argument')) {
                     return null; // computed list; leave it to runtime registration
                 }
             }
+        }
+
+        return null;
+    }
+}
+
+/** String literal starting at $i (after whitespace); sets $end. */
+if (!function_exists('ims_perm_string_at')) {
+    function ims_perm_string_at(array $tokens, int $i, ?int &$end = null): ?string
+    {
+        $count = count($tokens);
+        while ($i < $count && is_array($tokens[$i]) && in_array($tokens[$i][0], [T_WHITESPACE, T_COMMENT], true)) {
+            $i++;
+        }
+        if ($i < $count && is_array($tokens[$i]) && $tokens[$i][0] === T_CONSTANT_ENCAPSED_STRING) {
+            $end = $i;
+            return stripcslashes(substr($tokens[$i][1], 1, -1));
+        }
+
+        return null;
+    }
+}
+
+/** Index of the next "," after $i (skipping whitespace), or null. */
+if (!function_exists('ims_perm_comma_after')) {
+    function ims_perm_comma_after(array $tokens, int $i): ?int
+    {
+        $count = count($tokens);
+        for ($i++; $i < $count; $i++) {
+            if (is_array($tokens[$i]) && in_array($tokens[$i][0], [T_WHITESPACE, T_COMMENT], true)) {
+                continue;
+            }
+            return $tokens[$i] === ',' ? $i : null;
         }
 
         return null;
@@ -424,12 +542,12 @@ if (!function_exists('ims_perm_scan')) {
 
         foreach ($iterator as $file) {
             $code = @file_get_contents($file->getPathname());
-            if ($code === false || stripos($code, 'check_role') === false) {
+            if ($code === false || (stripos($code, 'check_role') === false && stripos($code, 'ims_allowed') === false)) {
                 continue;
             }
 
             $relFile = ims_perm_relative_file($file->getPathname());
-            if ($relFile === 'includes/auth') {
+            if ($relFile === 'includes/auth' || $relFile === 'includes/permissions') {
                 continue; // check_*_roles() shortcuts: registered under the calling page at runtime
             }
 
@@ -457,7 +575,11 @@ if (!function_exists('ims_perm_scan')) {
 
             for ($i = 0; $i < $count; $i++) {
                 $tok = $tokens[$i];
-                if (!is_array($tok) || $tok[0] !== T_STRING || strcasecmp($tok[1], 'check_role') !== 0) {
+                if (!is_array($tok) || $tok[0] !== T_STRING) {
+                    continue;
+                }
+                $isAction = strcasecmp($tok[1], 'ims_allowed') === 0;
+                if (!$isAction && strcasecmp($tok[1], 'check_role') !== 0) {
                     continue;
                 }
 
@@ -475,6 +597,24 @@ if (!function_exists('ims_perm_scan')) {
                     $n++;
                 }
                 if (($tokens[$n] ?? null) !== '(') {
+                    continue;
+                }
+
+                if ($isAction) {
+                    // ims_allowed('name', [roles], 'Label')
+                    $name = ims_perm_string_at($tokens, $n + 1, $nameEnd);
+                    $comma = $name !== null ? ims_perm_comma_after($tokens, $nameEnd) : null;
+                    $roles = $comma !== null ? ims_perm_parse_argument($tokens, $comma + 1, $localConsts, $rolesEnd) : null;
+                    if ($name === null || !$roles) {
+                        continue;
+                    }
+                    $label = '';
+                    $comma = ims_perm_comma_after($tokens, $rolesEnd);
+                    if ($comma !== null) {
+                        $label = (string)ims_perm_string_at($tokens, $comma + 1);
+                    }
+                    ims_perm_register($conn, $relFile, $roles, ims_action_key($name), $label);
+                    $found++;
                     continue;
                 }
 

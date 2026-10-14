@@ -148,27 +148,11 @@ function status_color(string $status): string
 | ACCESS CONTROL
 |--------------------------------------------------------------------------
 */
-$allowed_roles = [
-    'Administrator',
-    'Programs Lead',
-    'MEAL Lead',
-    'Operations/Admin',
-    'Project Officer',
-    'Donor/Partner',
-    'Staff',
-    'Reviewer',
-];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('reviews.open', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Donor/Partner', 'Staff', 'Reviewer'], 'Open the application review page')) {
     redirect_with_error('Access denied.');
 }
 
 $reviewer_id = (int)$_SESSION['user_id'];
-$role = (string)$_SESSION['role'];
 
 /*
 |--------------------------------------------------------------------------
@@ -191,14 +175,6 @@ unset($_SESSION['success'], $_SESSION['error']);
 | REVIEWER ASSIGNMENT
 |--------------------------------------------------------------------------
 */
-$unassigned_allowed_roles = [
-    'Administrator',
-    'MEAL Lead',
-    'Programs Lead',
-    'Reviewer',
-    'Project Officer',
-];
-
 $assignments = fetch_all_assoc(
     $conn,
     "
@@ -217,7 +193,7 @@ $assignments = fetch_all_assoc(
 );
 
 $is_assigned = !empty($assignments);
-$can_review_unassigned = in_array($role, $unassigned_allowed_roles, true);
+$can_review_unassigned = ims_allowed('reviews.review_unassigned', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Reviewer', 'Consultant'], 'Review applications they are not assigned to');
 
 if (!$is_assigned && !$can_review_unassigned) {
     redirect_with_error(

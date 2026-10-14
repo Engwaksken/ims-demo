@@ -107,7 +107,10 @@ if (isset($_POST['edit_donor'])) {
    DELETE DONOR
 --------------------------------------------------------- */
 if (isset($_POST['delete_donor'])) {
-    check_role(['Administrator']);
+    if (!ims_allowed('donors_partners.delete_donors', ['Administrator'], 'Delete donors')) {
+        send_notification($_SESSION['user_id'] ?? 0, 'You are not allowed to do that.', 'danger');
+        redirect_back();
+    }
 
     $donor_id = (int)$_POST['donor_id'];
 
@@ -299,7 +302,10 @@ if (isset($_POST['edit_partner'])) {
    DELETE PARTNER
 --------------------------------------------------------- */
 if (isset($_POST['delete_partner'])) {
-    check_role(['Administrator']);
+    if (!ims_allowed('donors_partners.delete_partners', ['Administrator'], 'Delete partners')) {
+        send_notification($_SESSION['user_id'] ?? 0, 'You are not allowed to do that.', 'danger');
+        redirect_back();
+    }
 
     $partner_id = (int)$_POST['partner_id'];
 

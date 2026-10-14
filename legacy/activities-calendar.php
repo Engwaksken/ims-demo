@@ -1414,7 +1414,7 @@ function ac_list_page_url(
                 <?= $googleCalendarConnected ? 'Google Connected' : 'Google Not Connected' ?>
             </span>
 
-            <?php if (!$googleCalendarConnected && auth_has_role(IMS_ADMIN_ROLES)): ?>
+            <?php if (!$googleCalendarConnected && ims_allowed('activities.connect_google', IMS_ADMIN_ROLES, 'See the Connect Google Calendar link')): ?>
                 <a
                     href="settings?tab=google"
                     class="btn btn-gray"

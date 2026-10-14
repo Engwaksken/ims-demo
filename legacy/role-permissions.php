@@ -97,14 +97,34 @@ try {
     $menuLabels = [];
 }
 
-$groups = ['Pages' => [], 'Actions & processing' => []];
+$groups = ['Pages' => [], 'Actions inside pages' => [], 'Actions & processing' => []];
 $perFile = [];
 foreach ($registry as $key => $row) {
-    $perFile[$row['source_file']][] = $key;
+    if (!str_starts_with($key, 'action:')) {
+        $perFile[$row['source_file']][] = $key;
+    }
 }
 
 foreach ($registry as $key => $row) {
     $file  = $row['source_file'];
+
+    // Named actions from ims_allowed(): "events.delete" -> "Events: Delete events".
+    if (str_starts_with($key, 'action:')) {
+        $name   = substr($key, 7);
+        $module = ucwords(str_replace(['_', '-'], ' ', strtok($name, '.')));
+        $what   = $row['label'] !== '' ? $row['label'] : ucfirst(str_replace(['_', '-', '.'], ' ', (string)substr($name, strlen(strtok($name, '.')) + 1)));
+        $groups['Actions inside pages'][] = [
+            'key'       => $key,
+            'label'     => $module . ': ' . $what,
+            'file'      => $name,
+            'defaults'  => $row['default_roles'],
+            'granted'   => isset($grants[$key]),
+            'protected' => false,
+            'is_action' => true,
+        ];
+        continue;
+    }
+
     $slug  = basename($file);
     $isAction = str_contains($file, '/') || preg_match('/(process|actions?|export|ajax|download|save|delete|update)/i', $slug);
     $label = $menuLabels[$slug] ?? ucwords(str_replace(['-', '_'], ' ', $slug));
@@ -242,7 +262,7 @@ include 'includes/header.php';
                                 <?php endif; ?>
                                 <span class="rp-text">
                                     <strong><?= e($item['label']) ?></strong>
-                                    <small><?= e($item['file']) ?>.php</small>
+                                    <small><?= e($item['file']) ?><?= empty($item['is_action']) ? '.php' : '' ?></small>
                                     <small class="rp-defaults">
                                         Default: <?= e(implode(', ', $item['defaults'])) ?>
                                     </small>

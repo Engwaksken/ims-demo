@@ -265,7 +265,7 @@ $currencies = [
                                            class="btn btn-sm btn-gray" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if ($_SESSION['role'] === 'Administrator'): ?>
+                                        <?php if (ims_allowed('programs.delete', ['Administrator'], 'Delete programs')): ?>
                                             <button
                                                 class="btn btn-sm btn-red"
                                                 title="Delete"

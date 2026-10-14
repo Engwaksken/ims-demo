@@ -34,22 +34,7 @@ function rows(mysqli $conn, string $sql, string $types = '', array $params = [])
     return $out;
 }
 
-$allowed = [
-    'Administrator',
-    'Programs Lead',
-    'MEAL Lead',
-    'Operations/Admin',
-    'Project Officer',
-    'Reviewer',
-    'Program Manager',
-    'Program Director'
-];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array($_SESSION['role'], $allowed, true)
-) {
+if (!ims_allowed('ai_review.compare', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Reviewer', 'Program Manager', 'Program Director'], 'Compare AI and human reviews of an application')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: dashboard');
     exit;

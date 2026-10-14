@@ -11,22 +11,7 @@ require_once 'includes/config.php';
 
 $page_title = 'Manage Risk Ratings';
 
-$allowed_roles = [
-    'Administrator',
-    'MEAL Lead',
-    'Programs Lead',
-    'Programs Manager',
-    'Reviewer',
-    'Project Officer',
-    'project Officer',
-    'ED',
-];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('risk_ratings.view', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Programs Manager', 'Reviewer', 'Project Officer', 'ED'], 'Open the risk ratings list')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: dashboard');
     exit();
@@ -70,15 +55,9 @@ if ($currentUserName === '') {
     $currentUserName = 'Current User';
 }
 
-$normalizedRole = strtolower(trim($currentUserRole));
-
-$prepRoles    = ['reviewer'];
-$reviewRoles  = ['administrator', 'programs lead', 'programs manager'];
-$approveRoles = ['administrator', 'ed'];
-
-$canPrepare = in_array($normalizedRole, $prepRoles, true);
-$canReview  = in_array($normalizedRole, $reviewRoles, true);
-$canApprove = in_array($normalizedRole, $approveRoles, true);
+$canPrepare = ims_allowed('risk_ratings.sign_prepared', ['Reviewer'], 'Sign the Prepared By section of risk ratings');
+$canReview  = ims_allowed('risk_ratings.sign_reviewed', ['Administrator', 'Programs Lead', 'Programs Manager'], 'Sign the Reviewed By section of risk ratings');
+$canApprove = ims_allowed('risk_ratings.sign_approved', ['Administrator', 'ED'], 'Sign the Approved by ED section of risk ratings');
 
 $signaturePermissions = [
     'prep' => [

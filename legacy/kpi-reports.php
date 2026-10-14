@@ -5,7 +5,7 @@ $load_chartjs = true; // header.php loads Chart.js in <head> so inline chart scr
 include 'includes/header.php';
 
 // Check role - HR or employee viewing own reports
-$is_hr = in_array($_SESSION['role'], ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin']);
+$is_hr = ims_allowed('kpi_reports.view_all', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin'], 'See KPI reports for everyone (not just their own)');
 
 // Get filter parameters
 $filter_department = isset($_GET['department']) ? intval($_GET['department']) : 0;

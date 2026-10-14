@@ -65,7 +65,7 @@ if ($achievement >= 100) {
         </a>
     </div>
     <div>
-        <?php if (in_array($_SESSION['role'], ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer'])): ?>
+        <?php if (ims_allowed('indicators.edit', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer'], 'Edit indicators and update progress')): ?>
             <button onclick="openModal('editIndicatorModal')" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Edit Indicator
             </button>

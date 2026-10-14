@@ -4,7 +4,7 @@ $page_title = 'Manage Available Spaces';
 include 'includes/header.php';
 
 
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Administrator', 'Operations/Admin'])) {
+if (!isset($_SESSION['user_id']) || !ims_allowed('spaces.manage', ['Administrator', 'Operations/Admin'], 'Add and edit spaces')) {
     $_SESSION['error'] = "Access denied. Administrator or Operations role required.";
     header("Location: dashboard");
     exit();
@@ -539,7 +539,7 @@ if (isset($_GET['edit'])) {
                         <i class="fas fa-calendar"></i> Bookings
                     </a>
                     
-                    <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                    <?php if (ims_allowed('spaces.delete', ['Administrator'], 'Delete spaces')): ?>
                     <button onclick="confirmDelete(<?php echo $space['availability_id']; ?>, '<?php echo htmlspecialchars(addslashes($space['space_name'])); ?>')" 
                             class="btn btn-danger btn-sm">
                         <i class="fas fa-trash"></i> Delete

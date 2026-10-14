@@ -5,13 +5,8 @@ session_start();
 require_once 'includes/header.php';
 
 $page_title    = 'Risk Rating - New Section Entry';
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'];
 
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array($_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('risk_ratings.edit', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'], 'Create and edit risk ratings')) {
     $_SESSION['error'] = "Access denied.";
     header("Location: dashboard");
     exit();

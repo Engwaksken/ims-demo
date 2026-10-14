@@ -13,8 +13,6 @@ require_once __DIR__ . '/../services/RiskRatingReportService.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
-$allowedRoles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer', 'project Officer'];
-
 function jsonOut(bool $success, string $message, array $extra = [], int $statusCode = 200): never
 {
     http_response_code($statusCode);
@@ -25,11 +23,7 @@ function jsonOut(bool $success, string $message, array $extra = [], int $statusC
     exit;
 }
 
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowedRoles, true)
-) {
+if (!ims_allowed('signatures.sign', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'], 'Sign risk ratings (signature handler)')) {
     jsonOut(false, 'Access denied.', [], 403);
 }
 
@@ -123,7 +117,6 @@ if ($rrId === null || $appId === null) {
 }
 
 $currentUserId   = (int)($_SESSION['user_id'] ?? 0);
-$currentUserRole = trim((string)($_SESSION['role'] ?? ''));
 
 $checkSql = "
     SELECT
@@ -169,9 +162,9 @@ if (!$record) {
 |--------------------------------------------------------------------------
 | Adjust these rules if your workflow should be stricter.
 */
-$roleCanPrepare = in_array($currentUserRole, ['Administrator', 'Reviewer', 'Project Officer', 'project Officer', 'Programs Lead', 'MEAL Lead'], true);
-$roleCanReview  = in_array($currentUserRole, ['Administrator', 'Reviewer', 'Programs Lead', 'MEAL Lead'], true);
-$roleCanApprove = in_array($currentUserRole, ['Administrator', 'Programs Lead', 'MEAL Lead'], true);
+$roleCanPrepare = ims_allowed('signatures.prepare', ['Administrator', 'Reviewer', 'Project Officer', 'Programs Lead', 'MEAL Lead'], 'Sign risk ratings as Prepared By (signature handler)');
+$roleCanReview  = ims_allowed('signatures.review', ['Administrator', 'Reviewer', 'Programs Lead', 'MEAL Lead'], 'Sign risk ratings as Reviewed By (signature handler)');
+$roleCanApprove = ims_allowed('signatures.approve', ['Administrator', 'Programs Lead', 'MEAL Lead'], 'Sign risk ratings as Approved By (signature handler)');
 
 /*
 |--------------------------------------------------------------------------

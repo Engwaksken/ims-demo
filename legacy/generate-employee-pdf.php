@@ -41,7 +41,7 @@ if (!$employee) {
 
 // Check permissions - users can only view their own profile unless they're admin/management
 if ($employee['user_id'] != $_SESSION['user_id']) {
-    if (!in_array($_SESSION['role'] ?? '', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR', 'Executive Director'], true)
+    if (!ims_allowed('employees.view_all', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR', 'Executive Director'], "View any employee's profile (not just their own)")
         && (int)($employee['supervisor_id'] ?? 0) !== (int)$_SESSION['user_id']) {
         die('You do not have permission to view this profile');
     }

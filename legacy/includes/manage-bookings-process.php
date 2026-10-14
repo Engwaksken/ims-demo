@@ -157,7 +157,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'create') {
 if (isset($_POST['action']) && $_POST['action'] == 'approve') {
     
     // Check admin access
-    if (!in_array($_SESSION['role'], ['Administrator', 'Operations/Admin'])) {
+    if (!ims_allowed('bookings.approve', ['Administrator', 'Operations/Admin'], 'Approve bookings')) {
         $_SESSION['error'] = "Access denied.";
         header("Location: ../dashboard");
         exit();
@@ -234,7 +234,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'approve') {
 if (isset($_POST['action']) && $_POST['action'] == 'reject') {
     
     // Check admin access
-    if (!in_array($_SESSION['role'], ['Administrator', 'Operations/Admin'])) {
+    if (!ims_allowed('bookings.reject', ['Administrator', 'Operations/Admin'], 'Reject bookings')) {
         $_SESSION['error'] = "Access denied.";
         header("Location: ../dashboard");
         exit();
@@ -388,7 +388,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'admin_cancel') {
     csrf_protect(true); // state-changing GET link must carry the CSRF token
     
     // Check admin access
-    if (!in_array($_SESSION['role'], ['Administrator', 'Operations/Admin'])) {
+    if (!ims_allowed('bookings.cancel_any', ['Administrator', 'Operations/Admin'], 'Cancel any booking')) {
         $_SESSION['error'] = "Access denied.";
         header("Location: ../dashboard");
         exit();
@@ -556,7 +556,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'mark_complete') {
     csrf_protect(true); // state-changing GET link must carry the CSRF token
     
     // Check admin access
-    if (!in_array($_SESSION['role'], ['Administrator', 'Operations/Admin'])) {
+    if (!ims_allowed('bookings.mark_complete', ['Administrator', 'Operations/Admin'], 'Mark bookings as completed')) {
         $_SESSION['error'] = "Access denied.";
         header("Location: ../dashboard");
         exit();

@@ -13,7 +13,7 @@ const KPI_COMMENT_QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4', 'Annual'];
 const KPI_COMMENT_TYPES = ['Progress Update', 'Challenge', 'Achievement', 'Feedback', 'Review'];
 
 $current_user_id = (int) $_SESSION['user_id'];
-$is_kpi_reviewer = in_array((string) ($_SESSION['role'] ?? ''), KPI_REVIEWER_ROLES, true);
+$is_kpi_reviewer = ims_allowed('kpis.comment_all', KPI_REVIEWER_ROLES, "Comment on any staff member's KPI");
 
 // Legacy GET links (?action=submit|delete&id=) are still accepted, but only
 // with a valid csrf_token query parameter; POST is CSRF-checked globally.
@@ -399,7 +399,9 @@ if ($action === 'delete') {
 if ($action === 'approve' || $action === 'reject') {
     // Same role list as kpi-management.php (previously HR and Operations/Admin
     // could open the review screen but every approve/reject was denied).
-    check_role(KPI_REVIEWER_ROLES);
+    if (!ims_allowed('kpis.approve', KPI_REVIEWER_ROLES, 'Approve or reject KPIs')) {
+        kpi_redirect('kpi-management', 'You do not have permission to review KPIs', 'danger');
+    }
 
     $kpi_id = (int) ($_POST['kpi_id'] ?? 0);
     $back = kpi_review_back($kpi_id);
@@ -411,7 +413,7 @@ if ($action === 'approve' || $action === 'reject') {
     if (!in_array($kpi_data['status'], ['Submitted', 'Under Review'], true)) {
         kpi_redirect($back, 'Only submitted KPIs can be reviewed', 'warning');
     }
-    if ((int) $kpi_data['user_id'] === $current_user_id && ($_SESSION['role'] ?? '') !== 'Administrator') {
+    if ((int) $kpi_data['user_id'] === $current_user_id && !ims_allowed('kpis.approve_own', ['Administrator'], 'Approve or reject their own KPI')) {
         kpi_redirect($back, 'You cannot review your own KPI', 'danger');
     }
 

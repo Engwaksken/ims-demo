@@ -490,7 +490,7 @@ if (isset($_POST['upload_csv'])) {
     redirect_attendance($event_id, $attendance_date);
 }
 
-if (isset($_GET['delete']) && in_array($_SESSION['role'] ?? '', ['Administrator', 'Operations/Admin'], true)) {
+if (isset($_GET['delete']) && ims_allowed('event_attendance.delete', ['Administrator', 'Operations/Admin'], 'Delete event attendance records')) {
     csrf_protect(true); // state-changing GET link must carry the CSRF token
     $registration_id = (int)$_GET['delete'];
 

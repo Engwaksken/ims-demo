@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Check if user is admin or member
-$is_admin = in_array($_SESSION['role'], ['Administrator', 'Operations/Admin']);
+$is_admin = ims_allowed('payments.view_all', ['Administrator', 'Operations/Admin'], "View any member's payment (not just their own)");
 
 // Get payment ID
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -621,7 +621,7 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
     
    
         <!-- Reject Form (Admin Only) -->
-        <?php if ($is_admin && $payment['payment_status'] == 'Pending'): ?>
+        <?php if (ims_allowed('payments.verify', ['Administrator', 'Operations/Admin'], 'Verify or reject member payments') && $payment['payment_status'] == 'Pending'): ?>
         <div id="rejectForm" style="display: none;">
             <div class="action-card">
                 <h3>Reject Payment</h3>

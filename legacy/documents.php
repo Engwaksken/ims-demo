@@ -22,7 +22,7 @@ if (!function_exists('h')) {
 
 $userId = (int)($_SESSION['user_id'] ?? 0);
 $userRole = (string)($_SESSION['role'] ?? '');
-$isAdmin = $userRole === 'Administrator';
+$isAdmin = ims_allowed('documents.edit_all', ['Administrator'], 'Edit, move and delete any document or folder');
 
 $currentFolderId = max(0, (int)($_GET['folder'] ?? 0));
 $search = trim((string)($_GET['search'] ?? ''));

@@ -9,10 +9,7 @@ require_once __DIR__ . '/includes/auth.php';
 if (
     !isset($_SESSION['user_id'])
     ||
-    !auth_has_role([
-        'Administrator',
-        'Operations/Admin',
-    ])
+    !ims_allowed('bookings.manage', ['Administrator', 'Operations/Admin'], 'Open the Manage Bookings page')
 ) {
     $_SESSION['error'] =
         'Access denied. Administrator or Operations/Admin role required.';

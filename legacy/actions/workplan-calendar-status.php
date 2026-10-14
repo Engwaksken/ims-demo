@@ -22,7 +22,7 @@ if (!auth_is_logged_in()) {
     exit;
 }
 
-if (!auth_has_role(IMS_STAFF_ROLES)) {
+if (!ims_allowed('workplan.update_status', IMS_STAFF_ROLES, 'Update work plan activity status from the calendar')) {
     http_response_code(403);
 
     echo json_encode([

@@ -35,7 +35,7 @@ $kpi = $result->fetch_assoc();
 
 // Check permissions
 $is_owner = $kpi['user_id'] == $_SESSION['user_id'];
-$is_hr = in_array($_SESSION['role'], ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin']);
+$is_hr = ims_allowed('kpis.export_all', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin'], "Export any staff member's KPI to PDF");
 
 if (!$is_owner && !$is_hr) {
     die('You do not have permission to export this KPI');

@@ -394,7 +394,7 @@ if ($project_info) {
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         
-                                        <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                                        <?php if (ims_allowed('participants.delete', ['Administrator'], 'Delete participants')): ?>
                                             <button onclick="openDeleteModal(<?php echo $beneficiary['beneficiary_id']; ?>, '<?php echo htmlspecialchars($beneficiary['first_name'] . ' ' . $beneficiary['last_name']); ?>')" 
                                                     class="btn btn-danger btn-sm" title="Delete">
                                                 <i class="fas fa-trash"></i>

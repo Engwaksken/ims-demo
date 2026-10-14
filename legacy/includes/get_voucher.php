@@ -8,7 +8,7 @@ function jsonOut($ok, $msg, $extra=[]){
 }
 
 if (!isset($_SESSION['user_id'])) jsonOut(false, 'Not authenticated.');
-if (!in_array($_SESSION['role'] ?? '', ['Administrator','Finance','Accountant','Meal Lead'])) jsonOut(false, 'Access denied.');
+if (!ims_allowed('vouchers.view', ['Administrator', 'Finance', 'Accountant'], 'View, print and download payment vouchers')) jsonOut(false, 'Access denied.');
 
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) jsonOut(false, 'Invalid ID.');

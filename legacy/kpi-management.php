@@ -5,6 +5,7 @@ $page_title = 'KPI Management';
 // Authorise before rendering any markup
 require_once __DIR__ . '/includes/config.php';
 check_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR']);
+$can_review_kpi = ims_allowed('kpis.approve', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR'], 'Approve or reject KPIs');
 
 include 'includes/header.php';
 
@@ -513,7 +514,7 @@ foreach ($departments as $dept) {
                                 <i class="fas fa-eye"></i> View
                             </a>
                             
-                            <?php if ($kpi['status'] == 'Submitted'): ?>
+                            <?php if ($kpi['status'] == 'Submitted' && $can_review_kpi): ?>
                                 <button onclick="quickApprove(<?php echo $kpi['kpi_id']; ?>, '<?php echo htmlspecialchars(addslashes($kpi['kpi_title'])); ?>')" 
                                         class="btn btn-success btn-sm">
                                     <i class="fas fa-check"></i> Approve

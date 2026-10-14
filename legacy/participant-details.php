@@ -122,7 +122,7 @@ $uganda_districts = ['Abim', 'Adjumani', 'Agago', 'Alebtong', 'Amolatar', 'Amuda
         </a>
     </div>
     <div>
-        <?php if (in_array($_SESSION['role'], ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer'])): ?>
+        <?php if (ims_allowed('participants.edit', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer'], 'Edit participant profiles and programme linkages')): ?>
             <button onclick="openModal('editBeneficiaryModal')" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Edit Profile
             </button>
@@ -474,7 +474,7 @@ $uganda_districts = ['Abim', 'Adjumani', 'Agago', 'Alebtong', 'Amolatar', 'Amuda
             <i class="fas fa-folder-open" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
             <h4>No Program or Project Participation</h4>
             <p>This participant has not been enrolled in any programs or projects yet.</p>
-            <?php if (in_array($_SESSION['role'], ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer'])): ?>
+            <?php if (ims_allowed('participants.edit', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer'], 'Edit participant profiles and programme linkages')): ?>
                 <button onclick="openModal('manageLinkagesModal')" class="btn btn-primary" style="margin-top: 15px;">
                     <i class="fas fa-link"></i> Link to Project or Program
                 </button>

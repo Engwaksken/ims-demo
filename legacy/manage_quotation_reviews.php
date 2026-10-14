@@ -27,7 +27,9 @@ function redirect_reviews(int $rfq_id): never
 $currentUserId = (int)($user['user_id'] ?? ($_SESSION['user_id'] ?? 0));
 $currentRole   = (string)($user['role'] ?? ($_SESSION['role'] ?? ''));
 
-$isManager = in_array($currentRole, ['Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer'], true);
+$isManager = ims_allowed('quotations.manage', ['Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer'], 'Open any RFQ and see its quotations and reviewers');
+$canInviteReviewers = ims_allowed('quotations.invite_reviewers', ['Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer'], 'Invite staff to review quotations');
+$canAwardQuotation = ims_allowed('quotations.award', ['Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer'], 'Award quotations to suppliers');
 
 $rfq_id = (int)($_GET['rfq_id'] ?? 0);
 
@@ -78,7 +80,7 @@ if (!$isManager && !$isInvitedReviewer) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = trim((string)($_POST['action'] ?? ''));
 
-    if ($action === 'invite_reviewer' && $isManager) {
+    if ($action === 'invite_reviewer' && $canInviteReviewers) {
         $reviewer_id = (int)($_POST['reviewer_id'] ?? 0);
 
         if ($reviewer_id <= 0) {
@@ -181,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect_reviews($rfq_id);
     }
 
-    if ($action === 'award_quotation' && $isManager) {
+    if ($action === 'award_quotation' && $canAwardQuotation) {
         $quotation_id = (int)($_POST['quotation_id'] ?? 0);
 
         if ($quotation_id <= 0) {
@@ -295,7 +297,7 @@ $error_msg   = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
 
 $staff = [];
-if ($isManager) {
+if ($canInviteReviewers) {
     $res = $conn->query("
         SELECT user_id, full_name, email, role
         FROM users
@@ -408,7 +410,7 @@ $stmt->close();
                 <i class="fas fa-arrow-left"></i> Back to Quotations
             </a>
 
-            <?php if ($isManager): ?>
+            <?php if ($canInviteReviewers): ?>
                 <button class="btn btn-dark" onclick="openModal('inviteReviewerModal')">
                     <i class="fas fa-user-plus"></i> Invite Reviewer
                 </button>
@@ -516,13 +518,13 @@ $stmt->close();
                         <th>Attachment</th>
                         <th>Average Score</th>
                         <th>My Review</th>
-                        <?php if ($isManager): ?><th>Award</th><?php endif; ?>
+                        <?php if ($canAwardQuotation): ?><th>Award</th><?php endif; ?>
                     </tr>
                     </thead>
 
                     <tbody>
                     <?php if (empty($quotations)): ?>
-                        <tr><td colspan="<?= $isManager ? 7 : 6 ?>">No quotations found.</td></tr>
+                        <tr><td colspan="<?= $canAwardQuotation ? 7 : 6 ?>">No quotations found.</td></tr>
                     <?php endif; ?>
 
                     <?php foreach ($quotations as $quote): ?>
@@ -586,7 +588,7 @@ $stmt->close();
                                 </form>
                             </td>
 
-                            <?php if ($isManager): ?>
+                            <?php if ($canAwardQuotation): ?>
                                 <td>
                                     <?php if ($quote['status'] === 'Selected'): ?>
                                         <span class="badge badge-issued">Selected</span>
@@ -685,7 +687,7 @@ $stmt->close();
 
 </div>
 
-<?php if ($isManager): ?>
+<?php if ($canInviteReviewers): ?>
 <div class="modal" id="inviteReviewerModal">
     <div class="modal-card modal-sm">
         <div class="modal-head">

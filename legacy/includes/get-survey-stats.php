@@ -6,7 +6,7 @@ require_once __DIR__ . '/auth.php';
 header('Content-Type: application/json');
 
 // Survey results are internal data: same roles as survey-analytics.php.
-if (!auth_has_role(['Administrator', 'MEAL Lead', 'Programs Lead', 'Executive Director', 'Program Director'])) {
+if (!ims_allowed('surveys.view_stats', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Executive Director', 'Program Director'], 'View survey results and statistics')) {
     http_response_code(auth_is_logged_in() ? 403 : 401);
     echo json_encode(['error' => 'Not authorized']);
     exit;

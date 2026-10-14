@@ -14,7 +14,7 @@ if (!isset($conn) || !$conn instanceof mysqli) {
 $currentUserId = (int)($user['user_id'] ?? ($_SESSION['user_id'] ?? 0));
 $currentRole   = (string)($user['role'] ?? ($_SESSION['role'] ?? ''));
 
-$isAssetManager = in_array($currentRole, ['Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer'], true);
+$isAssetManager = ims_allowed('assets.manage', ['Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer'], 'Approve, assign, return and delete assets');
 
 
 

@@ -5,7 +5,7 @@ require_once __DIR__ . '/includes/config.php';
 check_role(['Administrator', 'Programs Lead', 'MEAL Lead']);
 
 // Handle Clear Old Logs
-if (isset($_POST['clear_old_logs']) && $_SESSION['role'] == 'Administrator') {
+if (isset($_POST['clear_old_logs']) && ims_allowed('activity_log.clear', ['Administrator'], 'Clear old activity logs')) {
     $days_to_keep = intval($_POST['days_to_keep']);
     
     // Validate days

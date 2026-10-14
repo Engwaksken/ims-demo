@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/config.php';
 
-$allowedRoles = ['Administrator', 'Finance', 'Accountant', 'Meal Lead'];
-
-if (empty($_SESSION['user_id']) || !in_array((string)($_SESSION['role'] ?? ''), $allowedRoles, true)) {
+if (empty($_SESSION['user_id']) || !ims_allowed('vouchers.manage', ['Administrator', 'Finance', 'Accountant'], 'Create, edit, delete and import payment vouchers')) {
     http_response_code(403);
     header('Content-Type: text/plain; charset=utf-8');
     exit('Access denied.');

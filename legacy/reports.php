@@ -976,7 +976,7 @@ require_once __DIR__ . '/includes/header.php';
                         <div class="powerbi-icon-wrap"><i class="fas fa-chart-pie"></i></div>
                         <h3>Power BI Not Configured</h3>
                         <p>Connect your Power BI workspace to visualise real-time analytics.</p>
-                        <?php if (($_SESSION['role'] ?? '') === 'Administrator'): ?>
+                        <?php if (ims_allowed('reports.configure_powerbi', ['Administrator'], 'See the Configure Power BI link')): ?>
                             <a href="/settings?tab=powerbi" class="btn btn-dark"><i class="fas fa-cog"></i> Configure Power BI</a>
                         <?php endif; ?>
                     </div>

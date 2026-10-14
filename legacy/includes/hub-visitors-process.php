@@ -57,7 +57,7 @@ function collect_visitor_fields(bool $allow_future_date = false): array
 
 // -- Auth gate -----------------------------------------------------------------
 
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Administrator', 'Operations/Admin'])) {
+if (!isset($_SESSION['user_id']) || !ims_allowed('hub_visitors.manage', ['Administrator', 'Operations/Admin'], 'Add and edit hub visitors')) {
     redirect('Unauthorized access.', false);
 }
 
@@ -155,7 +155,7 @@ if (isset($_POST['edit_visitor'])) {
 // -----------------------------------------------------------------------------
 if (isset($_GET['delete'])) {
 
-    if ($role !== 'Administrator') {
+    if (!ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')) {
         redirect('Only administrators can delete visitor records.', false);
     }
 
@@ -195,7 +195,7 @@ if (isset($_GET['delete'])) {
 // -----------------------------------------------------------------------------
 if (isset($_POST['bulk_delete'])) {
 
-    if ($role !== 'Administrator') {
+    if (!ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')) {
         redirect('Only administrators can bulk-delete visitor records.', false);
     }
 

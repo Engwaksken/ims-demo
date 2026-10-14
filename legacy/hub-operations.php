@@ -430,7 +430,7 @@ if (isset($_GET['edit_receipt'])) {
                                            class="btn btn-warning btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                                        <?php if (ims_allowed('members.delete', ['Administrator'], 'Delete members')): ?>
                                             <a href="javascript:void(0)" 
                                                onclick="confirmDelete('<?php echo hub_e($member['full_name']); ?>', 'includes/hub-operations-process.php?delete_member=<?php echo $member['member_id']; ?>&tab=members&csrf_token=<?= urlencode(csrf_token()) ?>')" 
                                                class="btn btn-danger btn-sm" title="Delete">
@@ -764,11 +764,13 @@ if (isset($_GET['edit_receipt'])) {
                                         <?php endif; ?>
                                         
                                         
-                                        <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                                        <?php if (ims_allowed('hub_operations.edit_receipts', ['Administrator'], 'Edit payment receipts')): ?>
          <a href="?edit_receipt=<?php echo $receipt['receipt_id']; ?>&tab=receipts" 
             class="btn btn-warning btn-sm" title="Edit">
              <i class="fas fa-edit"></i>
          </a>
+     <?php endif; ?>
+     <?php if (ims_allowed('hub_operations.delete_receipts', ['Administrator'], 'Delete payment receipts')): ?>
          <a href="javascript:void(0)" 
             onclick="confirmDelete('this receipt', 'includes/hub-operations-process.php?delete_receipt=<?php echo $receipt['receipt_id']; ?>&tab=receipts&csrf_token=<?= urlencode(csrf_token()) ?>')" 
             class="btn btn-danger btn-sm" title="Delete">
@@ -1580,7 +1582,7 @@ new Chart(revenueTrendCtx, {
                                            class="btn btn-warning btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                                        <?php if (ims_allowed('subscriptions.delete', ['Administrator'], 'Delete subscription payments')): ?>
                                             <a href="javascript:void(0)" 
                                                onclick="confirmDelete('this payment', 'includes/hub-operations-process.php?delete_subscription=<?php echo $sub['payment_id']; ?>&tab=subscriptions&csrf_token=<?= urlencode(csrf_token()) ?>')" 
                                                class="btn btn-danger btn-sm" title="Delete">

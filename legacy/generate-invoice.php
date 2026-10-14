@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Check if user is admin or member
-$is_admin = in_array($_SESSION['role'], ['Administrator', 'Operations/Admin']);
+$is_admin = ims_allowed('invoices.view_all', ['Administrator', 'Operations/Admin'], "Generate invoices for any member's payment (not just their own)");
 
 // Get payment ID
 if (!isset($_GET['id']) || empty($_GET['id'])) {

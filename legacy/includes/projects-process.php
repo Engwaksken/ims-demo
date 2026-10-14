@@ -115,7 +115,7 @@ if (isset($_POST['edit_project'])) {
 }
 
 // Handle Delete Project
-if (isset($_POST['delete_project']) && $_SESSION['role'] == 'Administrator') {
+if (isset($_POST['delete_project']) && ims_allowed('projects.delete', ['Administrator'], 'Delete projects')) {
     $project_id = intval($_POST['project_id']);
     
     // Get project name for logging

@@ -176,7 +176,7 @@ if (isset($_POST['update_progress'])) {
 }
 
 // Handle Delete Indicator
-if (isset($_POST['delete_indicator']) && in_array($_SESSION['role'], ['Administrator', 'MEAL Lead'])) {
+if (isset($_POST['delete_indicator']) && ims_allowed('indicators.delete', ['Administrator', 'MEAL Lead'], 'Delete indicators')) {
     $indicator_id = intval($_POST['indicator_id']);
     
     // Get indicator name and context for logging

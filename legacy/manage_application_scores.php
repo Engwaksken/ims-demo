@@ -8,11 +8,7 @@ require_once 'includes/config.php';
 
 $page_title = 'Manage Application Scores';
 
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], ['Administrator'], true)
-) {
+if (!ims_allowed('application_scores.manage', ['Administrator'], 'Manage and delete application review scores')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: dashboard');
     exit();

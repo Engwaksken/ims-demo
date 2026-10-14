@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Check if user has access (Admin/Operations or Members)
-$is_admin = in_array($_SESSION['role'], ['Administrator', 'Operations/Admin']);
+$is_admin = ims_allowed('bookings.view_all', ['Administrator', 'Operations/Admin'], 'See all bookings (not just their own)');
 $is_member = isset($_SESSION['role']) && $_SESSION['role'] === 'Member';
 
 if (!$is_admin && !$is_member) {

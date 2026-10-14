@@ -2,8 +2,14 @@
 
 require_once __DIR__ . '/includes/config.php';
 
-// Only administrators can approve/reject
-check_role(['Administrator']);
+check_login();
+
+// Approve/reject: same permission as the buttons on employees-list.
+if (!ims_allowed('employees.approve', ['Administrator'], 'Approve or reject employee profiles')) {
+    send_notification($_SESSION['user_id'] ?? 0, 'You are not allowed to approve or reject employee profiles.', 'danger');
+    header("Location: employees-list");
+    exit();
+}
 
 // State changes are POST-only (CSRF token is enforced globally by config.php).
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {

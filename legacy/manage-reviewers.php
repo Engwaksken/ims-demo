@@ -5,8 +5,7 @@ ob_start();
 $page_title = 'Manage Reviewers';
 require_once 'includes/header.php';
 
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Program Director'];
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], $allowed_roles, true)) {
+if (!ims_allowed('reviewers.manage', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Program Director'], 'Manage reviewers, review types and assignments')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: dashboard');
     exit();

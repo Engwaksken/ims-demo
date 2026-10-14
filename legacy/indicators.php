@@ -418,7 +418,7 @@ function type_badge(string $type): string {
                                            class="btn btn-sm btn-gray" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if (in_array($_SESSION['role']??'', ['Administrator','MEAL Lead'])): ?>
+                                        <?php if (ims_allowed('indicators.delete', ['Administrator', 'MEAL Lead'], 'Delete indicators')): ?>
                                             <button class="btn btn-sm btn-red" title="Delete"
                                                     onclick="openDeleteModal(<?= (int)$ind['indicator_id'] ?>, <?= json_encode((string)$ind['indicator_name']) ?>)">
                                                 <i class="fas fa-trash"></i>

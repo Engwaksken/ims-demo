@@ -572,7 +572,7 @@ $badge = $status_badges[$membershipStatus] ?? 'secondary';
         <i class="fas fa-bell"></i> Send Notification
     </button>
 
-    <?php if (($_SESSION['role'] ?? '') === 'Administrator'): ?>
+    <?php if (ims_allowed('members.delete', ['Administrator'], 'Delete members')): ?>
         <button onclick="confirmDelete('<?php echo h($memberName); ?>', 'includes/hub-operations-process.php?delete_member=<?php echo $member_id; ?>&tab=members&csrf_token=<?= urlencode(csrf_token()) ?>')"
                 class="btn btn-danger">
             <i class="fas fa-trash"></i> Delete Member

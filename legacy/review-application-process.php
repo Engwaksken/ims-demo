@@ -17,14 +17,6 @@ if (!function_exists('sanitize_input')) {
     }
 }
 
-function requireRoles(array $roles): void {
-    if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || !in_array($_SESSION['role'], $roles, true)) {
-        $_SESSION['error'] = "Unauthorized access. You don't have permission to review applications.";
-        header("Location: login");
-        exit();
-    }
-}
-
 function failTo(string $url, string $msg): void {
     $_SESSION['error'] = $msg;
     header("Location: " . $url);
@@ -40,8 +32,11 @@ function okTo(string $url, string $msg): void {
 /* ============================================================
    ACCESS CONTROL
 ============================================================ */
-$admin_roles = ['Administrator', 'Programs Lead', 'MEAL Lead'];
-requireRoles($admin_roles);
+if (!ims_allowed('applications.process_reviews', ['Administrator', 'Programs Lead', 'MEAL Lead'], 'Review applications and change their status (bulk actions, notes, emails, assign reviewer)')) {
+    $_SESSION['error'] = "Unauthorized access. You don't have permission to review applications.";
+    header("Location: login");
+    exit();
+}
 
 $user_id = (int)$_SESSION['user_id'];
 
@@ -414,7 +409,7 @@ switch ($action) {
 
         if (!$review) failTo("view-application?id={$application_id}", "Review not found.");
 
-        if ((int)$review['reviewer_id'] !== $user_id && ($_SESSION['role'] ?? '') !== 'Administrator') {
+        if ((int)$review['reviewer_id'] !== $user_id && !ims_allowed('applications.delete_any_review', ['Administrator'], 'Delete other reviewers\' application reviews')) {
             failTo("view-application?id={$application_id}", "You can only delete your own reviews.");
         }
 

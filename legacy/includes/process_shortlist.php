@@ -2,7 +2,7 @@
 session_start();
 require_once 'config.php';
 
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'Administrator') {
+if (!ims_allowed('shortlisting.shortlist_phase2', ['Administrator'], 'Shortlist applications to Phase 2 from the progress board')) {
     $_SESSION['error'] = "Access denied.";
     header("Location: ../progress-board");
     exit();

@@ -410,7 +410,7 @@ if (isset($_POST['upload_csv'])) {
 }
 
 // Handle Delete Beneficiary
-if (isset($_POST['delete_beneficiary']) && $_SESSION['role'] == 'Administrator') {
+if (isset($_POST['delete_beneficiary']) && ims_allowed('participants.delete', ['Administrator'], 'Delete participants')) {
     $beneficiary_id = intval($_POST['beneficiary_id']);
     
     // Get context for return navigation

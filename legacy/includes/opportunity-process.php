@@ -4,13 +4,7 @@ declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/config.php';
 
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Program Manager', 'Program Director'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array($_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('opportunities.manage', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Program Manager', 'Program Director'], 'Create, edit, publish, close and delete opportunities')) {
     $_SESSION['error'] = 'Unauthorized access.';
     header('Location: ../login');
     exit;

@@ -10,13 +10,7 @@ require_once 'includes/config.php';
 
 $page_title = 'Shortlisting';
 
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer','Program Manager', 'Program Director'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)($_SESSION['role'] ?? ''), $allowed_roles, true)
-) {
+if (!ims_allowed('shortlisting.view', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer', 'Program Manager', 'Program Director'], 'Open the startups shortlisting page')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: dashboard');
     exit();

@@ -13,13 +13,7 @@ use Dompdf\Options;
 
 $page_title = 'Risk Ratings Report';
 
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer', 'project Officer'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('risk_ratings.report', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'], 'View and download risk rating reports')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: dashboard');
     exit();

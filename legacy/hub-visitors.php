@@ -420,7 +420,7 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                                 <a href="?edit=<?php echo $v['visitor_id']; ?>" class="btn btn-warning btn-sm" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                                <?php if (ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')): ?>
                                     <a href="javascript:void(0)"
                                        onclick="confirmDelete('<?php echo htmlspecialchars($v['visitor_name']); ?>','includes/hub-visitors-process.php?delete=<?php echo (int)$v['visitor_id']; ?>&csrf_token=<?= h(csrf_token()) ?>')"
                                        class="btn btn-danger btn-sm" title="Delete">

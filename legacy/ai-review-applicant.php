@@ -15,22 +15,7 @@ function redirectWithError(string $msg, string $url = 'startups-shortlisting'): 
     exit;
 }
 
-$allowedRoles = [
-    'Administrator',
-    'Programs Lead',
-    'MEAL Lead',
-    'Operations/Admin',
-    'Project Officer',
-    'Program Manager',
-    'Program Director',
-    'Reviewer'
-];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowedRoles, true)
-) {
+if (!ims_allowed('ai_review.view', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Program Manager', 'Program Director', 'Reviewer'], 'Open the AI review page for an application')) {
     redirectWithError('Access denied.', 'dashboard');
 }
 

@@ -525,7 +525,7 @@ $stats = [
                                 <i class="fas fa-eye"></i> View Profile
                             </a>
                             
-                            <?php if (($_SESSION['role'] ?? '') === 'Administrator'): ?>
+                            <?php if (ims_allowed('employees.approve', ['Administrator'], 'Approve or reject employee profiles')): ?>
                                 <?php if ($emp['status'] == 'Submitted'): ?>
                                     <button onclick="approveEmployee(<?php echo (int) $emp['employee_id']; ?>, <?php echo h(json_encode((string) $emp['full_name'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)); ?>)" 
                                             class="btn btn-success btn-sm">

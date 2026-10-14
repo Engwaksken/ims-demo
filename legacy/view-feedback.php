@@ -21,7 +21,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $feedback_id = intval($_GET['id']);
 
 // Check if user has admin/operations access
-$is_admin = in_array($_SESSION['role'], ['Administrator', 'Operations/Admin']);
+$is_admin = ims_allowed('feedback.view_all', ['Administrator', 'Operations/Admin'], 'See all feedback (not just their own)');
 
 // Get member_id
 $member_query = "SELECT member_id FROM members WHERE user_id = $user_id";
@@ -626,7 +626,7 @@ if ($feedback['attachments']) {
 </div>
 
 <!-- Respond Modal (Admin Only) -->
-<?php if ($is_admin): ?>
+<?php if (ims_allowed('feedback.respond', ['Administrator', 'Operations/Admin'], 'Respond to member feedback')): ?>
 <div id="respondModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">

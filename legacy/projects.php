@@ -257,7 +257,7 @@ $status_badge = [
                                            class="btn btn-sm btn-gray" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <?php if ($_SESSION['role'] === 'Administrator'): ?>
+                                        <?php if (ims_allowed('projects.delete', ['Administrator'], 'Delete projects')): ?>
                                             <button
                                                 class="btn btn-sm btn-red"
                                                 title="Delete"

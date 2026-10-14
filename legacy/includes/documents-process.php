@@ -179,7 +179,7 @@ function doc_can(
     string $userRole,
     string $right
 ): bool {
-    if ($userRole === 'Administrator') {
+    if (ims_allowed('documents.edit_all', ['Administrator'], 'Edit, move and delete any document or folder')) {
         return true;
     }
 

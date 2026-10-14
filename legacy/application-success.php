@@ -15,8 +15,7 @@ if (!$application_id) {
 // Only the browser session that just submitted the application (or staff)
 // may view it.
 $isStaffViewer = !empty($_SESSION['user_id'])
-    && defined('IMS_STAFF_ROLES')
-    && in_array((string)($_SESSION['role'] ?? ''), IMS_STAFF_ROLES, true);
+    && ims_allowed('applications.view_confirmations', IMS_STAFF_ROLES, 'Open any applicant confirmation page');
 if ((int)($_SESSION['application_id'] ?? 0) !== $application_id && !$isStaffViewer) {
     header("Location: submit-application");
     exit();

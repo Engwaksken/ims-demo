@@ -796,7 +796,7 @@ if (isset($_POST['edit_milestone'])) {
 |--------------------------------------------------------------------------
 */
 if (isset($_POST['delete_milestone'])) {
-    if (!in_array($userRole, ['Administrator', 'Programs Lead'], true)) {
+    if (!ims_allowed('milestones.delete', ['Administrator', 'Programs Lead'], 'Delete milestones')) {
         redirect_with_message('You are not allowed to delete milestones.');
     }
 

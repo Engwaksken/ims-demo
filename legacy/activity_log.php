@@ -189,7 +189,7 @@ $stats = $stats_result->fetch_assoc();
             <button onclick="exportLogs()" class="btn btn-info">
                 <i class="fas fa-download"></i> Export
             </button>
-            <?php if (in_array($_SESSION['role'], ['Administrator'])): ?>
+            <?php if (ims_allowed('activity_log.clear', ['Administrator'], 'Clear old activity logs')): ?>
                 <button onclick="openModal('clearLogsModal')" class="btn btn-danger">
                     <i class="fas fa-trash"></i> Clear Old Logs
                 </button>

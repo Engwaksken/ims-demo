@@ -4,7 +4,7 @@ session_start();
 require_once 'config.php';
 
 // Check if user is logged in and has admin/operations access
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['Administrator', 'Operations/Admin'])) {
+if (!isset($_SESSION['user_id']) || !ims_allowed('spaces.manage', ['Administrator', 'Operations/Admin'], 'Add and edit spaces')) {
     $_SESSION['error'] = "Access denied.";
     header("Location: ../manage-space");
     exit();
@@ -199,7 +199,7 @@ if (isset($_GET['toggle_availability'])) {
 // ======================
 // DELETE SPACE
 // ======================
-if (isset($_GET['delete_space']) && $_SESSION['role'] == 'Administrator') {
+if (isset($_GET['delete_space']) && ims_allowed('spaces.delete', ['Administrator'], 'Delete spaces')) {
     csrf_protect(true); // destructive GET link must carry the CSRF token
     $availability_id = intval($_GET['delete_space']);
     

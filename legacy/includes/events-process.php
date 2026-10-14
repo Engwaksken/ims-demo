@@ -397,7 +397,7 @@ if (isset($_POST['edit_event'])) {
    DELETE EVENT
 ========================= */
 if (isset($_POST['delete_event'])) {
-    if (!in_array($_SESSION['role'] ?? '', ['Administrator', 'Operations/Admin'], true)) {
+    if (!ims_allowed('events.delete', ['Administrator', 'Operations/Admin'], 'Delete events')) {
         notify_and_redirect('You are not allowed to delete events.');
     }
 

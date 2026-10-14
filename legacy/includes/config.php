@@ -1034,3 +1034,7 @@ if (!function_exists('verify_csrf_token')) {
         return ims_csrf_valid($token);
     }
 }
+
+// Database-driven permissions: check_role() defaults and ims_allowed() for
+// actions inside pages (see includes/permissions.php).
+require_once __DIR__ . '/permissions.php';

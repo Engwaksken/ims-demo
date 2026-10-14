@@ -17,15 +17,11 @@ require_once 'includes/header.php';
 $user_id = $_SESSION['user_id'];
 $role    = $_SESSION['role'];
 
-// -- Role helpers ----------------------------------------------
-function has_role(string $role, array $allowed): bool {
-    return in_array($role, $allowed, true);
-}
-
-$is_admin     = has_role($role, ['Administrator', 'Operations/Admin']);
-$can_programs = has_role($role, ['Administrator', 'Operations/Admin', 'Programs Lead', 'Program Manager', 'Program Officer', 'MEAL Lead']);
-$can_kpi_hr   = has_role($role, ['Administrator', 'Operations/Admin', 'HR', 'Program Director', 'Executive Director', 'Finance', 'Accountant']);
-$can_indicators = has_role($role, ['Administrator', 'Operations/Admin', 'Programs Lead', 'MEAL Lead', 'Program Manager', 'Program Officer']);
+// -- Dashboard sections (editable under Role Permissions) -------
+$is_admin     = ims_allowed('dashboard.admin_tools', ['Administrator', 'Operations/Admin'], 'See admin shortcuts on the dashboard');
+$can_programs = ims_allowed('dashboard.programs', ['Administrator', 'Operations/Admin', 'Programs Lead', 'Program Manager', 'Program Officer', 'MEAL Lead'], 'See the Programs & Participants dashboard tabs');
+$can_kpi_hr   = ims_allowed('dashboard.kpi_hr', ['Administrator', 'Operations/Admin', 'HR', 'Program Director', 'Executive Director', 'Finance', 'Accountant'], 'See the KPIs & HR dashboard tab');
+$can_indicators = ims_allowed('dashboard.indicators', ['Administrator', 'Operations/Admin', 'Programs Lead', 'MEAL Lead', 'Program Manager', 'Program Officer'], 'See the Indicators dashboard tab');
 
 // -- Stats -----------------------------------------------------
 $stats = [];

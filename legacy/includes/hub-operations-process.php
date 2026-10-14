@@ -12,10 +12,7 @@ require_once __DIR__ . '/mail-function.php';
 if (
     !isset($_SESSION['user_id'])
     ||
-    !auth_has_role([
-        'Administrator',
-        'Operations/Admin'
-    ])
+    !ims_allowed('hub_operations.manage', ['Administrator', 'Operations/Admin'], 'Add and edit hub members, subscriptions and receipts')
 ) {
     $_SESSION['error'] = 'Unauthorized access.';
     header('Location: ../hub-operations');
@@ -429,7 +426,7 @@ if (isset($_POST['edit_member'])) {
 /* =========================
    DELETE MEMBER
 ========================= */
-if (isset($_GET['delete_member']) && $role === 'Administrator') {
+if (isset($_GET['delete_member']) && ims_allowed('members.delete', ['Administrator'], 'Delete members')) {
     csrf_protect(true); // state-changing GET link must carry the CSRF token
     $member_id = geti('delete_member');
 
@@ -625,7 +622,7 @@ if (isset($_POST['edit_subscription'])) {
 /* =========================
    DELETE SUBSCRIPTION PAYMENT
 ========================= */
-if (isset($_GET['delete_subscription']) && $role === 'Administrator') {
+if (isset($_GET['delete_subscription']) && ims_allowed('subscriptions.delete', ['Administrator'], 'Delete subscription payments')) {
     csrf_protect(true); // state-changing GET link must carry the CSRF token
     $payment_id = geti('delete_subscription');
 
@@ -1198,7 +1195,7 @@ if (isset($_POST['edit_receipt'])) {
 /* =========================
    DELETE RECEIPT
 ========================= */
-if (isset($_GET['delete_receipt']) && $role === 'Administrator') {
+if (isset($_GET['delete_receipt']) && ims_allowed('hub_operations.delete_receipts', ['Administrator'], 'Delete payment receipts')) {
     csrf_protect(true); // state-changing GET link must carry the CSRF token
     $receipt_id = geti('delete_receipt');
 

@@ -217,7 +217,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                                 <td>
                                     <div class="table-actions">
                                         <a href="?id=<?= (int)$event_id ?>&day=<?= e($selected_day) ?>&update=<?= (int)$record['registration_id'] ?>" class="btn btn-info btn-sm"><i class="fas fa-edit"></i></a>
-                                        <?php if (in_array($_SESSION['role'] ?? '', ['Administrator', 'Operations/Admin'], true)): ?>
+                                        <?php if (ims_allowed('event_attendance.delete', ['Administrator', 'Operations/Admin'], 'Delete event attendance records')): ?>
                                             <a href="javascript:void(0)" onclick="confirmDelete('<?= e($record['attendee_name']) ?>', '<?= e($process_url) ?>&delete=<?= (int)$record['registration_id'] ?>&csrf_token=<?= e(urlencode(csrf_token())) ?>')" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                         <?php endif; ?>
                                     </div>

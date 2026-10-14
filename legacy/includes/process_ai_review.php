@@ -163,20 +163,7 @@ function friendlyAiError(string $rawMessage, array $api): string
 /* =========================================================
    ACCESS CONTROL
 ========================================================= */
-$allowedRoles = [
-    'Administrator',
-    'Programs Lead',
-    'MEAL Lead',
-    'Operations/Admin',
-    'Project Officer',
-    'Reviewer'
-];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowedRoles, true)
-) {
+if (!ims_allowed('ai_review.run', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Reviewer'], 'Run AI reviews on applications')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: ../dashboard');
     exit;

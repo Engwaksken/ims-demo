@@ -20,7 +20,7 @@ $currentRole   = (string)($user['role']    ?? ($_SESSION['role']    ?? ''));
 $currentName   = (string)($user['full_name'] ?? ($_SESSION['full_name'] ?? 'Staff'));
 $currentEmail  = (string)($user['email']   ?? ($_SESSION['email']   ?? ''));
 
-$isManager = in_array($currentRole, ['Administrator','Operations/Admin','Accountant','Procurement Officer'], true);
+$isManager = ims_allowed('procurement.manage', ['Administrator', 'Operations/Admin', 'Accountant', 'Procurement Officer'], 'Review, approve and process all procurement requests');
 
 /* -- Fetch procurement officers for email notification ---------------- */
 $officers = [];

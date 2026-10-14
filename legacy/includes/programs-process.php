@@ -115,7 +115,7 @@ if (isset($_POST['edit_program'])) {
 }
 
 // Handle Delete program
-if (isset($_POST['delete_program']) && $_SESSION['role'] == 'Administrator') {
+if (isset($_POST['delete_program']) && ims_allowed('programs.delete', ['Administrator'], 'Delete programs')) {
     $id = intval($_POST['id']);
     
     // Get program name for logging

@@ -21,11 +21,6 @@ function respond(bool $success, string $message, array $extra = [], int $httpCod
     exit;
 }
 
-function normalize_role(string $role): string
-{
-    return strtolower(trim($role));
-}
-
 function ensure_directory(string $dir): void
 {
     if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
@@ -396,11 +391,9 @@ try {
         respond(false, 'Application mismatch for this risk rating.', [], 422);
     }
 
-    $normalizedRole = normalize_role($loggedInUserRole);
-
-    $isReviewerRole = in_array($normalizedRole, ['reviewer'], true);
-    $isReviewerApproverRole = in_array($normalizedRole, ['administrator', 'programs lead', 'programs manager'], true);
-    $isEdApproverRole = in_array($normalizedRole, ['administrator', 'ed'], true);
+    $isReviewerRole = ims_allowed('risk_ratings.sign_prepared', ['Reviewer'], 'Sign the Prepared By section of risk ratings');
+    $isReviewerApproverRole = ims_allowed('risk_ratings.sign_reviewed', ['Administrator', 'Programs Lead', 'Programs Manager'], 'Sign the Reviewed By section of risk ratings');
+    $isEdApproverRole = ims_allowed('risk_ratings.sign_approved', ['Administrator', 'ED'], 'Sign the Approved by ED section of risk ratings');
 
     $prepUserId   = (int)($data['prep_by_user_id'] ?? 0);
     $prepUserName = trim((string)($data['prep_by_name'] ?? ''));

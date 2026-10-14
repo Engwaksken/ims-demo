@@ -9,12 +9,7 @@ require_once 'includes/config.php';
 /* ---------------------------------------------------------------
    Access control
 --------------------------------------------------------------- */
-$allowed_roles = [
-    'Administrator', 'Programs Lead', 'MEAL Lead',
-    'Operations/Admin', 'Project Officer', 'Donor/Partner',
-    'Staff', 'Reviewer', 'HR',
-];
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], $allowed_roles, true)) {
+if (!ims_allowed('reviews.view', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Donor/Partner', 'Staff', 'Reviewer', 'HR'], 'View submitted reviews')) {
     $_SESSION['error'] = "Access denied.";
     header("Location: dashboard");
     exit();
@@ -415,7 +410,7 @@ require_once 'includes/header.php';
         <a href="manage-reviewers?tab=status" class="btn btn-ghost">
             <i class="fas fa-arrow-left"></i> Back
         </a>
-        <?php if (in_array($viewer_role, ['Administrator','Programs Lead','MEAL Lead'], true)): ?>
+        <?php if (ims_allowed('reviews.edit', ['Administrator', 'Programs Lead', 'MEAL Lead'], 'See Edit Review buttons on the View Review page')): ?>
             <a href="review-applicant?id=<?= $review_id ?>" class="btn btn-white">
                 <i class="fas fa-edit"></i> Edit Review
             </a>
@@ -751,7 +746,7 @@ require_once 'includes/header.php';
                style="background:#eff6ff;color:#ff9800;border:1.5px solid #bfdbfe;justify-content:center;">
                 <i class="fas fa-file-alt"></i> View Full Application
             </a>
-            <?php if (in_array($viewer_role, ['Administrator','Programs Lead','MEAL Lead'], true)): ?>
+            <?php if (ims_allowed('reviews.edit', ['Administrator', 'Programs Lead', 'MEAL Lead'], 'See Edit Review buttons on the View Review page')): ?>
             <a href="review-applicant?id=<?= $review_id ?>"
                class="btn"
                style="background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;justify-content:center;">

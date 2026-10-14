@@ -32,7 +32,7 @@ if (!$employee) {
 }
 
 if ((int)$employee['user_id'] !== $user_id) {
-    $can_view_others = in_array($_SESSION['role'] ?? '', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR', 'Executive Director'], true)
+    $can_view_others = ims_allowed('employees.view_all', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR', 'Executive Director'], "View any employee's profile (not just their own)")
         || (int)($employee['supervisor_id'] ?? 0) === $user_id;
 
     if (!$can_view_others) {

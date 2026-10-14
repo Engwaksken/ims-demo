@@ -833,13 +833,7 @@ if (empty($_SESSION['user_id'])) {
     pvJson(false, 'Not authenticated. Please log in again.');
 }
 
-if (
-    !in_array(
-        (string)($_SESSION['role'] ?? ''),
-        PV_ALLOWED_ROLES,
-        true
-    )
-) {
+if (!ims_allowed('vouchers.manage', ['Administrator', 'Finance', 'Accountant'], 'Create, edit, delete and import payment vouchers')) {
     http_response_code(403);
     pvJson(false, 'Access denied.');
 }

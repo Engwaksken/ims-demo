@@ -68,12 +68,7 @@ if ($bookingId <= 0) {
 }
 
 $isAdmin =
-    auth_has_role(
-        [
-            'Administrator',
-            'Operations/Admin',
-        ]
-    );
+    ims_allowed('bookings.view_all', ['Administrator', 'Operations/Admin'], 'See all bookings (not just their own)');
 
 $memberId = null;
 

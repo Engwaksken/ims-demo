@@ -19,13 +19,7 @@ function jsonResponse(int $status, array $payload): never
 /* ==========================
    AUTH
 ========================== */
-$allowedRoles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowedRoles, true)
-) {
+if (!ims_allowed('reviews.save_scores', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'], 'Save review scores and comments')) {
     jsonResponse(403, ['message' => 'Access denied']);
 }
 

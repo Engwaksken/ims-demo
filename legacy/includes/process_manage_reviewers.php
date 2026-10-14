@@ -6,13 +6,7 @@ session_start();
 
 require_once 'config.php';
 
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Program Director'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('reviewers.manage', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Program Director'], 'Manage reviewers, review types and assignments')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: ../manage-reviewers');
     exit();

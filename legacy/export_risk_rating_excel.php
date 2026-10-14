@@ -4,13 +4,7 @@ declare(strict_types=1);
 session_start();
 require_once 'includes/config.php';
 
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'project Officer'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('risk_ratings.export', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer'], 'Export risk ratings to Excel')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: dashboard');
     exit();

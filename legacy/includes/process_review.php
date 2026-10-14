@@ -4,21 +4,7 @@ declare(strict_types=1);
 session_start();
 require_once 'config.php';
 
-$allowed_roles = [
-    'Reviewer',
-    'MEAL Lead',
-    'Programs Lead',
-    'Program Director',
-    'Consultant',
-    'Project Officer',
-    'Administrator',
-];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('reviews.submit', ['Reviewer', 'MEAL Lead', 'Programs Lead', 'Program Director', 'Consultant', 'Project Officer', 'Administrator'], 'Submit application reviews')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: ../dashboard');
     exit();
@@ -33,7 +19,6 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 $conn->set_charset('utf8mb4');
 
 $reviewer_id      = (int)($_SESSION['user_id'] ?? 0);
-$role             = trim((string)($_SESSION['role'] ?? ''));
 $application_id   = (int)($_POST['application_id'] ?? 0);
 $review_type_id   = (int)($_POST['review_type_id'] ?? 0);
 $recommendation   = trim((string)($_POST['recommendation'] ?? ''));
@@ -202,11 +187,7 @@ try {
         throw new RuntimeException('Selected review type is invalid or inactive.');
     }
 
-    $can_review_unassigned = in_array(
-        $role,
-        ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Reviewer', 'Consultant'],
-        true
-    );
+    $can_review_unassigned = ims_allowed('reviews.review_unassigned', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Reviewer', 'Consultant'], 'Review applications they are not assigned to');
 
     $assignment = fetchOneAssoc(
         $conn,

@@ -18,8 +18,7 @@ if (empty($_SESSION['user_id'])) {
 
 // Only HR / admin staff may manage job postings (previously any logged-in
 // user, including Applicants and Members, could create/delete jobs).
-$jobsAdminRoles = ['Administrator', 'HR', 'Operations/Admin', 'Executive Director', 'Programs Lead'];
-if (!in_array((string)($_SESSION['role'] ?? ''), $jobsAdminRoles, true)) {
+if (!ims_allowed('jobs.manage', ['Administrator', 'HR', 'Operations/Admin', 'Executive Director', 'Programs Lead'], 'Create, edit and delete job postings')) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'msg' => 'Access denied']);
     exit;

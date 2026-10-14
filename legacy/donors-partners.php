@@ -237,7 +237,7 @@ while ($row = $result->fetch_assoc()) {
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         
-                                        <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                                        <?php if (ims_allowed('donors_partners.delete_donors', ['Administrator'], 'Delete donors')): ?>
                                             <button onclick="openDeleteDonorModal(<?php echo $donor['donor_id']; ?>, '<?php echo htmlspecialchars($donor['donor_name']); ?>')" 
                                                     class="btn btn-danger btn-sm" title="Delete">
                                                 <i class="fas fa-trash"></i>
@@ -357,7 +357,7 @@ while ($row = $result->fetch_assoc()) {
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         
-                                        <?php if ($_SESSION['role'] == 'Administrator'): ?>
+                                        <?php if (ims_allowed('donors_partners.delete_partners', ['Administrator'], 'Delete partners')): ?>
                                             <button onclick="openDeletePartnerModal(<?php echo $partner['partner_id']; ?>, '<?php echo htmlspecialchars($partner['partner_name']); ?>')" 
                                                     class="btn btn-danger btn-sm" title="Delete">
                                                 <i class="fas fa-trash"></i>

@@ -413,7 +413,7 @@ if (isset($_POST['edit_activity'])) {
 |--------------------------------------------------------------------------
 */
 if (isset($_POST['delete_activity'])) {
-    if (!in_array($userRole, ['Administrator', 'Programs Lead'], true)) {
+    if (!ims_allowed('activities.delete', ['Administrator', 'Programs Lead'], 'Delete activities')) {
         redirect_with_message('You are not allowed to delete activities.');
     }
 

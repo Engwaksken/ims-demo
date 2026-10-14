@@ -1429,10 +1429,7 @@ function ev_render_staff_picker(string $prefix, array $staffOptions): void
     <?php
 }
 
-$canDeleteEvents = auth_has_role([
-    'Administrator',
-    'Operations/Admin',
-]);
+$canDeleteEvents = ims_allowed('events.delete', ['Administrator', 'Operations/Admin'], 'Delete events');
 
 
 ?>

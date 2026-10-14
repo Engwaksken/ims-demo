@@ -36,7 +36,8 @@ $kpi = $result->fetch_assoc();
 
 // Check permissions (owner or HR can view)
 $is_owner = $kpi['user_id'] == $_SESSION['user_id'];
-$is_hr = in_array($_SESSION['role'] ?? '', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR'], true);
+$is_hr = ims_allowed('kpis.view_all', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR'], "View any staff member's KPI (not just their own)");
+$can_review_kpi = ims_allowed('kpis.approve', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'HR'], 'Approve or reject KPIs');
 
 if (!$is_owner && !$is_hr) {
     send_notification($_SESSION['user_id'], 'You do not have permission to view this KPI', 'danger');
@@ -341,7 +342,7 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
             </button>
         <?php endif; ?>
         
-        <?php if ($is_hr && $kpi['status'] == 'Submitted'): ?>
+        <?php if ($can_review_kpi && $kpi['status'] == 'Submitted'): ?>
             <button onclick="openModal('approveModal')" class="btn btn-success">
                 <i class="fas fa-check"></i> Approve
             </button>
@@ -738,7 +739,7 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
 </div>
 <?php endif; ?>
 
-<?php if ($is_hr && $kpi['status'] == 'Submitted'): ?>
+<?php if ($can_review_kpi && $kpi['status'] == 'Submitted'): ?>
 <!-- Approve Modal -->
 <div id="approveModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">

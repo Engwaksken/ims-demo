@@ -7,13 +7,7 @@ session_start();
 require_once 'config.php';
 require_once 'mail-function.php';
 
-$allowed_roles = ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'];
-
-if (
-    empty($_SESSION['user_id']) ||
-    empty($_SESSION['role']) ||
-    !in_array((string)$_SESSION['role'], $allowed_roles, true)
-) {
+if (!ims_allowed('shortlisting.manage', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'], 'Assign reviewers and change status on the shortlisting page')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: ../startups-shortlisting');
     exit();

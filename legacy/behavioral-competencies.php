@@ -2,7 +2,7 @@
 require_once __DIR__ . '/includes/config.php';
 
 // Role names are e.g. 'Administrator' (there is no 'admin' role).
-if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['Administrator', 'HR'], true)) {
+if (!isset($_SESSION['user_id']) || !ims_allowed('competencies.manage', ['Administrator', 'HR'], 'Manage behavioural competencies')) {
     header("Location: dashboard");
     exit();
 }

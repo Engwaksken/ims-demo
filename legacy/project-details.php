@@ -372,7 +372,7 @@ $doc_icons = [
             <h3><i class="fas fa-chart-line"></i> Project Indicators</h3>
             <div style="display:flex;gap:8px;align-items:center;">
                 <span class="badge badge-available"><?= $total_indicators ?> total</span>
-                <?php if (in_array($_SESSION['role'], ['Administrator', 'MEAL Lead'])): ?>
+                <?php if (ims_allowed('indicators.add_link', ['Administrator', 'MEAL Lead'], 'See the Add indicator button on program/project pages')): ?>
                     <a href="indicators?project=<?= $project_id ?>" class="btn btn-sm btn-soft">
                         <i class="fas fa-plus"></i> Add
                     </a>

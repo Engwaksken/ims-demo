@@ -4,11 +4,7 @@ ob_start();
 $page_title = 'Menu Permissions';
 include 'includes/header.php';
 
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'Administrator') {
-    $_SESSION['error'] = "Access denied.";
-    header("Location: dashboard");
-    exit();
-}
+check_role(['Administrator']);
 
 $all_roles = [
     'Administrator',

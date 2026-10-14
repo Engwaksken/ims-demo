@@ -4,7 +4,7 @@ session_start();
 require_once 'includes/config.php';
 
 // Check if user is logged in and is Administrator
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'Administrator') {
+if (!ims_allowed('opportunities.manage_legacy', ['Administrator'], 'Manage opportunities (old opportunity-process handler)')) {
     $_SESSION['error'] = "Unauthorized access. Only administrators can manage opportunities.";
     header("Location: login");
     exit();
