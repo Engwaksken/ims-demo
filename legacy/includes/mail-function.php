@@ -412,6 +412,35 @@ if (!function_exists('sendEmail')) {
         }
     }
 }
+
+if (!function_exists('sendMail')) {
+    /**
+     * sendMail($email, $name, $subject, $html) used by the procurement module.
+     * It was never defined, so every procurement email call stopped the page
+     * with a fatal error. Sends through sendEmail(); true on success.
+     */
+    function sendMail(string $to, string $name, string $subject, string $body): bool
+    {
+        $to = trim($to);
+        if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        try {
+            $result = sendEmail($to, $subject, $body);
+        } catch (Throwable $e) {
+            error_log('sendMail to ' . $to . ' failed: ' . $e->getMessage());
+            return false;
+        }
+
+        if ($result !== true) {
+            error_log('sendMail to ' . $to . ' failed: ' . (is_string($result) ? $result : 'unknown error'));
+        }
+
+        return $result === true;
+    }
+}
+
 function email_wrapper(string $content): string {
     return "
     <!DOCTYPE html>
