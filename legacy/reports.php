@@ -525,479 +525,636 @@ $load_chartjs = true; // header.php loads Chart.js in <head> so inline chart scr
 require_once __DIR__ . '/includes/header.php';
 ?>
 <link rel="stylesheet" href="css/reports.css">
+<link rel="stylesheet" href="css/reports-page.css">
+<?php
+/* Display helpers (presentation only). */
+$rp_pct = static function (int $n, int $total): float {
+    return $total > 0 ? round($n / $total * 100, 1) : 0.0;
+};
+$rp_plural = static function (int $n, string $one, string $many): string {
+    return number_format($n) . ' ' . ($n === 1 ? $one : $many);
+};
+?>
 
-<div class="reports-wrap">
+<div class="reports-wrap rp-page">
 
     <!-- ── Hero ───────────────────────────────────────────────────────── -->
-    <div class="reports-hero">
+    <header class="reports-hero rp-hero">
         <div class="reports-hero-text">
-            <h1><i class="fas fa-chart-bar" style="margin-right:10px;opacity:.85;"></i>Reports &amp; Analytics</h1>
+            <p class="rp-hero-eyebrow">
+                <i class="fas fa-clock" aria-hidden="true"></i> Live data &middot; <?= date('d M Y') ?>
+            </p>
+            <h1><i class="fas fa-chart-bar rp-hero-icon" aria-hidden="true"></i>Reports &amp; Analytics</h1>
             <p>Generate, explore and export organisation-wide reports across programmes, projects and participants.</p>
         </div>
         <div class="hero-actions">
             <!-- PDF export -->
-            <a href="reports?export=pdf" target="_blank"
-               class="btn btn-primary"
-               style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);">
-                <i class="fas fa-file-pdf"></i> Export PDF
+            <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn rp-hero-btn rp-hero-btn-solid">
+                <i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF
             </a>
             <!-- CSV overview export -->
-            <a href="reports?export=csv&section=overview"
-               class="btn btn-primary"
-               style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.28);">
-                <i class="fas fa-file-csv"></i> Export CSV
+            <a href="reports?export=csv&amp;section=overview" class="btn rp-hero-btn">
+                <i class="fas fa-file-csv" aria-hidden="true"></i> Export CSV
             </a>
-            <button onclick="window.print()"
-                    class="btn btn-primary"
-                    style="background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.2);">
-                <i class="fas fa-print"></i> Print
+            <button type="button" onclick="window.print()" class="btn rp-hero-btn">
+                <i class="fas fa-print" aria-hidden="true"></i> Print
             </button>
         </div>
-    </div>
+    </header>
 
     <!-- ── Summary Stats ──────────────────────────────────────────────── -->
-    <div class="reports-stats">
+    <section class="reports-stats" aria-label="Summary totals">
         <div class="stat-card">
-            <div class="stat-icon bg-amber"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Programs</div>
-                <div class="stat-value"><?= $total_programs ?></div>
+                <div class="stat-value"><?= number_format($total_programs) ?></div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-blue"><i class="fas fa-project-diagram"></i></div>
+            <div class="stat-icon bg-blue" aria-hidden="true"><i class="fas fa-project-diagram"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Projects</div>
-                <div class="stat-value"><?= $total_projects ?></div>
+                <div class="stat-value"><?= number_format($total_projects) ?></div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-green"><i class="fas fa-users"></i></div>
+            <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-users"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Participants</div>
                 <div class="stat-value"><?= number_format($total_beneficiaries) ?></div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-primary"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-icon bg-primary" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Indicators</div>
-                <div class="stat-value"><?= $total_indicators ?></div>
+                <div class="stat-value"><?= number_format($total_indicators) ?></div>
             </div>
         </div>
-    </div>
+    </section>
 
     <!-- ── Report Controls ────────────────────────────────────────────── -->
-    <div class="controls-bar filters-bar" role="group" aria-label="Report controls">
-        <div class="form-group grow filters-grow">
-            <label class="form-label" for="reportType">Report Type</label>
-            <select id="reportType" class="form-control">
-                <option value="overview">Overview Dashboard</option>
-                <option value="programs">Programs Report</option>
-                <option value="projects">Projects Report</option>
-                <option value="beneficiaries">Participants Report</option>
-                <option value="indicators">Indicators Performance</option>
-                <option value="financial">Financial Report</option>
-                <option value="events">Events Report</option>
-                <option value="hub">Hub Operations</option>
-            </select>
+    <section class="rp-builder" aria-labelledby="rpBuilderTitle">
+        <div class="rp-builder-head">
+            <span class="rp-builder-icon bg-primary" aria-hidden="true"><i class="fas fa-sliders"></i></span>
+            <div>
+                <h2 class="rp-section-title" id="rpBuilderTitle">Report builder</h2>
+                <p class="rp-section-sub">Choose a report, time period and output format, then generate.</p>
+            </div>
         </div>
-        <div class="form-group">
-            <label class="form-label" for="timePeriod">Time Period</label>
-            <select id="timePeriod" class="form-control">
-                <option value="all">All Time</option>
-                <option value="year">This Year</option>
-                <option value="quarter">This Quarter</option>
-                <option value="month">This Month</option>
-            </select>
+        <div class="controls-bar filters-bar" role="group" aria-labelledby="rpBuilderTitle">
+            <div class="form-group grow filters-grow">
+                <label class="form-label" for="reportType">Report Type</label>
+                <select id="reportType" class="form-control">
+                    <option value="overview">Overview Dashboard</option>
+                    <option value="programs">Programs Report</option>
+                    <option value="projects">Projects Report</option>
+                    <option value="beneficiaries">Participants Report</option>
+                    <option value="indicators">Indicators Performance</option>
+                    <option value="financial">Financial Report</option>
+                    <option value="events">Events Report</option>
+                    <option value="hub">Hub Operations</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="timePeriod">Time Period</label>
+                <select id="timePeriod" class="form-control">
+                    <option value="all">All Time</option>
+                    <option value="year">This Year</option>
+                    <option value="quarter">This Quarter</option>
+                    <option value="month">This Month</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="reportFormat">Format</label>
+                <select id="reportFormat" class="form-control">
+                    <option value="html">Web View</option>
+                    <option value="pdf">PDF</option>
+                    <option value="excel">Excel</option>
+                    <option value="powerbi">Power BI</option>
+                </select>
+            </div>
+            <div class="ctrl-actions">
+                <button type="button" onclick="generateReport()" class="btn btn-primary">
+                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Generate report
+                </button>
+            </div>
         </div>
-        <div class="form-group">
-            <label class="form-label" for="reportFormat">Format</label>
-            <select id="reportFormat" class="form-control">
-                <option value="html">Web View</option>
-                <option value="pdf">PDF</option>
-                <option value="excel">Excel</option>
-                <option value="powerbi">Power BI</option>
-            </select>
-        </div>
-        <div class="ctrl-actions">
-            <button onclick="generateReport()" class="btn btn-dark">
-                <i class="fas fa-chart-line"></i> Generate
-            </button>
-        </div>
-    </div>
+    </section>
 
     <!-- ══════════════════════════════════════════════════════════════════
          TABS
          ══════════════════════════════════════════════════════════════════ -->
-    <div class="tab-shell">
+    <section class="tab-shell rp-tabs" aria-label="Report views">
 
-        <div class="tab-header" role="tablist">
-            <button class="tab-btn active" data-tab="overview"     role="tab"><i class="fas fa-th-large"></i>    Overview</button>
-            <button class="tab-btn"        data-tab="programs"     role="tab"><i class="fas fa-sitemap"></i>      Programs</button>
-            <button class="tab-btn"        data-tab="projects"     role="tab"><i class="fas fa-project-diagram"></i> Projects</button>
-            <button class="tab-btn"        data-tab="participants" role="tab"><i class="fas fa-users"></i>        Participants</button>
-            <button class="tab-btn"        data-tab="indicators"   role="tab"><i class="fas fa-chart-line"></i>   Indicators</button>
-            <button class="tab-btn"        data-tab="powerbi"      role="tab"><i class="fas fa-chart-pie"></i>    Power BI</button>
-            <button class="tab-btn"        data-tab="exports"      role="tab"><i class="fas fa-download"></i>     Exports</button>
+        <div class="tab-header" role="tablist" aria-label="Report sections">
+            <button type="button" class="tab-btn active" data-tab="overview"     role="tab" id="tabbtn-overview"     aria-controls="tab-overview"     aria-selected="true"><i class="fas fa-th-large" aria-hidden="true"></i> Overview</button>
+            <button type="button" class="tab-btn"        data-tab="programs"     role="tab" id="tabbtn-programs"     aria-controls="tab-programs"     aria-selected="false"><i class="fas fa-sitemap" aria-hidden="true"></i> Programs</button>
+            <button type="button" class="tab-btn"        data-tab="projects"     role="tab" id="tabbtn-projects"     aria-controls="tab-projects"     aria-selected="false"><i class="fas fa-project-diagram" aria-hidden="true"></i> Projects</button>
+            <button type="button" class="tab-btn"        data-tab="participants" role="tab" id="tabbtn-participants" aria-controls="tab-participants" aria-selected="false"><i class="fas fa-users" aria-hidden="true"></i> Participants</button>
+            <button type="button" class="tab-btn"        data-tab="indicators"   role="tab" id="tabbtn-indicators"   aria-controls="tab-indicators"   aria-selected="false"><i class="fas fa-chart-line" aria-hidden="true"></i> Indicators</button>
+            <button type="button" class="tab-btn"        data-tab="powerbi"      role="tab" id="tabbtn-powerbi"      aria-controls="tab-powerbi"      aria-selected="false"><i class="fas fa-chart-pie" aria-hidden="true"></i> Power BI</button>
+            <button type="button" class="tab-btn"        data-tab="exports"      role="tab" id="tabbtn-exports"      aria-controls="tab-exports"      aria-selected="false"><i class="fas fa-download" aria-hidden="true"></i> Exports</button>
         </div>
 
         <div class="tab-panels">
 
             <!-- ── OVERVIEW ─────────────────────────────────────────────── -->
-            <div class="tab-panel active" id="tab-overview">
-                <div class="report-grid">
+            <div class="tab-panel active" id="tab-overview" role="tabpanel" aria-labelledby="tabbtn-overview">
+                <div class="rp-grid">
 
                     <!-- Programs -->
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-amber"><i class="fas fa-sitemap"></i></div>
-                            <span class="report-card-title">Programs Summary</span>
-                            <a href="reports?export=csv&section=programs" class="btn btn-sm btn-gray" style="margin-left:auto;" title="Download CSV">
-                                <i class="fas fa-file-csv"></i>
+                    <article class="rp-card" aria-labelledby="rpOvPrograms">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpOvPrograms">Programs Summary</h3>
+                                <p class="rp-card-sub"><?= $rp_plural($total_programs, 'program', 'programs') ?> by status</p>
+                            </div>
+                            <a href="reports?export=csv&amp;section=programs" class="rp-icon-btn" title="Download CSV" aria-label="Download programs CSV">
+                                <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </div>
-                        <div class="report-card-chart"><canvas id="programsChart"></canvas></div>
-                        <div class="report-card-breakdown">
+                        </header>
+                        <div class="rp-card-body">
                             <?php if (empty($programs_data)): ?>
-                                <div class="empty-state"><i class="fas fa-folder-open"></i><span>No programs yet</span></div>
-                            <?php else: foreach ($programs_data as $s => $c): ?>
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label"><?= h($s) ?></span>
-                                    <span class="breakdown-value"><?= $c ?></span>
-                                </div>
-                            <?php endforeach; endif; ?>
+                                <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No programs yet</span></div>
+                            <?php else: ?>
+                                <div class="rp-chart"><canvas id="programsChart" role="img" aria-label="Doughnut chart of programs by status"></canvas></div>
+                                <ul class="rp-list">
+                                    <?php $i = 0; foreach ($programs_data as $s => $c): ?>
+                                        <li class="rp-row">
+                                            <span class="rp-dot rp-c-<?= $i++ % 7 ?>" aria-hidden="true"></span>
+                                            <span class="rp-row-label"><?= h((string)$s) ?></span>
+                                            <span class="rp-row-value"><?= number_format($c) ?></span>
+                                            <span class="rp-row-pct"><?= $rp_pct($c, $total_programs) ?>%</span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
-                        </div>
-                    </div>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
 
                     <!-- Projects -->
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-blue"><i class="fas fa-project-diagram"></i></div>
-                            <span class="report-card-title">Projects Summary</span>
-                            <a href="reports?export=csv&section=projects" class="btn btn-sm btn-gray" style="margin-left:auto;" title="Download CSV">
-                                <i class="fas fa-file-csv"></i>
+                    <article class="rp-card" aria-labelledby="rpOvProjects">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-blue" aria-hidden="true"><i class="fas fa-project-diagram"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpOvProjects">Projects Summary</h3>
+                                <p class="rp-card-sub"><?= $rp_plural($total_projects, 'project', 'projects') ?> by status</p>
+                            </div>
+                            <a href="reports?export=csv&amp;section=projects" class="rp-icon-btn" title="Download CSV" aria-label="Download projects CSV">
+                                <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </div>
-                        <div class="report-card-chart"><canvas id="projectsChart"></canvas></div>
-                        <div class="report-card-breakdown">
+                        </header>
+                        <div class="rp-card-body">
                             <?php if (empty($projects_data)): ?>
-                                <div class="empty-state"><i class="fas fa-folder-open"></i><span>No projects yet</span></div>
-                            <?php else: foreach ($projects_data as $s => $c): ?>
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label"><?= h($s) ?></span>
-                                    <span class="breakdown-value"><?= $c ?></span>
-                                </div>
-                            <?php endforeach; endif; ?>
+                                <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No projects yet</span></div>
+                            <?php else: ?>
+                                <div class="rp-chart"><canvas id="projectsChart" role="img" aria-label="Doughnut chart of projects by status"></canvas></div>
+                                <ul class="rp-list">
+                                    <?php $i = 0; foreach ($projects_data as $s => $c): ?>
+                                        <li class="rp-row">
+                                            <span class="rp-dot rp-c-<?= $i++ % 7 ?>" aria-hidden="true"></span>
+                                            <span class="rp-row-label"><?= h((string)$s) ?></span>
+                                            <span class="rp-row-value"><?= number_format($c) ?></span>
+                                            <span class="rp-row-pct"><?= $rp_pct($c, $total_projects) ?>%</span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
-                        </div>
-                    </div>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
 
                     <!-- Participants by Gender -->
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-green"><i class="fas fa-users"></i></div>
-                            <span class="report-card-title">Participants by Gender</span>
-                            <a href="reports?export=csv&section=participants" class="btn btn-sm btn-gray" style="margin-left:auto;" title="Download CSV">
-                                <i class="fas fa-file-csv"></i>
-                            </a>
-                        </div>
-                        <div class="report-card-chart"><canvas id="genderChart"></canvas></div>
-                        <div class="report-card-breakdown">
-                            <?php foreach ($gender_data as $g => $c): ?>
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label"><?= h($g) ?></span>
-                                    <span class="breakdown-value blue"><?= number_format($c) ?></span>
-                                </div>
-                            <?php endforeach; ?>
-                            <div class="breakdown-row" style="border-top:2px solid var(--ink-100);margin-top:4px;">
-                                <span class="breakdown-label" style="font-weight:800;">Total</span>
-                                <span class="breakdown-value"><?= number_format($total_beneficiaries) ?></span>
+                    <article class="rp-card" aria-labelledby="rpOvGender">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-green" aria-hidden="true"><i class="fas fa-users"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpOvGender">Participants by Gender</h3>
+                                <p class="rp-card-sub"><?= $rp_plural($total_beneficiaries, 'participant', 'participants') ?></p>
                             </div>
+                            <a href="reports?export=csv&amp;section=participants" class="rp-icon-btn" title="Download CSV" aria-label="Download participants CSV">
+                                <i class="fas fa-file-csv" aria-hidden="true"></i>
+                            </a>
+                        </header>
+                        <div class="rp-card-body">
+                            <?php if (empty($gender_data)): ?>
+                                <div class="empty-state rp-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><span>No participant data yet</span></div>
+                            <?php else: ?>
+                                <div class="rp-chart"><canvas id="genderChart" role="img" aria-label="Doughnut chart of participants by gender"></canvas></div>
+                                <ul class="rp-list">
+                                    <?php $i = 0; foreach ($gender_data as $g => $c): ?>
+                                        <li class="rp-row">
+                                            <span class="rp-dot rp-c-<?= $i++ % 7 ?>" aria-hidden="true"></span>
+                                            <span class="rp-row-label"><?= h((string)$g) ?></span>
+                                            <span class="rp-row-value"><?= number_format($c) ?></span>
+                                            <span class="rp-row-pct"><?= $rp_pct($c, $total_beneficiaries) ?>%</span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                    <li class="rp-row rp-row-total">
+                                        <span class="rp-row-label">Total</span>
+                                        <span class="rp-row-value"><?= number_format($total_beneficiaries) ?></span>
+                                        <span class="rp-row-pct">100%</span>
+                                    </li>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
-                        </div>
-                    </div>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
 
                     <!-- Indicators Performance -->
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-primary"><i class="fas fa-chart-line"></i></div>
-                            <span class="report-card-title">Indicators Performance</span>
-                            <a href="reports?export=csv&section=indicators" class="btn btn-sm btn-gray" style="margin-left:auto;" title="Download CSV">
-                                <i class="fas fa-file-csv"></i>
+                    <article class="rp-card" aria-labelledby="rpOvIndicators">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-primary" aria-hidden="true"><i class="fas fa-chart-line"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpOvIndicators">Indicators Performance</h3>
+                                <p class="rp-card-sub"><?= $rp_plural($total_indicators, 'indicator', 'indicators') ?> with a target</p>
+                            </div>
+                            <a href="reports?export=csv&amp;section=indicators" class="rp-icon-btn" title="Download CSV" aria-label="Download indicators CSV">
+                                <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
+                        </header>
+                        <div class="rp-card-body">
+                            <?php if ($total_indicators === 0): ?>
+                                <div class="empty-state rp-empty"><i class="fas fa-bullseye" aria-hidden="true"></i><span>No indicators with targets yet</span></div>
+                            <?php else: ?>
+                                <div class="rp-chart rp-chart-bar"><canvas id="indicatorsChart" role="img" aria-label="Bar chart of indicators by achievement level"></canvas></div>
+                                <ul class="rp-list">
+                                    <li class="rp-row">
+                                        <span class="rp-dot rp-c-0" aria-hidden="true"></span>
+                                        <span class="rp-row-label">Achieved (≥ 100%)</span>
+                                        <span class="rp-row-value"><?= $ind_data['achieved'] ?></span>
+                                        <span class="rp-row-pct"><?= $rp_pct($ind_data['achieved'], $total_indicators) ?>%</span>
+                                    </li>
+                                    <li class="rp-row">
+                                        <span class="rp-dot rp-c-2" aria-hidden="true"></span>
+                                        <span class="rp-row-label">Partial (50 – 99%)</span>
+                                        <span class="rp-row-value"><?= $ind_data['partial'] ?></span>
+                                        <span class="rp-row-pct"><?= $rp_pct($ind_data['partial'], $total_indicators) ?>%</span>
+                                    </li>
+                                    <li class="rp-row">
+                                        <span class="rp-dot rp-c-3" aria-hidden="true"></span>
+                                        <span class="rp-row-label">Low (&lt; 50%)</span>
+                                        <span class="rp-row-value"><?= $ind_data['low'] ?></span>
+                                        <span class="rp-row-pct"><?= $rp_pct($ind_data['low'], $total_indicators) ?>%</span>
+                                    </li>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="report-card-chart"><canvas id="indicatorsChart"></canvas></div>
-                        <div class="report-card-breakdown">
-                            <div class="breakdown-row">
-                                <span class="breakdown-label">Achieved (≥ 100%)</span>
-                                <span class="breakdown-value green"><?= $ind_data['achieved'] ?></span>
-                            </div>
-                            <div class="breakdown-row">
-                                <span class="breakdown-label">Partial (50 – 99%)</span>
-                                <span class="breakdown-value amber"><?= $ind_data['partial'] ?></span>
-                            </div>
-                            <div class="breakdown-row">
-                                <span class="breakdown-label">Low (&lt; 50%)</span>
-                                <span class="breakdown-value red"><?= $ind_data['low'] ?></span>
-                            </div>
-                        </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
-                        </div>
-                    </div>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
 
                     <!-- PWD -->
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-amber"><i class="fas fa-wheelchair"></i></div>
-                            <span class="report-card-title">PWD Statistics</span>
-                            <a href="reports?export=csv&section=pwd" class="btn btn-sm btn-gray" style="margin-left:auto;" title="Download CSV">
-                                <i class="fas fa-file-csv"></i>
+                    <article class="rp-card" aria-labelledby="rpOvPwd">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-wheelchair"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpOvPwd">PWD Statistics</h3>
+                                <p class="rp-card-sub">Disability inclusion</p>
+                            </div>
+                            <a href="reports?export=csv&amp;section=pwd" class="rp-icon-btn" title="Download CSV" aria-label="Download PWD statistics CSV">
+                                <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
+                        </header>
+                        <div class="rp-card-body">
+                            <?php if ($pwd_total === 0): ?>
+                                <div class="empty-state rp-empty"><i class="fas fa-wheelchair" aria-hidden="true"></i><span>No participant data yet</span></div>
+                            <?php else: ?>
+                                <div class="rp-chart"><canvas id="pwdChart" role="img" aria-label="Doughnut chart of PWD and non-PWD participants"></canvas></div>
+                                <ul class="rp-list">
+                                    <li class="rp-row">
+                                        <span class="rp-dot rp-c-0" aria-hidden="true"></span>
+                                        <span class="rp-row-label">Persons with Disabilities</span>
+                                        <span class="rp-row-value"><?= number_format($pwd_data['pwd']) ?></span>
+                                        <span class="rp-row-pct"><?= $pwd_pct ?>%</span>
+                                    </li>
+                                    <li class="rp-row">
+                                        <span class="rp-dot rp-c-1" aria-hidden="true"></span>
+                                        <span class="rp-row-label">Non-PWD</span>
+                                        <span class="rp-row-value"><?= number_format($pwd_data['non_pwd']) ?></span>
+                                        <span class="rp-row-pct"><?= $rp_pct($pwd_data['non_pwd'], $pwd_total) ?>%</span>
+                                    </li>
+                                    <li class="rp-row rp-row-total">
+                                        <span class="rp-row-label">PWD Inclusion Rate</span>
+                                        <span class="rp-row-value rp-accent"><?= $pwd_pct ?>%</span>
+                                    </li>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="report-card-chart"><canvas id="pwdChart"></canvas></div>
-                        <div class="report-card-breakdown">
-                            <div class="breakdown-row">
-                                <span class="breakdown-label">Persons with Disabilities</span>
-                                <span class="breakdown-value amber"><?= number_format($pwd_data['pwd']) ?></span>
-                            </div>
-                            <div class="breakdown-row">
-                                <span class="breakdown-label">Non-PWD</span>
-                                <span class="breakdown-value"><?= number_format($pwd_data['non_pwd']) ?></span>
-                            </div>
-                            <div class="breakdown-row" style="border-top:2px solid var(--ink-100);margin-top:4px;">
-                                <span class="breakdown-label" style="font-weight:800;">PWD Inclusion Rate</span>
-                                <span class="breakdown-value amber"><?= $pwd_pct ?>%</span>
-                            </div>
-                        </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
-                        </div>
-                    </div>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
 
                     <!-- Events -->
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-purple"><i class="fas fa-calendar-check"></i></div>
-                            <span class="report-card-title">Events Summary</span>
-                            <a href="reports?export=csv&section=events" class="btn btn-sm btn-gray" style="margin-left:auto;" title="Download CSV">
-                                <i class="fas fa-file-csv"></i>
+                    <article class="rp-card" aria-labelledby="rpOvEvents">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-purple" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpOvEvents">Events Summary</h3>
+                                <p class="rp-card-sub">Hub events and activity</p>
+                            </div>
+                            <a href="reports?export=csv&amp;section=events" class="rp-icon-btn" title="Download CSV" aria-label="Download events CSV">
+                                <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
+                        </header>
+                        <div class="rp-card-body">
+                            <div class="rp-metrics">
+                                <div class="rp-metric rp-metric-purple">
+                                    <span class="rp-metric-value"><?= number_format($events_data['total']) ?></span>
+                                    <span class="rp-metric-label">Total events</span>
+                                </div>
+                                <div class="rp-metric rp-metric-green">
+                                    <span class="rp-metric-value"><?= number_format($events_data['recent']) ?></span>
+                                    <span class="rp-metric-label">In the last 30 days</span>
+                                </div>
+                            </div>
+                            <?php if ($events_data['total'] === 0): ?>
+                                <p class="rp-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> No events have been recorded yet.</p>
+                            <?php else: ?>
+                                <div class="rp-meter" aria-hidden="true">
+                                    <span class="rp-meter-fill" style="width:<?= min(100, $rp_pct($events_data['recent'], $events_data['total'])) ?>%;"></span>
+                                </div>
+                                <p class="rp-hint"><?= $rp_pct($events_data['recent'], $events_data['total']) ?>% of all events took place in the last 30 days.</p>
+                            <?php endif; ?>
                         </div>
-                        <div class="big-number-block">
-                            <div class="big-number" style="color:var(--purple-fg);"><?= $events_data['total'] ?></div>
-                            <div class="big-number-label">Total Events</div>
-                        </div>
-                        <div class="sub-number-block">
-                            <div class="sub-number"><?= $events_data['recent'] ?></div>
-                            <div class="sub-number-label">In the last 30 days</div>
-                        </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
-                        </div>
-                    </div>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
 
-                </div><!-- /.report-grid -->
+                </div><!-- /.rp-grid -->
             </div><!-- /#tab-overview -->
 
             <!-- ── PROGRAMS ──────────────────────────────────────────────── -->
-            <div class="tab-panel" id="tab-programs">
-                <div class="report-grid" style="grid-template-columns:1fr 1fr;">
-                    <div class="report-card" style="grid-column:1/-1;">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-amber"><i class="fas fa-sitemap"></i></div>
-                            <span class="report-card-title">Programs by Status</span>
-                            <div class="actions" style="margin-left:auto;">
-                                <a href="reports?export=csv&section=programs" class="btn btn-sm btn-gray"><i class="fas fa-file-csv"></i> CSV</a>
-                                <a href="reports?export=pdf" target="_blank" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf"></i> PDF</a>
+            <div class="tab-panel" id="tab-programs" role="tabpanel" aria-labelledby="tabbtn-programs">
+                <section class="rp-card rp-card-wide" aria-labelledby="rpPrograms">
+                    <header class="rp-card-head">
+                        <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></span>
+                        <div class="rp-card-titles">
+                            <h3 class="rp-card-title" id="rpPrograms">Programs by Status</h3>
+                            <p class="rp-card-sub"><?= $rp_plural($total_programs, 'program', 'programs') ?> in total</p>
+                        </div>
+                        <div class="rp-card-actions">
+                            <a href="reports?export=csv&amp;section=programs" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                            <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                        </div>
+                    </header>
+                    <?php if (empty($programs_data)): ?>
+                        <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No programs yet</span></div>
+                    <?php else: ?>
+                        <div class="rp-split">
+                            <div class="rp-chart rp-chart-lg"><canvas id="programsChartFull" role="img" aria-label="Doughnut chart of programs by status"></canvas></div>
+                            <div class="table-wrap">
+                                <table class="table rp-table">
+                                    <caption class="sr-only">Programs by status</caption>
+                                    <thead><tr><th scope="col">Status</th><th scope="col" class="rp-num">Count</th><th scope="col">Share</th></tr></thead>
+                                    <tbody>
+                                    <?php $i = 0; foreach ($programs_data as $s => $c): $p = $rp_pct($c, $total_programs); $k = $i++ % 7; ?>
+                                        <tr>
+                                            <th scope="row"><span class="rp-dot rp-c-<?= $k ?>" aria-hidden="true"></span><?= h((string)$s) ?></th>
+                                            <td class="rp-num"><?= number_format($c) ?></td>
+                                            <td><span class="rp-share"><span class="rp-bar" aria-hidden="true"><span class="rp-bar-fill rp-c-<?= $k ?>" style="width:<?= $p ?>%;"></span></span><span class="rp-share-pct"><?= $p ?>%</span></span></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                    <tfoot><tr><th scope="row">Total</th><td class="rp-num"><?= number_format($total_programs) ?></td><td><span class="rp-share-pct">100%</span></td></tr></tfoot>
+                                </table>
                             </div>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                            <div class="report-card-chart" style="padding:24px 28px;"><canvas id="programsChartFull"></canvas></div>
-                            <div class="report-card-breakdown" style="padding:24px 28px;">
-                                <?php foreach ($programs_data as $s => $c): ?>
-                                    <div class="breakdown-row" style="font-size:13px;padding:10px 0;">
-                                        <span class="breakdown-label"><?= h($s) ?></span>
-                                        <span class="breakdown-value"><?= $c ?></span>
-                                    </div>
-                                <?php endforeach; ?>
-                                <div class="breakdown-row" style="border-top:2px solid var(--ink-100);font-size:13px;padding:10px 0;">
-                                    <span class="breakdown-label" style="font-weight:800;">Total</span>
-                                    <span class="breakdown-value"><?= $total_programs ?></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <?php endif; ?>
+                </section>
             </div>
 
             <!-- ── PROJECTS ──────────────────────────────────────────────── -->
-            <div class="tab-panel" id="tab-projects">
-                <div class="report-grid" style="grid-template-columns:1fr 1fr;">
-                    <div class="report-card" style="grid-column:1/-1;">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-blue"><i class="fas fa-project-diagram"></i></div>
-                            <span class="report-card-title">Projects by Status</span>
-                            <div class="actions" style="margin-left:auto;">
-                                <a href="reports?export=csv&section=projects" class="btn btn-sm btn-gray"><i class="fas fa-file-csv"></i> CSV</a>
-                                <a href="reports?export=pdf" target="_blank" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf"></i> PDF</a>
+            <div class="tab-panel" id="tab-projects" role="tabpanel" aria-labelledby="tabbtn-projects">
+                <section class="rp-card rp-card-wide" aria-labelledby="rpProjects">
+                    <header class="rp-card-head">
+                        <span class="report-card-icon bg-blue" aria-hidden="true"><i class="fas fa-project-diagram"></i></span>
+                        <div class="rp-card-titles">
+                            <h3 class="rp-card-title" id="rpProjects">Projects by Status</h3>
+                            <p class="rp-card-sub"><?= $rp_plural($total_projects, 'project', 'projects') ?> in total</p>
+                        </div>
+                        <div class="rp-card-actions">
+                            <a href="reports?export=csv&amp;section=projects" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                            <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                        </div>
+                    </header>
+                    <?php if (empty($projects_data)): ?>
+                        <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No projects yet</span></div>
+                    <?php else: ?>
+                        <div class="rp-split">
+                            <div class="rp-chart rp-chart-lg"><canvas id="projectsChartFull" role="img" aria-label="Doughnut chart of projects by status"></canvas></div>
+                            <div class="table-wrap">
+                                <table class="table rp-table">
+                                    <caption class="sr-only">Projects by status</caption>
+                                    <thead><tr><th scope="col">Status</th><th scope="col" class="rp-num">Count</th><th scope="col">Share</th></tr></thead>
+                                    <tbody>
+                                    <?php $i = 0; foreach ($projects_data as $s => $c): $p = $rp_pct($c, $total_projects); $k = $i++ % 7; ?>
+                                        <tr>
+                                            <th scope="row"><span class="rp-dot rp-c-<?= $k ?>" aria-hidden="true"></span><?= h((string)$s) ?></th>
+                                            <td class="rp-num"><?= number_format($c) ?></td>
+                                            <td><span class="rp-share"><span class="rp-bar" aria-hidden="true"><span class="rp-bar-fill rp-c-<?= $k ?>" style="width:<?= $p ?>%;"></span></span><span class="rp-share-pct"><?= $p ?>%</span></span></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                    <tfoot><tr><th scope="row">Total</th><td class="rp-num"><?= number_format($total_projects) ?></td><td><span class="rp-share-pct">100%</span></td></tr></tfoot>
+                                </table>
                             </div>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                            <div class="report-card-chart" style="padding:24px 28px;"><canvas id="projectsChartFull"></canvas></div>
-                            <div class="report-card-breakdown" style="padding:24px 28px;">
-                                <?php foreach ($projects_data as $s => $c): ?>
-                                    <div class="breakdown-row" style="font-size:13px;padding:10px 0;">
-                                        <span class="breakdown-label"><?= h($s) ?></span>
-                                        <span class="breakdown-value"><?= $c ?></span>
-                                    </div>
-                                <?php endforeach; ?>
-                                <div class="breakdown-row" style="border-top:2px solid var(--ink-100);font-size:13px;padding:10px 0;">
-                                    <span class="breakdown-label" style="font-weight:800;">Total</span>
-                                    <span class="breakdown-value"><?= $total_projects ?></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <?php endif; ?>
+                </section>
             </div>
 
             <!-- ── PARTICIPANTS ───────────────────────────────────────────── -->
-            <div class="tab-panel" id="tab-participants">
-                <div class="report-grid">
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-green"><i class="fas fa-venus-mars"></i></div>
-                            <span class="report-card-title">By Gender</span>
-                            <a href="reports?export=csv&section=participants" class="btn btn-sm btn-gray" style="margin-left:auto;"><i class="fas fa-file-csv"></i> CSV</a>
-                        </div>
-                        <div class="report-card-chart"><canvas id="genderChartFull"></canvas></div>
-                        <div class="report-card-breakdown">
-                            <?php foreach ($gender_data as $g => $c): ?>
-                                <div class="breakdown-row">
-                                    <span class="breakdown-label"><?= h($g) ?></span>
-                                    <span class="breakdown-value blue"><?= number_format($c) ?></span>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
-                        </div>
-                    </div>
-                    <div class="report-card">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-amber"><i class="fas fa-wheelchair"></i></div>
-                            <span class="report-card-title">PWD vs Non-PWD</span>
-                            <a href="reports?export=csv&section=pwd" class="btn btn-sm btn-gray" style="margin-left:auto;"><i class="fas fa-file-csv"></i> CSV</a>
-                        </div>
-                        <div class="report-card-chart"><canvas id="pwdChartFull"></canvas></div>
-                        <div class="report-card-breakdown">
-                            <div class="breakdown-row">
-                                <span class="breakdown-label">Persons with Disabilities</span>
-                                <span class="breakdown-value amber"><?= number_format($pwd_data['pwd']) ?></span>
+            <div class="tab-panel" id="tab-participants" role="tabpanel" aria-labelledby="tabbtn-participants">
+                <div class="rp-grid rp-grid-2">
+                    <article class="rp-card" aria-labelledby="rpPartGender">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-green" aria-hidden="true"><i class="fas fa-venus-mars"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpPartGender">By Gender</h3>
+                                <p class="rp-card-sub"><?= $rp_plural($total_beneficiaries, 'participant', 'participants') ?></p>
                             </div>
-                            <div class="breakdown-row">
-                                <span class="breakdown-label">Non-PWD</span>
-                                <span class="breakdown-value"><?= number_format($pwd_data['non_pwd']) ?></span>
-                            </div>
-                            <div class="breakdown-row" style="border-top:2px solid var(--ink-100);margin-top:4px;">
-                                <span class="breakdown-label" style="font-weight:800;">Inclusion Rate</span>
-                                <span class="breakdown-value amber"><?= $pwd_pct ?>%</span>
-                            </div>
+                            <a href="reports?export=csv&amp;section=participants" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                        </header>
+                        <div class="rp-card-body">
+                            <?php if (empty($gender_data)): ?>
+                                <div class="empty-state rp-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><span>No participant data yet</span></div>
+                            <?php else: ?>
+                                <div class="rp-chart"><canvas id="genderChartFull" role="img" aria-label="Doughnut chart of participants by gender"></canvas></div>
+                                <ul class="rp-list">
+                                    <?php $i = 0; foreach ($gender_data as $g => $c): ?>
+                                        <li class="rp-row">
+                                            <span class="rp-dot rp-c-<?= $i++ % 7 ?>" aria-hidden="true"></span>
+                                            <span class="rp-row-label"><?= h((string)$g) ?></span>
+                                            <span class="rp-row-value"><?= number_format($c) ?></span>
+                                            <span class="rp-row-pct"><?= $rp_pct($c, $total_beneficiaries) ?>%</span>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                        <div class="report-card-foot">
-                            <a href="generate-report" class="btn btn-sm btn-soft"><i class="fas fa-eye"></i> Full Report</a>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
+                    <article class="rp-card" aria-labelledby="rpPartPwd">
+                        <header class="rp-card-head">
+                            <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-wheelchair"></i></span>
+                            <div class="rp-card-titles">
+                                <h3 class="rp-card-title" id="rpPartPwd">PWD vs Non-PWD</h3>
+                                <p class="rp-card-sub">Disability inclusion</p>
+                            </div>
+                            <a href="reports?export=csv&amp;section=pwd" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                        </header>
+                        <div class="rp-card-body">
+                            <?php if ($pwd_total === 0): ?>
+                                <div class="empty-state rp-empty"><i class="fas fa-wheelchair" aria-hidden="true"></i><span>No participant data yet</span></div>
+                            <?php else: ?>
+                                <div class="rp-chart"><canvas id="pwdChartFull" role="img" aria-label="Doughnut chart of PWD and non-PWD participants"></canvas></div>
+                                <ul class="rp-list">
+                                    <li class="rp-row">
+                                        <span class="rp-dot rp-c-0" aria-hidden="true"></span>
+                                        <span class="rp-row-label">Persons with Disabilities</span>
+                                        <span class="rp-row-value"><?= number_format($pwd_data['pwd']) ?></span>
+                                        <span class="rp-row-pct"><?= $pwd_pct ?>%</span>
+                                    </li>
+                                    <li class="rp-row">
+                                        <span class="rp-dot rp-c-1" aria-hidden="true"></span>
+                                        <span class="rp-row-label">Non-PWD</span>
+                                        <span class="rp-row-value"><?= number_format($pwd_data['non_pwd']) ?></span>
+                                        <span class="rp-row-pct"><?= $rp_pct($pwd_data['non_pwd'], $pwd_total) ?>%</span>
+                                    </li>
+                                    <li class="rp-row rp-row-total">
+                                        <span class="rp-row-label">Inclusion Rate</span>
+                                        <span class="rp-row-value rp-accent"><?= $pwd_pct ?>%</span>
+                                    </li>
+                                </ul>
+                            <?php endif; ?>
                         </div>
-                    </div>
+                        <footer class="rp-card-foot">
+                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                        </footer>
+                    </article>
                 </div>
             </div>
 
             <!-- ── INDICATORS ─────────────────────────────────────────────── -->
-            <div class="tab-panel" id="tab-indicators">
-                <div class="report-grid">
-                    <div class="report-card" style="grid-column:1/-1;">
-                        <div class="report-card-head">
-                            <div class="report-card-icon bg-primary"><i class="fas fa-chart-bar"></i></div>
-                            <span class="report-card-title">Indicators Achievement Overview</span>
-                            <div class="actions" style="margin-left:auto;">
-                                <a href="reports?export=csv&section=indicators" class="btn btn-sm btn-gray"><i class="fas fa-file-csv"></i> CSV</a>
-                                <a href="reports?export=pdf" target="_blank" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf"></i> PDF</a>
+            <div class="tab-panel" id="tab-indicators" role="tabpanel" aria-labelledby="tabbtn-indicators">
+                <section class="rp-card rp-card-wide" aria-labelledby="rpIndicators">
+                    <header class="rp-card-head">
+                        <span class="report-card-icon bg-primary" aria-hidden="true"><i class="fas fa-chart-bar"></i></span>
+                        <div class="rp-card-titles">
+                            <h3 class="rp-card-title" id="rpIndicators">Indicators Achievement Overview</h3>
+                            <p class="rp-card-sub">Current value against target</p>
+                        </div>
+                        <div class="rp-card-actions">
+                            <a href="reports?export=csv&amp;section=indicators" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                            <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
+                        </div>
+                    </header>
+                    <?php if ($total_indicators === 0): ?>
+                        <div class="empty-state rp-empty"><i class="fas fa-bullseye" aria-hidden="true"></i><span>No indicators with targets yet</span></div>
+                    <?php else: ?>
+                        <div class="rp-split">
+                            <div class="rp-chart rp-chart-bar rp-chart-lg"><canvas id="indicatorsChartFull" role="img" aria-label="Bar chart of indicators by achievement level"></canvas></div>
+                            <div class="table-wrap">
+                                <table class="table rp-table">
+                                    <caption class="sr-only">Indicators by achievement level</caption>
+                                    <thead><tr><th scope="col">Achievement</th><th scope="col" class="rp-num">Count</th><th scope="col">Share</th></tr></thead>
+                                    <tbody>
+                                    <?php
+                                    $rp_ind_rows = [
+                                        ['Achieved (≥ 100%)',  $ind_data['achieved'], 0],
+                                        ['Partial (50 – 99%)', $ind_data['partial'],  2],
+                                        ['Low (< 50%)',        $ind_data['low'],      3],
+                                    ];
+                                    foreach ($rp_ind_rows as [$label, $cnt, $k]): $p = $rp_pct($cnt, $total_indicators);
+                                    ?>
+                                        <tr>
+                                            <th scope="row"><span class="rp-dot rp-c-<?= $k ?>" aria-hidden="true"></span><?= h($label) ?></th>
+                                            <td class="rp-num"><?= number_format($cnt) ?></td>
+                                            <td><span class="rp-share"><span class="rp-bar" aria-hidden="true"><span class="rp-bar-fill rp-c-<?= $k ?>" style="width:<?= $p ?>%;"></span></span><span class="rp-share-pct"><?= $p ?>%</span></span></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                    </tbody>
+                                    <tfoot><tr><th scope="row">Total Indicators</th><td class="rp-num"><?= number_format($total_indicators) ?></td><td><span class="rp-share-pct">100%</span></td></tr></tfoot>
+                                </table>
                             </div>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                            <div class="report-card-chart" style="padding:24px 28px;"><canvas id="indicatorsChartFull"></canvas></div>
-                            <div class="report-card-breakdown" style="padding:24px 28px;">
-                                <div class="breakdown-row" style="font-size:13px;padding:12px 0;">
-                                    <span class="breakdown-label">Total Indicators</span>
-                                    <span class="breakdown-value"><?= $total_indicators ?></span>
-                                </div>
-                                <div class="breakdown-row" style="font-size:13px;padding:12px 0;">
-                                    <span class="breakdown-label">Achieved (≥ 100%)</span>
-                                    <span class="breakdown-value green"><?= $ind_data['achieved'] ?></span>
-                                </div>
-                                <div class="breakdown-row" style="font-size:13px;padding:12px 0;">
-                                    <span class="breakdown-label">Partial (50 – 99%)</span>
-                                    <span class="breakdown-value amber"><?= $ind_data['partial'] ?></span>
-                                </div>
-                                <div class="breakdown-row" style="font-size:13px;padding:12px 0;">
-                                    <span class="breakdown-label">Low (&lt; 50%)</span>
-                                    <span class="breakdown-value red"><?= $ind_data['low'] ?></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <?php endif; ?>
+                </section>
             </div>
 
             <!-- ── POWER BI ───────────────────────────────────────────────── -->
-            <div class="tab-panel" id="tab-powerbi">
+            <div class="tab-panel" id="tab-powerbi" role="tabpanel" aria-labelledby="tabbtn-powerbi">
                 <?php if (!empty($powerbi_settings['embed_url'])): ?>
                     <div class="powerbi-controls">
-                        <span style="font-size:13px;font-weight:700;color:var(--ink-500);">
-                            <i class="fas fa-chart-pie" style="color:var(--blue-fg);margin-right:6px;"></i>Power BI Live Dashboard
-                        </span>
-                        <button onclick="document.getElementById('powerBIFrame').requestFullscreen()" class="btn btn-sm btn-gray">
-                            <i class="fas fa-expand"></i> Fullscreen
+                        <h3 class="rp-section-title">
+                            <i class="fas fa-chart-pie rp-pbi-icon" aria-hidden="true"></i> Power BI Live Dashboard
+                        </h3>
+                        <button type="button" onclick="document.getElementById('powerBIFrame').requestFullscreen()" class="btn btn-sm btn-gray">
+                            <i class="fas fa-expand" aria-hidden="true"></i> Fullscreen
                         </button>
                     </div>
                     <div class="powerbi-frame-wrap">
-                        <iframe id="powerBIFrame" src="<?= h($powerbi_settings['embed_url']) ?>" allowfullscreen></iframe>
+                        <iframe id="powerBIFrame" title="Power BI dashboard" src="<?= h($powerbi_settings['embed_url']) ?>" allowfullscreen></iframe>
                     </div>
                 <?php else: ?>
                     <div class="powerbi-unconfigured">
-                        <div class="powerbi-icon-wrap"><i class="fas fa-chart-pie"></i></div>
+                        <div class="powerbi-icon-wrap" aria-hidden="true"><i class="fas fa-chart-pie"></i></div>
                         <h3>Power BI Not Configured</h3>
                         <p>Connect your Power BI workspace to visualise real-time analytics.</p>
                         <?php if (ims_allowed('reports.configure_powerbi', ['Administrator'], 'See the Configure Power BI link')): ?>
-                            <a href="/settings?tab=powerbi" class="btn btn-dark"><i class="fas fa-cog"></i> Configure Power BI</a>
+                            <a href="/settings?tab=powerbi" class="btn btn-dark"><i class="fas fa-cog" aria-hidden="true"></i> Configure Power BI</a>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>
 
             <!-- ── EXPORTS ────────────────────────────────────────────────── -->
-            <div class="tab-panel" id="tab-exports">
-                <p class="note" style="margin-bottom:18px;">
-                    <i class="fas fa-info-circle" style="margin-right:5px;"></i>
-                    CSV files download immediately. PDF opens in a new tab via Dompdf. Detailed reports open in the browser.
-                </p>
-                <div class="exports-grid">
+            <div class="tab-panel" id="tab-exports" role="tabpanel" aria-labelledby="tabbtn-exports">
+                <div class="rp-callout">
+                    <i class="fas fa-circle-info" aria-hidden="true"></i>
+                    <p>CSV files download immediately. PDF opens in a new tab via Dompdf. Detailed reports open in the browser.</p>
+                </div>
+
+                <h3 class="rp-group-title">Reports</h3>
+                <div class="exports-grid rp-exports">
                     <!-- PDF exports -->
-                    <a href="reports?export=pdf" target="_blank" class="export-item">
-                        <div class="export-icon pdf"><i class="fas fa-file-pdf"></i></div>
-                        <div class="export-item-body">
-                            <div class="export-item-name">Analytics Overview (PDF)</div>
-                            <div class="export-item-desc">Full overview report rendered via Dompdf</div>
-                        </div>
+                    <a href="reports?export=pdf" target="_blank" rel="noopener" class="export-item">
+                        <span class="export-icon pdf" aria-hidden="true"><i class="fas fa-file-pdf"></i></span>
+                        <span class="export-item-body">
+                            <span class="export-item-name">Analytics Overview (PDF)</span>
+                            <span class="export-item-desc">Full overview report rendered via Dompdf</span>
+                        </span>
+                        <span class="rp-export-tag rp-tag-pdf">PDF</span>
                     </a>
+                    <!-- Detailed web reports -->
+                    <a href="generate-report" class="export-item">
+                        <span class="export-icon web" aria-hidden="true"><i class="fas fa-globe"></i></span>
+                        <span class="export-item-body">
+                            <span class="export-item-name">Custom Report Builder</span>
+                            <span class="export-item-desc">Build detailed reports with filters</span>
+                        </span>
+                        <span class="rp-export-tag rp-tag-web">Web</span>
+                    </a>
+                </div>
+
+                <h3 class="rp-group-title">Data exports</h3>
+                <div class="exports-grid rp-exports">
                     <!-- CSV exports -->
                     <?php
                     $csv_exports = [
@@ -1011,27 +1168,20 @@ require_once __DIR__ . '/includes/header.php';
                     ];
                     foreach ($csv_exports as [$sec, $ico, $name, $desc]):
                     ?>
-                        <a href="reports?export=csv&section=<?= $sec ?>" class="export-item">
-                            <div class="export-icon excel"><i class="fas <?= $ico ?>"></i></div>
-                            <div class="export-item-body">
-                                <div class="export-item-name"><?= $name ?></div>
-                                <div class="export-item-desc"><?= $desc ?></div>
-                            </div>
+                        <a href="reports?export=csv&amp;section=<?= $sec ?>" class="export-item">
+                            <span class="export-icon excel" aria-hidden="true"><i class="fas <?= $ico ?>"></i></span>
+                            <span class="export-item-body">
+                                <span class="export-item-name"><?= $name ?></span>
+                                <span class="export-item-desc"><?= $desc ?></span>
+                            </span>
+                            <span class="rp-export-tag rp-tag-csv"><i class="fas fa-download" aria-hidden="true"></i><span class="sr-only">Download</span></span>
                         </a>
                     <?php endforeach; ?>
-                    <!-- Detailed web reports -->
-                    <a href="generate-report" class="export-item">
-                        <div class="export-icon web"><i class="fas fa-globe"></i></div>
-                        <div class="export-item-body">
-                            <div class="export-item-name">Custom Report Builder</div>
-                            <div class="export-item-desc">Build detailed reports with filters</div>
-                        </div>
-                    </a>
                 </div>
             </div>
 
         </div><!-- /.tab-panels -->
-    </div><!-- /.tab-shell -->
+    </section><!-- /.tab-shell -->
 
 </div><!-- /.reports-wrap -->
 
@@ -1067,7 +1217,8 @@ require_once __DIR__ . '/includes/header.php';
             type:'doughnut',
             data:{ labels, datasets:[{ data:values, backgroundColor:BG.slice(0,values.length),
                 borderColor:BD.slice(0,values.length), borderWidth:1.5, hoverOffset:6 }]},
-            options:{ ...OPTS, cutout:'62%' },
+            /* The breakdown list beside each chart doubles as its legend. */
+            options:{ ...OPTS, cutout:'64%', plugins:{ ...OPTS.plugins, legend:{ display:false }}},
         });
     }
 
@@ -1123,9 +1274,10 @@ require_once __DIR__ . '/includes/header.php';
     const panels = document.querySelectorAll('.tab-panel');
     btns.forEach(function(btn){
         btn.addEventListener('click', function(){
-            btns.forEach(function(b){ b.classList.remove('active'); });
+            btns.forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
             panels.forEach(function(p){ p.classList.remove('active'); });
             btn.classList.add('active');
+            btn.setAttribute('aria-selected','true');
             const t = document.getElementById('tab-'+btn.dataset.tab);
             if(t) t.classList.add('active');
         });
