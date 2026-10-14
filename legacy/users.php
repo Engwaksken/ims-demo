@@ -14,13 +14,9 @@ if (!function_exists('e')) {
 
 
 // -- Role list -------------------------------------------------
-$roles = [
-    'Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin',
-    'Project Officer', 'Donor/Partner', 'Staff', 'Member', 'Applicant',
-    'Reviewer', 'Accountant', 'Finance', 'Program Director', 'Consultant',
-    'Executive Director', 'IT Officer', 'HR', 'Program Manager',
-    'Procurement Officer', 'Program Officer',
-];
+// Built-in roles plus roles added on the User Permissions page.
+require_once __DIR__ . '/includes/roles.php';
+$roles = ims_all_roles($conn);
 
 // -- Get user for editing --------------------------------------
 $edit_user = null;

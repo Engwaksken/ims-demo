@@ -437,6 +437,8 @@ final class ModuleRegistry
         'user-delete.php' => 'user-delete.php',
         'user-edit' => 'user-edit.php',
         'user-edit.php' => 'user-edit.php',
+        'role-permissions' => 'role-permissions.php',
+        'role-permissions.php' => 'role-permissions.php',
         'user-permissions' => 'user-permissions.php',
         'user-permissions-process' => 'user-permissions-process.php',
         'user-permissions-process.php' => 'user-permissions-process.php',

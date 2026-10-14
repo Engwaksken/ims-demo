@@ -3,7 +3,7 @@ require_once __DIR__ . '/config.php';
 check_login();
 
 $user_name = $_SESSION['full_name'] ?? $_SESSION['username'] ?? 'User';
-$role = $_SESSION['role'] ?? '';
+$role = $_SESSION['role_name'] ?? $_SESSION['role'] ?? ''; // role_name: an admin-added role's own name
 $page_title = $page_title ?? 'Dashboard';
 
 // Presentation-only helpers for the layout chrome.

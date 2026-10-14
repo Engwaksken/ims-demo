@@ -16,6 +16,8 @@ $current_page = basename($_SERVER['PHP_SELF'] ?? '');
 // Page name without ".php", for matching extensionless menu links.
 $current_page_name = (string)preg_replace('/\.php$/i', '', $current_page);
 $user_role    = (string)($_SESSION['role'] ?? '');
+// Display name: an admin-added role's own name (menus follow the role it works like).
+$user_role_label = (string)($_SESSION['role_name'] ?? $user_role);
 $user_name    = (string)($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'User');
 
 $menu_items = [];
@@ -143,7 +145,7 @@ $sidebar_link = static function (array $e): string {
 
             <div class="user-info">
                 <div class="user-name"><?= htmlspecialchars($user_name, ENT_QUOTES, 'UTF-8') ?></div>
-                <div class="user-role"><?= htmlspecialchars($user_role, ENT_QUOTES, 'UTF-8') ?></div>
+                <div class="user-role"><?= htmlspecialchars($user_role_label, ENT_QUOTES, 'UTF-8') ?></div>
             </div>
         </a>
     </div>

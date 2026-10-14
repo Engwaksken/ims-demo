@@ -1,6 +1,7 @@
 <?php
 //session_start();
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/roles.php';
 require_once __DIR__ . '/../helpers/auth_redirect.php';
 
 
@@ -71,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['user_id'] = $user_id;
         $_SESSION['username'] = $username;
         $_SESSION['full_name'] = $full_name;
-        $_SESSION['role'] = $role;
+        // Added roles log in with the access of the built-in role they work like.
+        ims_set_session_role($conn, (string)$role);
         
         // Clear verification data
         unset($_SESSION['verification_code']);

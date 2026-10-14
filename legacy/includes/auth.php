@@ -266,9 +266,24 @@ if (!function_exists('check_role')) {
             $loginUrl
         );
 
+        // Database permissions decide (see includes/permissions.php); the
+        // roles listed here are only the defaults. null = system unavailable.
+        require_once __DIR__ . '/permissions.php';
+        $caller = ims_perm_caller_file(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3));
+        $allowed = ims_perm_check(
+            is_array($allowedRoles) ? $allowedRoles : [$allowedRoles],
+            (string)$caller
+        );
+
         if (
-            auth_has_role(
-                $allowedRoles
+            $allowed === true
+            ||
+            (
+                $allowed === null
+                &&
+                auth_has_role(
+                    $allowedRoles
+                )
             )
         ) {
             return;

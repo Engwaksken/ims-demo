@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/roles.php';
 require_once __DIR__ . '/mail-function.php';
 
 check_role(['Administrator']);
@@ -151,7 +152,7 @@ if (isset($_POST['add_user'])) {
         redirect_users('Please enter a valid email address.', 'danger');
     }
 
-    if (!in_array($role, IMS_ALL_ROLES, true)) {
+    if (!in_array($role, ims_all_roles($conn), true)) {
         redirect_users('Please select a valid role.', 'danger');
     }
 
@@ -274,7 +275,7 @@ if (isset($_POST['edit_user'])) {
         redirect_users('Please enter a valid email address.', 'danger', "../users?edit={$user_id}");
     }
 
-    if (!in_array($role, IMS_ALL_ROLES, true)) {
+    if (!in_array($role, ims_all_roles($conn), true)) {
         redirect_users('Please select a valid role.', 'danger', "../users?edit={$user_id}");
     }
 

@@ -580,29 +580,37 @@ if (!function_exists('check_role')) {
     ): void {
         check_login();
 
-        $currentRole = strtolower(
-            trim(
-                (string) (
-                    $_SESSION['role'] ?? ''
+        // Database permissions decide (see includes/permissions.php); the
+        // roles listed here are only the defaults. null = system unavailable.
+        require_once __DIR__ . '/permissions.php';
+        $caller = ims_perm_caller_file(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3));
+        $allowed = ims_perm_check($allowedRoles, (string) $caller);
+
+        if ($allowed === null) {
+            $currentRole = strtolower(
+                trim(
+                    (string) (
+                        $_SESSION['role'] ?? ''
+                    )
                 )
-            )
-        );
+            );
 
-        $normalizedRoles = array_map(
-            static fn (mixed $role): string =>
-                strtolower(
-                    trim((string) $role)
-                ),
-            $allowedRoles
-        );
+            $normalizedRoles = array_map(
+                static fn (mixed $role): string =>
+                    strtolower(
+                        trim((string) $role)
+                    ),
+                $allowedRoles
+            );
 
-        if (
-            !in_array(
+            $allowed = in_array(
                 $currentRole,
                 $normalizedRoles,
                 true
-            )
-        ) {
+            );
+        }
+
+        if (!$allowed) {
             $_SESSION['notification'] = [
                 'user_id' => isset($_SESSION['user_id'])
                     ? (int) $_SESSION['user_id']
