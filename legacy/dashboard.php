@@ -136,7 +136,7 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
         </div>
         <div class="hero-actions">
             <?php if ($is_admin): ?>
-                <a href="manage_users.php" class="btn btn-primary">
+                <a href="users" class="btn btn-primary">
                     <i class="fas fa-users-cog"></i> Manage Users
                 </a>
             <?php endif; ?>
