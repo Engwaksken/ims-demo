@@ -5,6 +5,7 @@ ob_start();
 $page_title = 'Manage Procurement';
 require_once 'includes/header.php';
 require_once 'includes/process_procurement.php';
+require_once 'includes/procurement-import.php';
 require_once 'includes/mail-function.php';
 
 check_role(['Administrator', 'Operations/Admin', 'Accountant', 'Staff', 'Procurement Officer']);
@@ -34,6 +35,14 @@ if ($res) while ($r = $res->fetch_assoc()) $officers[] = $r;
    ACTION HANDLERS
    ---------------------------------------------------------------------- */
 handleProcurementActions($conn, $currentUserId, $isManager);
+
+/* -- Bulk import from CSV --------------------------------------------- */
+if (($_GET['export'] ?? '') === 'procurement_template') {
+    procurement_import_template($conn);
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'import_procurement') {
+    procurement_import_handle($conn, $currentUserId, $currentName, $currentEmail, $officers);
+}
 
 /* -- Create new request with multiple items --------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'create_request_items') {
@@ -219,6 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
 $success_msg = $_SESSION['success'] ?? '';
 $error_msg   = $_SESSION['error']   ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
+$import_report = ims_csv_take_report('procurement');
 
 /* -- Data ------------------------------------------------------------- */
 $categories = getProcurementCategories($conn);
@@ -305,6 +315,9 @@ $stats = [
             <button type="button" class="btn btn-primary" onclick="openModal('requestModal')">
                 <i class="fas fa-plus-circle"></i> New Request
             </button>
+            <button type="button" class="btn btn-soft" onclick="openModal('importProcurementModal')">
+                <i class="fas fa-file-import"></i> Import CSV
+            </button>
             <?php if ($isManager): ?>
                 <a href="procurement_categories" class="btn btn-dark">
                     <i class="fas fa-tags"></i> Categories
@@ -322,6 +335,27 @@ $stats = [
     <?php if ($error_msg): ?>
         <div class="alert alert-error">
             <i class="fas fa-exclamation-circle"></i> <?= e($error_msg) ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($import_report && !empty($import_report['errors'])): ?>
+        <div class="import-report" role="region" aria-label="Import problems">
+            <div class="import-report-head">
+                <strong><i class="fas fa-list-check" aria-hidden="true"></i>
+                    <?= e($import_report['file']) ?>: <?= count($import_report['errors']) + (int)$import_report['more'] ?> row(s) need fixing
+                </strong>
+                <button type="button" class="btn btn-sm btn-primary" onclick="openModal('importProcurementModal')">
+                    <i class="fas fa-file-import" aria-hidden="true"></i> Upload corrected file
+                </button>
+            </div>
+            <ul>
+                <?php foreach ($import_report['errors'] as $importError): ?>
+                    <li><?= e($importError) ?></li>
+                <?php endforeach; ?>
+                <?php if ((int)$import_report['more'] > 0): ?>
+                    <li><em>...and <?= (int)$import_report['more'] ?> more.</em></li>
+                <?php endif; ?>
+            </ul>
         </div>
     <?php endif; ?>
 
@@ -614,6 +648,75 @@ $stats = [
 <!-- ------------------------------------------------------------------
      NEW REQUEST MODAL - multi-item form
      ------------------------------------------------------------------ -->
+<!-- ------------------------------------------------------------------
+     IMPORT REQUESTS MODAL - bulk upload from CSV
+     ------------------------------------------------------------------ -->
+<div class="modal" id="importProcurementModal" role="dialog" aria-modal="true" aria-labelledby="importProcurementTitle">
+    <div class="modal-card" style="max-width:680px;">
+        <div class="modal-head">
+            <h3 id="importProcurementTitle"><i class="fas fa-file-import" style="color:var(--brand-500);margin-right:8px;" aria-hidden="true"></i>Import Requests from CSV</h3>
+            <button type="button" class="modal-close" onclick="closeModal('importProcurementModal')" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <ol class="import-steps">
+                <li>
+                    <div class="import-step-text">
+                        <strong>Download the template</strong>
+                        <span>One row per item, the same fields as the New Request form. Notes list your categories and departments.</span>
+                    </div>
+                    <a href="?export=procurement_template" class="btn btn-dark">
+                        <i class="fas fa-download" aria-hidden="true"></i> Download template
+                    </a>
+                </li>
+                <li>
+                    <div class="import-step-text">
+                        <strong>Fill in your requests</strong>
+                        <span>
+                            Rows with the same <code>request_title</code> become one request. Required: <code>request_title</code>, <code>item_name</code>.
+                            Request details only need filling on its first row. In Excel, save as <em>CSV UTF-8 (Comma delimited)</em>.
+                        </span>
+                    </div>
+                </li>
+                <li>
+                    <div class="import-step-text">
+                        <strong>Upload the file</strong>
+                        <span>Every row is checked first; nothing is saved until all rows are valid. Requests are submitted in your name and officers get one summary email.</span>
+                    </div>
+                </li>
+            </ol>
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="import_procurement">
+                <div class="form-group">
+                    <label class="form-label" for="procurement_file">CSV file *</label>
+                    <input type="file" name="procurement_file" id="procurement_file" class="form-control" accept=".csv,text/csv" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-gray" onclick="closeModal('importProcurementModal')">Cancel</button>
+                    <button type="submit" class="btn btn-dark"><i class="fas fa-upload" aria-hidden="true"></i> Import requests</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.import-steps { list-style: none; counter-reset: step; margin: 0 0 18px; padding: 0; display: grid; gap: 10px; }
+.import-steps li { counter-increment: step; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--border, #e5e7eb); border-radius: var(--radius-md, 12px); background: var(--surface-hover, #f9fafb); }
+.import-steps li::before { content: counter(step); flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-600, #ea580c); color: #fff; font-weight: 700; font-size: 13px; }
+.import-step-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.import-step-text span { color: var(--ink-400, #4b5563); }
+.import-step-text code { font-size: 12px; padding: 1px 5px; border-radius: 4px; background: var(--ink-50, #f3f4f6); }
+.import-steps .btn { flex: none; }
+.import-report { margin: 0 0 16px; padding: 14px 16px; border: 1px solid var(--amber-border, #fde68a); border-left: 4px solid var(--amber-fg, #b45309); border-radius: var(--radius-md, 12px); background: var(--amber-bg, #fffbeb); color: var(--ink-600, #2f3744); font-size: 13px; }
+.import-report-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.import-report ul { margin: 0; padding-left: 20px; max-height: 220px; overflow-y: auto; }
+.import-report li + li { margin-top: 3px; }
+@media (max-width: 640px) {
+    .import-steps li { flex-wrap: wrap; }
+    .import-steps .btn { width: 100%; justify-content: center; }
+}
+</style>
+
 <div class="modal" id="requestModal">
     <div class="modal-card" style="max-width:860px;">
         <div class="modal-head">

@@ -6,6 +6,7 @@ require_once __DIR__ . '/../includes/header.php';
 ob_end_clean();
 
 require_once __DIR__ . '/../includes/workplan-stats.php';
+require_once __DIR__ . '/../includes/workplan-import.php';
 
 header('Content-Type: application/json');
 
@@ -273,6 +274,10 @@ function wp_table_exists_simple(mysqli $conn, string $table): bool
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET' && isset($_GET['action'])) {
+    if ($_GET['action'] === 'template') {
+        wp_import_template();
+    }
+
     if ($_GET['action'] === 'list') {
         echo json_encode(['success' => true, 'workplans' => wp_list_workplans($conn)]);
         exit;
@@ -296,6 +301,12 @@ if ($method === 'GET' && isset($_GET['action'])) {
     }
 
     echo json_encode(['success' => false, 'message' => 'Unknown action.']);
+    exit;
+}
+
+// Bulk import from a CSV upload (multipart form, not JSON).
+if ($method === 'POST' && ($_POST['action'] ?? '') === 'import_csv') {
+    wp_import_handle($conn);
     exit;
 }
 

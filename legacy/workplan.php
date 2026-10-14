@@ -699,6 +699,7 @@ foreach ($calendarEvents as $event) {
         </div>
 
         <div class="hero-actions">
+            <button type="button" class="btn btn-primary" id="wpImportOpen"><i class="fas fa-file-import"></i> Import CSV</button>
             <a href="milestones" class="btn btn-gray"><i class="fas fa-flag-checkered"></i> Back to Milestones</a>
         </div>
     </div>
@@ -1012,6 +1013,181 @@ foreach ($calendarEvents as $event) {
     </section>
 </div>
 
+
+<div class="wp-modal" id="wpImportModal" role="dialog" aria-modal="true" aria-labelledby="wpImportTitle">
+    <div class="wp-modal-card wp-import-card">
+        <div class="wp-modal-head">
+            <h3 id="wpImportTitle"><i class="fas fa-file-import" style="color:#0f766e;margin-right:7px;" aria-hidden="true"></i> Import Workplan from CSV</h3>
+            <button type="button" class="wp-modal-close" id="wpImportClose" aria-label="Close">&times;</button>
+        </div>
+        <form id="wpImportForm" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="import_csv">
+            <div class="wp-modal-body">
+                <ol class="wp-import-steps">
+                    <li>
+                        <div>
+                            <strong>Download the template</strong>
+                            <span>One row per activity. Repeat the milestone name for each of its activities.</span>
+                        </div>
+                        <a href="actions/workplan-actions.php?action=template" class="btn btn-gray"><i class="fas fa-download" aria-hidden="true"></i> Template</a>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>Choose the project or program and year, then upload</strong>
+                            <span>If a workplan already exists for it, the activities are added to it (nothing is deleted, existing activities are skipped).</span>
+                        </div>
+                    </li>
+                </ol>
+
+                <div class="wp-import-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="wpImportEntityType">Entity Type</label>
+                        <select class="form-control" name="entity_type" id="wpImportEntityType">
+                            <option value="Project" <?php echo ($existingWorkplan && $existingWorkplan['entity_type'] === 'Project') ? 'selected' : ''; ?>>Project</option>
+                            <?php if (!empty($programs)): ?>
+                                <option value="Program" <?php echo ($existingWorkplan && $existingWorkplan['entity_type'] === 'Program') ? 'selected' : ''; ?>>Program</option>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <div class="form-group" id="wpImportProjectField">
+                        <label class="form-label" for="wpImportProject">Project</label>
+                        <select class="form-control" id="wpImportProject">
+                            <option value="">Select a project...</option>
+                            <?php foreach ($projects as $project): ?>
+                                <option value="<?php echo (int)$project['project_id']; ?>"
+                                    <?php echo ($existingWorkplan && $existingWorkplan['entity_type'] === 'Project' && (int)$existingWorkplan['entity_id'] === (int)$project['project_id']) ? 'selected' : ''; ?>>
+                                    <?php echo h(($project['project_code'] ?? '') . ' - ' . ($project['project_name'] ?? '')); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php if (!empty($programs)): ?>
+                    <div class="form-group" id="wpImportProgramField" hidden>
+                        <label class="form-label" for="wpImportProgram">Program</label>
+                        <select class="form-control" id="wpImportProgram">
+                            <option value="">Select a program...</option>
+                            <?php foreach ($programs as $program): ?>
+                                <option value="<?php echo (int)$program['id']; ?>"
+                                    <?php echo ($existingWorkplan && $existingWorkplan['entity_type'] === 'Program' && (int)$existingWorkplan['entity_id'] === (int)$program['id']) ? 'selected' : ''; ?>>
+                                    <?php echo h(($program['program_code'] ?? '') . ' - ' . ($program['program_name'] ?? '')); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
+                    <div class="form-group">
+                        <label class="form-label" for="wpImportYear">Workplan Year</label>
+                        <select class="form-control" name="workplan_year" id="wpImportYear">
+                            <?php foreach ($yearOptions as $y): ?>
+                                <option value="<?php echo (int)$y; ?>"
+                                    <?php echo ($existingWorkplan ? ((int)$existingWorkplan['workplan_year'] === $y) : ($y === $currentYear)) ? 'selected' : ''; ?>>
+                                    <?php echo (int)$y; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group wp-import-full">
+                        <label class="form-label" for="wpImportFile">CSV file</label>
+                        <input type="file" class="form-control" name="workplan_file" id="wpImportFile" accept=".csv,text/csv" required>
+                    </div>
+                </div>
+
+                <div class="wp-import-result" id="wpImportResult" role="alert" hidden></div>
+            </div>
+            <div class="wp-modal-foot">
+                <button type="button" class="btn btn-gray" id="wpImportCancel">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="wpImportSubmit"><i class="fas fa-upload" aria-hidden="true"></i> Import</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.wp-import-card { width: min(100%, 680px); }
+.wp-import-steps { list-style: none; counter-reset: wpstep; margin: 0 0 16px; padding: 0; display: grid; gap: 10px; }
+.wp-import-steps li { counter-increment: wpstep; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; background: var(--surface-hover, #f9fafb); font-size: 13px; }
+.wp-import-steps li::before { content: counter(wpstep); flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #0f766e; color: #fff; font-weight: 700; font-size: 12px; }
+.wp-import-steps li > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wp-import-steps li span { color: var(--ink-400, #4b5563); }
+.wp-import-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.wp-import-full { grid-column: 1 / -1; }
+.wp-import-result { margin-top: 6px; padding: 12px 14px; border-radius: 10px; font-size: 13px; border: 1px solid var(--red-border, #fecaca); background: var(--red-bg, #fef2f2); color: var(--red-fg, #b91c1c); }
+.wp-import-result ul { margin: 8px 0 0; padding-left: 18px; max-height: 200px; overflow-y: auto; color: var(--ink-600, #2f3744); }
+@media (max-width: 640px) {
+    .wp-import-grid { grid-template-columns: 1fr; }
+    .wp-import-steps li { flex-wrap: wrap; }
+    .wp-import-steps .btn { width: 100%; justify-content: center; }
+}
+</style>
+
+<script>
+(function () {
+    'use strict';
+    const modal = document.getElementById('wpImportModal');
+    const form = document.getElementById('wpImportForm');
+    if (!modal || !form) return;
+
+    const type = document.getElementById('wpImportEntityType');
+    const projectField = document.getElementById('wpImportProjectField');
+    const programField = document.getElementById('wpImportProgramField');
+    const result = document.getElementById('wpImportResult');
+    const submit = document.getElementById('wpImportSubmit');
+
+    function syncEntity() {
+        const isProgram = type.value === 'Program';
+        if (projectField) projectField.hidden = isProgram;
+        if (programField) programField.hidden = !isProgram;
+    }
+    function open() { syncEntity(); result.hidden = true; modal.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function close() { modal.classList.remove('open'); document.body.style.overflow = ''; }
+    function showError(message, errors, more) {
+        result.textContent = message;
+        if (errors && errors.length) {
+            const list = document.createElement('ul');
+            errors.forEach(text => { const li = document.createElement('li'); li.textContent = text; list.appendChild(li); });
+            if (more) { const li = document.createElement('li'); li.textContent = '...and ' + more + ' more.'; list.appendChild(li); }
+            result.appendChild(list);
+        }
+        result.hidden = false;
+    }
+
+    document.getElementById('wpImportOpen')?.addEventListener('click', open);
+    document.getElementById('wpImportClose')?.addEventListener('click', close);
+    document.getElementById('wpImportCancel')?.addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) close(); });
+    type.addEventListener('change', syncEntity);
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const data = new FormData(form);
+        const entityId = type.value === 'Program'
+            ? document.getElementById('wpImportProgram')?.value
+            : document.getElementById('wpImportProject')?.value;
+        if (!entityId) { showError('Choose the ' + type.value.toLowerCase() + ' for this workplan.'); return; }
+        data.set('entity_id', entityId);
+
+        submit.disabled = true;
+        submit.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Importing...';
+        result.hidden = true;
+
+        fetch('actions/workplan-actions.php', { method: 'POST', credentials: 'same-origin', body: data })
+            .then(r => r.json())
+            .then(res => {
+                if (res.success) {
+                    window.location.href = 'workplan?workplan_id=' + encodeURIComponent(res.workplan_id);
+                    return;
+                }
+                showError(res.message || 'The import failed.', res.errors, res.more);
+            })
+            .catch(() => showError('The import failed. Check your connection and try again.'))
+            .finally(() => {
+                submit.disabled = false;
+                submit.innerHTML = '<i class="fas fa-upload" aria-hidden="true"></i> Import';
+            });
+    });
+})();
+</script>
 
 <div class="wp-modal" id="wpCalendarStatusModal">
     <div class="wp-modal-card">
