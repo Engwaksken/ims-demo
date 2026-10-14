@@ -176,9 +176,13 @@ if (!function_exists('ims_role_user_counts')) {
  * can be saved. VARCHAR columns need nothing.
  */
 if (!function_exists('ims_roles_allow_in_enum')) {
-    function ims_roles_allow_in_enum(mysqli $conn, string $role): bool
+    function ims_roles_allow_in_enum(mysqli $conn, string $role, string $table = 'users'): bool
     {
-        $result = $conn->query("SHOW COLUMNS FROM users LIKE 'role'");
+        if (!in_array($table, ['users', 'menu_role_permissions'], true)) {
+            return false;
+        }
+
+        $result = $conn->query("SHOW COLUMNS FROM `$table` LIKE 'role'");
         $column = $result ? $result->fetch_assoc() : null;
         if ($result) {
             $result->close();
@@ -202,9 +206,9 @@ if (!function_exists('ims_roles_allow_in_enum')) {
         $default = $column['Default'] !== null ? " DEFAULT '" . $conn->real_escape_string((string)$column['Default']) . "'" : '';
 
         try {
-            return (bool)$conn->query("ALTER TABLE users MODIFY role ENUM($list) $null$default");
+            return (bool)$conn->query("ALTER TABLE `$table` MODIFY role ENUM($list) $null$default");
         } catch (Throwable $e) {
-            error_log('Could not add role to users.role enum: ' . $e->getMessage());
+            error_log("Could not add role to $table.role enum: " . $e->getMessage());
             return false;
         }
     }
@@ -247,5 +251,101 @@ if (!function_exists('ims_validate_role_name')) {
         }
 
         return '';
+    }
+}
+
+/* ---------------------------------------------------------------------
+   Sidebar menus (menu_role_permissions) for added roles
+   --------------------------------------------------------------------- */
+
+/** Give $to the same sidebar menu items as $from (added on top of any it has). */
+if (!function_exists('ims_menu_copy_role')) {
+    function ims_menu_copy_role(mysqli $conn, string $from, string $to): bool
+    {
+        if (!ims_roles_allow_in_enum($conn, $to, 'menu_role_permissions')) {
+            return false;
+        }
+
+        try {
+            $stmt = $conn->prepare('INSERT IGNORE INTO menu_role_permissions (menu_id, role) SELECT menu_id, ? FROM menu_role_permissions WHERE role = ?');
+            if (!$stmt) {
+                return false;
+            }
+            $stmt->bind_param('ss', $to, $from);
+            $ok = $stmt->execute();
+            $stmt->close();
+
+            return $ok;
+        } catch (Throwable $e) {
+            error_log('Could not copy menu permissions: ' . $e->getMessage());
+            return false;
+        }
+    }
+}
+
+if (!function_exists('ims_menu_rename_role')) {
+    function ims_menu_rename_role(mysqli $conn, string $from, string $to): void
+    {
+        try {
+            ims_roles_allow_in_enum($conn, $to, 'menu_role_permissions');
+            $stmt = $conn->prepare('UPDATE IGNORE menu_role_permissions SET role = ? WHERE role = ?');
+            if ($stmt) {
+                $stmt->bind_param('ss', $to, $from);
+                $stmt->execute();
+                $stmt->close();
+            }
+            ims_menu_delete_role($conn, $from); // rows that clashed with existing ones
+        } catch (Throwable $e) {
+            error_log('Could not rename menu permissions: ' . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('ims_menu_delete_role')) {
+    function ims_menu_delete_role(mysqli $conn, string $role): void
+    {
+        try {
+            $stmt = $conn->prepare('DELETE FROM menu_role_permissions WHERE role = ?');
+            if ($stmt) {
+                $stmt->bind_param('s', $role);
+                $stmt->execute();
+                $stmt->close();
+            }
+        } catch (Throwable $e) {
+            error_log('Could not delete menu permissions: ' . $e->getMessage());
+        }
+    }
+}
+
+/**
+ * Role whose sidebar menu the current user sees: an added role's own menu
+ * once it has one, otherwise the built-in role it works like.
+ */
+if (!function_exists('ims_menu_role')) {
+    function ims_menu_role(mysqli $conn): string
+    {
+        $sessionRole = trim((string)($_SESSION['role'] ?? ''));
+        $roleName = trim((string)($_SESSION['role_name'] ?? ''));
+
+        if ($roleName === '' || $roleName === $sessionRole || ims_effective_role($conn, $roleName) !== $sessionRole) {
+            return $sessionRole;
+        }
+
+        try {
+            $stmt = $conn->prepare('SELECT 1 FROM menu_role_permissions WHERE role = ? LIMIT 1');
+            if ($stmt) {
+                $stmt->bind_param('s', $roleName);
+                $stmt->execute();
+                $has = (bool)$stmt->get_result()->fetch_row();
+                $stmt->close();
+                if ($has) {
+                    return $roleName;
+                }
+            }
+        } catch (Throwable $e) {
+            // fall back to the built-in role's menu
+        }
+
+        return $sessionRole;
     }
 }

@@ -16,8 +16,12 @@ $current_page = basename($_SERVER['PHP_SELF'] ?? '');
 // Page name without ".php", for matching extensionless menu links.
 $current_page_name = (string)preg_replace('/\.php$/i', '', $current_page);
 $user_role    = (string)($_SESSION['role'] ?? '');
-// Display name: an admin-added role's own name (menus follow the role it works like).
+// Display name: an admin-added role's own name.
 $user_role_label = (string)($_SESSION['role_name'] ?? $user_role);
+// Menu: an added role's own menu (Menu Permissions), else its base role's.
+$menu_role = (isset($conn) && $conn instanceof mysqli && function_exists('ims_menu_role'))
+    ? ims_menu_role($conn)
+    : $user_role;
 $user_name    = (string)($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'User');
 
 $menu_items = [];
@@ -39,7 +43,7 @@ try {
         ");
 
         if ($stmt) {
-            $stmt->bind_param('s', $user_role);
+            $stmt->bind_param('s', $menu_role);
             $stmt->execute();
 
             $res = $stmt->get_result();

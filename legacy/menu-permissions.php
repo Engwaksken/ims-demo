@@ -6,28 +6,10 @@ include 'includes/header.php';
 
 check_role(['Administrator']);
 
-$all_roles = [
-    'Administrator',
-    'Programs Lead',
-    'MEAL Lead',
-    'Operations/Admin',
-    'Project Officer',
-    'Donor/Partner',
-    'Staff',
-    'Member',
-    'Applicant',
-    'Reviewer',
-    'Accountant',
-    'Finance',
-    'Program Director',
-    'Consultant',
-    'Executive Director',
-    'IT Officer',
-    'HR',
-    'Program Manager',
-    'Procurement Officer',
-    'Program Officer',
-];
+// Built-in roles plus roles added on User Permissions.
+require_once __DIR__ . '/includes/roles.php';
+$all_roles = ims_all_roles($conn);
+$custom_roles = ims_custom_roles($conn);
 
 /**
  * Store local menu links extensionless ("reports.php?x=1" -> "reports?x=1").
@@ -74,6 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $upd->close();
+        }
+
+        // Added roles must be valid values if the role column is an ENUM.
+        foreach (array_keys($custom_roles) as $customRole) {
+            ims_roles_allow_in_enum($conn, (string)$customRole, 'menu_role_permissions');
         }
 
         $conn->query("DELETE FROM menu_role_permissions");
@@ -414,6 +401,8 @@ function catColor(string $cat, array $keys, array $pal): string
     font-size:11.5px; padding:4px 10px; border-radius:20px;
 }
 .btn-role:hover { background:#dbeafe; }
+.btn-role-added { border-style:dashed; }
+.th-role-added { background:#faf5ff; color:#7c3aed; }
 .btn-xs { padding:4px 9px; font-size:11.5px; }
 
 /* Floating save */
@@ -532,8 +521,9 @@ function catColor(string $cat, array $keys, array $pal): string
         <div class="qbar">
             <span class="qbar-label"><i class="fas fa-bolt"></i> Grant all pages to:</span>
             <?php foreach ($all_roles as $r): ?>
-            <button type="button" class="btn btn-role"
-                    onclick="grantRole('<?= htmlspecialchars($r, ENT_QUOTES) ?>')">
+            <button type="button" class="btn btn-role<?= isset($custom_roles[$r]) ? ' btn-role-added' : '' ?>"
+                    data-role="<?= htmlspecialchars($r, ENT_QUOTES) ?>" onclick="grantRole(this.dataset.role)"
+                    <?= isset($custom_roles[$r]) ? 'title="Added role (works like ' . htmlspecialchars($custom_roles[$r]['base_role'], ENT_QUOTES) . ')"' : '' ?>>
                 <i class="fas fa-user-check" style="font-size:10px;"></i>
                 <?= htmlspecialchars($r) ?>
             </button>
@@ -553,7 +543,7 @@ function catColor(string $cat, array $keys, array $pal): string
                     </th>
                     <th class="th-act" title="Show in sidebar">Active</th>
                     <?php foreach ($all_roles as $r): ?>
-                    <th title="<?= htmlspecialchars($r) ?>">
+                    <th title="<?= htmlspecialchars($r) ?><?= isset($custom_roles[$r]) ? ' (added role, works like ' . htmlspecialchars($custom_roles[$r]['base_role']) . ')' : '' ?>"<?= isset($custom_roles[$r]) ? ' class="th-role-added"' : '' ?>>
                         <?= nl2br(htmlspecialchars(str_replace([' ','/'],["\n","/\n"],$r))) ?>
                     </th>
                     <?php endforeach; ?>

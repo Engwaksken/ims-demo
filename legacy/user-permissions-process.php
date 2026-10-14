@@ -238,8 +238,9 @@ if (isset($_POST['add_role'])) {
         perm_back('Error adding role.', 'danger', 'roles=1');
     }
 
-    // Start the new role with the same page permissions as its base role.
+    // Start the new role with the same page access and sidebar menu as its base role.
     ims_perm_copy_role($conn, $baseRole, $name);
+    ims_menu_copy_role($conn, $baseRole, $name);
 
     log_action($adminId, 'Add Role', 'ims_roles', 0, "Added role: {$name} (works like {$baseRole})");
     perm_back("Role \"{$name}\" added with the same page access as {$baseRole}. Adjust it under Role Permissions if needed.", 'success', 'roles=1');
@@ -291,6 +292,7 @@ if (isset($_POST['update_role'])) {
             $stmt->close();
 
             ims_perm_rename_role($conn, $original, $name);
+            ims_menu_rename_role($conn, $original, $name);
         }
 
         $conn->commit();
@@ -335,6 +337,7 @@ if (isset($_POST['delete_role'])) {
     $stmt->close();
 
     ims_perm_delete_role($conn, $name);
+    ims_menu_delete_role($conn, $name);
 
     log_action($adminId, 'Delete Role', 'ims_roles', 0, "Deleted role: {$name}");
     perm_back("Role \"{$name}\" deleted.", 'success', 'roles=1');
