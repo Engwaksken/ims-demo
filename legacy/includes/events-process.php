@@ -114,6 +114,81 @@ function validate_common_event_data(
     }
 }
 
+function load_event_row(mysqli $conn, int $event_id): ?array {
+    $stmt = $conn->prepare("SELECT * FROM hub_events WHERE event_id = ? LIMIT 1");
+    if (!$stmt) {
+        return null;
+    }
+    $stmt->bind_param("i", $event_id);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc() ?: null;
+    $stmt->close();
+    return $row;
+}
+
+/**
+ * Push the event to Google Calendar (if connected) and make sure invited staff
+ * get a calendar invite: Google sends it when the sync works and invitations
+ * are on, otherwise an .ics invite is emailed. Returns a summary sentence.
+ */
+function sync_event_and_invite(mysqli $conn, int $event_id, array $staff_changes, ?array $old_event = null): string {
+    $google_synced = false;
+
+    if (gcal_is_connected($conn)) {
+        try {
+            gcal_sync_hub_event($conn, $event_id, (int)($_SESSION['user_id'] ?? 0));
+            $google_synced = true;
+        } catch (Throwable $syncError) {
+            gcal_mark_hub_event_error($conn, $event_id, $syncError->getMessage());
+            error_log('Google event sync failed: ' . $syncError->getMessage());
+        }
+    }
+
+    $google_invites = $google_synced && gcal_setting($conn, 'google_send_invitations', '1') === '1';
+    $current = $staff_changes['current'] ?? [];
+    $removed = $staff_changes['removed'] ?? [];
+    $event = load_event_row($conn, $event_id);
+
+    if (!$google_invites && $event) {
+        if ($current) {
+            ev_staff_email_invites($conn, $event_id, $current, 'REQUEST', $event);
+        }
+        if ($removed) {
+            ev_staff_email_invites($conn, $event_id, $removed, 'CANCEL', $event);
+        }
+        // Dates dropped from the event: cancel those days in staff calendars.
+        if ($old_event && $current) {
+            $dropped = array_values(array_diff(ev_event_days($old_event), ev_event_days($event)));
+            if ($dropped) {
+                $old_event['event_days'] = json_encode($dropped);
+                ev_staff_email_invites($conn, $event_id, $current, 'CANCEL', $old_event);
+            }
+        }
+    }
+
+    if (!empty($staff_changes['added']) && $event) {
+        $when = date('D j M Y', strtotime((string)$event['event_date']))
+            . (!empty($event['start_time']) ? ' at ' . substr((string)$event['start_time'], 0, 5) : '');
+        ev_staff_notify(
+            $staff_changes['added'],
+            $event_id,
+            'Event invitation',
+            'You have been invited to "' . $event['event_title'] . '" on ' . $when . '. Check your calendar for the invite.'
+        );
+    }
+
+    $parts = [];
+    if ($google_synced) {
+        $parts[] = 'Google Calendar updated.';
+    }
+    if ($current) {
+        $parts[] = count($current) . ' staff ' . (count($current) === 1 ? 'member' : 'members')
+            . ($google_invites ? ' invited via Google Calendar.' : ' sent a calendar invite by email.');
+    }
+
+    return implode(' ', $parts);
+}
+
 /* =========================
    ADD EVENT
 ========================= */
@@ -196,32 +271,12 @@ if (isset($_POST['add_event'])) {
             "Added event: {$event_title}"
         );
 
-        if (gcal_is_connected($conn)) {
-            try {
-                gcal_sync_hub_event(
-                    $conn,
-                    $new_event_id,
-                    (int)($_SESSION['user_id'] ?? 0)
-                );
-            } catch (Throwable $syncError) {
-                gcal_mark_hub_event_error(
-                    $conn,
-                    $new_event_id,
-                    $syncError->getMessage()
-                );
-
-                error_log(
-                    'Google event sync failed after add: '
-                    . $syncError->getMessage()
-                );
-            }
-        }
+        $staff_changes = ev_staff_save($conn, $new_event_id, ev_staff_posted_ids(), (int)($_SESSION['user_id'] ?? 0));
+        $summary = sync_event_and_invite($conn, $new_event_id, $staff_changes);
 
         send_notification(
             $_SESSION['user_id'] ?? 0,
-            gcal_is_connected($conn)
-                ? 'Event added successfully and sent to Google Calendar.'
-                : 'Event added successfully.',
+            trim('Event added successfully. ' . $summary),
             'success'
         );
     } else {
@@ -270,6 +325,8 @@ if (isset($_POST['edit_event'])) {
         $end_time,
         'edit=' . $event_id
     );
+
+    $old_event = load_event_row($conn, $event_id);
 
     $stmt = $conn->prepare("
         UPDATE hub_events SET
@@ -320,32 +377,12 @@ if (isset($_POST['edit_event'])) {
             "Updated event: {$event_title}"
         );
 
-        if (gcal_is_connected($conn)) {
-            try {
-                gcal_sync_hub_event(
-                    $conn,
-                    $event_id,
-                    (int)($_SESSION['user_id'] ?? 0)
-                );
-            } catch (Throwable $syncError) {
-                gcal_mark_hub_event_error(
-                    $conn,
-                    $event_id,
-                    $syncError->getMessage()
-                );
-
-                error_log(
-                    'Google event sync failed after edit: '
-                    . $syncError->getMessage()
-                );
-            }
-        }
+        $staff_changes = ev_staff_save($conn, $event_id, ev_staff_posted_ids(), (int)($_SESSION['user_id'] ?? 0));
+        $summary = sync_event_and_invite($conn, $event_id, $staff_changes, $old_event);
 
         send_notification(
             $_SESSION['user_id'] ?? 0,
-            gcal_is_connected($conn)
-                ? 'Event updated successfully and Google Calendar was updated.'
-                : 'Event updated successfully.',
+            trim('Event updated successfully. ' . $summary),
             'success'
         );
     } else {
@@ -405,6 +442,10 @@ if (isset($_POST['delete_event'])) {
         notify_and_redirect("Cannot delete event. It has {$count} attendance record(s). Delete attendance records first.");
     }
 
+    $deleted_event = load_event_row($conn, $event_id);
+    $invited_staff = array_values(ev_staff_for_event($conn, $event_id));
+    $google_cancelled = false;
+
     if ($google_event_id !== '' && gcal_is_connected($conn)) {
         try {
             gcal_delete_google_event(
@@ -412,6 +453,7 @@ if (isset($_POST['delete_event'])) {
                 $google_event_id,
                 (int)($_SESSION['user_id'] ?? 0)
             );
+            $google_cancelled = gcal_setting($conn, 'google_send_invitations', '1') === '1';
         } catch (Throwable $syncError) {
             error_log(
                 'Google event delete failed: '
@@ -435,6 +477,13 @@ if (isset($_POST['delete_event'])) {
             $event_id,
             "Deleted event: {$event_name}"
         );
+
+        ev_staff_delete_all($conn, $event_id);
+
+        // Google emails attendees the cancellation; otherwise send it ourselves.
+        if ($invited_staff && $deleted_event && !$google_cancelled) {
+            ev_staff_email_invites($conn, $event_id, $invited_staff, 'CANCEL', $deleted_event);
+        }
 
         send_notification($_SESSION['user_id'] ?? 0, 'Event deleted successfully.', 'success');
     } else {

@@ -1336,6 +1336,10 @@ foreach (
 */
 $eventActionData = [];
 
+// Staff who can be invited, and who is already invited to each event.
+$staffOptions = ev_staff_options($conn);
+$eventStaffMap = ev_staff_map($conn, array_column($imsEvents, 'event_id'));
+
 foreach ($imsEvents as $event) {
     $days = [];
 
@@ -1374,7 +1378,55 @@ foreach ($imsEvents as $event) {
         'expected_participants' => (int)($event['expected_participants'] ?? 0),
         'description' => (string)($event['description'] ?? ''),
         'event_status' => (string)($event['event_status'] ?? 'Planned'),
+        'staff_ids' => $eventStaffMap[(int)$event['event_id']] ?? [],
     ];
+}
+
+/** Searchable checklist of staff; posts staff_ids[]. $prefix is "add" or "edit". */
+function ev_render_staff_picker(string $prefix, array $staffOptions): void
+{
+    $listId = $prefix . 'StaffList';
+    ?>
+    <div class="full ev-staff-picker" id="<?= ev_h($prefix) ?>StaffPicker">
+        <div class="ev-staff-head">
+            <label class="form-label" for="<?= ev_h($prefix) ?>StaffSearch">Invite Staff</label>
+            <span class="ev-staff-count" id="<?= ev_h($prefix) ?>StaffCount" aria-live="polite">0 selected</span>
+        </div>
+        <?php if (!$staffOptions): ?>
+            <p class="ev-staff-empty">No active staff with an email address were found.</p>
+        <?php else: ?>
+            <div class="ev-staff-chips" id="<?= ev_h($prefix) ?>StaffChips" aria-label="Selected staff"></div>
+            <input type="search" id="<?= ev_h($prefix) ?>StaffSearch" class="form-control ev-staff-search"
+                   placeholder="Search staff by name, email or role..." autocomplete="off"
+                   aria-controls="<?= ev_h($listId) ?>" oninput="filterStaffPicker('<?= ev_h($prefix) ?>')"
+                   onkeydown="if (event.key === 'Enter') event.preventDefault();">
+            <div class="ev-staff-tools">
+                <button type="button" class="ev-staff-link" onclick="setAllStaff('<?= ev_h($prefix) ?>', true)">Select all shown</button>
+                <button type="button" class="ev-staff-link" onclick="setAllStaff('<?= ev_h($prefix) ?>', false)">Clear</button>
+            </div>
+            <div class="ev-staff-list" id="<?= ev_h($listId) ?>" role="group" aria-label="Staff to invite">
+                <?php foreach ($staffOptions as $person): ?>
+                    <?php $search = strtolower(($person['full_name'] ?? '') . ' ' . ($person['email'] ?? '') . ' ' . ($person['role'] ?? '')); ?>
+                    <label class="ev-staff-item" data-search="<?= ev_h($search) ?>">
+                        <input type="checkbox" name="staff_ids[]" value="<?= (int)$person['user_id'] ?>"
+                               data-name="<?= ev_h($person['full_name']) ?>"
+                               onchange="updateStaffPicker('<?= ev_h($prefix) ?>')">
+                        <span class="ev-staff-avatar" aria-hidden="true"><?= ev_h(strtoupper(substr((string)$person['full_name'], 0, 1))) ?></span>
+                        <span class="ev-staff-text">
+                            <strong><?= ev_h($person['full_name']) ?></strong>
+                            <small><?= ev_h($person['email']) ?><?= !empty($person['role']) ? ' &middot; ' . ev_h($person['role']) : '' ?></small>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+                <p class="ev-staff-empty ev-staff-nomatch" hidden>No staff match your search.</p>
+            </div>
+            <small class="ev-staff-hint">
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
+                Selected staff receive a calendar invite by email and an IMS notification.
+            </small>
+        <?php endif; ?>
+    </div>
+    <?php
 }
 
 $canDeleteEvents = auth_has_role([
@@ -2221,7 +2273,30 @@ $canDeleteEvents = auth_has_role([
 .ev-link-target{display:none}.ev-link-target.open{display:block}
 .ev-danger{padding:11px 12px;border-left:4px solid #dc2626;border-radius:8px;background:#fef2f2;color:#991b1b;font-size:11px}
 body.ev-modal-open{overflow:hidden}
-@media(max-width:720px){.ev-form-grid{grid-template-columns:1fr}.ev-form-grid .full{grid-column:auto}}
+.ev-staff-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ev-staff-count{font-size:12px;font-weight:600;color:var(--brand-700,#c2410c)}
+.ev-staff-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.ev-staff-chips:empty{display:none}
+.ev-staff-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border:1px solid var(--brand-200,#ffc89e);border-radius:999px;background:var(--brand-50,#fff4ed);color:#7c2d12;font-size:12px;font-weight:600}
+.ev-staff-chip button{width:20px;height:20px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:14px;line-height:1;cursor:pointer}
+.ev-staff-chip button:hover,.ev-staff-chip button:focus-visible{background:var(--brand-100,#ffe6d0)}
+.ev-staff-tools{display:flex;gap:14px;margin:6px 0}
+.ev-staff-link{border:0;padding:2px 0;background:none;color:var(--brand-700,#c2410c);font-size:12px;font-weight:600;cursor:pointer}
+.ev-staff-link:hover{text-decoration:underline}
+.ev-staff-list{max-height:220px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+.ev-staff-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;margin:0}
+.ev-staff-item:last-of-type{border-bottom:0}
+.ev-staff-item:hover{background:#f8fafc}
+.ev-staff-item:has(input:checked){background:var(--brand-50,#fff4ed)}
+.ev-staff-item input{width:18px;height:18px;flex:none;accent-color:var(--brand-600,#ea580c)}
+.ev-staff-item[hidden]{display:none}
+.ev-staff-avatar{width:30px;height:30px;flex:none;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--brand-100,#ffe6d0);color:var(--brand-700,#c2410c);font-size:13px;font-weight:700}
+.ev-staff-text{display:flex;flex-direction:column;min-width:0}
+.ev-staff-text strong{font-size:13px;color:#0f172a}
+.ev-staff-text small{font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev-staff-empty{margin:0;padding:12px;font-size:12px;color:#64748b}
+.ev-staff-hint{display:block;margin-top:6px;font-size:12px;color:#64748b}
+@media(max-width:720px){.ev-form-grid{grid-template-columns:1fr}.ev-form-grid .full{grid-column:auto}.ev-staff-list{max-height:180px}}
 </style>
 
 
@@ -3477,6 +3552,7 @@ body.ev-modal-open{overflow:hidden}
                         <label class="form-label">Expected Participants</label>
                         <input type="number" name="expected_participants" id="addExpectedParticipants" class="form-control" min="1">
                     </div>
+                    <?php ev_render_staff_picker('add', $staffOptions); ?>
                     <div class="full">
                         <label class="form-label">Description</label>
                         <textarea name="description" id="addDescription" class="form-control" rows="4"></textarea>
@@ -3576,6 +3652,7 @@ body.ev-modal-open{overflow:hidden}
                         <label class="form-label">Expected Participants</label>
                         <input type="number" name="expected_participants" id="editExpectedParticipants" class="form-control" min="1">
                     </div>
+                    <?php ev_render_staff_picker('edit', $staffOptions); ?>
                     <div class="full">
                         <label class="form-label">Description</label>
                         <textarea name="description" id="editDescription" class="form-control" rows="4"></textarea>
@@ -3828,12 +3905,75 @@ function toggleEventLinkFields(prefix) {
     document.getElementById(prefix + 'ProgramWrap')?.classList.toggle('open', type === 'program');
 }
 
+function staffCheckboxes(prefix) {
+    return Array.from(document.querySelectorAll('#' + prefix + 'StaffList input[name="staff_ids[]"]'));
+}
+
+function updateStaffPicker(prefix) {
+    const boxes = staffCheckboxes(prefix);
+    const chips = document.getElementById(prefix + 'StaffChips');
+    const count = document.getElementById(prefix + 'StaffCount');
+    const selected = boxes.filter(box => box.checked);
+
+    if (count) count.textContent = selected.length + ' selected';
+    if (!chips) return;
+
+    chips.innerHTML = '';
+    selected.forEach(box => {
+        const chip = document.createElement('span');
+        chip.className = 'ev-staff-chip';
+        chip.textContent = box.dataset.name || '';
+        const remove = document.createElement('button');
+        remove.type = 'button';
+        remove.innerHTML = '&times;';
+        remove.setAttribute('aria-label', 'Remove ' + (box.dataset.name || 'staff member'));
+        remove.addEventListener('click', () => {
+            box.checked = false;
+            updateStaffPicker(prefix);
+            document.getElementById(prefix + 'StaffSearch')?.focus();
+        });
+        chip.appendChild(remove);
+        chips.appendChild(chip);
+    });
+}
+
+function filterStaffPicker(prefix) {
+    const term = (document.getElementById(prefix + 'StaffSearch')?.value || '').trim().toLowerCase();
+    const list = document.getElementById(prefix + 'StaffList');
+    if (!list) return;
+    let shown = 0;
+    list.querySelectorAll('.ev-staff-item').forEach(item => {
+        const match = !term || (item.dataset.search || '').includes(term);
+        item.hidden = !match;
+        if (match) shown++;
+    });
+    const none = list.querySelector('.ev-staff-nomatch');
+    if (none) none.hidden = shown > 0;
+}
+
+function setAllStaff(prefix, checked) {
+    staffCheckboxes(prefix).forEach(box => {
+        if (!checked || !box.closest('.ev-staff-item').hidden) box.checked = checked;
+    });
+    updateStaffPicker(prefix);
+}
+
+function setStaffSelection(prefix, ids) {
+    const wanted = new Set((ids || []).map(String));
+    staffCheckboxes(prefix).forEach(box => { box.checked = wanted.has(box.value); });
+    const search = document.getElementById(prefix + 'StaffSearch');
+    if (search) search.value = '';
+    filterStaffPicker(prefix);
+    updateStaffPicker(prefix);
+}
+
 function openAddEventModal() {
     const dates = document.getElementById('addEventDates');
     if (dates && !dates.children.length) {
         addEventDateRow('addEventDates');
     }
     toggleEventLinkFields('add');
+    updateStaffPicker('add');
     openCrudModal('addEventModal');
 }
 
@@ -3860,6 +4000,7 @@ function openEditEventModal(id) {
     setField('editDescription', event.description);
     populateEventDates('editEventDates', event.event_days || []);
     toggleEventLinkFields('edit');
+    setStaffSelection('edit', event.staff_ids || []);
     openCrudModal('editEventModal');
 }
 

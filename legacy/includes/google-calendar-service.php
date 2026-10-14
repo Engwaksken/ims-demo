@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/event-staff.php';
+
 if (!function_exists('gcal_setting')) {
     function gcal_setting(
         mysqli $conn,
@@ -922,6 +924,15 @@ if (!function_exists('gcal_delete_google_event')) {
             )
         );
 
+        $sendUpdates =
+            gcal_setting(
+                $conn,
+                'google_send_invitations',
+                '1'
+            ) === '1'
+                ? 'all'
+                : 'none';
+
         try {
             gcal_api(
                 $conn,
@@ -929,7 +940,9 @@ if (!function_exists('gcal_delete_google_event')) {
                 'calendars/'
                 . $calendarId
                 . '/events/'
-                . rawurlencode($googleEventId),
+                . rawurlencode($googleEventId)
+                . '?sendUpdates='
+                . $sendUpdates,
                 null,
                 $userId
             );
@@ -1010,6 +1023,14 @@ if (!function_exists('gcal_sync_hub_event')) {
         $payload = gcal_hub_event_payload(
             $event,
             $timezone
+        );
+
+        // Invited staff become Google attendees; Google emails them the
+        // invite (and updates/cancellations) when sendUpdates is "all".
+        // Always set the list so staff removed in IMS are removed in Google.
+        $payload['attendees'] = ev_staff_google_attendees(
+            $conn,
+            $eventId
         );
 
         $result = gcal_upsert_google_event(
