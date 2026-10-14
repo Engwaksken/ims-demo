@@ -181,44 +181,40 @@ if ($project_info) {
 <?php endif; ?>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<?php
+$malePct   = $stats['total'] > 0 ? round(($stats['male'] / $stats['total']) * 100, 1) : 0;
+$femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 100, 1) : 0;
+?>
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-users"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total']; ?></h4>
-            <p><?php echo ($project_info || $program_info) ? 'Participants' : 'Total Participants'; ?></p>
+        <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label"><?php echo ($project_info || $program_info) ? 'Participants' : 'Total Participants'; ?></div>
+            <div class="stat-value"><?php echo number_format((int)$stats['total']); ?></div>
         </div>
     </div>
-    
+
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-male"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['male']; ?></h4>
-            <p>Male (<?php echo $stats['total'] > 0 ? round(($stats['male']/$stats['total'])*100, 1) : 0; ?>%)</p>
+        <div class="stat-icon bg-green"><i class="fas fa-male" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Male</div>
+            <div class="stat-value"><?php echo number_format((int)$stats['male']); ?><span class="stat-sub"><?php echo $malePct; ?>%</span></div>
         </div>
     </div>
-    
+
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-female"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['female']; ?></h4>
-            <p>Female (<?php echo $stats['total'] > 0 ? round(($stats['female']/$stats['total'])*100, 1) : 0; ?>%)</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-female" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Female</div>
+            <div class="stat-value"><?php echo number_format((int)$stats['female']); ?><span class="stat-sub"><?php echo $femalePct; ?>%</span></div>
         </div>
     </div>
-    
+
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-wheelchair"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pwd']; ?></h4>
-            <p>Persons with Disabilities</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-wheelchair" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label" title="Persons with Disabilities">Persons with Disabilities</div>
+            <div class="stat-value"><?php echo number_format((int)$stats['pwd']); ?></div>
         </div>
     </div>
 </div>

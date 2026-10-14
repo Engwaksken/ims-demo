@@ -372,6 +372,29 @@ select.form-control {
   line-height: 1;
 }
 
+/* Secondary figure after a stat value, e.g. a share: "120  52.3%". */
+.stat-sub {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--ink-300);
+}
+
+/* Currency or unit before a stat value, e.g. "UGX 1,200,000". */
+.stat-unit {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--ink-300);
+}
+
+/* A card that fills its whole row (an odd card out, e.g. a grand total). */
+.stat-card.stat-card-wide { grid-column: 1 / -1; }
+
+/* Shared stat grid used outside the reports page keeps a gap below it. */
+.stats-grid.reports-stats { margin-bottom: 24px; }
+
 /* ----------------------------------------------------------------------
    MODALS
 ---------------------------------------------------------------------- */

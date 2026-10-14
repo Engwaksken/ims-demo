@@ -99,54 +99,44 @@ while ($row = $result->fetch_assoc()) {
 ?>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-hand-holding-usd"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo count($donors); ?></h4>
-            <p>Total Donors</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-hand-holding-usd" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Total Donors</div>
+            <div class="stat-value"><?php echo number_format(count($donors)); ?></div>
         </div>
     </div>
-    
+
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-handshake"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo count($partners); ?></h4>
-            <p>Total Partners</p>
+        <div class="stat-icon bg-green"><i class="fas fa-handshake" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Total Partners</div>
+            <div class="stat-value"><?php echo number_format(count($partners)); ?></div>
         </div>
     </div>
-    
+
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-sitemap"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo array_sum(array_column($donors, 'program_count')); ?></h4>
-            <p>Funded Programs</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-sitemap" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Funded Programs</div>
+            <div class="stat-value"><?php echo number_format(array_sum(array_column($donors, 'program_count'))); ?></div>
         </div>
     </div>
-    
+
     <div class="stat-card">
-        <div class="stat-icon" style="background: #3498DB;">
-            <i class="fas fa-project-diagram"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo array_sum(array_column($donors, 'project_count')); ?></h4>
-            <p>Funded Projects</p>
+        <div class="stat-icon bg-teal"><i class="fas fa-project-diagram" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Funded Projects</div>
+            <div class="stat-value"><?php echo number_format(array_sum(array_column($donors, 'project_count'))); ?></div>
         </div>
     </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-dollar-sign"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format(array_sum(array_column($donors, 'program_funding')) + array_sum(array_column($donors, 'project_funding'))); ?></h4>
-            <p>Total Funding (UGX)</p>
+
+    <div class="stat-card stat-card-wide">
+        <div class="stat-icon bg-purple"><i class="fas fa-dollar-sign" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Total Funding</div>
+            <div class="stat-value"><span class="stat-unit">UGX</span> <?php echo number_format(array_sum(array_column($donors, 'program_funding')) + array_sum(array_column($donors, 'project_funding'))); ?></div>
         </div>
     </div>
 </div>
