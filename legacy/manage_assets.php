@@ -132,6 +132,11 @@ $assignments = array_filter($data['assignments'], function ($a) use ($assignment
 /* ========================= EXPORTS ========================= */
 $export = $_GET['export'] ?? '';
 
+// Blank CSV for bulk import (columns match the Add Asset form).
+if ($export === 'assets_template' && $isAssetManager) {
+    asset_import_template($data['categories']);
+}
+
 if ($export === 'assets_csv' || $export === 'assets_pdf') {
    $headers = [
     'Code',
@@ -198,11 +203,31 @@ $data['assignments'] = array_slice(array_values($assignments), ($assignmentPage 
 
 $success_msg = $_SESSION['success'] ?? '';
 $error_msg   = $_SESSION['error'] ?? '';
-unset($_SESSION['success'], $_SESSION['error']);
+$import_report = $_SESSION['asset_import_report'] ?? null;
+unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']);
 ?>
 <link rel="stylesheet" href="css/assets.css">
 
 <style>
+/* -- CSV import -- */
+.import-steps { list-style: none; counter-reset: step; margin: 0 0 18px; padding: 0; display: grid; gap: 10px; }
+.import-steps li { counter-increment: step; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--border, #e5e7eb); border-radius: var(--radius-md, 12px); background: var(--surface-hover, #f9fafb); }
+.import-steps li::before { content: counter(step); flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-600, #ea580c); color: #fff; font-weight: 700; font-size: 13px; }
+.import-step-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.import-step-text span { color: var(--ink-400, #4b5563); }
+.import-step-text code { font-size: 12px; padding: 1px 5px; border-radius: 4px; background: var(--ink-50, #f3f4f6); }
+.import-steps .btn { flex: none; }
+.import-option { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 14px; font-size: 13px; color: var(--ink-500, #374151); cursor: pointer; }
+.import-option input { width: 18px; height: 18px; margin-top: 1px; flex: none; accent-color: var(--brand-600, #ea580c); }
+.import-report { margin: 0 0 16px; padding: 14px 16px; border: 1px solid var(--amber-border, #fde68a); border-left: 4px solid var(--amber-fg, #b45309); border-radius: var(--radius-md, 12px); background: var(--amber-bg, #fffbeb); color: var(--ink-600, #2f3744); font-size: 13px; }
+.import-report-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.import-report ul { margin: 0; padding-left: 20px; max-height: 220px; overflow-y: auto; }
+.import-report li + li { margin-top: 3px; }
+@media (max-width: 640px) {
+    .import-steps li { flex-wrap: wrap; }
+    .import-steps .btn { width: 100%; justify-content: center; }
+}
+
 /* -- Tab Navigation -- */
 .tab-nav {
     display: flex;
@@ -291,6 +316,9 @@ unset($_SESSION['success'], $_SESSION['error']);
                 <button type="button" class="btn btn-primary" onclick="openModal('addAssetModal')">
                     <i class="fas fa-plus-circle"></i> Add Asset
                 </button>
+                <button type="button" class="btn btn-soft" onclick="openModal('importAssetsModal')">
+                    <i class="fas fa-file-import"></i> Import CSV
+                </button>
                 <a href="asset_categories" class="btn btn-dark">
                     <i class="fas fa-tags"></i> Asset Categories
                 </a>
@@ -307,6 +335,31 @@ unset($_SESSION['success'], $_SESSION['error']);
     <?php endif; ?>
     <?php if ($error_msg): ?>
         <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= e($error_msg) ?></div>
+    <?php endif; ?>
+
+    <?php if ($import_report && !empty($import_report['errors'])): ?>
+        <div class="import-report" role="region" aria-label="Import problems">
+            <div class="import-report-head">
+                <strong><i class="fas fa-list-check" aria-hidden="true"></i>
+                    <?= e($import_report['file']) ?>:
+                    <?= (int)$import_report['imported'] ?> imported,
+                    <?= (int)$import_report['skipped'] ?> row<?= (int)$import_report['skipped'] === 1 ? '' : 's' ?> with problems
+                </strong>
+                <?php if ((int)$import_report['imported'] === 0): ?>
+                    <button type="button" class="btn btn-sm btn-primary" onclick="openModal('importAssetsModal')">
+                        <i class="fas fa-file-import" aria-hidden="true"></i> Upload corrected file
+                    </button>
+                <?php endif; ?>
+            </div>
+            <ul>
+                <?php foreach ($import_report['errors'] as $importError): ?>
+                    <li><?= e($importError) ?></li>
+                <?php endforeach; ?>
+                <?php if ((int)$import_report['more'] > 0): ?>
+                    <li><em>...and <?= (int)$import_report['more'] ?> more.</em></li>
+                <?php endif; ?>
+            </ul>
+        </div>
     <?php endif; ?>
 
     <!-- Stats -->
@@ -765,6 +818,69 @@ unset($_SESSION['success'], $_SESSION['error']);
         </div>
     </div>
 </div>
+
+<?php if ($isAssetManager): ?>
+<!-- IMPORT ASSETS MODAL -->
+<div class="modal" id="importAssetsModal" role="dialog" aria-modal="true" aria-labelledby="importAssetsTitle">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3 id="importAssetsTitle"><i class="fas fa-file-import" aria-hidden="true"></i> Import Assets from CSV</h3>
+            <button type="button" class="modal-close" onclick="closeModal('importAssetsModal')" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <ol class="import-steps">
+                <li>
+                    <div class="import-step-text">
+                        <strong>Download the template</strong>
+                        <span>It has the same columns as the Add Asset form, an example row and notes listing your categories.</span>
+                    </div>
+                    <a href="?export=assets_template" class="btn btn-dark">
+                        <i class="fas fa-download" aria-hidden="true"></i> Download template
+                    </a>
+                </li>
+                <li>
+                    <div class="import-step-text">
+                        <strong>Fill in one asset per row</strong>
+                        <span>
+                            Required: <code>asset_code</code> (unique), <code>asset_name</code>, <code>category</code>.
+                            Dates as YYYY-MM-DD, costs as plain numbers. Rows starting with # are ignored.
+                            In Excel, save as <em>CSV UTF-8 (Comma delimited)</em>.
+                        </span>
+                    </div>
+                </li>
+                <li>
+                    <div class="import-step-text">
+                        <strong>Upload the file</strong>
+                        <span>Every row is checked first. Up to <?= (int)ASSET_IMPORT_MAX_ROWS ?> assets, 2 MB per file.</span>
+                    </div>
+                </li>
+            </ol>
+
+            <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="import_assets">
+                <div class="form-group">
+                    <label class="form-label" for="assets_file">CSV file *</label>
+                    <input type="file" name="assets_file" id="assets_file" class="form-control" accept=".csv,text/csv" required>
+                </div>
+                <label class="import-option">
+                    <input type="checkbox" name="skip_invalid" value="1">
+                    <span>Skip rows with errors and import the rest. If unticked, nothing is imported until every row is valid.</span>
+                </label>
+                <?php if (empty($data['categories'])): ?>
+                    <div class="alert alert-error">
+                        <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+                        There are no asset categories yet. <a href="asset_categories">Add categories</a> before importing.
+                    </div>
+                <?php endif; ?>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-gray" onclick="closeModal('importAssetsModal')">Cancel</button>
+                    <button type="submit" class="btn btn-dark"><i class="fas fa-upload" aria-hidden="true"></i> Import assets</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- EDIT ASSET MODAL -->
 <div class="modal" id="editAssetModal">

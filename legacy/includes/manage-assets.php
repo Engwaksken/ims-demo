@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 date_default_timezone_set('Africa/Nairobi');
 
+require_once __DIR__ . '/asset-import.php';
+
 /* ----------------------------------------------
    HELPERS
 ---------------------------------------------- */
@@ -95,6 +97,7 @@ function handleAssetPostActions(mysqli $conn, int $currentUserId, bool $isAssetM
     try {
         match ($action) {
             'add_asset'            => addAsset($conn, $currentUserId, $isAssetManager),
+            'import_assets'        => importAssets($conn, $currentUserId, $isAssetManager),
             'update_asset'         => updateAsset($conn, $isAssetManager),
             'delete_asset'         => deleteAsset($conn, $isAssetManager),
             'request_asset'        => requestAsset($conn, $currentUserId),
