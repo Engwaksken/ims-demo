@@ -56,6 +56,8 @@ $hdr_bell_label = $hdr_unread > 0
          Per-page stylesheets are linked by each page after this header. -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/reports.css">
+    <!-- Accessibility widget (bottom-right): applies saved settings before paint, loads its own CSS. -->
+    <script src="../js/accessibility.js"></script>
     <!-- Font Awesome: the one copy for the whole app (pages must not load their own). -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <?php if (!empty($load_chartjs)): ?>

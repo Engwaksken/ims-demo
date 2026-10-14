@@ -266,6 +266,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             color: #64748b;
         }
     </style>
+<script src="js/accessibility.js"></script>
 </head>
 <body>
 

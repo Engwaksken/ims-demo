@@ -382,6 +382,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             }
         }
     </style>
+<script src="js/accessibility.js"></script>
 </head>
 <body>
     <div class="success-container">

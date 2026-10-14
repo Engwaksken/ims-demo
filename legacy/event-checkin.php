@@ -164,6 +164,7 @@ h2{
     color:#64748b;
 }
 </style>
+<script src="js/accessibility.js"></script>
 </head>
 <body>
 

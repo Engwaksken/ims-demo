@@ -521,6 +521,7 @@ body {
     font-size: 13px; color: var(--sub); cursor: pointer; line-height: 1.6;
 }
 </style>
+<script src="js/accessibility.js"></script>
 </head>
 <body>
 <div class="aj-page">

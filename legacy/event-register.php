@@ -246,6 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 
 <link rel="stylesheet" href="css/events.css">
 <link rel="stylesheet" href="css/event-register.css">
+<script src="js/accessibility.js"></script>
 </head>
 <body>
 

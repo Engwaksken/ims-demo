@@ -322,6 +322,7 @@ body {
 }
 </style>
 
+<script src="js/accessibility.js"></script>
 </head>
 <body>
 

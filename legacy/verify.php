@@ -131,6 +131,7 @@ $remaining_seconds = max(0, strtotime($_SESSION['verification_expiry']) - time()
             font-size: 14px;
         }
     </style>
+<script src="js/accessibility.js"></script>
 </head>
 <body>
     <div class="login-container">

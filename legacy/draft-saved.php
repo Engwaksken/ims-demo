@@ -240,6 +240,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             .btn-row { flex-direction: column; }
         }
     </style>
+<script src="js/accessibility.js"></script>
 </head>
 <body>
 <div class="wrapper">
