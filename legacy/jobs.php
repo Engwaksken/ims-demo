@@ -219,7 +219,7 @@ include 'includes/header.php';
                                 <i class="fas fa-pen"></i>
                             </button>
                             <button class="jm-act jm-act-del" title="Delete"
-                                    onclick="jmOpenDelete(<?= $j['job_id'] ?>, '<?= htmlspecialchars(addslashes($j['job_title'])) ?>')">
+                                    onclick="jmOpenDelete(<?= $j['job_id'] ?>, <?= htmlspecialchars(json_encode((string)($j['job_title'])), ENT_QUOTES, 'UTF-8') ?>)">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>

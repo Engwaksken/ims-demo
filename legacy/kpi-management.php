@@ -283,7 +283,7 @@ foreach ($departments as $dept) {
 </style>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
         <div class="stat-icon bg-primary"><i class="fas fa-bullseye" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -515,11 +515,11 @@ foreach ($departments as $dept) {
                             </a>
                             
                             <?php if ($kpi['status'] == 'Submitted' && $can_review_kpi): ?>
-                                <button onclick="quickApprove(<?php echo $kpi['kpi_id']; ?>, '<?php echo htmlspecialchars(addslashes($kpi['kpi_title'])); ?>')" 
+                                <button onclick="quickApprove(<?php echo $kpi['kpi_id']; ?>, <?= htmlspecialchars(json_encode((string)($kpi['kpi_title'])), ENT_QUOTES, 'UTF-8') ?>)" 
                                         class="btn btn-success btn-sm">
                                     <i class="fas fa-check"></i> Approve
                                 </button>
-                                <button onclick="quickReject(<?php echo $kpi['kpi_id']; ?>, '<?php echo htmlspecialchars(addslashes($kpi['kpi_title'])); ?>')" 
+                                <button onclick="quickReject(<?php echo $kpi['kpi_id']; ?>, <?= htmlspecialchars(json_encode((string)($kpi['kpi_title'])), ENT_QUOTES, 'UTF-8') ?>)" 
                                         class="btn btn-danger btn-sm">
                                     <i class="fas fa-times"></i> Reject
                                 </button>

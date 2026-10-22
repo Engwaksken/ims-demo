@@ -150,12 +150,42 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
     </div>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-users"></i></div><div class="stat-details"><h4><?= $total_registered ?></h4><p>Registered Today</p></div></div>
-    <div class="stat-card"><div class="stat-icon green"><i class="fas fa-user-check"></i></div><div class="stat-details"><h4><?= $total_attended ?></h4><p>Attended Today</p></div></div>
-    <div class="stat-card"><div class="stat-icon red"><i class="fas fa-user-times"></i></div><div class="stat-details"><h4><?= $total_no_show ?></h4><p>No Show Today</p></div></div>
-    <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-percentage"></i></div><div class="stat-details"><h4><?= number_format($attendance_rate, 1) ?>%</h4><p>Attendance Rate</p></div></div>
-    <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-star"></i></div><div class="stat-details"><h4><?= $avg_feedback > 0 ? number_format($avg_feedback, 1) : 'N/A' ?></h4><p>Average Feedback</p></div></div>
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Registered Today</span>
+            <span class="stat-value"><?= $total_registered ?></span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-user-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Attended Today</span>
+            <span class="stat-value"><?= $total_attended ?></span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-user-times" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">No Show Today</span>
+            <span class="stat-value"><?= $total_no_show ?></span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-purple"><i class="fas fa-percentage" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Attendance Rate</span>
+            <span class="stat-value"><?= number_format($attendance_rate, 1) ?>%</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-amber"><i class="fas fa-star" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Average Feedback</span>
+            <span class="stat-value"><?= $avg_feedback > 0 ? number_format($avg_feedback, 1) : 'N/A' ?></span>
+        </div>
+    </div>
 </div>
 
 <div class="card">
@@ -218,7 +248,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                                     <div class="table-actions">
                                         <a href="?id=<?= (int)$event_id ?>&day=<?= e($selected_day) ?>&update=<?= (int)$record['registration_id'] ?>" class="btn btn-info btn-sm"><i class="fas fa-edit"></i></a>
                                         <?php if (ims_allowed('event_attendance.delete', ['Administrator', 'Operations/Admin'], 'Delete event attendance records')): ?>
-                                            <a href="javascript:void(0)" onclick="confirmDelete('<?= e($record['attendee_name']) ?>', '<?= e($process_url) ?>&delete=<?= (int)$record['registration_id'] ?>&csrf_token=<?= e(urlencode(csrf_token())) ?>')" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                            <a href="javascript:void(0)" onclick="confirmDelete(<?= htmlspecialchars(json_encode((string)($record['attendee_name'])), ENT_QUOTES, 'UTF-8') ?>, '<?= e($process_url) ?>&delete=<?= (int)$record['registration_id'] ?>&csrf_token=<?= e(urlencode(csrf_token())) ?>')" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                         <?php endif; ?>
                                     </div>
                                 </td>

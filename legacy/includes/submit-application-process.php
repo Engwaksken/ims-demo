@@ -1,8 +1,7 @@
 <?php
 declare(strict_types=1);
 
-session_start();
-
+// config.php starts the session with the hardened cookie settings.
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/mail-function.php';
 
@@ -80,7 +79,7 @@ function fail_request(string $message, int $opportunityId = 0, int $draftId = 0)
         redirect_back($opportunityId, $draftId);
     }
 
-    header('Location: /apply');
+    header('Location: /apply-embed');
     exit;
 }
 
@@ -850,7 +849,11 @@ $userInfo = [
 ];
 
 try {
-    if (!empty($data['email'])) {
+    // A logged-in applicant always acts as themselves; the email field is
+    // only the application's contact address, never an account selector.
+    if ($sessionUserId > 0) {
+        // keep $userInfo for the session user
+    } elseif (!empty($data['email'])) {
         $userInfo = get_or_create_user(
             $conn,
             $data['email'],
@@ -875,7 +878,18 @@ try {
 
 $submittedBy = (int)$userInfo['user_id'];
 
+// Anonymous visitors may not file under an existing account just by typing
+// its email address: they must log in first.
+if ($sessionUserId < 1 && !$userInfo['is_new']) {
+    fail_request(
+        'An account with this email already exists. Please log in to continue your application.',
+        $opportunityId,
+        $draftId
+    );
+}
+
 if ($userInfo['is_new'] && $sessionUserId < 1) {
+    session_regenerate_id(true); // new authenticated session: prevent fixation
     $_SESSION['user_id'] = $submittedBy;
     $_SESSION['user_email'] = $data['email'];
     $_SESSION['user_name'] = $data['contact_person'] ?: $data['startup_name'];
@@ -925,7 +939,7 @@ if ($draftId > 0) {
 
     $ownerId = (int)($existingApplication['submitted_by'] ?? 0);
 
-    if ($ownerId > 0 && $ownerId !== $submittedBy) {
+    if ($ownerId !== $submittedBy) {
         fail_request(
             'You do not have permission to edit this draft.',
             $opportunityId

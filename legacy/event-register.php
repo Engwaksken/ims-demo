@@ -131,6 +131,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $organization = trim((string)($_POST['organization'] ?? ''));
     $special_requirements = trim((string)($_POST['special_requirements'] ?? ''));
 
+    // The public lookup no longer sends contact details to the browser, so
+    // fill blank email/phone from the selected record here.
+    if (($email === '' || $phone === '') && ($member_id || $beneficiary_id)) {
+        $src = $member_id
+            ? $conn->prepare("SELECT COALESCE(email, '') AS email, COALESCE(emergency_phone, '') AS phone FROM members WHERE member_id = ? LIMIT 1")
+            : $conn->prepare("SELECT COALESCE(email, '') AS email, COALESCE(phone, '') AS phone FROM beneficiaries WHERE beneficiary_id = ? LIMIT 1");
+        if ($src) {
+            $srcId = (int)($member_id ?: $beneficiary_id);
+            $src->bind_param('i', $srcId);
+            $src->execute();
+            $srcRow = $src->get_result()->fetch_assoc() ?: [];
+            $src->close();
+            if ($email === '') $email = trim((string)($srcRow['email'] ?? ''));
+            if ($phone === '') $phone = trim((string)($srcRow['phone'] ?? ''));
+        }
+    }
+
     $registration_status = 'Registered';
     $attendance_status = 'Pending';
     $payment_status = 'Pending';
@@ -590,9 +607,16 @@ function prefillFromRecord(item) {
     const organizationInput = document.getElementById('organization');
 
     if (attendeeInput) attendeeInput.value = item.attendee_name || '';
-    if (emailInput) emailInput.value = item.email || '';
-    if (phoneInput) phoneInput.value = item.phone || '';
     if (organizationInput) organizationInput.value = item.organization || '';
+
+    // Contact details are not sent to the browser; for linked records the
+    // server uses the email/phone on file when these are left blank.
+    const onFile = type === 'Member' || type === 'Beneficiary';
+    if (emailInput) {
+        emailInput.required = !onFile;
+        emailInput.placeholder = onFile ? 'Leave blank to use the email on file' : 'you@example.com';
+    }
+    if (phoneInput && onFile) phoneInput.placeholder = 'Leave blank to use the phone on file';
 
     if (memberIdInput) {
         memberIdInput.value = type === 'Member' ? (item.id || '') : '';
@@ -616,6 +640,12 @@ function prefillFromRecord(item) {
 function clearLinkedRecord() {
     if (memberIdInput) memberIdInput.value = '';
     if (beneficiaryIdInput) beneficiaryIdInput.value = '';
+
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+        emailInput.required = true;
+        emailInput.placeholder = 'you@example.com';
+    }
 
     if (prefilledNote) {
         prefilledNote.style.display = 'none';

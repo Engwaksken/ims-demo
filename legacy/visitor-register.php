@@ -142,7 +142,7 @@ require_once __DIR__ . '/includes/visitor-register-handler.php';
                             <input
                                 type="text"
                                 id="member_search"
-                                placeholder="Search member by name, email, phone or username"
+                                placeholder="Search member by name, or exact email / phone"
                                 autocomplete="off"
                             >
                             <i class="fas fa-magnifying-glass ico"></i>

@@ -472,7 +472,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
                     <i class="fas fa-print"></i> Print Confirmation
                 </button>
                 
-                <a href="apply.php" class="btn btn-secondary">
+                <a href="apply-embed" class="btn btn-secondary">
                     <i class="fas fa-search"></i> More Opportunities
                 </a>
                 

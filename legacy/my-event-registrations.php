@@ -340,44 +340,36 @@ $stats['pending_payment'] = $conn->query("SELECT COUNT(*) as count FROM event_re
 </div>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-calendar-check"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total']; ?></h4>
-            <p>Total Registrations</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Registrations</span>
+            <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-calendar-day"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['upcoming']; ?></h4>
-            <p>Upcoming Events</p>
+        <div class="stat-icon bg-green"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Upcoming Events</span>
+            <span class="stat-value"><?php echo $stats['upcoming']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['attended']; ?></h4>
-            <p>Events Attended</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Events Attended</span>
+            <span class="stat-value"><?php echo $stats['attended']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pending_payment']; ?></h4>
-            <p>Pending Payment</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Payment</span>
+            <span class="stat-value"><?php echo $stats['pending_payment']; ?></span>
         </div>
     </div>
 </div>
@@ -618,18 +610,12 @@ $stats['pending_payment'] = $conn->query("SELECT COUNT(*) as count FROM event_re
         
         <!-- Actions -->
         <div class="registration-actions">
-            <a href="view-event.php?id=<?php echo $reg['event_id']; ?>" class="btn btn-info btn-sm">
+            <a href="event-register?token=<?php echo rawurlencode(base64_encode('eid=' . (int)$reg['event_id'])); ?>" class="btn btn-info btn-sm">
                 <i class="fas fa-eye"></i> View Event Details
             </a>
             
-            <?php if ($reg['payment_status'] == 'Pending' && $reg['registration_fee'] > 0): ?>
-                <a href="make-event-payment.php?registration_id=<?php echo $reg['registration_id']; ?>" class="btn btn-success btn-sm">
-                    <i class="fas fa-money-bill"></i> Make Payment
-                </a>
-            <?php endif; ?>
-            
             <?php if ($can_cancel): ?>
-                <button onclick="confirmCancelRegistration(<?php echo $reg['registration_id']; ?>, '<?php echo htmlspecialchars($reg['event_title']); ?>')" 
+                <button onclick="confirmCancelRegistration(<?php echo $reg['registration_id']; ?>, <?= htmlspecialchars(json_encode((string)($reg['event_title'])), ENT_QUOTES, 'UTF-8') ?>)" 
                         class="btn btn-danger btn-sm">
                     <i class="fas fa-times"></i> Cancel Registration
                 </button>

@@ -321,44 +321,36 @@ if (isset($_GET['edit'])) {
 </div>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-door-open"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total']; ?></h4>
-            <p>Total Spaces</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-door-open" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Spaces</span>
+            <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['available']; ?></h4>
-            <p>Available</p>
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Available</span>
+            <span class="stat-value"><?php echo $stats['available']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-times-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['unavailable']; ?></h4>
-            <p>Unavailable</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-times-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Unavailable</span>
+            <span class="stat-value"><?php echo $stats['unavailable']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-users"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total_capacity']; ?></h4>
-            <p>Total Capacity</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Capacity</span>
+            <span class="stat-value"><?php echo $stats['total_capacity']; ?></span>
         </div>
     </div>
 </div>
@@ -540,7 +532,7 @@ if (isset($_GET['edit'])) {
                     </a>
                     
                     <?php if (ims_allowed('spaces.delete', ['Administrator'], 'Delete spaces')): ?>
-                    <button onclick="confirmDelete(<?php echo $space['availability_id']; ?>, '<?php echo htmlspecialchars(addslashes($space['space_name'])); ?>')" 
+                    <button onclick="confirmDelete(<?php echo $space['availability_id']; ?>, <?= htmlspecialchars(json_encode((string)($space['space_name'])), ENT_QUOTES, 'UTF-8') ?>)" 
                             class="btn btn-danger btn-sm">
                         <i class="fas fa-trash"></i> Delete
                     </button>

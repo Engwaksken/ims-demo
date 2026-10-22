@@ -1159,6 +1159,7 @@ if ($action === 'delete_document') {
 
 
 if ($action === 'delete') {
+    csrf_protect(true); // GET state change: the UI uses POST delete_document; links need a token
     $documentId = (int)($_GET['id'] ?? 0);
 
     if (

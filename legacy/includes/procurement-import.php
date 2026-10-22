@@ -263,6 +263,7 @@ function procurement_import_save(mysqli $conn, array $requests, int $userId): ar
     try {
         foreach ($requests as $r) {
             $budget = array_sum(array_map(static fn($i) => $i['qty'] * $i['price'], $r['items']));
+            $r['needed_by'] = $r['needed_by'] ?: null; // optional DATE: '' is invalid in strict mode
             $reqStmt->bind_param('ssidssisiii',
                 $r['title'], $r['description'], $r['category_id'], $budget,
                 $r['urgency'], $r['department'], $r['department_id'], $r['needed_by'],

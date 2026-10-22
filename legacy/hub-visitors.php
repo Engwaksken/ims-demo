@@ -76,13 +76,6 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
 ?>
 
 <style>
-/* Match the shared dashboard-card style while keeping the visitor metrics compact. */
-.hub-visitor-stats{grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px;margin-bottom:22px}
-.hub-visitor-stats .stat-card{padding:18px;border:1px solid #e5eaf1;border-radius:14px;box-shadow:0 3px 12px rgba(15,23,42,.045);gap:14px}
-.hub-visitor-stats .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.08)}
-.hub-visitor-stats .stat-icon{width:48px;height:48px;min-width:48px;border-radius:13px;font-size:20px}
-.hub-visitor-stats .stat-details h4{font-size:26px;line-height:1.1;margin:0 0 4px}
-.hub-visitor-stats .stat-details p{font-size:12px;margin:0;color:#64748b}
 /* -- Header --------------------------------------------------------------- */
 .visitors-header {
     background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
@@ -219,30 +212,48 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
 </div>
 
 <!-- -- Stats Cards ----------------------------------------------------------- -->
-<div class="stats-grid hub-visitor-stats">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue"><i class="fas fa-user-clock"></i></div>
-        <div class="stat-details"><h4><?php echo $stats['today']; ?></h4><p>Today's Visitors</p></div>
+        <div class="stat-icon bg-blue"><i class="fas fa-user-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Today's Visitors</span>
+            <span class="stat-value"><?php echo $stats['today']; ?></span>
+        </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon green"><i class="fas fa-calendar-week"></i></div>
-        <div class="stat-details"><h4><?php echo $stats['this_week']; ?></h4><p>This Week</p></div>
+        <div class="stat-icon bg-green"><i class="fas fa-calendar-week" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">This Week</span>
+            <span class="stat-value"><?php echo $stats['this_week']; ?></span>
+        </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon purple"><i class="fas fa-calendar-alt"></i></div>
-        <div class="stat-details"><h4><?php echo $stats['this_month']; ?></h4><p>This Month</p></div>
+        <div class="stat-icon bg-purple"><i class="fas fa-calendar-alt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">This Month</span>
+            <span class="stat-value"><?php echo $stats['this_month']; ?></span>
+        </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon orange"><i class="fas fa-users"></i></div>
-        <div class="stat-details"><h4><?php echo $stats['total']; ?></h4><p>Total Visitors</p></div>
+        <div class="stat-icon bg-amber"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Visitors</span>
+            <span class="stat-value"><?php echo $stats['total']; ?></span>
+        </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:#3498DB;"><i class="fas fa-user-check"></i></div>
-        <div class="stat-details"><h4><?php echo $stats['unique']; ?></h4><p>First Visit</p></div>
+        <div class="stat-icon bg-teal"><i class="fas fa-user-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">First Visit</span>
+            <span class="stat-value"><?php echo $stats['unique']; ?></span>
+        </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon" style="background:#27AE60;"><i class="fas fa-chart-line"></i></div>
-        <div class="stat-details"><h4><?php echo $stats['daily_avg']; ?></h4><p>Daily Avg (30d)</p></div>
+        <div class="stat-icon bg-slate"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Daily Avg (30d)</span>
+            <span class="stat-value"><?php echo $stats['daily_avg']; ?></span>
+        </div>
     </div>
 </div>
 
@@ -422,7 +433,7 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                                 </a>
                                 <?php if (ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')): ?>
                                     <a href="javascript:void(0)"
-                                       onclick="confirmDelete('<?php echo htmlspecialchars($v['visitor_name']); ?>','includes/hub-visitors-process.php?delete=<?php echo (int)$v['visitor_id']; ?>&csrf_token=<?= h(csrf_token()) ?>')"
+                                       onclick="confirmDelete(<?= htmlspecialchars(json_encode((string)($v['visitor_name'])), ENT_QUOTES, 'UTF-8') ?>,'includes/hub-visitors-process.php?delete=<?php echo (int)$v['visitor_id']; ?>&csrf_token=<?= h(csrf_token()) ?>')"
                                        class="btn btn-danger btn-sm" title="Delete">
                                         <i class="fas fa-trash"></i>
                                     </a>

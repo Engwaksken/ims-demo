@@ -573,51 +573,43 @@ $badge = $status_badges[$membershipStatus] ?? 'secondary';
     </button>
 
     <?php if (ims_allowed('members.delete', ['Administrator'], 'Delete members')): ?>
-        <button onclick="confirmDelete('<?php echo h($memberName); ?>', 'includes/hub-operations-process.php?delete_member=<?php echo $member_id; ?>&tab=members&csrf_token=<?= urlencode(csrf_token()) ?>')"
+        <button onclick="confirmDelete(<?= htmlspecialchars(json_encode((string)($memberName)), ENT_QUOTES, 'UTF-8') ?>, 'includes/hub-operations-process.php?delete_member=<?php echo $member_id; ?>&tab=members&csrf_token=<?= urlencode(csrf_token()) ?>')"
                 class="btn btn-danger">
             <i class="fas fa-trash"></i> Delete Member
         </button>
     <?php endif; ?>
 </div>
 
-<div class="stats-grid" style="margin-bottom: 30px;">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-dollar-sign"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo format_currency($stats['total_paid']); ?></h4>
-            <p>Total Paid</p>
+        <div class="stat-icon bg-green"><i class="fas fa-dollar-sign" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Paid</span>
+            <span class="stat-value"><?php echo format_currency($stats['total_paid']); ?></span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-calendar-check"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo (int)$stats['total_bookings']; ?></h4>
-            <p>Total Bookings</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Bookings</span>
+            <span class="stat-value"><?php echo (int)$stats['total_bookings']; ?></span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-receipt"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo (int)$stats['pending_receipts']; ?></h4>
-            <p>Pending Receipts</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-receipt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Receipts</span>
+            <span class="stat-value"><?php echo (int)$stats['pending_receipts']; ?></span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-comments"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo (int)$stats['feedback_count']; ?></h4>
-            <p>Feedback Submitted</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-comments" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Feedback Submitted</span>
+            <span class="stat-value"><?php echo (int)$stats['feedback_count']; ?></span>
         </div>
     </div>
 </div>

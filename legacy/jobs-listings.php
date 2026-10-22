@@ -323,7 +323,7 @@ $page_title = 'Career Opportunities';
             <a href="<?= $applyHref ?>" target="<?= $applyTarget ?>" class="apply-btn">
               <i class="fas fa-paper-plane"></i> Apply Now
             </a>
-            <button class="share-btn" onclick="shareJob(<?= (int)$j['job_id'] ?>, '<?= e(addslashes($j['job_title'])) ?>')">
+            <button class="share-btn" onclick="shareJob(<?= (int)$j['job_id'] ?>, <?= htmlspecialchars(json_encode((string)($j['job_title'])), ENT_QUOTES, 'UTF-8') ?>)">
               <i class="fas fa-share-alt"></i> Share Role
             </button>
           </div>

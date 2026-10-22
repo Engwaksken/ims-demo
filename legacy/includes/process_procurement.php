@@ -377,9 +377,11 @@ function approveProcurementRequest(mysqli $conn, int $userId, bool $isManager): 
                updated_at      = NOW()
         WHERE  procurement_id  = ?
           AND  status IN ('Submitted','Under Review')
+          AND  created_by <> ?
         LIMIT  1
     ");
-    $stmt->bind_param('ii', $userId, $procurement_id);
+    // Segregation of duties: nobody approves their own request.
+    $stmt->bind_param('iii', $userId, $procurement_id, $userId);
     $stmt->execute();
     $affected = $stmt->affected_rows;
     $stmt->close();
@@ -397,7 +399,7 @@ function approveProcurementRequest(mysqli $conn, int $userId, bool $isManager): 
         }
         procurement_flash('success', 'Request approved. Requester has been notified.');
     } else {
-        procurement_flash('error', 'Request could not be approved (wrong status or not found).');
+        procurement_flash('error', 'Request could not be approved (wrong status, not found, or it is your own request).');
     }
 
     procurement_redirect();

@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-session_start();
+// config.php starts the session with the hardened cookie settings.
 require_once __DIR__ . '/includes/config.php';
 
 $opportunityId = filter_input(INPUT_GET, 'opportunity_id', FILTER_VALIDATE_INT) ?: 0;
 $draftId       = filter_input(INPUT_GET, 'draft_id', FILTER_VALIDATE_INT) ?: 0;
 
 if ($opportunityId < 1) {
-    header('Location: apply');
+    header('Location: apply-embed');
     exit;
 }
 
@@ -26,7 +26,7 @@ $opportunity = $stmt->get_result()->fetch_assoc();
 $stmt->close();
 
 if (!$opportunity) {
-    header('Location: apply');
+    header('Location: apply-embed');
     exit;
 }
 
@@ -56,11 +56,11 @@ if ($draftId > 0) {
     $types = 'ii';
     $params = [$draftId, $opportunityId];
 
-    if (!empty($_SESSION['user_id'])) {
-        $sql .= " AND submitted_by = ?";
-        $types .= 'i';
-        $params[] = (int)$_SESSION['user_id'];
-    }
+    // Drafts load only for their logged-in owner (saving a draft logs the
+    // applicant in), so sequential draft ids cannot be browsed anonymously.
+    $sql .= " AND submitted_by = ?";
+    $types .= 'i';
+    $params[] = (int)($_SESSION['user_id'] ?? 0);
 
     $sql .= " LIMIT 1";
     $stmt = $conn->prepare($sql);

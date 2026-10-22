@@ -76,7 +76,7 @@ if (!function_exists('fetch_member_by_id')) {
         $sql = "
             SELECT user_id, full_name, email, phone, username, role
             FROM users
-            WHERE user_id = ?
+            WHERE user_id = ? AND role = 'Member' AND is_active = 1
             LIMIT 1
         ";
 
@@ -115,23 +115,32 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'member_search') {
         exit;
     }
 
+    // Public endpoint: only active Members are searchable, partial matches
+    // are on name only (email/phone/username must match exactly), and only
+    // id + name are returned. The form re-reads email/phone server-side
+    // from member_user_id on submit, so the browser never needs them.
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    $rateKey = 'visitor_member_search|' . $ip;
+    if (ims_rate_limit_too_many($rateKey, 30, 60)) {
+        http_response_code(429);
+        echo json_encode(['success' => false, 'message' => 'Too many searches. Please wait a minute.'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+    ims_rate_limit_hit($rateKey, 60);
+
     $like = '%' . $q . '%';
 
     $sql = "
-        SELECT
-            user_id,
-            full_name,
-            email,
-            phone,
-            username,
-            role
+        SELECT user_id, full_name
         FROM users
-        WHERE (
+        WHERE role = 'Member'
+          AND is_active = 1
+          AND (
                 full_name LIKE ?
-             OR email LIKE ?
-             OR phone LIKE ?
-             OR username LIKE ?
-        )
+             OR email = ?
+             OR phone = ?
+             OR username = ?
+          )
         ORDER BY full_name ASC
         LIMIT 10
     ";
@@ -145,7 +154,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'member_search') {
         exit;
     }
 
-    $stmt->bind_param('ssss', $like, $like, $like, $like);
+    $stmt->bind_param('ssss', $like, $q, $q, $q);
     $stmt->execute();
     $res = $stmt->get_result();
 
@@ -156,10 +165,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === 'member_search') {
             'user_id'   => (int)$row['user_id'],
             'name'      => $row['full_name'] ?? '',
             'full_name' => $row['full_name'] ?? '',
-            'email'     => $row['email'] ?? '',
-            'phone'     => $row['phone'] ?? '',
-            'username'  => $row['username'] ?? '',
-            'role'      => $row['role'] ?? '',
         ];
     }
 
