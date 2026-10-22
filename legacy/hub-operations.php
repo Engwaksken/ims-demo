@@ -18,6 +18,8 @@ require_once __DIR__ . '/includes/auth.php';
 check_role(IMS_ALL_ROLES);
 
 
+$can_open_member_folders = ims_allowed('members.folder_view', ['Administrator', 'Operations/Admin', 'Finance', 'Accountant', 'Executive Director'], 'View and export member folders (contracts, receipts, documents)');
+
 // Get active tab
 $active_tab = isset($_GET['tab']) ? sanitize_input($_GET['tab']) : 'members';
 
@@ -412,9 +414,15 @@ if (isset($_GET['edit_receipt'])) {
                                            class="btn btn-warning btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <?php if ($can_open_member_folders): ?>
+                                            <a href="member-folder?id=<?php echo (int)$member['member_id']; ?>"
+                                               class="btn btn-primary btn-sm" title="Folder: contracts, receipts &amp; documents">
+                                                <i class="fas fa-folder-open" aria-hidden="true"></i><span class="sr-only">Folder</span>
+                                            </a>
+                                        <?php endif; ?>
                                         <?php if (ims_allowed('members.delete', ['Administrator'], 'Delete members')): ?>
                                             <a href="javascript:void(0)" 
-                                               onclick="confirmDelete('<?php echo hub_e($member['full_name']); ?>', 'includes/hub-operations-process.php?delete_member=<?php echo $member['member_id']; ?>&tab=members&csrf_token=<?= urlencode(csrf_token()) ?>')" 
+                                               onclick="confirmDelete(<?php echo hub_e(json_encode((string)($member['full_name'] ?? ''))); ?>, 'includes/hub-operations-process.php?delete_member=<?php echo $member['member_id']; ?>&tab=members&csrf_token=<?= urlencode(csrf_token()) ?>')" 
                                                class="btn btn-danger btn-sm" title="Delete">
                                                 <i class="fas fa-trash"></i>
                                             </a>

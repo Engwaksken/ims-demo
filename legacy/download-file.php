@@ -269,6 +269,21 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
                 [$userId, $like]
             );
 
+        // uploads/member-files/{member_id}/... (member folder: contracts,
+        // monthly receipts, IDs). Same roles as member-folder.php, plus the
+        // member who owns the folder.
+        case 'member-files':
+            if (ims_allowed('members.folder_view', ['Administrator', 'Operations/Admin', 'Finance', 'Accountant', 'Executive Director'], 'View and export member folders (contracts, receipts, documents)')) {
+                return true;
+            }
+
+            return $ownerSegment > 0 && dl_exists(
+                $conn,
+                'SELECT 1 FROM members WHERE member_id = ? AND user_id = ? LIMIT 1',
+                'ii',
+                [$ownerSegment, $userId]
+            );
+
         // Member feedback attachments (stored as a JSON list on member_feedback).
         case 'feedback':
             if (ims_allowed('downloads.feedback_attachments', IMS_ADMIN_ROLES, 'Download any member feedback attachment')) {
