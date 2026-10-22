@@ -257,7 +257,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 <?php endif; ?>
 
 <!-- -- Stats ---------------------------------------------------- -->
-<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
         <div class="stat-icon bg-primary"><i class="fas fa-clipboard-list"></i></div>
         <div class="stat-info"><span class="stat-label">Assignments</span><span class="stat-value"><?= $total_assignments ?></span></div>
@@ -655,7 +655,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 --------------------------------------------------------------- -->
 <div id="tab-review_types" class="tab-panel<?= $active_tab==='review_types'?' active':'' ?>">
 
-    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+    <div class="stats-grid reports-stats">
         <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-layer-group"></i></div><div class="stat-info"><span class="stat-label">Total</span><span class="stat-value"><?= $rt_total ?></span></div></div>
         <div class="stat-card"><div class="stat-icon bg-green"><i class="fas fa-toggle-on"></i></div><div class="stat-info"><span class="stat-label">Active</span><span class="stat-value"><?= $rt_active ?></span></div></div>
         <div class="stat-card"><div class="stat-icon bg-blue"><i class="fas fa-chart-bar"></i></div><div class="stat-info"><span class="stat-label">Total Uses</span><span class="stat-value"><?= number_format($rt_uses) ?></span></div></div>

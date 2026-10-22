@@ -228,13 +228,8 @@ foreach ($calendarEvents as $event) {
 <link rel="stylesheet" href="css/workplan.css">
 
 <style>
-    .wp-stats-grid { display:flex; flex-wrap:wrap; gap:12px; padding:16px; }
-    .wp-stat-card {
-        flex:1 1 150px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;
-        padding:14px 16px;
-    }
-    .wp-stat-card .wp-stat-num { font-size:24px; font-weight:700; color:#0f766e; }
-    .wp-stat-card .wp-stat-lbl { font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:.03em; margin-top:2px; }
+    /* Global .stats-grid.reports-stats inside a panel: pad it, drop the outer gap. */
+    .stats-grid.reports-stats.wp-stats-grid { padding:16px; margin-bottom:0; }
     .wp-status-bar-wrap { padding:0 16px 16px; }
     .wp-status-bar { display:flex; height:14px; border-radius:7px; overflow:hidden; background:#e2e8f0; }
     .wp-status-bar-seg { height:100%; }
@@ -759,32 +754,48 @@ foreach ($calendarEvents as $event) {
             <h3><i class="fas fa-chart-column" style="color:#0f766e;margin-right:8px;"></i> Workplan Stats</h3>
         </div>
 
-        <div class="wp-stats-grid">
-            <div class="wp-stat-card">
-                <div class="wp-stat-num"><?php echo $existingStats['milestone_count']; ?></div>
-                <div class="wp-stat-lbl">Milestones</div>
-            </div>
-            <div class="wp-stat-card">
-                <div class="wp-stat-num"><?php echo $existingStats['deliverable_count']; ?></div>
-                <div class="wp-stat-lbl">Activities / Deliverables</div>
-            </div>
-            <div class="wp-stat-card">
-                <div class="wp-stat-num"><?php echo $existingStats['completion_pct']; ?>%</div>
-                <div class="wp-stat-lbl">Average Progress</div>
-            </div>
-            <div class="wp-stat-card">
-                <div class="wp-stat-num"><?php echo $existingStats['completed_deliverables']; ?></div>
-                <div class="wp-stat-lbl">Completed</div>
-            </div>
-            <div class="wp-stat-card">
-                <div class="wp-stat-num" style="color:<?php echo $existingStats['overdue_count'] > 0 ? '#dc2626' : '#0f766e'; ?>;">
-                    <?php echo $existingStats['overdue_count']; ?>
+        <div class="stats-grid reports-stats wp-stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary"><i class="fas fa-flag-checkered" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Milestones</span>
+                    <span class="stat-value"><?php echo $existingStats['milestone_count']; ?></span>
                 </div>
-                <div class="wp-stat-lbl">Overdue Flags</div>
             </div>
-            <div class="wp-stat-card">
-                <div class="wp-stat-num"><?php echo $existingStats['on_track_count']; ?></div>
-                <div class="wp-stat-lbl">On Track</div>
+            <div class="stat-card">
+                <div class="stat-icon bg-blue"><i class="fas fa-list-check" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Activities / Deliverables</span>
+                    <span class="stat-value"><?php echo $existingStats['deliverable_count']; ?></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-teal"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Average Progress</span>
+                    <span class="stat-value"><?php echo $existingStats['completion_pct']; ?>%</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Completed</span>
+                    <span class="stat-value"><?php echo $existingStats['completed_deliverables']; ?></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-amber"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Overdue Flags</span>
+                    <span class="stat-value"><span style="color:<?php echo $existingStats['overdue_count'] > 0 ? '#dc2626' : 'inherit'; ?>;"><?php echo $existingStats['overdue_count']; ?></span></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-purple"><i class="fas fa-gauge-high" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">On Track</span>
+                    <span class="stat-value"><?php echo $existingStats['on_track_count']; ?></span>
+                </div>
             </div>
         </div>
 

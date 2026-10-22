@@ -116,6 +116,14 @@ $current_year = date('Y');
     border-radius: 5px;
     margin-bottom: 20px;
 }
+
+@media (max-width: 768px) {
+    .quarterly-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 420px) {
+    .quarterly-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 <div class="card">

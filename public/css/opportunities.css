@@ -189,11 +189,7 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink-0);
 }
 
-/* NOTE: .opp-stat-label is shared between the hero stat bar (white
-   text on the orange hero) and the dashboard stat cards (dark text
-   on a white card) further down. The dashboard variant is declared
-   once more, scoped under .opp-stat-card, so its higher specificity
-   wins in that context without a second unscoped .opp-stat-label. */
+/* .opp-stat-label: hero stat bar label (white text on the orange hero). */
 .opp-stat-label {
   font-size: 10px;
   font-weight: 700;
@@ -209,80 +205,6 @@ a { color: inherit; text-decoration: none; }
   margin: 0 auto;
   padding: 0 18px 48px;
 }
-
-/* -- Stats Grid (admin dashboard) --------------------------- */
-.opp-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.opp-stat-card {
-  background: var(--surface-card);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border: 1px solid rgba(0,0,0,.04);
-  transition: box-shadow .2s var(--ease-out), transform .2s var(--ease-out);
-}
-.opp-stat-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.opp-stat-icon {
-  flex-shrink: 0;
-  width: 52px; height: 52px;
-  border-radius: var(--radius-lg);
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-}
-
-.opp-stat-icon.brand  { background: var(--brand-50);  color: var(--brand-600); }
-.opp-stat-icon.green  { background: var(--green-bg);  color: var(--green-fg);  }
-.opp-stat-icon.amber  { background: var(--amber-bg);  color: var(--amber-fg);  }
-.opp-stat-icon.purple { background: var(--purple-bg); color: var(--purple-fg); }
-.opp-stat-icon.red    { background: var(--red-bg);    color: var(--red-fg);    }
-
-.opp-stat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-
-/* Dashboard stat-card label override (see NOTE above) */
-.opp-stat-card .opp-stat-label {
-  color: var(--ink-300);
-  white-space: nowrap;
-}
-
-.opp-stat-value {
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  color: var(--ink-700);
-  line-height: 1;
-}
-
-/* Use on .opp-stat-value when content is text (not a big number) */
-.opp-stat-value-md {
-  font-size: 16px;
-  letter-spacing: 0;
-  line-height: 1.3;
-  font-weight: 700;
-}
-/* Inline unit label beside a stat number  e.g. "42 d" */
-.stat-unit {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-/* -- Stats grid: 6-column override ------------------------- */
-.opp-stats-grid-6 { grid-template-columns: repeat(6, 1fr); }
-@media (max-width: 1100px) { .opp-stats-grid-6 { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 640px)  { .opp-stats-grid-6 { grid-template-columns: repeat(2, 1fr); } }
 
 /* -- Panel / Card shell ------------------------------------ */
 .opp-panel {
@@ -1170,17 +1092,12 @@ select.form-control {
 }
 
 /* -- Responsive (core) --------------------------------------- */
-@media (max-width: 1200px) {
-  .opp-stats-grid { grid-template-columns: repeat(2, 1fr); }
-}
-
 @media (max-width: 900px) {
   .opp-hero { padding: 24px; }
   .opp-hero h1 { font-size: 22px; }
 }
 
 @media (max-width: 768px) {
-  .opp-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .opp-filter-bar { flex-wrap: wrap; overflow-x: visible; }
   .opp-filter-bar > .opp-search-wrap { flex: 1 1 100%; min-width: 0; }
   .opp-filter-bar > .opp-type-pills { flex: 1 1 100%; flex-wrap: wrap; }
@@ -1203,10 +1120,6 @@ select.form-control {
   .modal-head, .modal-body, .modal-foot { padding: 16px 18px; }
 }
 
-@media (max-width: 400px) {
-  .opp-stats-grid { grid-template-columns: 1fr; }
-  .opp-stat-value { font-size: 24px; }
-}
 
 
 /* ============================================================

@@ -3,22 +3,12 @@
 .mrr-page-header h2{margin:0 0 4px;font-weight:800;font-size:24px;color:#111827}
 .mrr-page-header .sub{color:#6b7280;font-size:14px}
 
-.mrr-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:20px}
-.stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(15,23,42,.04);transition:box-shadow .2s,transform .15s}
-.stat-card .sl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:4px}
-.stat-card .sv{font-size:26px;font-weight:800;line-height:1;color:#111827}
-.stat-card.c-blue .sv{color:#1d4ed8}
-.stat-card.c-green .sv{color:#16a34a}
-.stat-card.c-amber .sv{color:#d97706}
-.stat-card.c-red .sv{color:#dc2626}
-.stat-card.c-slate .sv{color:#475569}
-
-.stat-card-link{text-decoration:none;display:block}
-.stat-card-link .stat-card{cursor:pointer}
-.stat-card-link .stat-card:hover{box-shadow:0 6px 20px rgba(29,78,216,.13);transform:translateY(-2px);border-color:#bfdbfe}
-.stat-card-link .stat-card .sl{display:flex;align-items:center;gap:5px}
-.stat-card-link .stat-card .sl .link-icon{font-size:10px;color:#bfdbfe;transition:color .15s}
-.stat-card-link .stat-card:hover .sl .link-icon{color:#1d4ed8}
+.stat-card-link{text-decoration:none;display:block;color:inherit}
+.stat-card-link .stat-card{cursor:pointer;height:100%}
+.stat-card-link .stat-card:hover{border-color:#bfdbfe}
+.stat-card-link .stat-label{display:flex;align-items:center;gap:5px}
+.stat-card-link .link-icon{font-size:10px;color:#bfdbfe;transition:color .15s}
+.stat-card-link .stat-card:hover .link-icon{color:#1d4ed8}
 
 .mrr-filters{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px 18px;margin-bottom:16px;box-shadow:0 2px 8px rgba(15,23,42,.04)}
 /* .mrr-filters form: one-row layout comes from .filters-bar (style.css). */
@@ -302,11 +292,9 @@
 .wf-status.err{color:#dc2626}
 
 @media(max-width:900px){
-    .mrr-stats{grid-template-columns:repeat(3,1fr)}
     .mrr-table th:nth-child(3),.mrr-table td:nth-child(3){display:none}
 }
 @media(max-width:640px){
-    .mrr-stats{grid-template-columns:repeat(2,1fr)}
     .fg-search,.fg-select{width:100%}
     .wf-step-tabs{flex-direction:column}
     .sig-saved{

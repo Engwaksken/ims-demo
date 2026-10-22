@@ -274,7 +274,7 @@ function pgUrl(int $p): string {
     <?php endif; ?>
 
     <!-- -- Stats strip ---------------------------------------------- -->
-    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
             <div class="stat-icon bg-primary"><i class="fas fa-star"></i></div>
             <div class="stat-info">

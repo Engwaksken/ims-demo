@@ -338,8 +338,8 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 .vo-cohort-box{background:linear-gradient(135deg,var(--brand-50),#fff);border:1px solid var(--brand-100);border-radius:var(--radius-lg);padding:16px}.vo-cohort-name{font-size:15px;font-weight:800;color:var(--ink-700);margin-bottom:8px}.vo-cohort-meta{font-size:12px;color:var(--ink-300);display:flex;gap:12px;flex-wrap:wrap}
 .vo-actionbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
 @media(max-width:1050px){.vo-layout{grid-template-columns:1fr}.vo-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.vo-sidebar .opp-panel{margin:0}}
-@media(max-width:720px){.vo-sidebar{grid-template-columns:1fr}.opp-stats-grid{grid-template-columns:repeat(2,1fr)!important}.vo-app-item{flex-direction:column;align-items:flex-start}.vo-app-actions{align-self:flex-end}}
-@media(max-width:460px){.opp-stats-grid{grid-template-columns:1fr!important}.vo-info-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.vo-sidebar{grid-template-columns:1fr}.vo-app-item{flex-direction:column;align-items:flex-start}.vo-app-actions{align-self:flex-end}}
+@media(max-width:460px){.vo-info-grid{grid-template-columns:1fr}}
 
 .vo-tabs{
     display:flex;
@@ -516,56 +516,56 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
     </div>
 <?php endif; ?>
 
-<div class="opp-stats-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:20px">
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon brand"><i class="fas fa-file-alt"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Total</span>
-            <span class="opp-stat-value"><?= (int)$stats['total'] ?></span>
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-file-alt"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total</span>
+            <span class="stat-value"><?= (int)$stats['total'] ?></span>
         </div>
     </div>
 
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon" style="background:var(--blue-bg);color:var(--blue-fg)">
+    <div class="stat-card">
+        <div class="stat-icon bg-blue">
             <i class="fas fa-paper-plane"></i>
         </div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Submitted</span>
-            <span class="opp-stat-value"><?= (int)$stats['Submitted'] ?></span>
+        <div class="stat-info">
+            <span class="stat-label">Submitted</span>
+            <span class="stat-value"><?= (int)$stats['Submitted'] ?></span>
         </div>
     </div>
 
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon amber"><i class="fas fa-eye"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Reviewing</span>
-            <span class="opp-stat-value"><?= (int)$stats['Under Review'] ?></span>
+    <div class="stat-card">
+        <div class="stat-icon bg-amber"><i class="fas fa-eye"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Reviewing</span>
+            <span class="stat-value"><?= (int)$stats['Under Review'] ?></span>
         </div>
     </div>
 
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon purple"><i class="fas fa-star"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Shortlisted</span>
-            <span class="opp-stat-value"><?= (int)$stats['Shortlisted'] ?></span>
+    <div class="stat-card">
+        <div class="stat-icon bg-purple"><i class="fas fa-star"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Shortlisted</span>
+            <span class="stat-value"><?= (int)$stats['Shortlisted'] ?></span>
         </div>
     </div>
 
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon green"><i class="fas fa-check-circle"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Selected</span>
-            <span class="opp-stat-value"><?= $selectedCount ?></span>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Selected</span>
+            <span class="stat-value"><?= $selectedCount ?></span>
         </div>
     </div>
 
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon" style="background:var(--red-bg);color:var(--red-fg)">
+    <div class="stat-card">
+        <div class="stat-icon bg-red">
             <i class="fas fa-times-circle"></i>
         </div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Rejected</span>
-            <span class="opp-stat-value"><?= (int)$stats['Rejected'] ?></span>
+        <div class="stat-info">
+            <span class="stat-label">Rejected</span>
+            <span class="stat-value"><?= (int)$stats['Rejected'] ?></span>
         </div>
     </div>
 </div>

@@ -151,22 +151,22 @@ body.modal-open{
         <div class="flash flash-error"><i class="fas fa-exclamation-circle"></i><?= h($error) ?></div>
     <?php endif; ?>
 
-    <div class="opp-stats-grid">
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon brand"><i class="fas fa-robot"></i></div>
-            <div class="opp-stat-info"><span class="opp-stat-label">Total APIs</span><span class="opp-stat-value"><?= (int)$total ?></span></div>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-robot"></i></div>
+            <div class="stat-info"><span class="stat-label">Total APIs</span><span class="stat-value"><?= (int)$total ?></span></div>
         </div>
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon green"><i class="fas fa-circle-check"></i></div>
-            <div class="opp-stat-info"><span class="opp-stat-label">Active</span><span class="opp-stat-value"><?= (int)$active ?></span></div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-info"><span class="stat-label">Active</span><span class="stat-value"><?= (int)$active ?></span></div>
         </div>
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon amber"><i class="fas fa-star"></i></div>
-            <div class="opp-stat-info"><span class="opp-stat-label">Default</span><span class="opp-stat-value"><?= (int)$defaults ?></span></div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-star"></i></div>
+            <div class="stat-info"><span class="stat-label">Default</span><span class="stat-value"><?= (int)$defaults ?></span></div>
         </div>
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon purple"><i class="fas fa-ban"></i></div>
-            <div class="opp-stat-info"><span class="opp-stat-label">Inactive</span><span class="opp-stat-value"><?= (int)$inactive ?></span></div>
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="fas fa-ban"></i></div>
+            <div class="stat-info"><span class="stat-label">Inactive</span><span class="stat-value"><?= (int)$inactive ?></span></div>
         </div>
     </div>
 

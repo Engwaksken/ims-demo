@@ -293,44 +293,36 @@ $stats['resolved'] = $conn->query("SELECT COUNT(*) as count FROM member_feedback
 </div>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-comments"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total']; ?></h4>
-            <p>Total Feedback</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-comments" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Feedback</span>
+            <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pending']; ?></h4>
-            <p>Pending Review</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Review</span>
+            <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-reply"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['responded']; ?></h4>
-            <p>Responded</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-reply" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Responded</span>
+            <span class="stat-value"><?php echo $stats['responded']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['resolved']; ?></h4>
-            <p>Resolved</p>
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Resolved</span>
+            <span class="stat-value"><?php echo $stats['resolved']; ?></span>
         </div>
     </div>
 </div>

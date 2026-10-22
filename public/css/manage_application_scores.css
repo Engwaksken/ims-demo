@@ -124,15 +124,15 @@ textarea.form-control {
     border-radius: 12px;
 }
 
-table {
+.table-wrap table {
     width: 100%;
     border-collapse: collapse;
     background: #fff;
     min-width: 980px;
 }
 
-th,
-td {
+.table-wrap th,
+.table-wrap td {
     padding: 12px 10px;
     border-bottom: 1px solid #e5e7eb;
     text-align: left;
@@ -141,7 +141,7 @@ td {
     color: #1e293b;
 }
 
-th {
+.table-wrap th {
     background: #f8fafc;
     color: #334155;
     font-weight: 700;
@@ -150,11 +150,11 @@ th {
     z-index: 1;
 }
 
-tbody tr:hover {
+.table-wrap tbody tr:hover {
     background: #f8fbff;
 }
 
-tbody tr:last-child td {
+.table-wrap tbody tr:last-child td {
     border-bottom: none;
 }
 

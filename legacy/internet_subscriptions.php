@@ -327,35 +327,45 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 </div>
 <?php endif; ?>
 
-<div class="stats-strip">
-    <div class="stat-card s-total" data-filter="all">
-        <div class="stat-icon"><i class="fas fa-list"></i></div>
-        <div class="stat-value"><?= (int)$stats['total'] ?></div>
-        <div class="stat-label">Total</div>
+<div class="stats-grid reports-stats">
+    <div class="stat-card stat-card-wide s-total" data-filter="all">
+        <div class="stat-icon bg-primary"><i class="fas fa-list" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total</span>
+            <span class="stat-value"><?= (int)$stats['total'] ?></span>
+        </div>
     </div>
 
     <div class="stat-card s-pending" data-filter="pending">
-        <div class="stat-icon"><i class="fas fa-clock"></i></div>
-        <div class="stat-value"><?= (int)$stats['pending'] ?></div>
-        <div class="stat-label">Pending</div>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending</span>
+            <span class="stat-value"><?= (int)$stats['pending'] ?></span>
+        </div>
     </div>
 
     <div class="stat-card s-active" data-filter="active">
-        <div class="stat-icon"><i class="fas fa-wifi"></i></div>
-        <div class="stat-value"><?= (int)$stats['active'] ?></div>
-        <div class="stat-label">Active</div>
+        <div class="stat-icon bg-green"><i class="fas fa-wifi" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Active</span>
+            <span class="stat-value"><?= (int)$stats['active'] ?></span>
+        </div>
     </div>
 
     <div class="stat-card s-expired" data-filter="expired">
-        <div class="stat-icon"><i class="fas fa-calendar-xmark"></i></div>
-        <div class="stat-value"><?= (int)$stats['expired'] ?></div>
-        <div class="stat-label">Expired</div>
+        <div class="stat-icon bg-slate"><i class="fas fa-calendar-xmark" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Expired</span>
+            <span class="stat-value"><?= (int)$stats['expired'] ?></span>
+        </div>
     </div>
 
     <div class="stat-card s-rejected" data-filter="rejected">
-        <div class="stat-icon"><i class="fas fa-ban"></i></div>
-        <div class="stat-value"><?= (int)$stats['rejected'] ?></div>
-        <div class="stat-label">Rejected</div>
+        <div class="stat-icon bg-red"><i class="fas fa-ban" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Rejected</span>
+            <span class="stat-value"><?= (int)$stats['rejected'] ?></span>
+        </div>
     </div>
 </div>
 

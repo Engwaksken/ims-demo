@@ -151,57 +151,8 @@
   gap: 16px;
 }
 
-.stat-card {
-  background: var(--surface-card);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  border: 1px solid rgba(0,0,0,.04);
-  transition: box-shadow .2s var(--ease-out), transform .2s var(--ease-out);
-}
-.stat-card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-
-.stat-icon {
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-lg);
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-}
-
-.bg-primary { background: var(--brand-50);  color: var(--brand-600); }
-.bg-green   { background: var(--green-bg);  color: var(--green-fg);  }
-.bg-blue    { background: var(--blue-bg);   color: var(--blue-fg);   }
-.bg-amber   { background: var(--amber-bg);  color: var(--amber-fg);  }
-
-.stat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-
-.stat-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--ink-300);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stat-value {
-  font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  color: var(--ink-700);
-  line-height: 1;
-}
+/* .stat-card, .stat-icon, .stat-info, .stat-label, .stat-value: the global
+   standard in reports.css (loaded on every page) styles these. */
 
 /* -- Panels ------------------------------------------------- */
 .panel {

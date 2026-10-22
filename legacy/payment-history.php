@@ -299,44 +299,36 @@ while ($row = $years_result->fetch_assoc()) {
 </div>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo format_currency($stats['total_paid']); ?></h4>
-            <p>Total Paid</p>
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Paid</span>
+            <span class="stat-value"><?php echo format_currency($stats['total_paid']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo format_currency($stats['pending_amount']); ?></h4>
-            <p>Pending Payments</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Payments</span>
+            <span class="stat-value"><?php echo format_currency($stats['pending_amount']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-receipt"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total_count']; ?></h4>
-            <p>Total Transactions</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-receipt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Transactions</span>
+            <span class="stat-value"><?php echo $stats['total_count']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-calculator"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo format_currency($stats['avg_payment']); ?></h4>
-            <p>Average Payment</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-calculator" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Average Payment</span>
+            <span class="stat-value"><?php echo format_currency($stats['avg_payment']); ?></span>
         </div>
     </div>
 </div>

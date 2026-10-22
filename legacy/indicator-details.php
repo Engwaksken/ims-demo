@@ -187,7 +187,7 @@ if ($achievement >= 100) {
             </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+        <div class="ind-summary-grid">
             <div style="text-align: center; padding: 20px; background: #E3F2FD; border-radius: 8px;">
                 <div style="font-size: 28px; font-weight: bold; color: #2196F3;">
                     <?php echo $indicator['baseline_value'] !== null ? number_format($indicator['baseline_value'], 2) : 'N/A'; ?>
@@ -560,6 +560,12 @@ if ($achievement >= 100) {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Three summary tiles; stack on phones. */
+.ind-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+@media (max-width: 768px) {
+    .ind-summary-grid { grid-template-columns: 1fr; }
 }
 
 @media print {

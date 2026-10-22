@@ -333,44 +333,36 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
 <?php endif; ?>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-calendar-check"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $total_bookings; ?></h4>
-            <p>Total Bookings</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Bookings</span>
+            <span class="stat-value"><?php echo $total_bookings; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-calendar"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $this_month_bookings; ?></h4>
-            <p>This Month</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-calendar" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">This Month</span>
+            <span class="stat-value"><?php echo $this_month_bookings; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-users"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $total_events_attended; ?></h4>
-            <p>Events Attended</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Events Attended</span>
+            <span class="stat-value"><?php echo $total_events_attended; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-bell"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $unread_count; ?></h4>
-            <p>Notifications</p>
+        <div class="stat-icon bg-green"><i class="fas fa-bell" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Notifications</span>
+            <span class="stat-value"><?php echo $unread_count; ?></span>
         </div>
     </div>
 </div>

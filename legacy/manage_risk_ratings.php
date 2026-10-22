@@ -631,40 +631,64 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
             </div>
         </div>
 
-        <div class="mrr-stats">
+        <div class="stats-grid reports-stats">
             <a href="risk_ratings_report" class="stat-card-link" title="View full Risk Ratings Report">
-                <div class="stat-card c-blue">
-                    <div class="sl">Total <i class="fas fa-external-link-alt link-icon"></i></div>
-                    <div class="sv"><?= number_format((int)($stats['total'] ?? 0)) ?></div>
+                <div class="stat-card">
+                    <div class="stat-icon bg-blue"><i class="fas fa-shield-halved" aria-hidden="true"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total <i class="fas fa-external-link-alt link-icon" aria-hidden="true"></i></span>
+                        <span class="stat-value"><?= number_format((int)($stats['total'] ?? 0)) ?></span>
+                    </div>
                 </div>
             </a>
-            <div class="stat-card c-green">
-                <div class="sl">Generated</div>
-                <div class="sv"><?= number_format((int)($stats['generated'] ?? 0)) ?></div>
-            </div>
-            <div class="stat-card c-slate">
-                <div class="sl">Draft</div>
-                <div class="sv"><?= number_format((int)($stats['draft'] ?? 0)) ?></div>
-            </div>
-            <div class="stat-card c-green">
-                <div class="sl">Minor</div>
-                <div class="sv"><?= number_format((int)($stats['minor'] ?? 0)) ?></div>
-            </div>
-            <div class="stat-card c-blue">
-                <div class="sl">Moderate</div>
-                <div class="sv"><?= number_format((int)($stats['moderate'] ?? 0)) ?></div>
-            </div>
-            <div class="stat-card c-amber">
-                <div class="sl">Major</div>
-                <div class="sv"><?= number_format((int)($stats['major'] ?? 0)) ?></div>
-            </div>
-            <div class="stat-card c-red">
-                <div class="sl">Severe</div>
-                <div class="sv"><?= number_format((int)($stats['severe'] ?? 0)) ?></div>
+            <div class="stat-card">
+                <div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Generated</span>
+                    <span class="stat-value"><?= number_format((int)($stats['generated'] ?? 0)) ?></span>
+                </div>
             </div>
             <div class="stat-card">
-                <div class="sl">PDFs</div>
-                <div class="sv"><?= number_format((int)($stats['has_pdf'] ?? 0)) ?></div>
+                <div class="stat-icon bg-slate"><i class="fas fa-file-pen" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Draft</span>
+                    <span class="stat-value"><?= number_format((int)($stats['draft'] ?? 0)) ?></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-teal"><i class="fas fa-signal" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Minor</span>
+                    <span class="stat-value"><?= number_format((int)($stats['minor'] ?? 0)) ?></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-blue"><i class="fas fa-gauge" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Moderate</span>
+                    <span class="stat-value"><?= number_format((int)($stats['moderate'] ?? 0)) ?></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-amber"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Major</span>
+                    <span class="stat-value"><?= number_format((int)($stats['major'] ?? 0)) ?></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-red"><i class="fas fa-radiation" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Severe</span>
+                    <span class="stat-value"><?= number_format((int)($stats['severe'] ?? 0)) ?></span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon bg-purple"><i class="fas fa-file-pdf" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">PDFs</span>
+                    <span class="stat-value"><?= number_format((int)($stats['has_pdf'] ?? 0)) ?></span>
+                </div>
             </div>
         </div>
 

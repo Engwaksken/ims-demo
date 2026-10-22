@@ -120,64 +120,52 @@ $stats = $stats_result->fetch_assoc();
 ?>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-list"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format($stats['total_actions']); ?></h4>
-            <p>Total Actions</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-list" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Actions</span>
+            <span class="stat-value"><?php echo number_format($stats['total_actions']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-calendar-day"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format($stats['today_actions']); ?></h4>
-            <p>Today's Actions</p>
+        <div class="stat-icon bg-green"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Today's Actions</span>
+            <span class="stat-value"><?php echo number_format($stats['today_actions']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-calendar-week"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format($stats['week_actions']); ?></h4>
-            <p>This Week</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-calendar-week" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">This Week</span>
+            <span class="stat-value"><?php echo number_format($stats['week_actions']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-calendar-alt"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format($stats['month_actions']); ?></h4>
-            <p>This Month</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-calendar-alt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">This Month</span>
+            <span class="stat-value"><?php echo number_format($stats['month_actions']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon red">
-            <i class="fas fa-users"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format($stats['unique_users']); ?></h4>
-            <p>Active Users</p>
+        <div class="stat-icon bg-teal"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Active Users</span>
+            <span class="stat-value"><?php echo number_format($stats['unique_users']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon gray">
-            <i class="fas fa-chart-line"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format($stats['active_days']); ?></h4>
-            <p>Active Days</p>
+        <div class="stat-icon bg-slate"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Active Days</span>
+            <span class="stat-value"><?php echo number_format($stats['active_days']); ?></span>
         </div>
     </div>
 </div>

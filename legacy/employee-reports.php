@@ -199,56 +199,56 @@ function h($v): string {
     </div>
 
     <!-- -- KPI Stats ---------------------------------------------------------- -->
-    <div class="opp-stats-grid opp-stats-grid-6">
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon brand"><i class="fas fa-users"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Total</span>
-                <span class="opp-stat-value"><?= $total_employees ?></span>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Total</span>
+                <span class="stat-value"><?= $total_employees ?></span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon green"><i class="fas fa-check-circle"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Approved</span>
-                <span class="opp-stat-value"><?= $approved ?></span>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Approved</span>
+                <span class="stat-value"><?= $approved ?></span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon amber"><i class="fas fa-user-tie"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Staff</span>
-                <span class="opp-stat-value"><?= $staff ?></span>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-user-tie"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Staff</span>
+                <span class="stat-value"><?= $staff ?></span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon purple"><i class="fas fa-briefcase"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Consultants</span>
-                <span class="opp-stat-value"><?= $consultants ?></span>
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="fas fa-briefcase"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Consultants</span>
+                <span class="stat-value"><?= $consultants ?></span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon red">
+        <div class="stat-card">
+            <div class="stat-icon bg-teal">
                 <i class="fas fa-venus-mars"></i>
             </div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Female %</span>
-                <span class="opp-stat-value"><?= pct($female, $safe_total) ?>%</span>
+            <div class="stat-info">
+                <span class="stat-label">Female %</span>
+                <span class="stat-value"><?= pct($female, $safe_total) ?>%</span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon red">
+        <div class="stat-card">
+            <div class="stat-icon bg-amber">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Expiring</span>
-                <span class="opp-stat-value"><?= count($contracts_expiring) ?></span>
+            <div class="stat-info">
+                <span class="stat-label">Expiring</span>
+                <span class="stat-value"><?= count($contracts_expiring) ?></span>
             </div>
         </div>
     </div>
