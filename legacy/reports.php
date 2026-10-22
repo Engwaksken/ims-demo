@@ -91,6 +91,15 @@ function stream_csv(string $filename, array $headers, array $rows): void {
     exit;
 }
 
+/* A failed query would otherwise be a fatal fetch on false: log and say so. */
+function reports_export_failed(string $section): never {
+    global $conn;
+    error_log("reports.php CSV export '{$section}' failed: " . ($conn->error ?? 'unknown error'));
+    $_SESSION['notification'] = ['type' => 'error', 'message' => 'That export could not be generated. Please try again or contact the administrator.'];
+    header('Location: reports');
+    exit;
+}
+
 /* ── CSV export ─────────────────────────────────────────────────────── */
 if ($export === 'csv') {
     $section = $_GET['section'] ?? 'overview';
@@ -114,6 +123,7 @@ if ($export === 'csv') {
         case 'participants':
             $res = $conn->query("SELECT first_name, last_name, gender, date_of_birth,
                 phone, district, is_pwd FROM beneficiaries ORDER BY last_name, first_name LIMIT 5000");
+            if (!$res) reports_export_failed('participants');
             while ($r = $res->fetch_assoc()) $rows[] = [
                 $r['first_name'].' '.$r['last_name'],
                 $r['gender'], $r['date_of_birth'],
@@ -131,6 +141,7 @@ if ($export === 'csv') {
                 baseline_value, target_value, current_value,
                 CASE WHEN target_value>0 THEN ROUND(current_value/target_value*100,1) ELSE 0 END AS pct
                 FROM indicators ORDER BY indicator_type, indicator_name");
+            if (!$res) reports_export_failed('indicators');
             while ($r = $res->fetch_assoc()) $rows[] = [
                 $r['indicator_name'], $r['indicator_type'], $r['unit_of_measure'],
                 $r['baseline_value'], $r['target_value'], $r['current_value'],
@@ -151,9 +162,10 @@ if ($export === 'csv') {
             break;
 
         case 'events':
-            $res = $conn->query("SELECT event_name, event_date, event_type, location,
-                expected_participants, actual_participants, status
+            $res = $conn->query("SELECT event_title, event_date, event_type, venue,
+                expected_participants, actual_participants, event_status
                 FROM hub_events ORDER BY event_date DESC LIMIT 5000");
+            if (!$res) reports_export_failed('events');
             while ($r = $res->fetch_assoc()) $rows[] = array_values($r);
             stream_csv('events_' . date('Ymd') . '.csv',
                 ['Event Name','Date','Type','Location','Expected','Actual','Status'],
