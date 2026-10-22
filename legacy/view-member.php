@@ -210,368 +210,171 @@ $status_badges = [
 
 $membershipStatus = $member['membership_status'] ?? 'Pending';
 $badge = $status_badges[$membershipStatus] ?? 'secondary';
+
+/* Member folder (contracts, receipts, documents) */
+$can_open_folder = ims_allowed('members.folder_view', ['Administrator', 'Operations/Admin', 'Finance', 'Accountant', 'Executive Director'], 'View and export member folders (contracts, receipts, documents)');
+$folder_count = 0;
+if ($can_open_folder && ($fstmt = $conn->prepare('SELECT COUNT(*) FROM member_documents WHERE member_id = ?'))) {
+    $fstmt->bind_param('i', $member_id);
+    $fstmt->execute();
+    $fstmt->bind_result($folder_count);
+    $fstmt->fetch();
+    $fstmt->close();
+}
 ?>
 
+<link rel="stylesheet" href="css/assets.css">
 <style>
-    .member-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, #2980B9 100%);
-        color: white;
-        padding: 30px;
-        border-radius: 12px;
-        margin-bottom: 30px;
-        position: relative;
-        overflow: hidden;
+    /* Hero, stat cards, alerts and empty states come from the global CSS
+       (style.css / reports.css / assets.css); only member-specific bits here. */
+    .vm-hero-main { display: flex; align-items: center; gap: 18px; position: relative; min-width: 0; }
+    .vm-avatar {
+        width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+        display: grid; place-items: center;
+        background: rgba(255, 255, 255, .2); border: 2px solid rgba(255, 255, 255, .45);
+        font-size: 30px; font-weight: 800; color: var(--ink-0);
     }
-
-    .member-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 300px;
-        height: 300px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
+    .vm-hero-main h1 { margin-bottom: 4px; }
+    .vm-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .vm-chip {
+        display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
+        border-radius: 999px; background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .28);
+        font-size: 12px; font-weight: 600; color: var(--ink-0); max-width: 100%;
     }
+    .vm-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .vm-status { background: var(--ink-0); color: var(--brand-700); border-color: var(--ink-0); font-weight: 800; }
+    .vm-hero-btn { background: rgba(255, 255, 255, .14); color: var(--ink-0); border: 1px solid rgba(255, 255, 255, .35); box-shadow: none; }
+    .vm-hero-btn:hover { background: rgba(255, 255, 255, .24); color: var(--ink-0); }
+    .vm-hero-btn.solid { background: var(--ink-0); color: var(--brand-700); border-color: var(--ink-0); }
+    .vm-hero-btn.solid:hover { background: var(--brand-50); color: var(--brand-700); }
+    .vm-hero-btn .vm-count { margin-left: 2px; padding: 1px 7px; border-radius: 999px; background: var(--brand-100); font-size: 11px; }
 
-    .member-header-content {
-        position: relative;
-        z-index: 1;
-    }
+    .vm-page { display: flex; flex-direction: column; gap: 20px; }
+    .vm-page > .stats-grid, .vm-page > .alert, .vm-page > .card { margin-bottom: 0; }
+    .vm-page .alert { display: flex; align-items: center; gap: 12px; }
+    .vm-page .alert > i { font-size: 22px; }
 
-    .member-avatar {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 40px;
-        font-weight: bold;
-        color: var(--primary-color);
-        margin-bottom: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        flex-shrink: 0;
-    }
+    .quick-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 
-    .member-name {
-        font-size: 28px;
-        font-weight: 700;
-        margin-bottom: 5px;
-    }
-
-    .member-number {
-        font-size: 16px;
-        opacity: 0.9;
-        margin-bottom: 15px;
-    }
-
-    .member-info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-top: 20px;
-    }
-
-    .member-info-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .member-info-item i {
-        font-size: 18px;
-        opacity: 0.8;
-    }
-
-    .status-alert {
-        padding: 15px 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        font-weight: 500;
-    }
-
-    .status-alert.warning {
-        background: #FFF3CD;
-        color: #856404;
-        border-left: 4px solid #F39C12;
-    }
-
-    .status-alert.danger {
-        background: #F8D7DA;
-        color: #721C24;
-        border-left: 4px solid #E74C3C;
-    }
-
-    .status-alert.success {
-        background: #D4EDDA;
-        color: #155724;
-        border-left: 4px solid #2ECC71;
-    }
-
-    .tab-navigation {
-        display: flex;
-        gap: 0;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #E5E7EB;
-        overflow-x: auto;
-    }
-
+    .tab-navigation { display: flex; border-bottom: 1px solid var(--ink-100); overflow-x: auto; }
     .tab-btn {
-        padding: 15px 25px;
-        background: none;
-        border: none;
-        border-bottom: 3px solid transparent;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 500;
-        color: #7f8c8d;
-        transition: all 0.3s;
-        white-space: nowrap;
+        padding: 14px 22px; background: none; border: none; border-bottom: 3px solid transparent;
+        cursor: pointer; font-size: 14px; font-weight: 600; color: var(--ink-300);
+        white-space: nowrap; transition: color .2s, border-color .2s, background .2s;
     }
+    .tab-btn:hover { color: var(--brand-700); background: var(--brand-50); }
+    .tab-btn.active { color: var(--brand-700); border-bottom-color: var(--brand-500); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
-    .tab-btn:hover {
-        color: var(--primary-color);
-        background: rgba(52, 152, 219, 0.05);
-    }
-
-    .tab-btn.active {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-
+    /* Member details: label/value tiles in the same language as stat cards */
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
     .info-card {
-        background: #F8F9FA;
-        padding: 20px;
-        border-radius: 8px;
-        border-left: 4px solid var(--primary-color);
+        background: var(--surface-hover); border: 1px solid var(--ink-50);
+        border-radius: var(--radius-lg, 12px); padding: 14px 16px;
     }
-
     .info-label {
-        font-size: 12px;
-        color: #7f8c8d;
-        text-transform: uppercase;
-        font-weight: 600;
-        margin-bottom: 5px;
+        font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+        color: var(--ink-300); margin-bottom: 6px;
     }
+    .info-value { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: var(--ink-700); }
+    .info-value i { color: var(--brand-500); }
 
-    .info-value {
-        font-size: 16px;
-        font-weight: 600;
-        color: #2C3E50;
-    }
-
-    .timeline {
-        position: relative;
-        padding-left: 30px;
-    }
-
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 8px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: #E5E7EB;
-    }
-
-    .timeline-item {
-        position: relative;
-        padding-bottom: 30px;
-    }
-
+    .timeline { position: relative; padding-left: 30px; }
+    .timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--ink-100); }
+    .timeline-item { position: relative; padding-bottom: 24px; }
     .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -26px;
-        top: 5px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        border: 3px solid white;
-        box-shadow: 0 0 0 2px #E5E7EB;
+        content: ''; position: absolute; left: -26px; top: 5px; width: 12px; height: 12px; border-radius: 50%;
+        background: var(--brand-500); border: 3px solid var(--ink-0); box-shadow: 0 0 0 2px var(--ink-100);
     }
-
-    .timeline-date {
-        font-size: 12px;
-        color: #7f8c8d;
-        margin-bottom: 5px;
-    }
-
-    .timeline-content {
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .quick-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #95A5A6;
-    }
-
-    .empty-state i {
-        font-size: 64px;
-        margin-bottom: 20px;
-        opacity: 0.3;
-    }
-
-    .empty-state p {
-        font-size: 16px;
-        margin: 0;
-    }
+    .timeline-date { font-size: 12px; color: var(--ink-300); margin-bottom: 5px; }
+    .timeline-content { background: var(--surface-card); padding: 15px; border-radius: var(--radius-md, 10px); box-shadow: var(--shadow-sm, 0 2px 4px rgba(0,0,0,.05)); }
 
     @media (max-width: 768px) {
-        .member-header-content > div {
-            flex-direction: column;
-        }
-
-        .member-name {
-            font-size: 22px;
-        }
-
-        .tab-btn {
-            padding: 12px 16px;
-            font-size: 14px;
-        }
+        .vm-avatar { width: 56px; height: 56px; font-size: 24px; }
+        .tab-btn { padding: 12px 16px; font-size: 13px; }
+    }
+    @media (max-width: 480px) {
+        .vm-hero-main { align-items: flex-start; }
     }
 </style>
 
-<div style="margin-bottom: 20px;">
-    <a href="hub-operations?tab=members" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Members
-    </a>
-</div>
+<div class="vm-page">
 
-<div class="member-header">
-    <div class="member-header-content">
-        <div style="display: flex; align-items: flex-start; gap: 20px;">
-            <div class="member-avatar">
-                <?php echo strtoupper(substr((string)$memberName, 0, 1)); ?>
-            </div>
-
-            <div style="flex: 1;">
-                <div class="member-name"><?php echo h($memberName); ?></div>
-
-                <div class="member-number">
-                    <i class="fas fa-id-card"></i>
-                    <?php echo h($member['membership_number'] ?? 'N/A'); ?>
-                </div>
-
-                <div class="member-info-grid">
-                    <div class="member-info-item">
-                        <i class="fas fa-envelope"></i>
-                        <span><?php echo h($memberEmail); ?></span>
-                    </div>
-
-                    <?php if (!empty($member['emergency_contact'])): ?>
-                        <div class="member-info-item">
-                            <i class="fas fa-phone"></i>
-                            <span><?php echo h($member['emergency_contact']); ?></span>
-                        </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($member['company_name'])): ?>
-                        <div class="member-info-item">
-                            <i class="fas fa-building"></i>
-                            <span><?php echo h($member['company_name']); ?></span>
-                        </div>
-                    <?php endif; ?>
-
-                    <div class="member-info-item">
-                        <i class="fas fa-calendar"></i>
-                        <span>Joined <?php echo safe_date($member['registration_date'] ?? null); ?></span>
-                    </div>
-                </div>
-            </div>
-
-            <div>
-                <span class="badge badge-<?php echo h($badge); ?>" style="font-size: 14px; padding: 8px 16px;">
-                    <?php echo h($membershipStatus); ?>
-                </span>
+<div class="page-hero">
+    <div class="vm-hero-main">
+        <div class="vm-avatar" aria-hidden="true"><?php echo h(strtoupper(substr((string)$memberName, 0, 1))); ?></div>
+        <div style="min-width:0">
+            <h1><?php echo h($memberName); ?></h1>
+            <p><i class="fas fa-id-card" aria-hidden="true"></i> <?php echo h($member['membership_number'] ?? 'N/A'); ?></p>
+            <div class="vm-chips">
+                <span class="vm-chip vm-status"><?php echo h($membershipStatus); ?></span>
+                <?php if ($memberEmail !== ''): ?>
+                    <span class="vm-chip"><i class="fas fa-envelope" aria-hidden="true"></i><span><?php echo h($memberEmail); ?></span></span>
+                <?php endif; ?>
+                <?php if (!empty($member['emergency_contact'])): ?>
+                    <span class="vm-chip"><i class="fas fa-phone" aria-hidden="true"></i><span><?php echo h($member['emergency_contact']); ?></span></span>
+                <?php endif; ?>
+                <?php if (!empty($member['company_name'])): ?>
+                    <span class="vm-chip"><i class="fas fa-building" aria-hidden="true"></i><span><?php echo h($member['company_name']); ?></span></span>
+                <?php endif; ?>
+                <span class="vm-chip"><i class="fas fa-calendar" aria-hidden="true"></i><span>Joined <?php echo safe_date($member['registration_date'] ?? null); ?></span></span>
             </div>
         </div>
+    </div>
+
+    <div class="hero-actions">
+        <a href="hub-operations?tab=members" class="btn vm-hero-btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Members</a>
+        <a href="hub-operations?edit_member=<?php echo $member_id; ?>&tab=members" class="btn vm-hero-btn"><i class="fas fa-edit" aria-hidden="true"></i> Edit</a>
+        <?php if ($can_open_folder): ?>
+            <a href="member-folder?id=<?php echo $member_id; ?>" class="btn vm-hero-btn solid">
+                <i class="fas fa-folder-open" aria-hidden="true"></i> Member Folder
+                <?php if ($folder_count > 0): ?><span class="vm-count"><?php echo (int)$folder_count; ?></span><?php endif; ?>
+            </a>
+        <?php endif; ?>
     </div>
 </div>
 
 <?php if ($is_expired): ?>
-    <div class="status-alert danger">
-        <i class="fas fa-exclamation-circle" style="font-size: 24px;"></i>
+    <div class="alert alert-danger" role="status">
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
         <div>
             <strong>Membership Expired</strong><br>
-            <span>
-                This membership expired <?php echo abs(round($days_to_expire)); ?> days ago on
-                <?php echo safe_date($member['subscription_end_date'] ?? null); ?>
-            </span>
+            This membership expired <?php echo abs(round($days_to_expire)); ?> days ago on
+            <?php echo safe_date($member['subscription_end_date'] ?? null); ?>.
         </div>
     </div>
 <?php elseif ($is_expiring_soon): ?>
-    <div class="status-alert warning">
-        <i class="fas fa-exclamation-triangle" style="font-size: 24px;"></i>
+    <div class="alert alert-warning" role="status">
+        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
         <div>
             <strong>Expiring Soon</strong><br>
-            <span>
-                This membership will expire in <?php echo round($days_to_expire); ?> days on
-                <?php echo safe_date($member['subscription_end_date'] ?? null); ?>
-            </span>
+            This membership will expire in <?php echo round($days_to_expire); ?> days on
+            <?php echo safe_date($member['subscription_end_date'] ?? null); ?>.
         </div>
     </div>
 <?php elseif ($membershipStatus === 'Active'): ?>
-    <div class="status-alert success">
-        <i class="fas fa-check-circle" style="font-size: 24px;"></i>
+    <div class="alert alert-success" role="status">
+        <i class="fas fa-check-circle" aria-hidden="true"></i>
         <div>
             <strong>Active Membership</strong><br>
-            <span>Valid until <?php echo safe_date($member['subscription_end_date'] ?? null); ?></span>
+            Valid until <?php echo safe_date($member['subscription_end_date'] ?? null); ?>.
         </div>
     </div>
 <?php endif; ?>
 
 <div class="quick-actions">
-    <a href="hub-operations?edit_member=<?php echo $member_id; ?>&tab=members" class="btn btn-primary">
-        <i class="fas fa-edit"></i> Edit Member
-    </a>
-
     <a href="hub-operations?tab=subscriptions" class="btn btn-success">
-        <i class="fas fa-plus"></i> Add Payment
+        <i class="fas fa-plus" aria-hidden="true"></i> Add Payment
     </a>
 
     <a href="hub-operations?tab=receipts" class="btn btn-info">
-        <i class="fas fa-receipt"></i> Add Receipt
+        <i class="fas fa-receipt" aria-hidden="true"></i> Add Receipt
     </a>
 
-    <button onclick="sendNotification(<?php echo $member_id; ?>)" class="btn" style="background: #9B59B6; color: white;">
-        <i class="fas fa-bell"></i> Send Notification
+    <button type="button" onclick="sendNotification(<?php echo $member_id; ?>)" class="btn btn-secondary">
+        <i class="fas fa-bell" aria-hidden="true"></i> Send Notification
     </button>
-
     <?php if (ims_allowed('members.delete', ['Administrator'], 'Delete members')): ?>
         <button onclick="confirmDelete(<?= htmlspecialchars(json_encode((string)($memberName)), ENT_QUOTES, 'UTF-8') ?>, 'includes/hub-operations-process.php?delete_member=<?php echo $member_id; ?>&tab=members&csrf_token=<?= urlencode(csrf_token()) ?>')"
                 class="btn btn-danger">
@@ -1123,6 +926,8 @@ $badge = $status_badges[$membershipStatus] ?? 'secondary';
         </div>
     </div>
 </div>
+
+</div><!-- /.vm-page -->
 
 <?php include 'includes/footer.php'; ?>
 

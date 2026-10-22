@@ -1,0 +1,134 @@
+/* Member folder (legacy/member-folder.php). Hero, stat cards, tables and
+   buttons come from style.css / reports.css / assets.css; this file only
+   adds the folder-specific pieces. */
+
+.mf-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.mf-page .page-hero p strong { font-weight: 800; }
+
+.mf-hero-btn {
+  background: rgba(255, 255, 255, .14);
+  color: var(--ink-0);
+  border: 1px solid rgba(255, 255, 255, .35);
+  box-shadow: none;
+}
+.mf-hero-btn:hover { background: rgba(255, 255, 255, .24); color: var(--ink-0); }
+.mf-hero-btn.mf-hero-btn-solid { background: var(--ink-0); color: var(--brand-700); border-color: var(--ink-0); }
+.mf-hero-btn.mf-hero-btn-solid:hover { background: var(--brand-50); color: var(--brand-700); }
+
+.mf-page .stats-grid { margin-bottom: 0; }
+
+.mf-card { margin-bottom: 0; }
+.mf-card .card-header { gap: 12px; flex-wrap: wrap; }
+.mf-card .card-header h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.mf-card .card-header h3 i { color: var(--brand-500); }
+
+.mf-inline-form { display: inline-flex; margin: 0; }
+.mf-inline-form select { min-width: 110px; }
+
+/* 12-month receipt coverage */
+.mf-months {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+}
+.mf-month {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--ink-100);
+  font-size: 12px;
+  text-align: center;
+}
+.mf-month-name { font-weight: 700; }
+.mf-month-amt { font-size: 11px; color: var(--ink-400); min-height: 1em; }
+.mf-month.is-covered { background: var(--green-bg); border-color: var(--green-border); color: var(--green-fg); }
+.mf-month.is-missing { background: var(--surface-hover); color: var(--ink-300); }
+.mf-last { margin-top: 10px; }
+
+/* Upload */
+.mf-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 16px;
+}
+.mf-upload-grid .mf-wide { grid-column: span 2; }
+.mf-upload-grid [hidden] { display: none; }
+
+/* Documents */
+.mf-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+}
+.mf-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.mf-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ink-100);
+  color: var(--ink-500);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.mf-tabs a span { font-size: 11px; color: var(--ink-300); }
+.mf-tabs a.active,
+.mf-tabs a:hover { background: var(--brand-50); border-color: var(--brand-200); color: var(--brand-700); }
+.mf-exports { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.mf-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ink-500);
+}
+.mf-group:first-of-type { margin-top: 4px; }
+.mf-group i { color: var(--brand-500); }
+.mf-group span { font-weight: 600; color: var(--ink-300); }
+.mf-table .cell-truncate { display: block; max-width: 220px; }
+.mf-table .table-actions { flex-wrap: wrap; }
+
+@media (max-width: 1024px) {
+  .mf-months { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .mf-upload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .mf-months { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mf-upload-grid { grid-template-columns: 1fr; }
+  .mf-upload-grid .mf-wide { grid-column: auto; }
+  .mf-toolbar { flex-direction: column; align-items: stretch; }
+  .mf-table .cell-truncate { max-width: 100%; white-space: normal; }
+}
+
+@media print {
+  .mf-no-print,
+  .sidebar,
+  .main-header,
+  .accessibility-widget { display: none !important; }
+  .mf-page { gap: 12px; }
+  .page-hero { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .mf-month { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .stat-card, .card { box-shadow: none !important; border: 1px solid #e5e7eb; break-inside: avoid; }
+  .mf-months { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+}
