@@ -55,19 +55,14 @@ if (isset($_GET['edit'])) {
 }
 ?>
 
+<link rel="stylesheet" href="css/assets.css">
 <style>
-.spaces-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
-
-.spaces-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
+.ms-page { display: flex; flex-direction: column; gap: 20px; }
+.ms-page > .stats-grid { margin-bottom: 0; }
+.ms-hero-btn { background: rgba(255, 255, 255, .14); color: var(--ink-0); border: 1px solid rgba(255, 255, 255, .35); box-shadow: none; }
+.ms-hero-btn:hover { background: rgba(255, 255, 255, .24); color: var(--ink-0); }
+.ms-hero-btn.solid { background: var(--ink-0); color: var(--brand-700); border-color: var(--ink-0); }
+.ms-hero-btn.solid:hover { background: var(--brand-50); color: var(--brand-700); }
 
 .filter-bar {
     background: #f8f9fa;
@@ -314,10 +309,20 @@ if (isset($_GET['edit'])) {
 }
 </style>
 
-<!-- Header -->
-<div class="spaces-header">
-    <h1><i class="fas fa-building"></i> Manage Available Spaces</h1>
-    <p style="margin: 0; opacity: 0.9;">Manage bookable spaces and their availability</p>
+<div class="ms-page">
+
+<!-- Header (global .page-hero) -->
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-building" aria-hidden="true"></i> Manage Available Spaces</h1>
+        <p>Manage bookable spaces, their rates and availability.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="manage-bookings" class="btn ms-hero-btn"><i class="fas fa-calendar-check" aria-hidden="true"></i> Bookings</a>
+        <button type="button" onclick="openModal('addSpaceModal')" class="btn ms-hero-btn solid">
+            <i class="fas fa-plus" aria-hidden="true"></i> Add New Space
+        </button>
+    </div>
 </div>
 
 <!-- Statistics -->
@@ -353,13 +358,6 @@ if (isset($_GET['edit'])) {
             <span class="stat-value"><?php echo $stats['total_capacity']; ?></span>
         </div>
     </div>
-</div>
-
-<!-- Quick Actions -->
-<div style="margin-bottom: 25px;">
-    <button onclick="openModal('addSpaceModal')" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Add New Space
-    </button>
 </div>
 
 <!-- Filter Bar -->
@@ -677,6 +675,8 @@ if (isset($_GET['edit'])) {
         </div>
     </div>
 </div>
+
+</div><!-- /.ms-page -->
 
 <?php include 'includes/footer.php'; ?>
 
