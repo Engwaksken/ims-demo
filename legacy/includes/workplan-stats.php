@@ -209,9 +209,9 @@ function wp_compute_stats(array $workplan): array
                 $statusCounts[$status]++;
             }
             $progressSum += (float)($d['progress_percentage'] ?? 0);
-            if ($status === 'Delayed') {
-                $overdueCount++;
-            }
+            // A deliverable counts as overdue once, however many months are
+            // marked Overdue, so overdue + on-track always equals the total.
+            $isOverdue = ($status === 'Delayed');
 
             foreach (($d['monthly_status'] ?? []) as $mo => $entry) {
                 $st = $entry['status'] ?? 'Planned';
@@ -222,8 +222,11 @@ function wp_compute_stats(array $workplan): array
                     $perMonth[$mo][$st]++;
                 }
                 if ($st === 'Overdue') {
-                    $overdueCount++;
+                    $isOverdue = true;
                 }
+            }
+            if ($isOverdue) {
+                $overdueCount++;
             }
         }
     }

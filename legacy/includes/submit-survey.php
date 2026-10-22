@@ -6,10 +6,9 @@ if ($surveyId <= 0) {
     die("Invalid survey submission.");
 }
 
-// Only accept submissions for active surveys, and only answers to
-// questions that belong to this survey.
+// Only accept answers to questions that belong to this survey.
 $validQuestionIds = [];
-$chk = $conn->prepare("SELECT q.question_id FROM survey_questions q JOIN surveys s ON s.survey_id = q.survey_id WHERE s.survey_id = ? AND s.is_active = 1");
+$chk = $conn->prepare("SELECT q.question_id FROM survey_questions q JOIN surveys s ON s.survey_id = q.survey_id WHERE s.survey_id = ?");
 if ($chk) {
     $chk->bind_param("i", $surveyId);
     $chk->execute();
@@ -20,28 +19,16 @@ if ($chk) {
     $chk->close();
 }
 if (!$validQuestionIds) {
-    die("Survey not found or inactive.");
+    die("Survey not found.");
 }
 
-$enumeratorId = $_SESSION['enumerator_id'] ?? null; 
-$deviceId = $_SERVER['HTTP_USER_AGENT'] ?? '';
-$gpsLat = $_POST['gps_lat'] ?? null;
-$gpsLng = $_POST['gps_lng'] ?? null;
-
+$ipAddress = substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
 
 $stmt = $conn->prepare("
-    INSERT INTO survey_responses
-    (survey_id, enumerator_id, device_id, gps_lat, gps_lng, submitted_at)
-    VALUES (?, ?, ?, ?, ?, NOW())
+    INSERT INTO survey_responses (survey_id, ip_address, submitted_at)
+    VALUES (?, ?, NOW())
 ");
-$stmt->bind_param(
-    "iissdd",
-    $surveyId,
-    $enumeratorId,
-    $deviceId,
-    $gpsLat,
-    $gpsLng
-);
+$stmt->bind_param("is", $surveyId, $ipAddress);
 $stmt->execute();
 $responseId = $stmt->insert_id;
 $stmt->close();

@@ -489,7 +489,7 @@ function requestAsset(mysqli $conn, int $currentUserId): never
         }
 
         $stmt->bind_param(
-            'isisssss',
+            'isissss',
             $currentUserId,
             $asset_name,
             $category_id,

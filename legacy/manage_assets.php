@@ -37,7 +37,7 @@ function exportCsv(string $filename, array $headers, array $rows): never
 
 function exportPdf(string $filename, string $title, array $headers, array $rows): never
 {
-    require_once __DIR__ . '/vendor/autoload.php';
+    foreach ([__DIR__ . '/vendor/autoload.php', dirname(__DIR__) . '/vendor/autoload.php'] as $ims_autoload) { if (is_file($ims_autoload)) { require_once $ims_autoload; break; } }
     while (ob_get_level() > 0) ob_end_clean();
 
     $html = "
@@ -363,33 +363,33 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
     <?php endif; ?>
 
     <!-- Stats -->
-    <div class="stats-grid">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
-            <div class="stat-icon bg-primary"><i class="fas fa-boxes-stacked"></i></div>
-            <div>
-                <div class="stat-label">Total Assets</div>
-                <div class="stat-value"><?= number_format($data['stats']['total_assets']) ?></div>
+            <div class="stat-icon bg-primary"><i class="fas fa-boxes-stacked" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Total Assets</span>
+                <span class="stat-value"><?= number_format($data['stats']['total_assets']) ?></span>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-green"><i class="fas fa-check"></i></div>
-            <div>
-                <div class="stat-label">Available</div>
-                <div class="stat-value"><?= number_format($data['stats']['available_assets']) ?></div>
+            <div class="stat-icon bg-green"><i class="fas fa-check" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Available</span>
+                <span class="stat-value"><?= number_format($data['stats']['available_assets']) ?></span>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-blue"><i class="fas fa-user-check"></i></div>
-            <div>
-                <div class="stat-label">Assigned</div>
-                <div class="stat-value"><?= number_format($data['stats']['assigned_assets']) ?></div>
+            <div class="stat-icon bg-blue"><i class="fas fa-user-check" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Assigned</span>
+                <span class="stat-value"><?= number_format($data['stats']['assigned_assets']) ?></span>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-amber"><i class="fas fa-clock"></i></div>
-            <div>
-                <div class="stat-label">Pending Requests</div>
-                <div class="stat-value"><?= number_format($data['stats']['pending_requests']) ?></div>
+            <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Pending Requests</span>
+                <span class="stat-value"><?= number_format($data['stats']['pending_requests']) ?></span>
             </div>
         </div>
     </div>

@@ -54,7 +54,7 @@ if (isset($_POST['add_linkage'])) {
             send_notification($_SESSION['user_id'], 'Participant is already linked to this project', 'warning');
         } else {
             // Create linkage
-            $stmt = $conn->prepare("INSERT INTO project_beneficiaries (project_id, beneficiary_id, status, enrollment_date) VALUES (?, ?, 'Active', NOW())");
+            $stmt = $conn->prepare("INSERT INTO project_beneficiaries (project_id, beneficiary_id, participation_type, status, enrollment_date) VALUES (?, ?, 'Other', 'Active', NOW())");
             $stmt->bind_param("ii", $link_project_id, $beneficiary_id);
             
             if ($stmt->execute()) {

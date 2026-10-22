@@ -9,7 +9,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-check_role(['Administrator']);
+check_role(IMS_ADMIN_ROLES); // same roles as settings.php, so everyone who can open the page can save it
 
 if (!isset($conn) || !($conn instanceof mysqli)) {
     http_response_code(500);

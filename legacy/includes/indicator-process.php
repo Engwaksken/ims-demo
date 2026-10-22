@@ -152,23 +152,26 @@ if (isset($_POST['update_progress'])) {
         exit();
     }
     
-    // Update indicator current value
+    // Save the history row and the current value together, so the value
+    // never changes without a matching progress record.
+    $conn->begin_transaction();
+    $stmt2 = $conn->prepare("INSERT INTO indicator_progress (indicator_id, reporting_period, actual_value, progress_notes, responsible_person, recorded_date) VALUES (?, ?, ?, ?, ?, CURDATE())");
     $stmt = $conn->prepare("UPDATE indicators SET current_value = ?, last_updated = NOW() WHERE indicator_id = ?");
-    $stmt->bind_param("di", $actual_value, $indicator_id);
-    
-    if ($stmt->execute()) {
-        // Add progress record
-        $stmt2 = $conn->prepare("INSERT INTO indicator_progress (indicator_id, reporting_period, actual_value, progress_notes, responsible_person) VALUES (?, ?, ?, ?, ?)");
+    $ok = $stmt2 && $stmt;
+    if ($ok) {
         $stmt2->bind_param("isdss", $indicator_id, $reporting_period, $actual_value, $progress_notes, $responsible_person);
-        
-        if ($stmt2->execute()) {
-            log_action($_SESSION['user_id'], 'Update Indicator Progress', 'indicators', $indicator_id, "Updated progress to $actual_value");
-            send_notification($_SESSION['user_id'], 'Progress updated successfully', 'success');
-        } else {
-            send_notification($_SESSION['user_id'], 'Error adding progress record: ' . $conn->error, 'danger');
-        }
+        $stmt->bind_param("di", $actual_value, $indicator_id);
+        $ok = $stmt2->execute() && $stmt->execute();
+    }
+
+    if ($ok) {
+        $conn->commit();
+        log_action($_SESSION['user_id'], 'Update Indicator Progress', 'indicators', $indicator_id, "Updated progress to $actual_value");
+        send_notification($_SESSION['user_id'], 'Progress updated successfully', 'success');
     } else {
-        send_notification($_SESSION['user_id'], 'Error updating progress: ' . $conn->error, 'danger');
+        error_log('Indicator progress update failed: ' . $conn->error);
+        $conn->rollback();
+        send_notification($_SESSION['user_id'], 'Error updating progress. Please try again.', 'danger');
     }
     
     header("Location: ../indicators");

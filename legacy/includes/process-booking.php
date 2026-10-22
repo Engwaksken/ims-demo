@@ -2,6 +2,7 @@
 session_start();
 require_once 'config.php';
 require_once 'mail-function.php';
+require_once __DIR__ . '/pricing.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -125,7 +126,6 @@ if (isset($_POST['action']) && $_POST['action'] == 'create_booking') {
     $catering_required = isset($_POST['catering_required']) ? 1 : 0;
     $catering_description = $conn->real_escape_string(sanitize_input($_POST['catering_description']));
     $special_requests = $conn->real_escape_string(sanitize_input($_POST['special_requests']));
-    $total_amount = floatval($_POST['total_amount']);
 
     // Validate required fields
     if (empty($space_id) || empty($booking_date) || empty($start_time) || empty($purpose)) {
@@ -156,8 +156,9 @@ if (isset($_POST['action']) && $_POST['action'] == 'create_booking') {
     }
 
     $space = $space_result->fetch_assoc();
-    $space_type = $space['space_type'];
-    $space_name = $space['space_name'];
+    // Escaped: these go into string-built SQL below (e.g. "Founder's Room").
+    $space_type = $conn->real_escape_string((string)$space['space_type']);
+    $space_name = $conn->real_escape_string((string)$space['space_name']);
     $capacity = $space['capacity'];
 
     // Validate number of attendees
@@ -172,8 +173,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'create_booking') {
     if ($booking_type == 'hourly') {
         $start = new DateTime($start_time);
         $end = new DateTime($end_time);
-        $interval = $start->diff($end);
-        $duration_hours = $interval->h + ($interval->i / 60);
+        $duration_hours = ($end->getTimestamp() - $start->getTimestamp()) / 3600; // negative if reversed
 
         if ($duration_hours <= 0) {
             $_SESSION['error'] = "End time must be after start time.";
@@ -184,7 +184,23 @@ if (isset($_POST['action']) && $_POST['action'] == 'create_booking') {
         $duration_hours = 4;
     } elseif ($booking_type == 'full_day') {
         $duration_hours = 8;
+    } else {
+        $_SESSION['error'] = "Please choose a valid booking type.";
+        header("Location: $return_to");
+        exit();
     }
+
+    // The overlap check below compares start/end, so they must be in order
+    // for every booking type, not just hourly.
+    if ($end_time === '' || strtotime($end_time) <= strtotime($start_time)) {
+        $_SESSION['error'] = "End time must be after start time.";
+        header("Location: $return_to");
+        exit();
+    }
+
+    // Price is computed here; the amount posted by the form is only a preview.
+    $pricing = calculate_booking_amount($conn, $member_id, $space, $booking_type, (float)$duration_hours, $booking_date);
+    $total_amount = round((float)$pricing['amount'], 2);
 
     // Check for conflicts (same space, overlapping time) - this is the
     // authoritative double-booking guard; the calendar UI is just a preview.
@@ -242,7 +258,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'create_booking') {
         // Build a common booking data array for the email templates
         $booking_email_data = [
             'booking_id'          => $booking_id,
-            'space_name'          => $space_name,
+            'space_name'          => $space['space_name'],
             'space_type'          => $space_type,
             'booking_date'        => $booking_date,
             'start_time'          => $start_time,
@@ -377,8 +393,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'update_booking') {
     // booking_type selector in edit mode (see book-space.php).
     $start = new DateTime($start_time);
     $end = new DateTime($end_time);
-    $interval = $start->diff($end);
-    $duration_hours = $interval->h + ($interval->i / 60);
+    $duration_hours = ($end->getTimestamp() - $start->getTimestamp()) / 3600; // negative if reversed
 
     if ($duration_hours <= 0) {
         $_SESSION['error'] = "End time must be after start time.";
@@ -462,7 +477,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'update_booking') {
         // In-app notification
         $notif_query = "INSERT INTO member_notifications (member_id, notification_type, title, message, link_url) 
                        VALUES ($member_id, 'Booking Confirmed', 'Booking Updated', 
-                               'Your booking for {$booking['space_name']} has been updated and is pending confirmation.', 
+                               'Your booking for " . $conn->real_escape_string((string)$booking['space_name']) . " has been updated and is pending confirmation.', 
                                '../my-bookings')";
         if (!$conn->query($notif_query)) {
             error_log("Booking #$booking_id: update notification insert failed: " . $conn->error);
@@ -470,7 +485,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'update_booking') {
 
         // Log activity
         $log_query = "INSERT INTO activity_log (user_id, action, description, ip_address) 
-                     VALUES ($user_id, 'Update Booking', 'Updated booking #$booking_id details for {$booking['space_name']}', '{$_SERVER['REMOTE_ADDR']}')";
+                     VALUES ($user_id, 'Update Booking', 'Updated booking #$booking_id details for " . $conn->real_escape_string((string)$booking['space_name']) . "', '{$_SERVER['REMOTE_ADDR']}')";
         if (!$conn->query($log_query)) {
             error_log("Booking #$booking_id: update activity log insert failed: " . $conn->error);
         }
@@ -590,7 +605,7 @@ if (isset($_GET['cancel_booking'])) {
         // In-app notification
         $notif_query = "INSERT INTO member_notifications (member_id, notification_type, title, message) 
                        VALUES ($member_id, 'Booking Confirmed', 'Booking Cancelled', 
-                               'Your booking for {$booking['space_name']} on {$booking['booking_date']} has been cancelled.')";
+                               'Your booking for " . $conn->real_escape_string((string)$booking['space_name']) . " on " . $conn->real_escape_string((string)$booking['booking_date']) . " has been cancelled.')";
         if (!$conn->query($notif_query)) {
             error_log("Booking #$booking_id: cancellation notification insert failed: " . $conn->error);
         }
@@ -697,8 +712,7 @@ if (isset($_POST['reschedule_booking'])) {
     // Calculate new duration
     $start = new DateTime($new_start_time);
     $end = new DateTime($new_end_time);
-    $interval = $start->diff($end);
-    $new_duration = $interval->h + ($interval->i / 60);
+    $new_duration = ($end->getTimestamp() - $start->getTimestamp()) / 3600; // negative if reversed
 
     if ($new_duration <= 0) {
         $_SESSION['error'] = "End time must be after start time.";
@@ -710,7 +724,7 @@ if (isset($_POST['reschedule_booking'])) {
     $conflict_result = run_query_or_fail(
         $conn,
         "SELECT * FROM space_bookings 
-         WHERE space_name = '{$booking['space_name']}' 
+         WHERE space_name = '" . $conn->real_escape_string((string)$booking['space_name']) . "' 
          AND booking_date = '$new_date' 
          AND booking_id != $booking_id
          AND booking_status NOT IN ('Cancelled', 'No Show')
@@ -752,7 +766,7 @@ if (isset($_POST['reschedule_booking'])) {
         // In-app notification
         $notif_query = "INSERT INTO member_notifications (member_id, notification_type, title, message) 
                        VALUES ($member_id, 'Booking Confirmed', 'Booking Rescheduled', 
-                               'Your booking for {$booking['space_name']} has been rescheduled to $new_date. Pending confirmation.')";
+                               'Your booking for " . $conn->real_escape_string((string)$booking['space_name']) . " has been rescheduled to $new_date. Pending confirmation.')";
         if (!$conn->query($notif_query)) {
             error_log("Booking #$booking_id: reschedule notification insert failed: " . $conn->error);
         }

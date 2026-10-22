@@ -104,10 +104,10 @@ if ($res) {
                     <button class="btn btn-dark">
                         <i class="fas fa-search"></i> Search
                     </button>
-                    <a href="my_procurement_requests" class="btn btn-gray">
+                    <a href="my_requests" class="btn btn-gray">
                         <i class="fas fa-rotate-left"></i> Reset
                     </a>
-                    <a href="my_procurement_requests?search=<?= urlencode($search) ?>&export=pdf" class="btn btn-red">
+                    <a href="my_requests?search=<?= urlencode($search) ?>&export=pdf" class="btn btn-red">
                         <i class="fas fa-file-pdf"></i> Export PDF
                     </a>
                 </form>
@@ -253,7 +253,7 @@ if ($res) {
 
         <div class="modal-body">
             <!-- Posts to self; action=submit_request routes to submitMyAssetRequest() -->
-            <form method="POST" action="my_procurement_requests">
+            <form method="POST" action="my_requests">
                 <input type="hidden" name="action" value="submit_request">
 
                 <div class="form-grid">
@@ -314,7 +314,7 @@ if ($res) {
         </div>
 
         <div class="modal-body">
-            <form method="POST" action="my_procurement_requests">
+            <form method="POST" action="my_requests">
                 <input type="hidden" name="action" value="update_request">
                 <input type="hidden" name="request_id" id="edit_request_id">
 

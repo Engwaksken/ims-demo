@@ -101,7 +101,7 @@ if (isset($_POST['edit_program'])) {
     
     // Update program
     $stmt = $conn->prepare("UPDATE programs SET program_code = ?, program_name = ?, donor_id = ?, start_date = ?, end_date = ?, budget = ?, currency = ?, status = ?, description = ?, objectives = ? WHERE id = ?");
-    $stmt->bind_param("ssissddsssi", $program_code, $program_name, $donor_id, $start_date, $end_date, $budget, $currency, $status, $description, $objectives, $id);
+    $stmt->bind_param("ssissdssssi", $program_code, $program_name, $donor_id, $start_date, $end_date, $budget, $currency, $status, $description, $objectives, $id);
     
     if ($stmt->execute()) {
         log_action($_SESSION['user_id'], 'Edit program', 'programs', $id, "Updated program: $program_name");
@@ -125,9 +125,9 @@ if (isset($_POST['delete_program']) && ims_allowed('programs.delete', ['Administ
     
     // Check for dependencies
     $check = $conn->query("SELECT 
-        (SELECT COUNT(*) FROM program_beneficiaries WHERE id = $id) as beneficiaries,
-        (SELECT COUNT(*) FROM indicators WHERE id = $id) as indicators");
-    $counts = $check->fetch_assoc();
+        (SELECT COUNT(*) FROM programs_beneficiaries WHERE program_id = $id) as beneficiaries,
+        (SELECT COUNT(*) FROM indicators WHERE program_id = $id) as indicators");
+    $counts = $check ? $check->fetch_assoc() : ['beneficiaries' => 1, 'indicators' => 0]; // fail closed
     
     if ($counts['beneficiaries'] > 0 || $counts['indicators'] > 0) {
         send_notification($_SESSION['user_id'], "Cannot delete program. It has {$counts['beneficiaries']} beneficiaries and {$counts['indicators']} indicators.", 'danger');

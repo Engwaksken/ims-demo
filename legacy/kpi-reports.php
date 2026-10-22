@@ -10,7 +10,8 @@ $is_hr = ims_allowed('kpi_reports.view_all', ['Administrator', 'Programs Lead', 
 // Get filter parameters
 $filter_department = isset($_GET['department']) ? intval($_GET['department']) : 0;
 $filter_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
-$filter_user = $is_hr && isset($_GET['user']) ? intval($_GET['user']) : $_SESSION['user_id'];
+// Reviewers default to "All Employees" (0), matching the dropdown.
+$filter_user = $is_hr ? (int)($_GET['user'] ?? 0) : (int)$_SESSION['user_id'];
 
 // If not HR, force filter to current user
 if (!$is_hr) {
@@ -314,47 +315,50 @@ $needs_attention = array_slice($needs_attention, 0, 5);
     background: linear-gradient(90deg, #27AE60, #2ECC71);
     transition: width 0.5s ease;
 }
+
+.kpi-weight-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+    .kpi-weight-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 <!-- Statistics Overview -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-bullseye"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $total_kpis; ?></h4>
-            <p>Total KPIs</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-bullseye" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total KPIs</span>
+            <span class="stat-value"><?php echo $total_kpis; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $status_counts['Approved']; ?></h4>
-            <p>Approved</p>
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Approved</span>
+            <span class="stat-value"><?php echo $status_counts['Approved']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-chart-line"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $overall_avg_achievement; ?>%</h4>
-            <p>Avg Achievement</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Avg Achievement</span>
+            <span class="stat-value"><?php echo $overall_avg_achievement; ?>%</span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-tasks"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo count($kpis_with_achievement); ?></h4>
-            <p>In Progress</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-tasks" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">In Progress</span>
+            <span class="stat-value"><?php echo count($kpis_with_achievement); ?></span>
         </div>
     </div>
 </div>
@@ -503,7 +507,7 @@ $needs_attention = array_slice($needs_attention, 0, 5);
             <div class="section-title">
                 <i class="fas fa-weight"></i> Weight Distribution
             </div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 15px;">
+            <div class="kpi-weight-grid">
                 <div style="text-align: center; padding: 20px; background: #ffe5e5; border-radius: 8px;">
                     <div style="font-size: 28px; font-weight: bold; color: #c62828;"><?php echo $high_weight; ?></div>
                     <div style="font-size: 13px; color: #666; margin-top: 5px;">High Weight (=30%)</div>

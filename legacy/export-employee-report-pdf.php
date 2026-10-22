@@ -122,7 +122,7 @@ if ($filter_department) {
 }
 
 // Load DomPDF
-require_once 'vendor/autoload.php';
+foreach ([__DIR__ . '/vendor/autoload.php', dirname(__DIR__) . '/vendor/autoload.php'] as $ims_autoload) { if (is_file($ims_autoload)) { require_once $ims_autoload; break; } }
 
 use Dompdf\Dompdf;
 use Dompdf\Options;

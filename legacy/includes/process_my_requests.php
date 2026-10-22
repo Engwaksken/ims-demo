@@ -487,7 +487,7 @@ function buildMyRequestsWhere(int $currentUserId, string $search): array
 
 function exportMyRequestsPdf(mysqli $conn, string $where, string $types, array $params): never
 {
-    require_once __DIR__ . '/../vendor/autoload.php';
+    foreach ([dirname(__DIR__) . '/vendor/autoload.php', dirname(__DIR__, 2) . '/vendor/autoload.php'] as $ims_autoload) { if (is_file($ims_autoload)) { require_once $ims_autoload; break; } }
 
     $stmt = $conn->prepare("
         SELECT

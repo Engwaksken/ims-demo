@@ -5,7 +5,7 @@ $load_chartjs = true; // header.php loads Chart.js in <head> so inline chart scr
 require_once 'includes/header.php';
 check_role(['Administrator', 'MEAL Lead', 'Programs Lead','Executive Director', 'Program Director']);
 
-function h(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function h(mixed $v): string { return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
 
 /* -- Survey ID -------------------------------------------------------- */
 $surveyId = isset($_GET['id']) ? (int) $_GET['id'] : 0;

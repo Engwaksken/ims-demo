@@ -60,7 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* Validate */
     $errors = [];
+    // Must match the subscription_payments.payment_method enum.
+    $allowed_methods = ['Cash', 'Mobile Money', 'Bank Transfer', 'Card', 'Cheque'];
     if (empty($payment_method))    $errors[] = "Payment method is required.";
+    elseif (!in_array($payment_method, $allowed_methods, true)) $errors[] = "Please choose a valid payment method.";
     if (empty($payment_reference)) $errors[] = "Payment reference / transaction ID is required.";
     if (empty($payment_date))      $errors[] = "Payment date is required.";
     elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $payment_date)) $errors[] = "Payment date is invalid.";
@@ -106,8 +109,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE  payment_id = ?
         ");
         $upd->bind_param('sssssi', $payment_method, $payment_reference, $payment_date, $receipt_path, $notes, $payment_id);
-        $upd->execute();
+        $saved = $upd->execute();
+        if (!$saved) {
+            error_log("upload-receipt: payment #$payment_id update failed: " . $upd->error);
+        }
         $upd->close();
+    }
+
+    if (empty($errors) && empty($saved)) {
+        $error_msg = 'Your receipt could not be recorded. Please try again or contact support.';
+    } elseif (empty($errors)) {
 
         /* Notify admins */
         $admin_res = $conn->query("SELECT user_id FROM users WHERE role IN ('Administrator','Operations/Admin') LIMIT 10");
@@ -431,10 +442,10 @@ textarea.fc { resize:vertical; min-height:80px; }
                         <option value="">Select Method </option>
                         <?php
                         $methods = [
-                            'Bank Transfer'  => ['Bank Transfer','Cheque'],
+                            'Mobile'         => ['Mobile Money'],
+                            'Bank'           => ['Bank Transfer','Cheque'],
                             'Cash'           => ['Cash'],
-                            'Card'           => ['Visa','Mastercard'],
-                            'Other'          => ['Other'],
+                            'Card'           => ['Card'],
                         ];
                         $prev = $payment['payment_method'] ?? '';
                         foreach ($methods as $grp => $opts):

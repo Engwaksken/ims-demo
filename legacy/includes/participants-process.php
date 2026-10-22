@@ -79,7 +79,7 @@ if (isset($_POST['add_participant'])) {
                 $link_check = $conn->query("SELECT * FROM project_beneficiaries WHERE project_id = $link_project_id AND beneficiary_id = $new_beneficiary_id");
                 
                 if ($link_check->num_rows == 0) {
-                    $link_stmt = $conn->prepare("INSERT INTO project_beneficiaries (project_id, beneficiary_id, status, enrollment_date) VALUES (?, ?, 'Active', NOW())");
+                    $link_stmt = $conn->prepare("INSERT INTO project_beneficiaries (project_id, beneficiary_id, participation_type, status, enrollment_date) VALUES (?, ?, 'Other', 'Active', NOW())");
                     $link_stmt->bind_param("ii", $link_project_id, $new_beneficiary_id);
                     
                     if ($link_stmt->execute()) {
@@ -171,7 +171,7 @@ if (isset($_POST['edit_beneficiary'])) {
     }
     
     $stmt = $conn->prepare("UPDATE beneficiaries SET first_name = ?, last_name = ?, gender = ?, date_of_birth = ?, phone = ?, email = ?, district = ?, subcounty = ?, village = ?, education_level = ?, occupation = ?, is_pwd = ?, pwd_type = ? WHERE beneficiary_id = ?");
-    $stmt->bind_param("ssssssssssssii", $first_name, $last_name, $gender, $date_of_birth, $phone, $email, $district, $subcounty, $village, $education_level, $occupation, $is_pwd, $disability_type, $beneficiary_id);
+    $stmt->bind_param("sssssssssssisi", $first_name, $last_name, $gender, $date_of_birth, $phone, $email, $district, $subcounty, $village, $education_level, $occupation, $is_pwd, $disability_type, $beneficiary_id);
     
     if ($stmt->execute()) {
         log_action($_SESSION['user_id'], 'Edit Participant', 'participants', $beneficiary_id, "Updated participant: $first_name $last_name");
@@ -349,7 +349,7 @@ if (isset($_POST['upload_csv'])) {
                 
                 // Link to project if project_id is provided
                 if ($project_id > 0) {
-                    $link_stmt = $conn->prepare("INSERT INTO project_beneficiaries (project_id, beneficiary_id, status, enrollment_date) VALUES (?, ?, 'Active', NOW())");
+                    $link_stmt = $conn->prepare("INSERT INTO project_beneficiaries (project_id, beneficiary_id, participation_type, status, enrollment_date) VALUES (?, ?, 'Other', 'Active', NOW())");
                     $link_stmt->bind_param("ii", $project_id, $new_beneficiary_id);
                     $link_stmt->execute();
                 }

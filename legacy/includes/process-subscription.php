@@ -107,11 +107,14 @@ if (isset($_POST['action']) && $_POST['action'] === 'renew') {
     // itself is NOT extended yet. It only gets extended once the payment
     // is confirmed (see make-payment.php / wherever payments get marked Paid),
     // so a member can't get extra days just by clicking "Renew".
+    // invoice_number is NOT NULL and UNIQUE: insert a unique placeholder,
+    // then replace it with the real number once payment_id is known.
+    $tmp_invoice = 'TMP-' . bin2hex(random_bytes(8));
     $insert_query = "INSERT INTO subscription_payments (
-        member_id, subscription_plan, amount, payment_period_start, payment_period_end,
+        member_id, invoice_number, subscription_plan, amount, payment_period_start, payment_period_end,
         payment_status, created_at
     ) VALUES (
-        $member_id, '" . $conn->real_escape_string($plan) . "', $amount,
+        $member_id, '$tmp_invoice', '" . $conn->real_escape_string($plan) . "', $amount,
         '$period_start', '$period_end', 'Pending', NOW()
     )";
 
@@ -160,7 +163,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'renew') {
         header("Location: ../make-payment?payment_id=$payment_id");
     } else {
         error_log("Renewal insert failed: " . $conn->error . " | SQL: $insert_query");
-        $_SESSION['error'] = "Error creating renewal invoice: " . $conn->error;
+        $_SESSION['error'] = "Error creating renewal invoice. Please try again or contact the administrator.";
         header("Location: $redirect_back");
     }
     exit();
@@ -184,85 +187,47 @@ if (isset($_POST['action']) && $_POST['action'] === 'upgrade') {
     }
 
     $old_plan = $member['subscription_plan'];
-    $old_amount = floatval($member['subscription_amount']);
 
     /*
-     * NOTE: proper proration requires knowing the price of each plan tier.
-     * That pricing isn't available in the schema this file has visibility
-     * into (there's no plan-rate/price table provided), so the prorated
-     * charge below is a straightforward day-rate estimate using the
-     * member's CURRENT subscription_amount as the daily-rate basis for
-     * the remaining period. Replace $new_amount_estimate below with a
-     * real lookup against your plan pricing table once available.
+     * There is no plan price table: each member's subscription_amount is
+     * set by staff in Hub Operations. Switching the plan here without a
+     * price meant the next renewal billed the new period at the old amount
+     * (e.g. a year at the weekly price). So a member-initiated change is a
+     * request: staff are notified and apply the new plan + amount.
      */
-    $days_remaining = max(0, ceil((strtotime($member['subscription_end_date']) - strtotime('today')) / 86400));
-    $new_amount_estimate = $old_amount; // placeholder until real plan pricing is wired in
-
-    // Update the member's plan immediately so their account reflects the
-    // new tier; billing for the difference is tracked as a Pending payment
-    // below rather than blocking the plan change on payment first.
-    $update_query = "UPDATE members SET subscription_plan = '" . $conn->real_escape_string($new_plan) . "' WHERE member_id = $member_id";
-
-    if ($conn->query($update_query)) {
-
-        // Record a Pending prorated payment for the plan change so Finance
-        // has a paper trail, even though the exact amount is a placeholder
-        // until plan pricing data is available (see NOTE above).
-        $insert_query = "INSERT INTO subscription_payments (
-            member_id, subscription_plan, amount, payment_period_start, payment_period_end,
-            payment_status, created_at
-        ) VALUES (
-            $member_id, '" . $conn->real_escape_string($new_plan) . "', $new_amount_estimate,
-            CURDATE(), '{$member['subscription_end_date']}', 'Pending', NOW()
-        )";
-
-        $payment_id = null;
-        if ($conn->query($insert_query)) {
-            $payment_id = $conn->insert_id;
-            $invoice_number = build_invoice_number($member_id, $payment_id);
-            $conn->query("UPDATE subscription_payments SET invoice_number = '$invoice_number' WHERE payment_id = $payment_id");
-        } else {
-            error_log("Upgrade #$member_id: prorated payment insert failed: " . $conn->error);
-        }
-
-        // Log activity
-        $log_query = "INSERT INTO activity_log (user_id, action, description, ip_address) 
-                     VALUES ($user_id, 'Upgrade Subscription', 'Upgraded member #$member_id from $old_plan to $new_plan', '{$_SERVER['REMOTE_ADDR']}')";
-        if (!$conn->query($log_query)) {
-            error_log("Upgrade #$member_id: activity log insert failed: " . $conn->error);
-        }
-
-        // In-app notification
-        $notif_query = "INSERT INTO member_notifications (member_id, notification_type, title, message, link_url) 
-                       VALUES ($member_id, 'Payment', 'Plan Upgraded', 
-                               'Your subscription plan has been upgraded from $old_plan to $new_plan.' . 
-                               ($payment_id ? ' A prorated invoice has been created - please review and complete payment.' : ''), 
-                               '../my-subscription')";
-        if (!$conn->query($notif_query)) {
-            error_log("Upgrade #$member_id: notification insert failed: " . $conn->error);
-        }
-
-        // Optional email confirmation
-        if (function_exists('send_subscription_upgrade_email') && !empty($member['email'])) {
-            try {
-                send_subscription_upgrade_email($member['email'], [
-                    'full_name' => $member['full_name'] ?? '',
-                    'old_plan'  => $old_plan,
-                    'new_plan'  => $new_plan,
-                    'amount'    => $new_amount_estimate,
-                ]);
-            } catch (Throwable $e) {
-                error_log("Upgrade #$member_id: confirmation email failed: " . $e->getMessage());
+    $member_name = (string)($member['full_name'] ?? $member['company_name'] ?? ('Member #' . $member_id));
+    $staff = $conn->query("SELECT user_id FROM users WHERE is_active = 1 AND role IN ('Administrator', 'Operations/Admin', 'Finance', 'Accountant')");
+    $notified = 0;
+    if ($staff) {
+        while ($row = $staff->fetch_assoc()) {
+            if (notify_user(
+                (int)$row['user_id'],
+                'Plan change requested',
+                "$member_name asked to change their subscription from $old_plan to $new_plan. Update the plan and amount in Hub Operations.",
+                'info',
+                (int)$member_id,
+                'member'
+            )) {
+                $notified++;
             }
         }
-
-        $_SESSION['success'] = "Plan upgraded from $old_plan to $new_plan." . ($payment_id ? " A prorated invoice (#$invoice_number) has been created." : "");
-        header("Location: $redirect_back");
-    } else {
-        error_log("Upgrade #$member_id: plan update failed: " . $conn->error);
-        $_SESSION['error'] = "Error upgrading plan: " . $conn->error;
-        header("Location: $redirect_back");
     }
+
+    log_action($user_id, 'Request Plan Change', 'members', (int)$member_id, "Requested change from $old_plan to $new_plan");
+
+    $member_msg = $conn->real_escape_string("Your request to change from $old_plan to $new_plan has been sent. The team will confirm the new amount with you.");
+    if (!$conn->query("INSERT INTO member_notifications (member_id, notification_type, title, message, link_url)
+                       VALUES ($member_id, 'Payment', 'Plan Change Requested', '$member_msg', '../my-subscription')")) {
+        error_log("Plan change request #$member_id: notification insert failed: " . $conn->error);
+    }
+
+    if ($notified > 0) {
+        $_SESSION['success'] = "Your request to change to the $new_plan plan has been sent. The team will confirm the new amount with you.";
+    } else {
+        error_log("Plan change request #$member_id: no staff could be notified");
+        $_SESSION['error'] = "We could not send your plan change request. Please contact the administrator.";
+    }
+    header("Location: $redirect_back");
     exit();
 }
 

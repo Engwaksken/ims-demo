@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once 'includes/header.php';
 check_role(['Administrator', 'MEAL Lead', 'Programs Lead','Executive Director']);
 
-function h(string $v): string  { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function h(mixed $v): string { return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
 function clean(mixed $v): string { return trim((string) $v); }
 
 $survey_id = (int) ($_GET['id'] ?? 0);
