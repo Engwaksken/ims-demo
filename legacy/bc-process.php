@@ -28,6 +28,10 @@ $supRes = $conn->query("SELECT supervisor_id FROM employee_directory WHERE user_
 if ($supRes && ($supRow = $supRes->fetch_assoc())) {
     $supervisor_id = (int)($supRow['supervisor_id'] ?? 0);
 }
+// An employee can never be their own supervisor (they would approve their own assessment).
+if ($supervisor_id <= 0 || $supervisor_id === $uid) {
+    $supervisor_id = null;
+}
 $period_from     = cl($_POST['period_from']        ?? '');
 $period_to       = cl($_POST['period_to']          ?? '');
 $discussion_date = cl($_POST['discussion_date']    ?? '');
@@ -83,7 +87,7 @@ try {
         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())
     ");
     $stmt->bind_param(
-        'iissssssssdss',
+        'iissssssssds',
         $uid, $supervisor_id, $full_name, $department, $job_title,
         $period_from, $period_to, $discussion_date,
         $emp_overall, $mgr_overall,
@@ -118,7 +122,7 @@ try {
     $mode = $is_submit ? 'submitted for review' : 'saved as draft';
     send_notification($uid, "Your Behavioral Competency Assessment has been {$mode}.", $is_submit ? 'success' : 'info');
 
-    if ($is_submit && $supervisor_id > 0) {
+    if ($is_submit && $supervisor_id !== null) {
         $nq = $conn->query("SELECT full_name AS fn FROM users WHERE user_id=" . (int)$uid . " LIMIT 1");
         $emp_name = $nq ? ($nq->fetch_assoc()['fn'] ?? 'An employee') : 'An employee';
         notify_user(
@@ -136,7 +140,7 @@ try {
         : 'Draft saved. Continue editing from My Appraisals.';
     ok($msg, "my-appraisals?bc={$submission_id}");
 
-} catch (Exception $e) {
+} catch (Throwable $e) {
     $conn->rollback();
     error_log('[bc-process] Error uid=' . $uid . ': ' . $e->getMessage());
     err('A database error occurred. Please try again or contact IT support.');

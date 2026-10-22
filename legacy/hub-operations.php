@@ -107,12 +107,6 @@ if (isset($_GET['edit_receipt'])) {
 
 
 <style>
-    .hub-ops-stats{grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:14px;margin-bottom:22px}
-    .hub-ops-stats .stat-card{padding:18px;border:1px solid #e5eaf1;border-radius:14px;box-shadow:0 3px 12px rgba(15,23,42,.045);gap:14px}
-    .hub-ops-stats .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(15,23,42,.08)}
-    .hub-ops-stats .stat-icon{width:48px;height:48px;min-width:48px;border-radius:13px;font-size:20px}
-    .hub-ops-stats .stat-details h4{font-size:26px;line-height:1.1;margin:0 0 4px}
-    .hub-ops-stats .stat-details p{font-size:12px;margin:0;color:#64748b}
     .tabs {
         display: flex;
         gap: 10px;
@@ -157,64 +151,52 @@ if (isset($_GET['edit_receipt'])) {
 </style>
 
 <!-- Statistics -->
-<div class="stats-grid hub-ops-stats">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-users"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['active_members']; ?></h4>
-            <p>Active Members</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Active Members</span>
+            <span class="stat-value"><?php echo $stats['active_members']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-exclamation-triangle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['expiring_soon']; ?></h4>
-            <p>Expiring Soon (30 days)</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Expiring Soon (30 days)</span>
+            <span class="stat-value"><?php echo $stats['expiring_soon']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-calendar-check"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['today_bookings']; ?></h4>
-            <p>Today's Bookings</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Today's Bookings</span>
+            <span class="stat-value"><?php echo $stats['today_bookings']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-calendar-alt"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pending_bookings']; ?></h4>
-            <p>Pending Bookings</p>
+        <div class="stat-icon bg-green"><i class="fas fa-calendar-alt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Bookings</span>
+            <span class="stat-value"><?php echo $stats['pending_bookings']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon red">
-            <i class="fas fa-receipt"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pending_receipts']; ?></h4>
-            <p>Unverified Receipts</p>
+        <div class="stat-icon bg-primary"><i class="fas fa-receipt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Unverified Receipts</span>
+            <span class="stat-value"><?php echo $stats['pending_receipts']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon" style="background: #3498DB;">
-            <i class="fas fa-comments"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['new_feedback']; ?></h4>
-            <p>New Feedback</p>
+        <div class="stat-icon bg-teal"><i class="fas fa-comments" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">New Feedback</span>
+            <span class="stat-value"><?php echo $stats['new_feedback']; ?></span>
         </div>
     </div>
 </div>

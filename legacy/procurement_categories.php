@@ -92,7 +92,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 
 /* EXPORT PDF */
 if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
-    require_once __DIR__ . '/vendor/autoload.php';
+    foreach ([__DIR__ . '/vendor/autoload.php', dirname(__DIR__) . '/vendor/autoload.php'] as $ims_autoload) { if (is_file($ims_autoload)) { require_once $ims_autoload; break; } }
 
     $stmt = $conn->prepare("
         SELECT 

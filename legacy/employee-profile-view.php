@@ -240,7 +240,7 @@ if ($employee['date_of_birth']) {
 <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;" class="no-print">
     <div>
         <?php if ($employee['status'] == 'Draft' || $employee['status'] == 'Rejected'): ?>
-            <a href="employee-profile.php" class="btn btn-warning">
+            <a href="my-profile" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Edit Profile
             </a>
         <?php endif; ?>

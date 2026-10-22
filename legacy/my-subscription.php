@@ -302,44 +302,36 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
 </div>
 <?php endif; ?>
 
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-calendar-check"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['days_member']; ?></h4>
-            <p>Days as Member</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Days as Member</span>
+            <span class="stat-value"><?php echo $stats['days_member']; ?></span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-money-bill-wave"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo format_currency($stats['total_paid']); ?></h4>
-            <p>Total Paid</p>
+        <div class="stat-icon bg-green"><i class="fas fa-money-bill-wave" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Paid</span>
+            <span class="stat-value"><?php echo format_currency($stats['total_paid']); ?></span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo format_currency($stats['pending_amount']); ?></h4>
-            <p>Pending Payments</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Payments</span>
+            <span class="stat-value"><?php echo format_currency($stats['pending_amount']); ?></span>
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-receipt"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['payment_count']; ?></h4>
-            <p>Total Payments</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-receipt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Payments</span>
+            <span class="stat-value"><?php echo $stats['payment_count']; ?></span>
         </div>
     </div>
 </div>
@@ -426,7 +418,7 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
         <?php endif; ?>
 
         <button onclick="openModal('upgradeModal')" class="btn btn-success">
-            <i class="fas fa-arrow-up"></i> Upgrade Plan
+            <i class="fas fa-arrow-up"></i> Change Plan
         </button>
 
         <button onclick="openModal('autoRenewModal')" class="btn btn-info">
@@ -636,7 +628,7 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
 <div id="upgradeModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Upgrade Plan</h3>
+            <h3>Change Plan</h3>
             <span class="close" onclick="closeModal('upgradeModal')">&times;</span>
         </div>
         <div class="modal-body">
@@ -672,13 +664,13 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
                 </div>
 
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Upgrading will adjust your billing cycle. You'll be charged a prorated amount for the remaining period.
+                    <i class="fas fa-info-circle"></i> Your request goes to the Hive team, who will confirm the new plan and amount with you before anything changes.
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('upgradeModal')" class="btn btn-secondary">Cancel</button>
                     <button type="submit" class="btn btn-success">
-                        <i class="fas fa-arrow-up"></i> Upgrade Plan
+                        <i class="fas fa-paper-plane"></i> Send Request
                     </button>
                 </div>
             </form>

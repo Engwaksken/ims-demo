@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     $category_id   = !empty($_POST['category_id'])   ? (int)$_POST['category_id']   : null;
     $urgency       = $_POST['urgency'] ?? 'Medium';
     $department_id = !empty($_POST['department_id']) ? (int)$_POST['department_id'] : null;
-    $needed_by     = trim($_POST['needed_by']   ?? '');
+    $needed_by     = trim($_POST['needed_by']   ?? '') ?: null; // optional DATE: '' is invalid in strict mode
     $link_type     = $_POST['link_type']   ?? '';
     $link_project  = !empty($_POST['link_project_id']) ? (int)$_POST['link_project_id'] : null;
     $link_program  = !empty($_POST['link_program_id']) ? (int)$_POST['link_program_id'] : null;
@@ -107,7 +107,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
         $title, $description, $category_id, $total_budget,
         $urgency, $dept, $department_id, $needed_by,
         $link_project, $link_program, $currentUserId);
-    $stmt->execute();
+    if (!$stmt->execute()) {
+        error_log('Procurement request insert failed: ' . $stmt->error);
+        $stmt->close();
+        procurement_flash('error', 'Failed to save the request. Please try again.');
+        procurement_redirect();
+    }
     $proc_id = $conn->insert_id;
     $stmt->close();
 
@@ -360,7 +365,7 @@ $stats = [
     <?php endif; ?>
 
     <!-- -- Stats -------------------------------------------------------- -->
-    <div class="stats-grid">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fas fa-layer-group"></i></div>
             <div class="stat-info">
@@ -527,7 +532,7 @@ $stats = [
                                         <?php endif; ?>
 
                                         <!-- Approve / Reject -->
-                                        <?php if ($isManager && in_array($req['status'],['Submitted','Under Review'],true)): ?>
+                                        <?php if ($isManager && !$isOwn && in_array($req['status'],['Submitted','Under Review'],true)): ?>
                                             <form method="POST" style="display:contents;">
                                                 <input type="hidden" name="action" value="approve_request">
                                                 <input type="hidden" name="procurement_id" value="<?= $pid ?>">

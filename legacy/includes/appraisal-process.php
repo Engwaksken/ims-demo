@@ -96,6 +96,10 @@ $supLookup = $conn->query("SELECT supervisor_id FROM employee_directory WHERE us
 if ($supLookup && ($supLookupRow = $supLookup->fetch_assoc()) && (int)$supLookupRow['supervisor_id'] > 0) {
     $supervisor_id = (int)$supLookupRow['supervisor_id'];
 }
+// An employee can never be their own supervisor (they would approve their own appraisal).
+if ($supervisor_id === $uid) {
+    $supervisor_id = null;
+}
 $period_from     = clean($_POST['period_from']      ?? '');
 $period_to       = clean($_POST['period_to']        ?? '');
 $discussion_date = clean($_POST['discussion_date']  ?? '');

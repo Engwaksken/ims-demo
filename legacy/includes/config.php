@@ -378,6 +378,9 @@ try {
     ) {
         $conn = db_connect();
     }
+    // LegacyRunner requires pages inside a method, so $conn above is a local
+    // there; publish it so `global $conn` in helper functions still works.
+    $GLOBALS['conn'] = $conn;
 } catch (Throwable $exception) {
     error_log(
         'Application database initialization failed: '
@@ -565,6 +568,45 @@ if (!function_exists('check_login')) {
 
             exit;
         }
+
+        // Re-read the account at most once a minute so deactivating,
+        // deleting or changing a user's role takes effect on their open
+        // session instead of at their next login.
+        $checkedAt = (int)($_SESSION['account_checked_at'] ?? 0);
+        if (time() - $checkedAt < 60) {
+            return;
+        }
+
+        try {
+            $db = db_connect();
+            $stmt = $db->prepare('SELECT is_active, role FROM users WHERE user_id = ? LIMIT 1');
+            if (!$stmt) {
+                return; // schema/DB problem: don't lock everyone out
+            }
+            $uid = (int)$_SESSION['user_id'];
+            $stmt->bind_param('i', $uid);
+            $stmt->execute();
+            $account = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+        } catch (Throwable $e) {
+            error_log('check_login account re-check failed: ' . $e->getMessage());
+            return;
+        }
+
+        if (!$account || (int)$account['is_active'] !== 1) {
+            $_SESSION = [];
+            session_regenerate_id(true);
+            header('Location: ' . login_url());
+            exit;
+        }
+
+        $dbRole = (string)$account['role'];
+        if ($dbRole !== (string)($_SESSION['role_name'] ?? $_SESSION['role'] ?? '')) {
+            require_once __DIR__ . '/roles.php';
+            ims_set_session_role($db, $dbRole);
+        }
+
+        $_SESSION['account_checked_at'] = time();
     }
 }
 

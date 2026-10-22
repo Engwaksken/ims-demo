@@ -369,9 +369,10 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
     <?php
     $status_badges = [
         'Pending' => 'warning',
-        'Verified' => 'success',
-        'Rejected' => 'danger',
-        'Processing' => 'info'
+        'Paid' => 'success',
+        'Partially Paid' => 'info',
+        'Overdue' => 'danger',
+        'Cancelled' => 'danger'
     ];
     $badge = $status_badges[$payment['payment_status']] ?? 'secondary';
     ?>
@@ -385,7 +386,7 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
     <!-- Main Section -->
     <div class="main-section">
         <!-- Status Alert -->
-        <?php if ($payment['payment_status'] == 'Verified'): ?>
+        <?php if ($payment['payment_status'] == 'Paid'): ?>
         <div class="alert-success-custom">
             <i class="fas fa-check-circle"></i>
             <strong>Payment Verified</strong><br>
@@ -605,7 +606,7 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
                 <div class="timeline-item">
                     <div class="timeline-content">
                         <strong>
-                            <?php echo $payment['payment_status'] == 'Verified' ? 'Payment Verified' : 'Payment Rejected'; ?>
+                            <?php echo $payment['payment_status'] == 'Cancelled' ? 'Payment Rejected' : 'Payment Verified'; ?>
                         </strong>
                         <small>
                             By <?php echo htmlspecialchars($payment['verified_by_name']); ?><br>
@@ -620,70 +621,9 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
     <div class="payment-aside"><!-- right column (was .sidebar, which collided with the app sidebar) -->
     
    
-        <!-- Reject Form (Admin Only) -->
-        <?php if (ims_allowed('payments.verify', ['Administrator', 'Operations/Admin'], 'Verify or reject member payments') && $payment['payment_status'] == 'Pending'): ?>
-        <div id="rejectForm" style="display: none;">
-            <div class="action-card">
-                <h3>Reject Payment</h3>
-                <form method="POST" action="process-receipt-verification.php">
-                    <input type="hidden" name="action" value="reject">
-                    <input type="hidden" name="payment_id" value="<?php echo $payment_id; ?>">
-                    
-                    <div class="form-group">
-                        <label for="rejection_reason" class="required">Rejection Reason</label>
-                        <textarea id="rejection_reason" name="rejection_reason" 
-                                  class="form-control" rows="4" required
-                                  placeholder="Explain why this payment is being rejected..."></textarea>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-times"></i> Confirm Reject
-                        </button>
-                        <button type="button" onclick="hideRejectForm()" class="btn btn-secondary">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        <?php endif; ?>
+        <!-- Payments are verified or rejected from Hub Operations (receipts tab). -->
     </div>
 </div>
 
 <?php include 'includes/footer.php'; ?>
 
-<script>
-function verifyPayment() {
-    if (confirm('Verify this payment?\n\nThis will activate the member\'s subscription.')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = 'process-receipt-verification.php';
-        
-        const actionInput = document.createElement('input');
-        actionInput.type = 'hidden';
-        actionInput.name = 'action';
-        actionInput.value = 'verify';
-        form.appendChild(actionInput);
-        
-        const idInput = document.createElement('input');
-        idInput.type = 'hidden';
-        idInput.name = 'payment_id';
-        idInput.value = <?php echo $payment_id; ?>;
-        form.appendChild(idInput);
-        
-        document.body.appendChild(form);
-        form.submit();
-    }
-}
-
-function showRejectForm() {
-    document.getElementById('rejectForm').style.display = 'block';
-    document.querySelector('.action-card').style.display = 'none';
-}
-
-function hideRejectForm() {
-    document.getElementById('rejectForm').style.display = 'none';
-    document.querySelector('.action-card').style.display = 'block';
-}
-</script>

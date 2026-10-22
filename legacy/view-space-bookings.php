@@ -308,44 +308,36 @@ if ($is_admin) {
 
 <!-- Statistics (Admin Only) -->
 <?php if ($is_admin): ?>
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-calendar-check"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total']; ?></h4>
-            <p>Active Bookings</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Active Bookings</span>
+            <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-calendar-day"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['today']; ?></h4>
-            <p>Today's Bookings</p>
+        <div class="stat-icon bg-green"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Today's Bookings</span>
+            <span class="stat-value"><?php echo $stats['today']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pending']; ?></h4>
-            <p>Pending Approval</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Approval</span>
+            <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['confirmed']; ?></h4>
-            <p>Confirmed</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Confirmed</span>
+            <span class="stat-value"><?php echo $stats['confirmed']; ?></span>
         </div>
     </div>
 </div>

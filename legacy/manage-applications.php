@@ -430,51 +430,51 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
 </div>
 
 <!-- -- Stats -------------------------------------------------- -->
-<div class="opp-stats-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:20px;">
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon brand"><i class="fas fa-file-alt"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Total</span>
-            <span class="opp-stat-value"><?= (int)$stats['total'] ?></span>
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-file-alt"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total</span>
+            <span class="stat-value"><?= (int)$stats['total'] ?></span>
         </div>
     </div>
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon" style="background:var(--blue-bg);color:var(--blue-fg);width:52px;height:52px;border-radius:var(--radius-lg);display:grid;place-items:center;font-size:22px;flex-shrink:0;">
+    <div class="stat-card">
+        <div class="stat-icon bg-blue">
             <i class="fas fa-paper-plane"></i>
         </div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Submitted</span>
-            <span class="opp-stat-value"><?= (int)$stats['submitted'] ?></span>
+        <div class="stat-info">
+            <span class="stat-label">Submitted</span>
+            <span class="stat-value"><?= (int)$stats['submitted'] ?></span>
         </div>
     </div>
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon amber"><i class="fas fa-eye"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Reviewing</span>
-            <span class="opp-stat-value"><?= (int)$stats['under_review'] ?></span>
+    <div class="stat-card">
+        <div class="stat-icon bg-amber"><i class="fas fa-eye"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Reviewing</span>
+            <span class="stat-value"><?= (int)$stats['under_review'] ?></span>
         </div>
     </div>
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon purple"><i class="fas fa-star"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Shortlisted</span>
-            <span class="opp-stat-value"><?= (int)$stats['shortlisted'] ?></span>
+    <div class="stat-card">
+        <div class="stat-icon bg-purple"><i class="fas fa-star"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Shortlisted</span>
+            <span class="stat-value"><?= (int)$stats['shortlisted'] ?></span>
         </div>
     </div>
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon green"><i class="fas fa-check-circle"></i></div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Accepted</span>
-            <span class="opp-stat-value"><?= (int)$stats['accepted'] ?></span>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Accepted</span>
+            <span class="stat-value"><?= (int)$stats['accepted'] ?></span>
         </div>
     </div>
-    <div class="opp-stat-card">
-        <div class="opp-stat-icon" style="background:var(--green-bg);color:var(--green-fg);width:52px;height:52px;border-radius:var(--radius-lg);display:grid;place-items:center;font-size:22px;flex-shrink:0;">
+    <div class="stat-card">
+        <div class="stat-icon bg-green">
             <i class="fas fa-chart-line"></i>
         </div>
-        <div class="opp-stat-info">
-            <span class="opp-stat-label">Avg Score</span>
-            <span class="opp-stat-value"><?= number_format($avg_score, 1) ?></span>
+        <div class="stat-info">
+            <span class="stat-label">Avg Score</span>
+            <span class="stat-value"><?= number_format($avg_score, 1) ?></span>
         </div>
     </div>
 </div>

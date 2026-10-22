@@ -377,7 +377,7 @@ foreach ($reviewTypes as $rt) {
     </div>
 
     <!-- -- Global KPI stats (always shown) ------------------------- -->
-    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
             <div class="stat-icon bg-primary"><i class="fas fa-building"></i></div>
             <div class="stat-info">

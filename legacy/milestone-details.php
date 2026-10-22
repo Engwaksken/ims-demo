@@ -361,6 +361,11 @@ $entityIcon  = strtolower($entityType) === 'project' ? 'fa-project-diagram' : 'f
 
 <link rel="stylesheet" href="css/reports.css">
 <link rel="stylesheet" href="css/milestones.css">
+<style>
+/* Three-up date/status rows in the deliverable form; stack on phones. */
+.form-row.md-form-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 768px) { .form-row.md-form-row-3 { grid-template-columns: 1fr; } }
+</style>
 
 <div class="milestones-wrap">
 
@@ -1031,7 +1036,7 @@ $entityIcon  = strtolower($entityType) === 'project' ? 'fa-project-diagram' : 'f
                     <input type="text" id="deliverable_title" name="deliverable_title" class="form-control" required>
                 </div>
 
-                <div class="form-row" style="grid-template-columns:repeat(3,1fr);">
+                <div class="form-row md-form-row-3">
                     <div class="form-group">
                         <label for="deliverable_start_date">Start Date</label>
                         <input type="date" id="deliverable_start_date" name="start_date" class="form-control">
@@ -1046,7 +1051,7 @@ $entityIcon  = strtolower($entityType) === 'project' ? 'fa-project-diagram' : 'f
                     </div>
                 </div>
 
-                <div class="form-row" style="grid-template-columns:repeat(3,1fr);">
+                <div class="form-row md-form-row-3">
                     <div class="form-group">
                         <label for="deliverable_status" class="required">Status</label>
                         <select id="deliverable_status" name="status" class="form-control" required>

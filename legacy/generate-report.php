@@ -9,7 +9,7 @@ use Dompdf\Options;
 
 check_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin']);
 
-function h(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function h(mixed $v): string { return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
 
 /* -- Dropdowns -------------------------------------------------------- */
 $projects = [];
@@ -23,7 +23,7 @@ while ($row = $result->fetch_assoc()) { $programs[] = $row; }
 /* -- Quick stats ------------------------------------------------------ */
 $stats = [
     'total_programs'     => (int)$conn->query("SELECT COUNT(*) AS c FROM programs")->fetch_assoc()['c'],
-    'active_programs'    => (int)$conn->query("SELECT COUNT(*) AS c FROM programs WHERE status='Active'")->fetch_assoc()['c'],
+    'active_programs'    => (int)$conn->query("SELECT COUNT(*) AS c FROM programs WHERE status='Ongoing'")->fetch_assoc()['c'],
     'total_projects'     => (int)$conn->query("SELECT COUNT(*) AS c FROM projects")->fetch_assoc()['c'],
     'ongoing_projects'   => (int)$conn->query("SELECT COUNT(*) AS c FROM projects WHERE status='Ongoing'")->fetch_assoc()['c'],
     'total_participants' => (int)$conn->query("SELECT COUNT(*) AS c FROM beneficiaries")->fetch_assoc()['c'],
@@ -191,7 +191,6 @@ $quick_exports = [
   .params-grid { grid-template-columns: 1fr; }
   .guide-grid  { grid-template-columns: 1fr; }
   .generate-row .btn { flex: 1; justify-content: center; }
-  .reports-stats { grid-template-columns: repeat(2,1fr) !important; }
 }
 </style>
 
@@ -212,40 +211,40 @@ $quick_exports = [
     </div>
 
     <!-- -- Quick Stats -------------------------------------------------- -->
-    <div class="reports-stats" style="grid-template-columns:repeat(5,1fr);">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
-            <div class="stat-icon bg-amber"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-icon bg-amber"><i class="fas fa-sitemap" aria-hidden="true"></i></div>
             <div class="stat-info">
-                <div class="stat-label">Active Programs</div>
-                <div class="stat-value" style="font-size:22px;"><?= $stats['active_programs'] ?><span style="font-size:13px;color:var(--ink-200);font-weight:500;"> / <?= $stats['total_programs'] ?></span></div>
+                <span class="stat-label">Active Programs</span>
+                <span class="stat-value"><?= $stats['active_programs'] ?><span class="stat-sub">/ <?= $stats['total_programs'] ?></span></span>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-blue"><i class="fas fa-project-diagram"></i></div>
+            <div class="stat-icon bg-blue"><i class="fas fa-project-diagram" aria-hidden="true"></i></div>
             <div class="stat-info">
-                <div class="stat-label">Ongoing Projects</div>
-                <div class="stat-value" style="font-size:22px;"><?= $stats['ongoing_projects'] ?><span style="font-size:13px;color:var(--ink-200);font-weight:500;"> / <?= $stats['total_projects'] ?></span></div>
+                <span class="stat-label">Ongoing Projects</span>
+                <span class="stat-value"><?= $stats['ongoing_projects'] ?><span class="stat-sub">/ <?= $stats['total_projects'] ?></span></span>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-green"><i class="fas fa-users"></i></div>
+            <div class="stat-icon bg-green"><i class="fas fa-users" aria-hidden="true"></i></div>
             <div class="stat-info">
-                <div class="stat-label">Participants</div>
-                <div class="stat-value" style="font-size:22px;"><?= number_format($stats['total_participants']) ?></div>
+                <span class="stat-label">Participants</span>
+                <span class="stat-value"><?= number_format($stats['total_participants']) ?></span>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-primary"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-icon bg-primary"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
             <div class="stat-info">
-                <div class="stat-label">Indicators</div>
-                <div class="stat-value" style="font-size:22px;"><?= $stats['total_indicators'] ?></div>
+                <span class="stat-label">Indicators</span>
+                <span class="stat-value"><?= $stats['total_indicators'] ?></span>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon bg-purple"><i class="fas fa-calendar-check"></i></div>
+        <div class="stat-card stat-card-wide">
+            <div class="stat-icon bg-purple"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
             <div class="stat-info">
-                <div class="stat-label">Events This Year</div>
-                <div class="stat-value" style="font-size:22px;"><?= $stats['total_events'] ?></div>
+                <span class="stat-label">Events This Year</span>
+                <span class="stat-value"><?= $stats['total_events'] ?></span>
             </div>
         </div>
     </div>

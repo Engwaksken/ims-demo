@@ -16,7 +16,13 @@ $user_id = $_SESSION['user_id'];
 // Check for time conflicts
 function check_booking_conflict($space_name, $booking_date, $start_time, $end_time, $exclude_booking_id = 0) {
     global $conn;
-    
+
+    $space_name = $conn->real_escape_string((string)$space_name);
+    $booking_date = $conn->real_escape_string((string)$booking_date);
+    $start_time = $conn->real_escape_string((string)$start_time);
+    $end_time = $conn->real_escape_string((string)$end_time);
+    $exclude_booking_id = (int)$exclude_booking_id;
+
     $query = "SELECT booking_id FROM space_bookings 
               WHERE space_name = '$space_name' 
               AND booking_date = '$booking_date'
@@ -130,7 +136,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'create') {
         $log_query = "INSERT INTO audit_log (user_id, action, details, ip_address) 
                      VALUES ($user_id, 'Create Booking', 
                              'Created booking for $space_name on $booking_date (ID: $booking_id)', 
-                             '{$_SERVER['REMOTE_ADDR']}')";
+                             '" . $conn->real_escape_string((string)($_SERVER['REMOTE_ADDR'] ?? '')) . "')";
         $conn->query($log_query);
         
         // Send notification to member
@@ -179,6 +185,8 @@ if (isset($_POST['action']) && $_POST['action'] == 'approve') {
     }
     
     $booking = $booking_result->fetch_assoc();
+    // SQL-escaped copy for the string-built queries below (names like "Founder's Room").
+    $booking_sql = array_map(fn($v) => is_string($v) ? $conn->real_escape_string($v) : $v, $booking);
     
     // Check if already approved
     if ($booking['booking_status'] != 'Pending') {
@@ -198,8 +206,8 @@ if (isset($_POST['action']) && $_POST['action'] == 'approve') {
     // Update booking status
     $update_query = "UPDATE space_bookings SET 
                      booking_status = 'Confirmed',
-                     approved_by = $user_id,
-                     approved_at = NOW()
+                     confirmed_by = $user_id,
+                     confirmed_at = NOW()
                      WHERE booking_id = $booking_id";
     
     if ($conn->query($update_query)) {
@@ -207,16 +215,16 @@ if (isset($_POST['action']) && $_POST['action'] == 'approve') {
         // Log activity
         $log_query = "INSERT INTO audit_log (user_id, action, details, ip_address) 
                      VALUES ($user_id, 'Approve Booking', 
-                             'Approved booking ID: $booking_id for {$booking['space_name']}', 
-                             '{$_SERVER['REMOTE_ADDR']}')";
+                             'Approved booking ID: $booking_id for {$booking_sql['space_name']}', 
+                             '" . $conn->real_escape_string((string)($_SERVER['REMOTE_ADDR'] ?? '')) . "')";
         $conn->query($log_query);
         
         // Send notification to member
         $notif_query = "INSERT INTO member_notifications (
                             member_id, notification_type, title, message, link_url
                         ) VALUES (
-                            {$booking['member_id']}, 'Booking', 'Booking Confirmed',
-                            'Your booking for {$booking['space_name']} on {$booking['booking_date']} has been confirmed!',
+                            {$booking_sql['member_id']}, 'Booking', 'Booking Confirmed',
+                            'Your booking for {$booking_sql['space_name']} on {$booking_sql['booking_date']} has been confirmed!',
                             'view-booking?id=$booking_id'
                         )";
         $conn->query($notif_query);
@@ -263,11 +271,13 @@ if (isset($_POST['action']) && $_POST['action'] == 'reject') {
     }
     
     $booking = $booking_result->fetch_assoc();
+    // SQL-escaped copy for the string-built queries below (names like "Founder's Room").
+    $booking_sql = array_map(fn($v) => is_string($v) ? $conn->real_escape_string($v) : $v, $booking);
     
     // Update booking status
     $update_query = "UPDATE space_bookings SET 
-                     booking_status = 'Rejected',
-                     cancellation_reason = '$rejection_reason',
+                     booking_status = 'Cancelled',
+                     cancellation_reason = CONCAT('Rejected: ', '$rejection_reason'),
                      cancelled_by = $user_id,
                      cancelled_at = NOW()
                      WHERE booking_id = $booking_id";
@@ -278,15 +288,15 @@ if (isset($_POST['action']) && $_POST['action'] == 'reject') {
         $log_query = "INSERT INTO audit_log (user_id, action, details, ip_address) 
                      VALUES ($user_id, 'Reject Booking', 
                              'Rejected booking ID: $booking_id - Reason: $rejection_reason', 
-                             '{$_SERVER['REMOTE_ADDR']}')";
+                             '" . $conn->real_escape_string((string)($_SERVER['REMOTE_ADDR'] ?? '')) . "')";
         $conn->query($log_query);
         
         // Send notification to member
         $notif_query = "INSERT INTO member_notifications (
                             member_id, notification_type, title, message, link_url
                         ) VALUES (
-                            {$booking['member_id']}, 'Booking', 'Booking Rejected',
-                            'Your booking for {$booking['space_name']} on {$booking['booking_date']} was rejected. Reason: $rejection_reason',
+                            {$booking_sql['member_id']}, 'Booking', 'Booking Rejected',
+                            'Your booking for {$booking_sql['space_name']} on {$booking_sql['booking_date']} was rejected. Reason: $rejection_reason',
                             'my-bookings'
                         )";
         $conn->query($notif_query);
@@ -302,6 +312,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'reject') {
 
 // CANCEL BOOKING (Member)
 if (isset($_GET['action']) && $_GET['action'] == 'cancel') {
+    csrf_protect(true); // state change over GET needs a token
     
     $booking_id = intval($_GET['booking_id']);
     
@@ -330,6 +341,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'cancel') {
     }
     
     $booking = $booking_result->fetch_assoc();
+    // SQL-escaped copy for the string-built queries below (names like "Founder's Room").
+    $booking_sql = array_map(fn($v) => is_string($v) ? $conn->real_escape_string($v) : $v, $booking);
     
     // Check if booking can be cancelled (24 hours policy)
     $booking_datetime = strtotime($booking['booking_date'] . ' ' . $booking['start_time']);
@@ -360,8 +373,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'cancel') {
         // Log activity
         $log_query = "INSERT INTO audit_log (user_id, action, details, ip_address) 
                      VALUES ($user_id, 'Cancel Booking', 
-                             'Cancelled booking ID: $booking_id for {$booking['space_name']}', 
-                             '{$_SERVER['REMOTE_ADDR']}')";
+                             'Cancelled booking ID: $booking_id for {$booking_sql['space_name']}', 
+                             '" . $conn->real_escape_string((string)($_SERVER['REMOTE_ADDR'] ?? '')) . "')";
         $conn->query($log_query);
         
         // Send notification to member
@@ -369,7 +382,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'cancel') {
                             member_id, notification_type, title, message, link_url
                         ) VALUES (
                             $member_id, 'Booking', 'Booking Cancelled',
-                            'Your booking for {$booking['space_name']} on {$booking['booking_date']} has been cancelled.',
+                            'Your booking for {$booking_sql['space_name']} on {$booking_sql['booking_date']} has been cancelled.',
                             'my-bookings'
                         )";
         $conn->query($notif_query);
@@ -410,6 +423,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'admin_cancel') {
     }
     
     $booking = $booking_result->fetch_assoc();
+    // SQL-escaped copy for the string-built queries below (names like "Founder's Room").
+    $booking_sql = array_map(fn($v) => is_string($v) ? $conn->real_escape_string($v) : $v, $booking);
     
     // Update booking status
     $update_query = "UPDATE space_bookings SET 
@@ -425,15 +440,15 @@ if (isset($_GET['action']) && $_GET['action'] == 'admin_cancel') {
         $log_query = "INSERT INTO audit_log (user_id, action, details, ip_address) 
                      VALUES ($user_id, 'Admin Cancel Booking', 
                              'Admin cancelled booking ID: $booking_id', 
-                             '{$_SERVER['REMOTE_ADDR']}')";
+                             '" . $conn->real_escape_string((string)($_SERVER['REMOTE_ADDR'] ?? '')) . "')";
         $conn->query($log_query);
         
         // Send notification to member
         $notif_query = "INSERT INTO member_notifications (
                             member_id, notification_type, title, message, link_url
                         ) VALUES (
-                            {$booking['member_id']}, 'Booking', 'Booking Cancelled',
-                            'Your booking for {$booking['space_name']} on {$booking['booking_date']} has been cancelled by administration.',
+                            {$booking_sql['member_id']}, 'Booking', 'Booking Cancelled',
+                            'Your booking for {$booking_sql['space_name']} on {$booking_sql['booking_date']} has been cancelled by administration.',
                             'my-bookings'
                         )";
         $conn->query($notif_query);
@@ -480,6 +495,8 @@ if (isset($_POST['action']) && $_POST['action'] == 'reschedule') {
     }
     
     $booking = $booking_result->fetch_assoc();
+    // SQL-escaped copy for the string-built queries below (names like "Founder's Room").
+    $booking_sql = array_map(fn($v) => is_string($v) ? $conn->real_escape_string($v) : $v, $booking);
     
     // Check if booking can be rescheduled
     $booking_datetime = strtotime($booking['booking_date'] . ' ' . $booking['start_time']);
@@ -529,7 +546,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'reschedule') {
         $log_query = "INSERT INTO audit_log (user_id, action, details, ip_address) 
                      VALUES ($user_id, 'Reschedule Booking', 
                              'Rescheduled booking ID: $booking_id to $new_date', 
-                             '{$_SERVER['REMOTE_ADDR']}')";
+                             '" . $conn->real_escape_string((string)($_SERVER['REMOTE_ADDR'] ?? '')) . "')";
         $conn->query($log_query);
         
         // Send notification to member
@@ -537,7 +554,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'reschedule') {
                             member_id, notification_type, title, message, link_url
                         ) VALUES (
                             $member_id, 'Booking', 'Booking Rescheduled',
-                            'Your booking for {$booking['space_name']} has been rescheduled to $new_date and is pending approval.',
+                            'Your booking for {$booking_sql['space_name']} has been rescheduled to $new_date and is pending approval.',
                             'view-booking?id=$booking_id'
                         )";
         $conn->query($notif_query);
@@ -578,6 +595,8 @@ if (isset($_GET['action']) && $_GET['action'] == 'mark_complete') {
     }
     
     $booking = $booking_result->fetch_assoc();
+    // SQL-escaped copy for the string-built queries below (names like "Founder's Room").
+    $booking_sql = array_map(fn($v) => is_string($v) ? $conn->real_escape_string($v) : $v, $booking);
     
     // Update booking status
     $update_query = "UPDATE space_bookings SET 
@@ -590,15 +609,15 @@ if (isset($_GET['action']) && $_GET['action'] == 'mark_complete') {
         $log_query = "INSERT INTO audit_log (user_id, action, details, ip_address) 
                      VALUES ($user_id, 'Complete Booking', 
                              'Marked booking ID: $booking_id as completed', 
-                             '{$_SERVER['REMOTE_ADDR']}')";
+                             '" . $conn->real_escape_string((string)($_SERVER['REMOTE_ADDR'] ?? '')) . "')";
         $conn->query($log_query);
         
         // Send notification to member (optional)
         $notif_query = "INSERT INTO member_notifications (
                             member_id, notification_type, title, message, link_url
                         ) VALUES (
-                            {$booking['member_id']}, 'Booking', 'Booking Completed',
-                            'Your booking for {$booking['space_name']} on {$booking['booking_date']} has been marked as completed. Thank you!',
+                            {$booking_sql['member_id']}, 'Booking', 'Booking Completed',
+                            'Your booking for {$booking_sql['space_name']} on {$booking_sql['booking_date']} has been marked as completed. Thank you!',
                             'my-bookings'
                         )";
         $conn->query($notif_query);

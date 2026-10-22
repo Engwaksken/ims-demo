@@ -16,7 +16,7 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . '/includes/auth.php';
 check_role(IMS_STAFF_ROLES);
 
-function h(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function h(mixed $v): string { return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
 
 $powerbi_settings = [];
 $res = $conn->query("SELECT setting_key, setting_value FROM powerbi_settings");

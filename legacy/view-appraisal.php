@@ -690,10 +690,7 @@ function fmt_date(?string $d): string {
         </a>
         <div class="topbar-actions no-print">
             <?php if ($is_owner && $status === 'draft'): ?>
-                <a href="performance-appraisal?edit=<?= $appraisal_id ?>" class="btn btn-outline">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                    Edit Draft
-                </a>
+                <?php /* "Edit Draft" hidden: no edit page exists yet (performance-appraisal ignores ?edit= and would create a duplicate). */ ?>
                 <form method="POST" action="includes/appraisal-process.php" style="display:inline">
                     <input type="hidden" name="action" value="submit_appraisal_existing">
                     <input type="hidden" name="appraisal_id" value="<?= $appraisal_id ?>">

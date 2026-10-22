@@ -172,19 +172,35 @@ while ($d = $donorRes->fetch_assoc()) {
         </form>
 
         <!-- Summary -->
-        <div class="stats-grid mb-20">
+        <div class="stats-grid reports-stats">
             <div class="stat-card">
-                <h4><?= count($projects); ?></h4>
-                <p>Total Projects</p>
+                <div class="stat-icon bg-primary"><i class="fas fa-diagram-project" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Projects</span>
+                    <span class="stat-value"><?= count($projects); ?></span>
+                </div>
             </div>
             <div class="stat-card">
-                <h4><?= format_currency($total_budget,'UGX'); ?></h4>
-                <p>Total Budget</p>
+                <div class="stat-icon bg-green"><i class="fas fa-coins" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Budget</span>
+                    <span class="stat-value" style="font-size:20px"><?= format_currency($total_budget,'UGX'); ?></span>
+                </div>
             </div>
-            <?php foreach($status_count as $s=>$c): ?>
+            <?php foreach($status_count as $s=>$c):
+                $sk = strtolower((string)$s);
+                if (strpos($sk, 'complet') !== false)                                   { $si = ['fa-circle-check', 'bg-green']; }
+                elseif (strpos($sk, 'cancel') !== false || strpos($sk, 'suspend') !== false) { $si = ['fa-ban', 'bg-slate']; }
+                elseif (strpos($sk, 'hold') !== false || strpos($sk, 'pend') !== false || strpos($sk, 'plan') !== false) { $si = ['fa-clock', 'bg-amber']; }
+                elseif (strpos($sk, 'activ') !== false || strpos($sk, 'ongo') !== false || strpos($sk, 'progress') !== false) { $si = ['fa-play', 'bg-blue']; }
+                else                                                                      { $si = ['fa-tag', 'bg-purple']; }
+            ?>
                 <div class="stat-card">
-                    <h4><?= $c; ?></h4>
-                    <p><?= $s; ?></p>
+                    <div class="stat-icon <?= $si[1]; ?>"><i class="fas <?= $si[0]; ?>" aria-hidden="true"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label"><?= htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="stat-value"><?= $c; ?></span>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>

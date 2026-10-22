@@ -1,5 +1,25 @@
 <?php
 require_once 'config.php';
+
+/**
+ * Websites are rendered as links, so only http(s) URLs are kept; a bare
+ * domain gets https:// and anything else (e.g. javascript:) is dropped.
+ */
+function dp_safe_url($value): string
+{
+    $url = trim((string)$value);
+    if ($url === '') {
+        return '';
+    }
+    if (!preg_match('#^[a-z][a-z0-9+.-]*:#i', $url)) {
+        $url = 'https://' . $url;
+    }
+    $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+    if (!in_array($scheme, ['http', 'https'], true) || filter_var($url, FILTER_VALIDATE_URL) === false) {
+        return '';
+    }
+    return $url;
+}
 check_login();
 
 /* ---------------------------------------------------------
@@ -21,7 +41,7 @@ if (isset($_POST['add_donor'])) {
     $email          = sanitize_input($_POST['email']);
     $phone          = sanitize_input($_POST['phone']);
     $country        = sanitize_input($_POST['country']);
-    $website        = sanitize_input($_POST['website']);
+    $website        = dp_safe_url($_POST['website'] ?? '');
     $address        = sanitize_input($_POST['address']);
 
     if (empty($donor_name)) {
@@ -66,7 +86,7 @@ if (isset($_POST['edit_donor'])) {
     $email          = sanitize_input($_POST['email']);
     $phone          = sanitize_input($_POST['phone']);
     $country        = sanitize_input($_POST['country']);
-    $website        = sanitize_input($_POST['website']);
+    $website        = dp_safe_url($_POST['website'] ?? '');
     $address        = sanitize_input($_POST['address']);
 
     if (empty($donor_name)) {
@@ -177,7 +197,7 @@ if (isset($_POST['add_partner'])) {
     $email          = sanitize_input($_POST['email']);
     $phone          = sanitize_input($_POST['phone']);
     $country        = sanitize_input($_POST['country']);
-    $website        = sanitize_input($_POST['website_partner']);
+    $website        = dp_safe_url($_POST['website_partner'] ?? '');
     $address        = sanitize_input($_POST['address']);
 
     /* Validation */
@@ -257,7 +277,7 @@ if (isset($_POST['edit_partner'])) {
     $email          = sanitize_input($_POST['email']);
     $phone          = sanitize_input($_POST['phone']);
     $country        = sanitize_input($_POST['country']);
-    $website        = sanitize_input($_POST['website_partner']);
+    $website        = dp_safe_url($_POST['website_partner'] ?? '');
     $address        = sanitize_input($_POST['address']);
 
     if (empty($partner_name) || empty($partner_type)) {

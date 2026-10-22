@@ -302,7 +302,7 @@ $stats = [
 </style>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
         <div class="stat-icon bg-primary"><i class="fas fa-users" aria-hidden="true"></i></div>
         <div class="stat-info">

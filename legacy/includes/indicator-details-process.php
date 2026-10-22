@@ -68,6 +68,7 @@ if (isset($_POST['update_progress'])) {
     $achievement_percentage = 0;
     if ($target_value > 0) {
         $achievement_percentage = ($current_value / $target_value) * 100;
+        $achievement_percentage = min($achievement_percentage, 999.99); // column is decimal(5,2)
     }
     
     // Update indicator current value
@@ -170,6 +171,7 @@ if (isset($_POST['add_progress_update'])) {
     $achievement_percentage = 0;
     if ($target_value > 0) {
         $achievement_percentage = ($actual_value / $target_value) * 100;
+        $achievement_percentage = min($achievement_percentage, 999.99); // column is decimal(5,2)
     }
     
     // Add progress record (does NOT update indicator current_value)

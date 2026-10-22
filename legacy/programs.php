@@ -4,7 +4,7 @@ include 'includes/header.php';
 require_once __DIR__ . '/includes/auth.php';
 
 check_role(IMS_ALL_ROLES);
-function h(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function h(mixed $v): string { return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
 
 /* -- Edit pre-load ---------------------------------------------------- */
 $edit_program = null;
@@ -269,7 +269,7 @@ $currencies = [
                                             <button
                                                 class="btn btn-sm btn-red"
                                                 title="Delete"
-                                                onclick="openDeleteModal(<?= (int)$p['id'] ?>, '<?= h($p['program_name']) ?>')">
+                                                onclick="openDeleteModal(<?= (int)$p['id'] ?>, <?= h(json_encode((string)$p['program_name'])) ?>)">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         <?php endif; ?>

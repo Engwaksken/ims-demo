@@ -101,7 +101,7 @@ if (isset($_POST['edit_project'])) {
     
     // Update project
     $stmt = $conn->prepare("UPDATE projects SET project_code = ?, project_name = ?, donor_id = ?, start_date = ?, end_date = ?, budget = ?, currency = ?, status = ?, description = ?, objectives = ? WHERE project_id = ?");
-    $stmt->bind_param("ssissddsssi", $project_code, $project_name, $donor_id, $start_date, $end_date, $budget, $currency, $status, $description, $objectives, $project_id);
+    $stmt->bind_param("ssissdssssi", $project_code, $project_name, $donor_id, $start_date, $end_date, $budget, $currency, $status, $description, $objectives, $project_id);
     
     if ($stmt->execute()) {
         log_action($_SESSION['user_id'], 'Edit Project', 'projects', $project_id, "Updated project: $project_name");

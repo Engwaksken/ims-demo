@@ -5,7 +5,7 @@ session_start();
 
 date_default_timezone_set('Africa/Nairobi');
 
-require_once 'includes/config.php';
+require_once __DIR__ . '/config.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 

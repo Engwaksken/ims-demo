@@ -151,11 +151,11 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
     </div>
 </div>
 
-<div class="opp-stats-grid">
-    <div class="opp-stat-card"><div class="opp-stat-icon brand"><i class="fas fa-bullhorn"></i></div><div class="opp-stat-info"><span class="opp-stat-label">Total</span><span class="opp-stat-value"><?= $total_opportunities ?></span></div></div>
-    <div class="opp-stat-card"><div class="opp-stat-icon green"><i class="fas fa-check-circle"></i></div><div class="opp-stat-info"><span class="opp-stat-label">Published</span><span class="opp-stat-value"><?= $published ?></span></div></div>
-    <div class="opp-stat-card"><div class="opp-stat-icon amber"><i class="fas fa-edit"></i></div><div class="opp-stat-info"><span class="opp-stat-label">Drafts</span><span class="opp-stat-value"><?= $draft ?></span></div></div>
-    <div class="opp-stat-card"><div class="opp-stat-icon purple"><i class="fas fa-file-alt"></i></div><div class="opp-stat-info"><span class="opp-stat-label">Applications</span><span class="opp-stat-value"><?= $total_apps ?></span></div></div>
+<div class="stats-grid reports-stats">
+    <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-bullhorn"></i></div><div class="stat-info"><span class="stat-label">Total</span><span class="stat-value"><?= $total_opportunities ?></span></div></div>
+    <div class="stat-card"><div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div><div class="stat-info"><span class="stat-label">Published</span><span class="stat-value"><?= $published ?></span></div></div>
+    <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-edit"></i></div><div class="stat-info"><span class="stat-label">Drafts</span><span class="stat-value"><?= $draft ?></span></div></div>
+    <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-file-alt"></i></div><div class="stat-info"><span class="stat-label">Applications</span><span class="stat-value"><?= $total_apps ?></span></div></div>
 </div>
 
 <div class="opp-panel">

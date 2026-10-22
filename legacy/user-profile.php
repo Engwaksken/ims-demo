@@ -403,36 +403,36 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
     </div>
 
     <!-- -- Stats -------------------------------------------------------------- -->
-    <div class="opp-stats-grid">
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon brand"><i class="fas fa-calendar-check"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Account Age</span>
-                <span class="opp-stat-value"><?= $stats['account_age'] ?><small class="stat-unit"> d</small></span>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Account Age</span>
+                <span class="stat-value"><?= $stats['account_age'] ?><span class="stat-sub">d</span></span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon green"><i class="fas fa-tasks"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Total Actions</span>
-                <span class="opp-stat-value"><?= $stats['total_actions'] ?></span>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-tasks"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Total Actions</span>
+                <span class="stat-value"><?= $stats['total_actions'] ?></span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon amber"><i class="fas fa-chart-line"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">This Month</span>
-                <span class="opp-stat-value"><?= $stats['actions_this_month'] ?></span>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">This Month</span>
+                <span class="stat-value"><?= $stats['actions_this_month'] ?></span>
             </div>
         </div>
 
-        <div class="opp-stat-card">
-            <div class="opp-stat-icon purple"><i class="fas fa-clock"></i></div>
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Last Login</span>
-                <span class="opp-stat-value opp-stat-value-md">
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="fas fa-clock"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Last Login</span>
+                <span class="stat-value" style="font-size:16px;font-weight:700;letter-spacing:0;line-height:1.3">
                     <?= h(profile_time_ago($user['last_login'] ?? null)) ?>
                 </span>
             </div>

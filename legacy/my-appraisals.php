@@ -87,7 +87,7 @@ $total_appraisals  = count($appraisals);
 $total_activities  = count($activities);
 $total_bc          = count($bc_submissions);
 
-$pending_appraisals = count(array_filter($appraisals,  fn($r) => in_array($r['status'], ['draft','submitted'])));
+$pending_appraisals = count(array_filter($appraisals,  fn($r) => in_array($r['status'], ['draft','submitted','pending_review'])));
 $pending_activities = count(array_filter($activities,  fn($r) => in_array($r['status'], ['draft','submitted'])));
 $pending_bc         = count(array_filter($bc_submissions, fn($r) => in_array($r['status'], ['draft','submitted'])));
 
@@ -96,7 +96,9 @@ function status_badge(string $s): string {
     $map = [
         'draft'        => ['#f1f5f9','#64748b','Draft'],
         'submitted'    => ['#dbeafe','#1d4ed8','Submitted'],
+        'pending_review' => ['#dbeafe','#1d4ed8','Pending Review'],
         'under_review' => ['#fef3c7','#d97706','Under Review'],
+        'reviewed'     => ['#e0e7ff','#4338ca','Reviewed'],
         'approved'     => ['#dcfce7','#ff9800','Approved'],
         'completed'    => ['#dcfce7','#ff9800','Completed'],
         'rejected'     => ['#fee2e2','#dc2626','Rejected'],
@@ -173,39 +175,6 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
 .btn-danger:hover   { background: var(--danger-lt); border-color: var(--danger); }
 .btn-sm { padding: 5px 13px; font-size: 12px; }
 .btn-xs { padding: 3px 9px;  font-size: 11px; }
-
-/* -- Stat cards -- */
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px; margin-bottom: 24px;
-}
-.stat-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    display: flex; align-items: center; gap: 16px;
-    box-shadow: var(--shadow);
-    transition: transform .15s, box-shadow .15s;
-    cursor: pointer; text-decoration: none;
-}
-.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
-.stat-icon {
-    width: 52px; height: 52px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; flex-shrink: 0;
-}
-.stat-icon.pa  { background: #ededfd; color: var(--accent); }
-.stat-icon.act { background: var(--success-lt); color: var(--success); }
-.stat-icon.bc  { background: var(--warning-lt); color: var(--warning); }
-.stat-info h3  { font-size: 26px; font-weight: 800; font-family: var(--mono); letter-spacing: -1px; }
-.stat-info p   { font-size: 12px; color: var(--muted); margin-top: 2px; }
-.stat-info .pending {
-    font-size: 11px; font-weight: 600; margin-top: 4px;
-    color: var(--warning);
-}
-.stat-info .pending.none { color: var(--success); }
 
 /* -- Flash -- */
 .flash {
@@ -344,7 +313,6 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
 .modal-box .modal-actions { display: flex; gap: 10px; justify-content: center; }
 
 @media(max-width: 900px) {
-    .stats-row { grid-template-columns: 1fr; }
     .hero { flex-direction: column; }
     .hero-actions { width: 100%; }
     .ap-table { font-size: 12px; }
@@ -379,36 +347,18 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
 <?php endif; ?>
 
 <!-- -- Stat cards -- -->
-<div class="stats-row">
+<div class="stats-grid reports-stats">
     <a class="stat-card" onclick="switchTab('appraisals')" href="?tab=appraisals">
-        <div class="stat-icon pa"><i class="fas fa-clipboard-check"></i></div>
-        <div class="stat-info">
-            <h3><?php echo $total_appraisals; ?></h3>
-            <p>Performance Appraisals</p>
-            <div class="pending <?php echo $pending_appraisals === 0 ? 'none' : ''; ?>">
-                <?php echo $pending_appraisals > 0 ? "$pending_appraisals pending action" : "All up to date"; ?>
-            </div>
-        </div>
+        <div class="stat-icon bg-blue"><i class="fas fa-clipboard-check"></i></div>
+        <div class="stat-info"><span class="stat-label">Performance Appraisals</span><span class="stat-value"><?php echo $total_appraisals; ?></span></div>
     </a>
     <a class="stat-card" onclick="switchTab('activities')" href="?tab=activities">
-        <div class="stat-icon act"><i class="fas fa-tasks"></i></div>
-        <div class="stat-info">
-            <h3><?php echo $total_activities; ?></h3>
-            <p>Activity Plans</p>
-            <div class="pending <?php echo $pending_activities === 0 ? 'none' : ''; ?>">
-                <?php echo $pending_activities > 0 ? "$pending_activities pending action" : "All up to date"; ?>
-            </div>
-        </div>
+        <div class="stat-icon bg-green"><i class="fas fa-tasks"></i></div>
+        <div class="stat-info"><span class="stat-label">Activity Plans</span><span class="stat-value"><?php echo $total_activities; ?></span></div>
     </a>
     <a class="stat-card" onclick="switchTab('bc')" href="?tab=bc">
-        <div class="stat-icon bc"><i class="fas fa-brain"></i></div>
-        <div class="stat-info">
-            <h3><?php echo $total_bc; ?></h3>
-            <p>BC Assessments</p>
-            <div class="pending <?php echo $pending_bc === 0 ? 'none' : ''; ?>">
-                <?php echo $pending_bc > 0 ? "$pending_bc pending action" : "All up to date"; ?>
-            </div>
-        </div>
+        <div class="stat-icon bg-amber"><i class="fas fa-brain"></i></div>
+        <div class="stat-info"><span class="stat-label">BC Assessments</span><span class="stat-value"><?php echo $total_bc; ?></span></div>
     </a>
 </div>
 
@@ -517,19 +467,7 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
                                class="btn btn-outline btn-xs" title="View">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            <?php if (in_array($ap['status'], ['draft'])): ?>
-                            <a href="edit-appraisal.php?id=<?php echo $ap['appraisal_id']; ?>"
-                               class="btn btn-outline btn-xs" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <?php endif; ?>
-                            <?php if ($ap['status'] === 'draft'): ?>
-                            <button class="btn btn-danger btn-xs"
-                                    onclick="confirmDelete('appraisal', <?php echo $ap['appraisal_id']; ?>, '<?php echo addslashes($ap['job_title'] ?? 'Appraisal'); ?>')"
-                                    title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <?php endif; ?>
+                            <?php /* Edit/Delete hidden: edit-appraisal.php and appraisal-delete.php don't exist yet. */ ?>
                         </div>
                     </td>
                 </tr>
@@ -627,11 +565,7 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
                                class="btn btn-outline btn-xs" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <button class="btn btn-danger btn-xs"
-                                    onclick="confirmDelete('activity', <?php echo $act['plan_id']; ?>, '<?php echo addslashes($act['plan_title']); ?>')"
-                                    title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <?php /* Delete hidden: appraisal-delete.php doesn't exist yet. */ ?>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -762,21 +696,8 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
                     </td>
                     <td class="td-c">
                         <div class="row-actions">
-                            <a href="view-bc.php?id=<?php echo $bc['submission_id']; ?>"
-                               class="btn btn-outline btn-xs" title="View">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <?php if ($bc['status'] === 'draft'): ?>
-                            <a href="edit-bc.php?id=<?php echo $bc['submission_id']; ?>"
-                               class="btn btn-outline btn-xs" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button class="btn btn-danger btn-xs"
-                                    onclick="confirmDelete('bc', <?php echo $bc['submission_id']; ?>, 'BC Assessment <?php echo fmt_date($bc['period_from']); ?>')"
-                                    title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <?php endif; ?>
+                            <?php /* View/Edit/Delete hidden: view-bc.php, edit-bc.php and appraisal-delete.php don't exist yet. */ ?>
+                            <span style="color:var(--muted);font-size:12px">-</span>
                         </div>
                     </td>
                 </tr>
@@ -789,7 +710,7 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
     </div><!-- /tab panels -->
 </div><!-- /section-card -->
 
-<!-- -- Delete confirm modal -- -->
+<!-- -- Delete confirm modal (unused: appraisal-delete.php does not exist yet; all delete buttons are hidden) -- -->
 <div class="modal-bd" id="deleteModal">
     <div class="modal-box">
         <div style="font-size:36px;color:var(--danger);margin-bottom:12px">

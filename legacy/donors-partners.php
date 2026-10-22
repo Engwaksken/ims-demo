@@ -98,6 +98,12 @@ while ($row = $result->fetch_assoc()) {
 }
 ?>
 
+<style>
+/* Funding summary: three figures side by side, stacked on phones. */
+.dp-funding-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 10px; }
+@media (max-width: 768px) { .dp-funding-grid { grid-template-columns: 1fr; } }
+</style>
+
 <!-- Statistics -->
 <div class="stats-grid reports-stats">
     <div class="stat-card">
@@ -228,7 +234,7 @@ while ($row = $result->fetch_assoc()) {
                                         </a>
                                         
                                         <?php if (ims_allowed('donors_partners.delete_donors', ['Administrator'], 'Delete donors')): ?>
-                                            <button onclick="openDeleteDonorModal(<?php echo $donor['donor_id']; ?>, '<?php echo htmlspecialchars($donor['donor_name']); ?>')" 
+                                            <button onclick="openDeleteDonorModal(<?php echo $donor['donor_id']; ?>, <?= htmlspecialchars(json_encode((string)($donor['donor_name'])), ENT_QUOTES, 'UTF-8') ?>)" 
                                                     class="btn btn-danger btn-sm" title="Delete">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -348,7 +354,7 @@ while ($row = $result->fetch_assoc()) {
                                         </a>
                                         
                                         <?php if (ims_allowed('donors_partners.delete_partners', ['Administrator'], 'Delete partners')): ?>
-                                            <button onclick="openDeletePartnerModal(<?php echo $partner['partner_id']; ?>, '<?php echo htmlspecialchars($partner['partner_name']); ?>')" 
+                                            <button onclick="openDeletePartnerModal(<?php echo $partner['partner_id']; ?>, <?= htmlspecialchars(json_encode((string)($partner['partner_name'])), ENT_QUOTES, 'UTF-8') ?>)" 
                                                     class="btn btn-danger btn-sm" title="Delete">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -655,7 +661,7 @@ while ($row = $result->fetch_assoc()) {
                 <?php if (!empty($donor_programs) || !empty($donor_projects)): ?>
                     <div style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #2ECC71;">
                         <strong>Funding Summary:</strong>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 10px;">
+                        <div class="dp-funding-grid">
                             <div>
                                 <div style="font-size: 12px; color: #7f8c8d;">Total Programs</div>
                                 <div style="font-size: 24px; font-weight: bold; color: #E67E22;"><?php echo count($donor_programs); ?></div>

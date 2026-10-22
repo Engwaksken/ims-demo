@@ -272,66 +272,66 @@ require_once 'includes/header.php';
     </div>
 
     <!-- STATS -->
-    <div class="opp-stats-grid">
+    <div class="stats-grid reports-stats">
 
-        <div class="opp-stat-card">
+        <div class="stat-card">
 
-            <div class="opp-stat-icon brand">
+            <div class="stat-icon bg-primary">
                 <i class="fas fa-robot"></i>
             </div>
 
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">AI Score</span>
+            <div class="stat-info">
+                <span class="stat-label">AI Score</span>
 
-                <span class="opp-stat-value">
+                <span class="stat-value">
                     <?= number_format((float)($summary['ai_score'] ?? 0),1) ?>%
                 </span>
             </div>
 
         </div>
 
-        <div class="opp-stat-card">
+        <div class="stat-card">
 
-            <div class="opp-stat-icon green">
+            <div class="stat-icon bg-green">
                 <i class="fas fa-users"></i>
             </div>
 
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Reviewer Average</span>
+            <div class="stat-info">
+                <span class="stat-label">Reviewer Average</span>
 
-                <span class="opp-stat-value">
+                <span class="stat-value">
                     <?= number_format((float)($summary['reviewer_avg'] ?? 0),1) ?>%
                 </span>
             </div>
 
         </div>
 
-        <div class="opp-stat-card">
+        <div class="stat-card">
 
-            <div class="opp-stat-icon amber">
+            <div class="stat-icon bg-amber">
                 <i class="fas fa-user-check"></i>
             </div>
 
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">Reviewers</span>
+            <div class="stat-info">
+                <span class="stat-label">Reviewers</span>
 
-                <span class="opp-stat-value">
+                <span class="stat-value">
                     <?= (int)($summary['reviewer_count'] ?? 0) ?>
                 </span>
             </div>
 
         </div>
 
-        <div class="opp-stat-card">
+        <div class="stat-card">
 
-            <div class="opp-stat-icon purple">
+            <div class="stat-icon bg-purple">
                 <i class="fas fa-lightbulb"></i>
             </div>
 
-            <div class="opp-stat-info">
-                <span class="opp-stat-label">AI Recommendation</span>
+            <div class="stat-info">
+                <span class="stat-label">AI Recommendation</span>
 
-                <span class="opp-stat-value" style="font-size:18px">
+                <span class="stat-value" style="font-size:18px">
                     <?= h($summary['ai_recommendation'] ?? '-') ?>
                 </span>
             </div>

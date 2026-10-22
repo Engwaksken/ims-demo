@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/header.php';
 
 check_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Staff']);
 
-function h(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function h(mixed $v): string { return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
 
 /* -- Validate ID ------------------------------------------------------ */
 $program_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;

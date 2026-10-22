@@ -4,7 +4,7 @@ include 'includes/header.php';
 
 check_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Program Director','Program Manager']);
 
-function h(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function h(mixed $v): string { return htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8'); }
 
 /* -- Edit pre-load ---------------------------------------------------- */
 $edit_project = null;
@@ -261,7 +261,7 @@ $status_badge = [
                                             <button
                                                 class="btn btn-sm btn-red"
                                                 title="Delete"
-                                                onclick="openDeleteModal(<?= (int)$p['project_id'] ?>, '<?= h($p['project_name']) ?>')">
+                                                onclick="openDeleteModal(<?= (int)$p['project_id'] ?>, <?= h(json_encode((string)$p['project_name'])) ?>)">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         <?php endif; ?>

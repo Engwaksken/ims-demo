@@ -1261,6 +1261,21 @@ ob_end_flush();
         });
     }
 
+    function postApplicationAction(action, id) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'includes/my-application-actions.php';
+        [['action', action], ['application_id', String(id)], ['csrf_token', <?= json_encode(csrf_token()) ?>]].forEach(function (pair) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = pair[0];
+            input.value = pair[1];
+            form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     document.querySelectorAll('.js-withdraw-application').forEach(function (button) {
         button.addEventListener('click', function () {
             const id = Number(button.dataset.id || 0);
@@ -1269,13 +1284,11 @@ ob_end_flush();
                 return;
             }
 
-            if (!window.confirm('Are you sure you want to withdraw this application? This action cannot be undone.')) {
+            if (!window.confirm('Withdraw this application? It will be removed from review and moved back to your drafts, where you can resubmit it before the deadline or discard it.')) {
                 return;
             }
 
-            window.location.href =
-                'review-application-process?action=withdraw&csrf_token=<?= h(csrf_token()) ?>&application_id=' +
-                encodeURIComponent(String(id));
+            postApplicationAction('withdraw', id);
         });
     });
 
@@ -1291,9 +1304,7 @@ ob_end_flush();
                 return;
             }
 
-            window.location.href =
-                'review-application-process?action=delete_draft&csrf_token=<?= h(csrf_token()) ?>&application_id=' +
-                encodeURIComponent(String(id));
+            postApplicationAction('delete_draft', id);
         });
     });
 

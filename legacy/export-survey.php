@@ -27,7 +27,7 @@ $stmt = $conn->prepare("
            a.answer_text, COUNT(a.answer_text) as count
     FROM survey_questions q
     LEFT JOIN survey_answers a ON q.question_id = a.question_id
-    LEFT JOIN survey_responses r ON a.response_id = r.response_id AND r.survey_id = ?
+    WHERE q.survey_id = ?
     GROUP BY q.question_id, a.answer_text
     ORDER BY q.question_order, a.answer_text
 ");

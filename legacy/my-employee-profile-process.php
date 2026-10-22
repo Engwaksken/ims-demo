@@ -61,6 +61,33 @@ $nin                     = sanitize_input($_POST['nin']                     ?? '
 $form_completion_date    = sanitize_input($_POST['form_completion_date']    ?? date('Y-m-d'));
 
 /* ---------------------------------------------------------------
+   Validate supervisor: never yourself, and must be an existing active user
+   (the supervisor approves this employee's appraisals).
+--------------------------------------------------------------- */
+if ($supervisor_id !== null) {
+    if ($supervisor_id <= 0 || $supervisor_id === $user_id) {
+        send_notification($user_id, 'You cannot select yourself as your own supervisor.', 'danger');
+        header("Location: my-profile");
+        exit();
+    }
+    $supOk = false;
+    $supStmt = $conn->prepare("SELECT user_id FROM users WHERE user_id = ? AND is_active = 1 LIMIT 1");
+    if ($supStmt) {
+        $supStmt->bind_param('i', $supervisor_id);
+        if ($supStmt->execute()) {
+            $supRes = $supStmt->get_result();
+            $supOk  = $supRes && $supRes->fetch_assoc() !== null;
+        }
+        $supStmt->close();
+    }
+    if (!$supOk) {
+        send_notification($user_id, 'The selected supervisor is not a valid active user.', 'danger');
+        header("Location: my-profile");
+        exit();
+    }
+}
+
+/* ---------------------------------------------------------------
    Determine new status
    � Approved profiles that are re-submitted go back to Submitted
    � Save Draft always forces Draft

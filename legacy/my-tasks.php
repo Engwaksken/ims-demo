@@ -339,7 +339,7 @@ $kpis = [];
 $sql = 'SELECT CONCAT("employee:",k.kpi_id) ref,k.kpi_title title,NULL kra_title,u.full_name owner_name FROM kpis k JOIN users u ON u.user_id=k.user_id WHERE 1=1';
 if (!$isAdmin) $sql .= ' AND k.user_id=' . $uid;
 $res = $conn->query($sql); if ($res) while ($row = $res->fetch_assoc()) $kpis[] = $row;
-$appKpis = $conn->query('SELECT CONCAT("appraisal:",ak.kpi_id,":",ak.kra_id) ref,ak.title,kr.title kra_title,pa.full_name owner_name FROM appraisal_kpis ak JOIN appraisal_kras kr ON kr.kra_id=ak.kra_id JOIN performance_appraisals pa ON pa.appraisal_id=ak.appraisal_id WHERE pa.status IN ("draft","submitted","under_review","completed")' . ($isAdmin ? '' : ' AND pa.user_id=' . $uid));
+$appKpis = $conn->query('SELECT CONCAT("appraisal:",ak.kpi_id,":",ak.kra_id) ref,ak.title,kr.title kra_title,pa.full_name owner_name FROM appraisal_kpis ak JOIN appraisal_kras kr ON kr.kra_id=ak.kra_id JOIN performance_appraisals pa ON pa.appraisal_id=ak.appraisal_id WHERE pa.status IN ("draft","submitted","pending_review","under_review","reviewed","completed")' . ($isAdmin ? '' : ' AND pa.user_id=' . $uid));
 if ($appKpis) while ($row = $appKpis->fetch_assoc()) $kpis[] = $row;
 $users = [];
 $res = $conn->query("SELECT user_id,full_name FROM users WHERE is_active=1 AND role NOT IN ('Member','Applicant','Donor/Partner') ORDER BY full_name"); if ($res) while ($row = $res->fetch_assoc()) $users[] = $row;

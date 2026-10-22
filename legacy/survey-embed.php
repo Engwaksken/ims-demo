@@ -12,7 +12,7 @@ if (!$token) {
 $stmt = $conn->prepare("
     SELECT *
     FROM surveys
-    WHERE file_path = ? AND is_active = 1
+    WHERE file_path = ?
 ");
 $stmt->bind_param("s", $token);
 $stmt->execute();

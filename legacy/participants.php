@@ -391,7 +391,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                                         </a>
                                         
                                         <?php if (ims_allowed('participants.delete', ['Administrator'], 'Delete participants')): ?>
-                                            <button onclick="openDeleteModal(<?php echo $beneficiary['beneficiary_id']; ?>, '<?php echo htmlspecialchars($beneficiary['first_name'] . ' ' . $beneficiary['last_name']); ?>')" 
+                                            <button onclick="openDeleteModal(<?php echo $beneficiary['beneficiary_id']; ?>, <?= htmlspecialchars(json_encode((string)($beneficiary['first_name'] . ' ' . $beneficiary['last_name'])), ENT_QUOTES, 'UTF-8') ?>)" 
                                                     class="btn btn-danger btn-sm" title="Delete">
                                                 <i class="fas fa-trash"></i>
                                             </button>

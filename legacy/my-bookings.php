@@ -582,44 +582,36 @@ $bank_details = [
 </div>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-calendar"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total']; ?></h4>
-            <p>Total Bookings</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-calendar" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Bookings</span>
+            <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-calendar-check"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['upcoming']; ?></h4>
-            <p>Upcoming</p>
+        <div class="stat-icon bg-green"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Upcoming</span>
+            <span class="stat-value"><?php echo $stats['upcoming']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pending']; ?></h4>
-            <p>Pending Approval</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Approval</span>
+            <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['completed']; ?></h4>
-            <p>Completed</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Completed</span>
+            <span class="stat-value"><?php echo $stats['completed']; ?></span>
         </div>
     </div>
 </div>
@@ -806,7 +798,7 @@ $bank_details = [
 
                             <?php if ($can_cancel): ?>
                                 <a href="javascript:void(0)" class="btn btn-danger btn-sm" title="Cancel Booking"
-                                   onclick="confirmCancel(<?php echo $booking['booking_id']; ?>, '<?php echo htmlspecialchars($booking['space_name']); ?>', '<?php echo date('d M Y', strtotime($booking['booking_date'])); ?>')">
+                                   onclick="confirmCancel(<?php echo $booking['booking_id']; ?>, <?= htmlspecialchars(json_encode((string)($booking['space_name'])), ENT_QUOTES, 'UTF-8') ?>, '<?php echo date('d M Y', strtotime($booking['booking_date'])); ?>')">
                                     <i class="fas fa-times"></i>
                                 </a>
                             <?php endif; ?>
@@ -1013,21 +1005,21 @@ $bank_details = [
                     <span class="pm-label">Bank Name</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['bank_name']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($bank_details['bank_name']); ?>', this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['bank_name'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">
                     <span class="pm-label">Account Name</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['account_name']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($bank_details['account_name']); ?>', this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['account_name'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">
                     <span class="pm-label">Account Number</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['account_number']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($bank_details['account_number']); ?>', this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['account_number'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">
@@ -1038,7 +1030,7 @@ $bank_details = [
                     <span class="pm-label">SWIFT Code</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['swift_code']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($bank_details['swift_code']); ?>', this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['swift_code'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">

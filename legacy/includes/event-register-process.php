@@ -38,6 +38,16 @@ if ($type === '' || $type === 'Guest') {
     jsonOut([]);
 }
 
+// Public endpoint: partial matches on names only, exact matches on email or
+// phone, and no contact details in the response. event-register.php fills
+// email/phone from the selected record server-side when left blank.
+$rateKey = 'event_register_lookup|' . (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+if (ims_rate_limit_too_many($rateKey, 30, 60)) {
+    http_response_code(429);
+    jsonOut([]);
+}
+ims_rate_limit_hit($rateKey, 60);
+
 $like = '%' . $q . '%';
 $results = [];
 
@@ -48,8 +58,6 @@ try {
             SELECT
                 a.application_id AS id,
                 COALESCE(NULLIF(a.startup_name, ''), NULLIF(a.contact_person, ''), 'Startup') AS attendee_name,
-                COALESCE(a.email, '') AS email,
-                COALESCE(a.phone, '') AS phone,
                 COALESCE(a.startup_name, '') AS organization,
                 CONCAT(
                     'Startup',
@@ -57,16 +65,17 @@ try {
                     CASE WHEN COALESCE(a.business_stage, '') <> '' THEN CONCAT(' | ', a.business_stage) ELSE '' END
                 ) AS sub_label
             FROM applications a
-            WHERE a.startup_name LIKE ?
+            WHERE a.status <> 'Draft'
+              AND (a.startup_name LIKE ?
                OR a.contact_person LIKE ?
-               OR a.email LIKE ?
-               OR a.phone LIKE ?
-               OR a.sector LIKE ?
+               OR a.email = ?
+               OR a.phone = ?
+               OR a.sector LIKE ?)
             ORDER BY a.startup_name ASC
             LIMIT 10
         ");
 
-        $stmt->bind_param("sssss", $like, $like, $like, $like, $like);
+        $stmt->bind_param("sssss", $like, $like, $q, $q, $like);
         $stmt->execute();
         $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
@@ -76,8 +85,6 @@ try {
                 'id'            => (int)$row['id'],
                 'record_type'   => 'Startup',
                 'attendee_name' => (string)$row['attendee_name'],
-                'email'         => (string)$row['email'],
-                'phone'         => (string)$row['phone'],
                 'organization'  => (string)$row['organization'],
                 'sub_label'     => (string)$row['sub_label'],
             ];
@@ -91,26 +98,20 @@ try {
             SELECT
                 b.beneficiary_id AS id,
                 CONCAT_WS(' ', b.first_name, b.last_name) AS attendee_name,
-                COALESCE(b.email, '') AS email,
-                COALESCE(b.phone, '') AS phone,
                 '' AS organization,
                 CONCAT(
                     'Participant',
-                    CASE WHEN COALESCE(b.gender, '') <> '' THEN CONCAT(' | ', b.gender) ELSE '' END,
-                    CASE WHEN COALESCE(b.district, '') <> '' THEN CONCAT(' | ', b.district) ELSE '' END,
-                    CASE WHEN COALESCE(b.occupation, '') <> '' THEN CONCAT(' | ', b.occupation) ELSE '' END
+                    CASE WHEN COALESCE(b.district, '') <> '' THEN CONCAT(' | ', b.district) ELSE '' END
                 ) AS sub_label
             FROM beneficiaries b
             WHERE CONCAT_WS(' ', b.first_name, b.last_name) LIKE ?
-               OR b.email LIKE ?
-               OR b.phone LIKE ?
-               OR b.district LIKE ?
-               OR b.occupation LIKE ?
+               OR b.email = ?
+               OR b.phone = ?
             ORDER BY b.first_name ASC, b.last_name ASC
             LIMIT 10
         ");
 
-        $stmt->bind_param("sssss", $like, $like, $like, $like, $like);
+        $stmt->bind_param("sss", $like, $q, $q);
         $stmt->execute();
         $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
@@ -120,8 +121,6 @@ try {
                 'id'            => (int)$row['id'],
                 'record_type'   => 'Beneficiary',
                 'attendee_name' => trim((string)$row['attendee_name']),
-                'email'         => (string)$row['email'],
-                'phone'         => (string)$row['phone'],
                 'organization'  => '',
                 'sub_label'     => (string)$row['sub_label'],
             ];
@@ -134,8 +133,6 @@ try {
         SELECT
             m.member_id AS id,
             COALESCE(NULLIF(m.company_name, ''), NULLIF(m.membership_number, ''), 'Member') AS attendee_name,
-            COALESCE(m.email, '') AS email,
-            COALESCE(m.emergency_phone, '') AS phone,
             COALESCE(m.company_name, '') AS organization,
             CONCAT(
                 'Member',
@@ -145,15 +142,13 @@ try {
             ) AS sub_label
         FROM members m
         WHERE m.company_name LIKE ?
-           OR m.membership_number LIKE ?
-           OR m.email LIKE ?
-           OR m.emergency_phone LIKE ?
-           OR m.member_type LIKE ?
+           OR m.membership_number = ?
+           OR m.email = ?
         ORDER BY m.company_name ASC, m.membership_number ASC
         LIMIT 10
     ");
 
-    $stmt->bind_param("sssss", $like, $like, $like, $like, $like);
+    $stmt->bind_param("sss", $like, $q, $q);
     $stmt->execute();
     $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     $stmt->close();
@@ -163,8 +158,6 @@ try {
             'id'            => (int)$row['id'],
             'record_type'   => 'Member',
             'attendee_name' => (string)$row['attendee_name'],
-            'email'         => (string)$row['email'],
-            'phone'         => (string)$row['phone'],
             'organization'  => (string)$row['organization'],
             'sub_label'     => (string)$row['sub_label'],
         ];
@@ -173,6 +166,7 @@ try {
     jsonOut($results);
 
 } catch (Throwable $e) {
+    error_log('event-register lookup failed: ' . $e->getMessage());
     http_response_code(500);
 
     jsonOut([
@@ -183,7 +177,7 @@ try {
             'email'         => '',
             'phone'         => '',
             'organization'  => '',
-            'sub_label'     => $e->getMessage(),
+            'sub_label'     => 'Please fill in your details manually.',
         ]
     ]);
 }
