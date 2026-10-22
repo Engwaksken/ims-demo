@@ -40,6 +40,30 @@ if ($user_id) {
           AND  status  = 'Draft'
         LIMIT 1
     ")->fetch_assoc();
+} else {
+    /* Guests: reuse the draft created earlier in this session for this job,
+       but only if it is still an anonymous Draft for the same job. */
+    $guest_draft_id = (int)($_SESSION['guest_job_drafts'][$job_id] ?? 0);
+    if ($guest_draft_id > 0) {
+        $gstmt = $conn->prepare("
+            SELECT * FROM job_applications
+            WHERE  application_id = ?
+              AND  job_id = ?
+              AND  user_id IS NULL
+              AND  status = 'Draft'
+            LIMIT 1
+        ");
+        if ($gstmt) {
+            $gstmt->bind_param('ii', $guest_draft_id, $job_id);
+            if ($gstmt->execute()) {
+                $draft = $gstmt->get_result()->fetch_assoc() ?: null;
+            }
+            $gstmt->close();
+        }
+        if (!$draft) {
+            unset($_SESSION['guest_job_drafts'][$job_id]);
+        }
+    }
 }
 $draft_id   = $draft['application_id'] ?? null;
 $is_resuming = (bool)$draft;
@@ -135,7 +159,12 @@ function saveJobDraft($conn, $user_id, $job_id, $post, $files, $existing_id) {
             return "'$v'";
         }, array_keys($fields), $fields));
         $ok  = $conn->query("INSERT INTO job_applications ($cols) VALUES ($vals)");
-        return ['ok' => (bool)$ok, 'draft_id' => $conn->insert_id, 'saved_at' => date('d M Y \a\t h:i A')];
+        $new_id = $ok ? (int)$conn->insert_id : 0;
+        if ($ok && !$user_id && $new_id > 0) {
+            /* Remember the guest's draft so later autosaves update it instead of inserting new rows */
+            $_SESSION['guest_job_drafts'][(int)$job_id] = $new_id;
+        }
+        return ['ok' => (bool)$ok, 'draft_id' => $new_id, 'saved_at' => date('d M Y \a\t h:i A')];
     }
 }
 
@@ -153,9 +182,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_
    Submit POST
 --------------------------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submit') {
+    /* Server-side gate: deadline / capacity */
+    if ($is_expired || $is_full) {
+        $_SESSION['job_app_error'] = $is_expired
+            ? 'The application deadline for this job has passed.'
+            : 'This job is no longer accepting applications (maximum number of applicants reached).';
+        header("Location: apply-job?job_id=$job_id");
+        exit();
+    }
+
+    /* Block a second submitted application for the same job
+       (by account when logged in, by email address for guests) */
+    $dup_email = trim((string)($_POST['applicant_email'] ?? ''));
+    $dstmt = null;
+    if ($user_id) {
+        $dup_uid = (int)$user_id;
+        $dstmt = $conn->prepare("SELECT application_id FROM job_applications WHERE job_id = ? AND user_id = ? AND status != 'Draft' LIMIT 1");
+        if ($dstmt) $dstmt->bind_param('ii', $job_id, $dup_uid);
+    } elseif ($dup_email !== '') {
+        $dstmt = $conn->prepare("SELECT application_id FROM job_applications WHERE job_id = ? AND LOWER(applicant_email) = LOWER(?) AND status != 'Draft' LIMIT 1");
+        if ($dstmt) $dstmt->bind_param('is', $job_id, $dup_email);
+    }
+    if ($user_id || $dup_email !== '') {
+        if (!$dstmt || !$dstmt->execute()) {
+            $_SESSION['job_app_error'] = 'We could not verify your application right now. Please try again.';
+            header("Location: apply-job?job_id=$job_id");
+            exit();
+        }
+        $already_applied = (bool)$dstmt->get_result()->fetch_assoc();
+        $dstmt->close();
+        if ($already_applied) {
+            $_SESSION['job_app_error'] = 'You have already submitted an application for this job.';
+            header("Location: apply-job?job_id=$job_id");
+            exit();
+        }
+    }
+
     /* Save/update draft first */
     $r = saveJobDraft($conn, $user_id, $job_id, $_POST, $_FILES, $draft_id);
-    $aid = $r['draft_id'];
+    $aid = (int)$r['draft_id'];
+    if (empty($r['ok']) || $aid <= 0) {
+        $_SESSION['job_app_error'] = 'We could not save your application. Please try again.';
+        header("Location: apply-job?job_id=$job_id");
+        exit();
+    }
 
     /* Validate required */
     $errors = [];
@@ -165,8 +235,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submi
     if (empty(trim($_POST['cover_letter']    ?? ''))) $errors[] = 'Cover letter is required.';
 
     /* CV must exist (either uploaded now or previously saved) */
-    $has_cv = !empty($_FILES['cv']['name']) ||
-              ($aid && $conn->query("SELECT cv_path FROM job_applications WHERE application_id=$aid")->fetch_assoc()['cv_path']);
+    /* Based on the stored path, so a rejected upload does not count */
+    $has_cv = false;
+    $cvstmt = $conn->prepare("SELECT cv_path FROM job_applications WHERE application_id = ? LIMIT 1");
+    if ($cvstmt) {
+        $cvstmt->bind_param('i', $aid);
+        if ($cvstmt->execute()) {
+            $cv_row = $cvstmt->get_result()->fetch_assoc();
+            $has_cv = !empty($cv_row['cv_path']);
+        }
+        $cvstmt->close();
+    }
     if (!$has_cv) $errors[] = 'Please upload your CV.';
 
     if (!empty($errors)) {
@@ -176,11 +255,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submi
     }
 
     /* Promote to Submitted */
-    $conn->query("
+    $promoted = $conn->query("
         UPDATE job_applications
         SET status='Pending', submitted_at=NOW(), updated_at=NOW()
-        WHERE application_id=$aid
+        WHERE application_id=$aid AND status='Draft'
     ");
+    if (!$promoted || $conn->affected_rows < 1) {
+        $_SESSION['job_app_error'] = 'We could not submit your application. Please try again.';
+        header("Location: apply-job?job_id=$job_id");
+        exit();
+    }
+    unset($_SESSION['guest_job_drafts'][$job_id]);
 
     /* Notify hiring managers */
     $notif_roles = "'Administrator','HR','Programs Lead'";

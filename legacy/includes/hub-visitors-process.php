@@ -85,7 +85,7 @@ if (isset($_POST['add_visitor'])) {
     );
 
     if ($stmt->execute()) {
-        log_action($conn, $user_id, 'Add Visitor',
+        log_action($user_id, 'Add Visitor', 'hub_visitors', $stmt->insert_id ?: null,
             "Added visitor: {$f['visitor_name']} on {$f['visit_date']}");
         redirect('Visitor logged successfully!');
     } else {
@@ -141,7 +141,7 @@ if (isset($_POST['edit_visitor'])) {
     );
 
     if ($stmt->execute()) {
-        log_action($conn, $user_id, 'Edit Visitor',
+        log_action($user_id, 'Edit Visitor', 'hub_visitors', $visitor_id,
             "Updated visitor ID $visitor_id: \"$old_name\" ? \"{$f['visitor_name']}\"");
         redirect('Visitor updated successfully!');
     } else {
@@ -181,7 +181,7 @@ if (isset($_GET['delete'])) {
     $del->bind_param('i', $visitor_id);
 
     if ($del->execute()) {
-        log_action($conn, $user_id, 'Delete Visitor',
+        log_action($user_id, 'Delete Visitor', 'hub_visitors', $visitor_id,
             "Deleted visitor: $v_name (visit date: $v_date)");
         redirect('Visitor record deleted successfully.');
     } else {
@@ -229,7 +229,7 @@ if (isset($_POST['bulk_delete'])) {
 
     if ($del->execute()) {
         $count = $del->affected_rows;
-        log_action($conn, $user_id, 'Bulk Delete Visitors',
+        log_action($user_id, 'Bulk Delete Visitors', 'hub_visitors', null,
             "Deleted $count visitor(s): " . implode(', ', $names));
         redirect("$count visitor record(s) deleted successfully.");
     } else {
@@ -323,7 +323,7 @@ if (isset($_GET['export'])) {
     fclose($out);
     $stmt->close();
 
-    log_action($conn, $user_id, 'Export Visitors', "Exported visitor list to CSV ($filename)");
+    log_action($user_id, 'Export Visitors', 'hub_visitors', null, "Exported visitor list to CSV ($filename)");
     exit();
 }
 
@@ -406,7 +406,7 @@ if (isset($_POST['generate_report'])) {
         $_SESSION['report_data']   = $stats;
         $_SESSION['report_period'] = "$start_date to $end_date";
 
-        log_action($conn, $user_id, 'Generate Report',
+        log_action($user_id, 'Generate Report', 'hub_visitors', null,
             "Generated visitor summary report for $start_date to $end_date");
 
         redirect('Report generated successfully.', true, 'view_report=summary');
@@ -441,7 +441,7 @@ if (isset($_GET['mark_member'])) {
     $upd->bind_param('i', $visitor_id);
 
     if ($upd->execute()) {
-        log_action($conn, $user_id, 'Update Visitor', "Marked \"$v_name\" (ID $visitor_id) as a Hub member");
+        log_action($user_id, 'Update Visitor', 'hub_visitors', $visitor_id, "Marked \"$v_name\" (ID $visitor_id) as a Hub member");
         redirect("$v_name has been marked as a Hub member.");
     } else {
         redirect('Error updating visitor: ' . $conn->error, false);
@@ -479,7 +479,7 @@ if (isset($_GET['approve_self_reg'])) {
     $upd->bind_param('i', $visitor_id);
 
     if ($upd->execute()) {
-        log_action($conn, $user_id, 'Approve Self-Registration',
+        log_action($user_id, 'Approve Self-Registration', 'hub_visitors', $visitor_id,
             "Approved self-registered visitor: \"$v_name\" (ID $visitor_id)");
         redirect("Self-registration for \"$v_name\" approved.");
     } else {
@@ -514,7 +514,7 @@ if (isset($_POST['send_welcome_email'])) {
 
   
 
-    log_action($conn, $user_id, 'Send Welcome Email',
+    log_action($user_id, 'Send Welcome Email', 'hub_visitors', $visitor_id,
         "Sent welcome email to $v_name ($v_email)");
 
     redirect("Welcome email sent to $v_email.");

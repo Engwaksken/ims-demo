@@ -402,7 +402,7 @@ if (isset($_GET['edit'])) {
 
     </section>
 
-    <form method="get" action="/cohort" class="controls-bar filters-bar">
+    <form method="get" action="cohorts" class="controls-bar filters-bar">
 
         <div class="form-group grow filters-grow">
             <label for="cohortSearch">Search</label>
@@ -475,7 +475,7 @@ if (isset($_GET['edit'])) {
                 Filter
             </button>
 
-            <a href="/cohort" class="btn btn-gray">
+            <a href="cohorts" class="btn btn-gray">
                 <i class="fas fa-times" aria-hidden="true"></i>
                 Clear
             </a>

@@ -3,16 +3,25 @@ declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
 
 check_login();
-check_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Operations/Admin']);
+
+$type = isset($_GET['type']) ? trim((string)$_GET['type']) : '';
+
+// Each export is limited to the roles of the page that offers it.
+if ($type === 'employee_report') {
+    check_role(['Administrator', 'Programs Lead', 'HR']);                        // employee-reports.php
+} elseif (in_array($type, ['members', 'bookings', 'subscriptions'], true)) {
+    check_role(['Administrator', 'Operations/Admin', 'Finance', 'Accountant']);  // hub-operations.php
+} else {
+    check_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Operations/Admin']);
+}
 
 /* -- Validate export type --------------------------------------------- */
 $valid_types = [
     'programs', 'projects', 'participants', 'beneficiaries',
     'indicators', 'events', 'documents',
     'hub_visitors', 'memberships', 'pwd', 'donors',
+    'members', 'bookings', 'subscriptions', 'employee_report',
 ];
-
-$type = isset($_GET['type']) ? trim($_GET['type']) : '';
 
 if (!in_array($type, $valid_types, true)) {
     http_response_code(400);
@@ -21,7 +30,9 @@ if (!in_array($type, $valid_types, true)) {
 
 /* -- Optional scope filters ------------------------------------------- */
 $program_id = !empty($_GET['id']) ? (int) $_GET['id'] : 0;
-$project_id = !empty($_GET['project_id']) ? (int) $_GET['project_id'] : 0;
+$project_id = !empty($_GET['project_id']) ? (int) $_GET['project_id'] : (!empty($_GET['project']) ? (int) $_GET['project'] : 0);
+$indicator_type = in_array($_GET['indicator_type'] ?? '', ['Output', 'Outcome', 'Impact'], true) ? $_GET['indicator_type'] : '';
+$department_id = !empty($_GET['department']) ? (int) $_GET['department'] : 0;
 
 /* -- Stream CSV headers ----------------------------------------------- */
 $filename = $type . '_export_' . date('Y-m-d_His') . '.csv';
@@ -180,6 +191,7 @@ switch ($type) {
         $scope = '';
         if ($program_id) $scope = "AND i.program_id = {$program_id}";
         if ($project_id) $scope = "AND i.project_id = {$project_id}";
+        if ($indicator_type !== '') $scope .= " AND i.indicator_type = '{$indicator_type}'"; // whitelisted above
 
         $res = $conn->query("
             SELECT i.*,
@@ -411,6 +423,90 @@ switch ($type) {
                 $r['program_count'],   $r['project_count'],
                 number_format((float)($r['program_budget'] ?? 0)),
                 number_format((float)($r['project_budget'] ?? 0)),
+            ));
+        }
+        break;
+
+    /* -- Hub members (hub-operations.php) ------------------------------ */
+    case 'members':
+        ims_fputcsv($out, [
+            'Membership No.', 'Company / Name', 'Email', 'Member Type', 'Industry',
+            'Status', 'Approval', 'Plan', 'Amount (UGX)', 'Start Date', 'End Date', 'Registered',
+        ]);
+        $res = $conn->query("SELECT m.*, u.full_name FROM members m LEFT JOIN users u ON u.user_id = m.user_id ORDER BY m.registration_date DESC");
+        while ($res && $r = $res->fetch_assoc()) {
+            ims_fputcsv($out, row(
+                $r['membership_number'], $r['company_name'] ?: $r['full_name'], $r['email'],
+                $r['member_type'], $r['industry'], $r['membership_status'], $r['approval_status'],
+                $r['subscription_plan'], $r['subscription_amount'],
+                $r['subscription_start_date'], $r['subscription_end_date'], $r['registration_date'],
+            ));
+        }
+        break;
+
+    /* -- Space bookings (hub-operations.php) --------------------------- */
+    case 'bookings':
+        ims_fputcsv($out, [
+            'Booking ID', 'Member', 'Space Type', 'Space', 'Date', 'Start', 'End', 'Hours',
+            'Attendees', 'Purpose', 'Amount (UGX)', 'Payment Status', 'Booking Status',
+        ]);
+        $res = $conn->query("
+            SELECT sb.*, COALESCE(NULLIF(m.company_name, ''), u.full_name) AS member_name
+            FROM space_bookings sb
+            LEFT JOIN members m ON m.member_id = sb.member_id
+            LEFT JOIN users u ON u.user_id = m.user_id
+            ORDER BY sb.booking_date DESC, sb.start_time DESC
+        ");
+        while ($res && $r = $res->fetch_assoc()) {
+            ims_fputcsv($out, row(
+                $r['booking_id'], $r['member_name'], $r['space_type'], $r['space_name'],
+                $r['booking_date'], $r['start_time'], $r['end_time'], $r['duration_hours'],
+                $r['number_of_attendees'], $r['purpose'], $r['booking_amount'],
+                $r['payment_status'], $r['booking_status'],
+            ));
+        }
+        break;
+
+    /* -- Subscription payments (hub-operations.php) -------------------- */
+    case 'subscriptions':
+        ims_fputcsv($out, [
+            'Invoice', 'Member', 'Plan', 'Amount (UGX)', 'Period Start', 'Period End',
+            'Status', 'Method', 'Reference', 'Payment Date', 'Created',
+        ]);
+        $res = $conn->query("
+            SELECT sp.*, COALESCE(NULLIF(m.company_name, ''), u.full_name) AS member_name
+            FROM subscription_payments sp
+            LEFT JOIN members m ON m.member_id = sp.member_id
+            LEFT JOIN users u ON u.user_id = m.user_id
+            ORDER BY sp.created_at DESC
+        ");
+        while ($res && $r = $res->fetch_assoc()) {
+            ims_fputcsv($out, row(
+                $r['invoice_number'], $r['member_name'], $r['subscription_plan'], $r['amount'],
+                $r['payment_period_start'], $r['payment_period_end'], $r['payment_status'],
+                $r['payment_method'], $r['payment_reference'], $r['payment_date'], $r['created_at'],
+            ));
+        }
+        break;
+
+    /* -- Employees (employee-reports.php); no personal/ID/bank fields --- */
+    case 'employee_report':
+        ims_fputcsv($out, [
+            'Name', 'Job Title', 'Department', 'Contract Type', 'Gender',
+            'Start Date', 'Contract End', 'Company Email', 'Profile Status',
+        ]);
+        $dept_sql = $department_id ? "WHERE ed.department_id = {$department_id}" : '';
+        $res = $conn->query("
+            SELECT ed.*, d.department_name
+            FROM employee_directory ed
+            LEFT JOIN departments d ON d.department_id = ed.department_id
+            {$dept_sql}
+            ORDER BY ed.full_name
+        ");
+        while ($res && $r = $res->fetch_assoc()) {
+            ims_fputcsv($out, row(
+                $r['full_name'], $r['job_title'], $r['department_name'], $r['contract_type'],
+                $r['gender'], $r['start_date'], $r['contract_end_date'], $r['company_email'], $r['status'],
             ));
         }
         break;

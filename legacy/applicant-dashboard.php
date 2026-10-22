@@ -680,44 +680,36 @@ if ($stmt) {
 </div>
 
 <!-- Statistics -->
-<div class="stats-grid">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-clipboard-list"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total']; ?></h4>
-            <p>Total Applications</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Applications</span>
+            <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pending']; ?></h4>
-            <p>Pending Review</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Review</span>
+            <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['accepted']; ?></h4>
-            <p>Accepted</p>
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Accepted</span>
+            <span class="stat-value"><?php echo $stats['accepted']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-star"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['shortlisted']; ?></h4>
-            <p>Shortlisted</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-star" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Shortlisted</span>
+            <span class="stat-value"><?php echo $stats['shortlisted']; ?></span>
         </div>
     </div>
 </div>
@@ -931,9 +923,9 @@ if ($stmt) {
                         <i class="fas fa-eye"></i> View Details
                     </a>
                     
-                    <?php if (in_array(($app['status'] ?? ''), ['Pending', 'Submitted'], true)): ?>
-                        <a href="edit-application?id=<?php echo $app['application_id']; ?>" class="btn btn-warning btn-sm">
-                            <i class="fas fa-edit"></i> Edit Application
+                    <?php if (($app['status'] ?? '') === 'Draft'): ?>
+                        <a href="submit-application?opportunity_id=<?php echo (int)($app['opportunity_id'] ?? 0); ?>&amp;draft_id=<?php echo (int)$app['application_id']; ?>" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Continue Draft
                         </a>
                     <?php endif; ?>
                     

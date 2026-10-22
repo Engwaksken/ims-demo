@@ -253,7 +253,7 @@ while ($row = $result->fetch_assoc()) {
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-search"></i> Apply Filters
                 </button>
-                <a href="report-beneficiaries.php" class="btn btn-secondary">
+                <a href="report-participants" class="btn btn-secondary">
                     <i class="fas fa-redo"></i> Reset
                 </a>
             </div>
@@ -275,74 +275,60 @@ while ($row = $result->fetch_assoc()) {
 </div>
 
 <!-- Key Metrics -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+<div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-users"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo number_format($stats['total']); ?></h4>
-            <p>Total Participants</p>
+        <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Participants</span>
+            <span class="stat-value"><?php echo number_format($stats['total']); ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="fas fa-male"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['male']; ?></h4>
-            <p>Male (<?php echo $stats['total'] > 0 ? number_format($stats['male'] / $stats['total'] * 100, 1) : 0; ?>%)</p>
+        <div class="stat-icon bg-green"><i class="fas fa-male" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Male (<?php echo $stats['total'] > 0 ? number_format($stats['male'] / $stats['total'] * 100, 1) : 0; ?>%)</span>
+            <span class="stat-value"><?php echo $stats['male']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon purple">
-            <i class="fas fa-female"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['female']; ?></h4>
-            <p>Female (<?php echo $stats['total'] > 0 ? number_format($stats['female'] / $stats['total'] * 100, 1) : 0; ?>%)</p>
+        <div class="stat-icon bg-purple"><i class="fas fa-female" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Female (<?php echo $stats['total'] > 0 ? number_format($stats['female'] / $stats['total'] * 100, 1) : 0; ?>%)</span>
+            <span class="stat-value"><?php echo $stats['female']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon orange">
-            <i class="fas fa-wheelchair"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['pwd']; ?></h4>
-            <p>Persons with Disabilities</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-wheelchair" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Persons with Disabilities</span>
+            <span class="stat-value"><?php echo $stats['pwd']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon" style="background: #E67E22;">
-            <i class="fas fa-sitemap"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['active_in_programs']; ?></h4>
-            <p>Active in Programs</p>
+        <div class="stat-icon bg-amber"><i class="fas fa-sitemap" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Active in Programs</span>
+            <span class="stat-value"><?php echo $stats['active_in_programs']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon" style="background: #2ECC71;">
-            <i class="fas fa-project-diagram"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['active_in_projects']; ?></h4>
-            <p>Active in Projects</p>
+        <div class="stat-icon bg-teal"><i class="fas fa-project-diagram" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Active in Projects</span>
+            <span class="stat-value"><?php echo $stats['active_in_projects']; ?></span>
         </div>
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon" style="background: #E74C3C;">
-            <i class="fas fa-user-slash"></i>
-        </div>
-        <div class="stat-details">
-            <h4><?php echo $stats['total'] - $stats['with_programs'] - $stats['with_projects']; ?></h4>
-            <p>Not Enrolled</p>
+        <div class="stat-icon bg-primary"><i class="fas fa-user-slash" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Not Enrolled</span>
+            <span class="stat-value"><?php echo $stats['total'] - $stats['with_programs'] - $stats['with_projects']; ?></span>
         </div>
     </div>
 </div>
