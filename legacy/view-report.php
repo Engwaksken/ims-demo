@@ -553,15 +553,16 @@ switch ($report_type) {
         }
 
         $res = vr_query($conn, "
-            SELECT 
-                membership_type,
-                status,
+            SELECT
+                COALESCE(member_type, 'Unspecified') AS membership_type,
+                COALESCE(membership_status, 'Pending') AS status,
                 COUNT(*) AS cnt,
-                SUM(monthly_fee) AS revenue
-            FROM memberships
-            WHERE start_date <= :ed
-              AND (end_date >= :sd OR status = 'Active')
-            GROUP BY membership_type, status
+                SUM(COALESCE(subscription_amount, 0)) AS revenue
+            FROM members
+            WHERE COALESCE(subscription_start_date, registration_date) <= :ed
+              AND (subscription_end_date >= :sd OR membership_status = 'Active')
+            GROUP BY member_type, membership_status
+            ORDER BY member_type, membership_status
         ", $vr_params);
 
         while ($row = $res?->fetch_assoc()) {
@@ -877,6 +878,15 @@ switch ($report_type):
 <?php endforeach; ?>
 </table>
 </div></div>
+<?php if (!empty($data['memberships'])): ?>
+<div class="section"><div class="section-head">Memberships</div><div class="section-body">
+<table><tr><th>Member Type</th><th>Status</th><th>Members</th><th>Subscription Fees</th></tr>
+<?php foreach ($data['memberships'] as $m): ?>
+<tr><td><?= h($m['membership_type']) ?></td><td><?= h($m['status']) ?></td><td><?= number_format((int)$m['cnt']) ?></td><td><?= h(safe_money((float)($m['revenue'] ?? 0))) ?></td></tr>
+<?php endforeach; ?>
+</table>
+</div></div>
+<?php endif; ?>
 <?php
         break;
 
@@ -972,7 +982,11 @@ endif;
 
 <style>
 .report-wrap{display:flex;flex-direction:column;gap:20px;padding:24px;max-width:1400px;margin:0 auto}
-.report-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#1e1b4b 0%,#312e81 55%,#4338ca 100%);color:#fff;border-radius:18px;padding:28px 36px;box-shadow:0 16px 40px rgba(30,27,75,.35)}
+.report-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--brand-700,#c2410c) 0%,var(--brand-500,#f97316) 55%,var(--brand-400,#fb923c) 100%);color:#fff;border-radius:18px;padding:28px 36px;box-shadow:0 16px 40px rgba(234,88,12,.28)}
+.report-hero-btn{min-height:40px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:none}
+.report-hero-btn:hover{background:rgba(255,255,255,.24);color:#fff}
+.report-hero-btn.solid{background:#fff;color:var(--brand-700,#c2410c);border-color:#fff}
+.report-hero-btn.solid:hover{background:var(--brand-50,#fff4ed);color:var(--brand-700,#c2410c)}
 .report-hero h1{font-size:clamp(18px,2.8vw,26px);font-weight:800;margin-bottom:6px}
 .report-hero p{font-size:13px;opacity:.85}
 .report-hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
@@ -985,7 +999,7 @@ endif;
 .report-section{background:var(--surface-card,#fff);border:1px solid rgba(0,0,0,.05);border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.06);overflow:hidden;margin-bottom:20px}
 .report-section-head{padding:14px 20px;border-bottom:1px solid var(--ink-50,#f1f5f9);display:flex;justify-content:space-between;align-items:center;background:var(--surface-card,#fff)}
 .report-section-head h3{font-size:14px;font-weight:800;color:var(--ink-700,#1f2937);display:flex;align-items:center;gap:8px}
-.report-section-head h3 i{color:var(--brand-500,#4338ca)}
+.report-section-head h3 i{color:var(--brand-500,#f97316)}
 .report-section-body{padding:18px 20px}
 .type-heading{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-400,#64748b);margin:18px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--ink-50,#f1f5f9)}
 .type-heading:first-child{margin-top:0}
@@ -1000,6 +1014,7 @@ endif;
 .prog-fill.high{background:var(--green-fg,#15803d)}
 .prog-fill.mid{background:var(--amber-fg,#b45309)}
 .prog-fill.low{background:var(--red-fg,#b91c1c)}
+.prog-fill.hub-share{background:var(--brand-500,#f97316)}
 @media print{.no-print,.hero-actions{display:none!important}.report-wrap{padding:0}body{background:#fff}}
 @media(max-width:700px){.report-wrap{padding:12px}.report-hero{padding:20px}.summary-stats{grid-template-columns:1fr 1fr}}
 </style>
@@ -1024,13 +1039,13 @@ endif;
             </div>
 
             <div class="hero-actions no-print" style="display:flex;gap:8px;flex-wrap:wrap;">
-                <a href="generate-report" class="btn btn-primary" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);">
+                <a href="generate-report" class="btn report-hero-btn">
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
-                <button onclick="window.print()" class="btn btn-primary" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);">
+                <button type="button" onclick="window.print()" class="btn report-hero-btn">
                     <i class="fas fa-print"></i> Print
                 </button>
-                <a href="report-process.php?type=<?= urlencode($report_type) ?>&start_date=<?= urlencode($start_date) ?>&end_date=<?= urlencode($end_date) ?>&project_id=<?= (int)($project_id ?? 0) ?>&program_id=<?= (int)($program_id ?? 0) ?>&export=pdf" target="_blank" class="btn btn-primary" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);">
+                <a href="report-process.php?type=<?= urlencode($report_type) ?>&start_date=<?= urlencode($start_date) ?>&end_date=<?= urlencode($end_date) ?>&project_id=<?= (int)($project_id ?? 0) ?>&program_id=<?= (int)($program_id ?? 0) ?>&export=pdf" target="_blank" rel="noopener" class="btn report-hero-btn solid">
                     <i class="fas fa-file-pdf"></i> PDF
                 </a>
             </div>
@@ -1332,31 +1347,96 @@ switch ($report_type):
 
     case 'hub_operations':
         $visitor_stats = $data['visitor_stats'] ?? ['total' => 0, 'days' => 0];
+        $hub_visitors  = (int)($visitor_stats['total'] ?? 0);
+        $hub_days      = (int)($visitor_stats['days'] ?? 0);
+        $hub_avg       = $hub_days > 0 ? round($hub_visitors / $hub_days, 1) : 0;
+        $hub_purposes  = $data['purposes'] ?? [];
+        $hub_members   = $data['memberships'] ?? [];
+        $hub_active    = 0;
+        $hub_revenue   = 0.0;
+        foreach ($hub_members as $m) {
+            if (($m['status'] ?? '') === 'Active') {
+                $hub_active  += (int)$m['cnt'];
+                $hub_revenue += (float)($m['revenue'] ?? 0);
+            }
+        }
 ?>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-user-check" aria-hidden="true"></i></div>
+            <div class="stat-info"><span class="stat-label">Total Visitors</span><span class="stat-value"><?= number_format($hub_visitors) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
+            <div class="stat-info"><span class="stat-label">Active Days</span><span class="stat-value"><?= number_format($hub_days) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-teal"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+            <div class="stat-info"><span class="stat-label">Avg Visitors / Day</span><span class="stat-value"><?= number_format($hub_avg, 1) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-id-card" aria-hidden="true"></i></div>
+            <div class="stat-info"><span class="stat-label">Active Memberships</span><span class="stat-value"><?= number_format($hub_active) ?></span></div>
+        </div>
+    </div>
+
     <div class="report-section">
         <div class="report-section-head">
-            <h3><i class="fas fa-building"></i> Hub Operations</h3>
+            <h3><i class="fas fa-clipboard-list" aria-hidden="true"></i> Visitor Purposes</h3>
         </div>
         <div class="report-section-body">
-            <div class="summary-box">
-                <div class="summary-box-title">Summary</div>
-                <div class="summary-stats">
-                    <div><div class="sum-stat-val"><?= number_format((int)$visitor_stats['total']) ?></div><div class="sum-stat-lbl">Total Visitors</div></div>
-                    <div><div class="sum-stat-val"><?= number_format((int)$visitor_stats['days']) ?></div><div class="sum-stat-lbl">Active Days</div></div>
-                </div>
-            </div>
-
-            <div class="type-heading">Visitor Purposes</div>
+        <?php if (!$hub_purposes): ?>
+            <div class="no-data"><i class="fas fa-user-slash" aria-hidden="true"></i><span>No visitors recorded in this period.</span></div>
+        <?php else: ?>
             <div class="table-wrap">
                 <table class="table">
-                    <thead><tr><th>Purpose</th><th>Count</th></tr></thead>
+                    <thead><tr><th>Purpose</th><th class="text-nowrap">Visitors</th><th style="width:40%">Share</th></tr></thead>
                     <tbody>
-                    <?php foreach (($data['purposes'] ?? []) as $purpose => $count): ?>
-                        <tr><td><?= h($purpose) ?></td><td><?= number_format((int)$count) ?></td></tr>
+                    <?php foreach ($hub_purposes as $purpose => $count):
+                        $share = $hub_visitors > 0 ? round((int)$count / $hub_visitors * 100, 1) : 0; ?>
+                        <tr>
+                            <td><?= h($purpose) ?></td>
+                            <td><?= number_format((int)$count) ?></td>
+                            <td>
+                                <span class="cell-muted" style="margin:0"><?= number_format($share, 1) ?>%</span>
+                                <div class="prog-track"><div class="prog-fill hub-share" style="width:<?= min(100, $share) ?>%"></div></div>
+                            </td>
+                        </tr>
                     <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
+        <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="report-section">
+        <div class="report-section-head">
+            <h3><i class="fas fa-id-card" aria-hidden="true"></i> Memberships</h3>
+            <?php if ($hub_revenue > 0): ?>
+                <span class="cell-muted" style="margin:0">Active subscription fees: <strong><?= h(safe_money($hub_revenue)) ?></strong></span>
+            <?php endif; ?>
+        </div>
+        <div class="report-section-body">
+        <?php if (!$hub_members): ?>
+            <div class="no-data"><i class="fas fa-id-card" aria-hidden="true"></i><span>No memberships overlap this period.</span></div>
+        <?php else: ?>
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Member Type</th><th>Status</th><th>Members</th><th>Subscription Fees</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($hub_members as $m): ?>
+                        <tr>
+                            <td><?= h($m['membership_type']) ?></td>
+                            <td><span class="badge <?= h(web_badge_cls((string)$m['status'])) ?>"><?= h($m['status']) ?></span></td>
+                            <td><?= number_format((int)$m['cnt']) ?></td>
+                            <td><?= h(safe_money((float)($m['revenue'] ?? 0))) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
         </div>
     </div>
 <?php
