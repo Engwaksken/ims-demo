@@ -457,36 +457,45 @@ include 'includes/header.php';
 ?>
 
 <style>
-.mb-wrap{width:100%}
-.mb-hero{background:#fff;border:1px solid #e2e8f0;border-left:5px solid #ff6b35;border-radius:11px;padding:18px 20px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
-.mb-hero h1{margin:0;color:#0f172a;font-size:21px}.mb-hero p{margin:5px 0 0;color:#64748b;font-size:11px}
-.mb-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:14px}
-.mb-stat{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #2563eb;border-radius:8px;padding:12px}
-.mb-stat:nth-child(2){border-left-color:#f59e0b}.mb-stat:nth-child(3){border-left-color:#16a34a}.mb-stat:nth-child(4){border-left-color:#9333ea}
-.mb-stat small{display:block;color:#64748b;font-size:8.5px;font-weight:800;text-transform:uppercase}.mb-stat strong{display:block;color:#0f172a;font-size:19px;margin-top:3px}
-.mb-filter{background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:11px;margin-bottom:13px;display:grid;grid-template-columns:repeat(4,minmax(130px,1fr)) auto;gap:8px;align-items:end}
-.mb-filter label{display:block;margin-bottom:4px;color:#64748b;font-size:8px;font-weight:800;text-transform:uppercase}
-.mb-panel{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
-.mb-panel-head{padding:12px 14px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.mb-panel-head h3{margin:0;font-size:13px;color:#0f172a}.mb-table-wrap{overflow-x:auto}
-.mb-table{width:100%;border-collapse:collapse;min-width:1050px}.mb-table th{padding:9px;background:#f8fafc;color:#64748b;border-bottom:1px solid #e2e8f0;text-align:left;font-size:8px;text-transform:uppercase}.mb-table td{padding:9px;border-bottom:1px solid #f1f5f9;color:#334155;font-size:9.5px;vertical-align:top}
-.mb-table tr.pending{background:#fffdf5}.mb-status{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:8px;font-weight:800}.mb-status.Pending{background:#fff7ed;color:#9a3412}.mb-status.Confirmed{background:#ecfdf5;color:#166534}.mb-status.Rejected,.mb-status.Cancelled{background:#fef2f2;color:#991b1b}.mb-status.Completed{background:#eff6ff;color:#1d4ed8}
-.mb-actions{display:flex;gap:4px;flex-wrap:wrap}.mb-pagination{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;padding:14px;border-top:1px solid #e2e8f0}.mb-pagination a,.mb-pagination span.page{min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #e2e8f0;border-radius:7px;text-decoration:none;color:#334155;font-size:9px;font-weight:700}.mb-pagination a:hover,.mb-pagination span.active{background:#ff6b35;border-color:#ff6b35;color:#fff}.mb-pagination .summary{color:#64748b;font-size:9px;margin-left:5px}
-.mb-modal{position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.58);overflow-y:auto}.mb-modal.show{display:flex}.mb-modal-card{width:min(100%,760px);max-height:calc(100vh - 40px);overflow:auto;background:#fff;border-radius:12px;box-shadow:0 24px 70px rgba(15,23,42,.3)}
-.mb-modal-head{position:sticky;top:0;z-index:2;background:#fff;padding:14px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}.mb-modal-head h3{margin:0;font-size:14px}.mb-modal-close{width:32px;height:32px;border:0;border-radius:8px;background:#f1f5f9;color:#475569;cursor:pointer;font-size:18px}
-.mb-modal-body{padding:16px}.mb-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.mb-detail{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px}.mb-detail.full{grid-column:1/-1}.mb-detail small{display:block;color:#64748b;font-size:8px;text-transform:uppercase;font-weight:800;margin-bottom:4px}.mb-detail strong,.mb-detail div{font-size:10px;color:#0f172a;word-break:break-word}
-.mb-section-title{margin:16px 0 8px;font-size:11px;color:#0f172a}.mb-modal-actions{padding:12px 16px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
-body.mb-modal-open{overflow:hidden}
-@media(max-width:900px){.mb-stats{grid-template-columns:repeat(2,1fr)}.mb-filter{grid-template-columns:repeat(2,1fr)}.mb-detail-grid{grid-template-columns:1fr 1fr}}
-@media(max-width:600px){.mb-stats,.mb-filter,.mb-detail-grid{grid-template-columns:1fr}.mb-detail.full{grid-column:auto}}
+/* Manage bookings: booking detail grid and the self-contained modals
+   (toggled by .show / body.mb-modal-open from the page JS). */
+.mb-filters { margin-bottom: 0; }
+.mb-filters > .form-group { min-width: 150px; }
+.mb-count { font-size: var(--fs-sm); }
+.mb-table tr.pending td { background: var(--amber-bg); }
+.mb-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.mb-pagination { align-items: center; flex-wrap: wrap; }
+.mb-pagination .summary { margin-left: var(--space-2); }
+
+.mb-modal { position: fixed; inset: 0; z-index: 100000; display: none; align-items: center; justify-content: center; padding: var(--space-5); background: color-mix(in srgb, var(--ink-900) 58%, transparent); overflow-y: auto; }
+.mb-modal.show { display: flex; }
+.mb-modal-card { width: min(100%, 760px); max-height: calc(100vh - 40px); overflow: auto; background: var(--surface-card); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); }
+.mb-modal-card.is-narrow { max-width: 560px; }
+.mb-modal-card.is-small { max-width: 520px; }
+.mb-modal-head { position: sticky; top: 0; z-index: 2; background: var(--surface-card); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--ink-100); display: flex; justify-content: space-between; align-items: center; }
+.mb-modal-head h3 { margin: 0; font-size: var(--fs-lg); color: var(--ink-900); }
+.mb-modal-close { width: 32px; height: 32px; border: 0; border-radius: var(--radius-md); background: var(--ink-50); color: var(--ink-400); cursor: pointer; font-size: 18px; }
+.mb-modal-close:hover { background: var(--ink-100); color: var(--ink-900); }
+.mb-modal-body { padding: var(--space-5); }
+.mb-modal-actions { padding: var(--space-3) var(--space-5); border-top: 1px solid var(--ink-100); display: flex; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; }
+.mb-detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.mb-detail { background: var(--ink-50); border: 1px solid var(--ink-100); border-radius: var(--radius-md); padding: var(--space-3); }
+.mb-detail.full { grid-column: 1 / -1; }
+.mb-detail.is-danger { border-left: 4px solid var(--red-fg); }
+.mb-detail small { display: block; color: var(--ink-300); font-size: var(--fs-xs); text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
+.mb-detail strong, .mb-detail div { color: var(--ink-900); word-break: break-word; }
+.mb-email-msg { display: none; margin: var(--space-3) 0 0; }
+body.mb-modal-open { overflow: hidden; }
+@media (max-width: 900px) { .mb-detail-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .mb-detail-grid { grid-template-columns: 1fr; } .mb-detail.full { grid-column: auto; } }
 </style>
 
-<div class="mb-wrap">
+<div class="page-stack">
 
-    <div class="mb-hero">
+    <div class="page-hero">
         <div>
             <h1>
-                <i class="fas fa-calendar-check"></i>
+                <i class="fas fa-calendar-check" aria-hidden="true"></i>
                 Manage Bookings
             </h1>
             <p>
@@ -494,42 +503,56 @@ body.mb-modal-open{overflow:hidden}
             </p>
         </div>
 
-        <a
-            href="hub-operations?tab=bookings"
-            class="btn btn-secondary"
-        >
-            <i class="fas fa-arrow-left"></i>
-            Hub Operations
-        </a>
-    </div>
-
-    <div class="mb-stats">
-        <div class="mb-stat">
-            <small>Total Bookings</small>
-            <strong><?= $stats['total'] ?></strong>
-        </div>
-
-        <div class="mb-stat">
-            <small>Pending Approval</small>
-            <strong><?= $stats['pending'] ?></strong>
-        </div>
-
-        <div class="mb-stat">
-            <small>Confirmed</small>
-            <strong><?= $stats['confirmed'] ?></strong>
-        </div>
-
-        <div class="mb-stat">
-            <small>Today's Bookings</small>
-            <strong><?= $stats['today'] ?></strong>
+        <div class="hero-actions">
+            <a
+                href="hub-operations?tab=bookings"
+                class="btn"
+            >
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                Hub Operations
+            </a>
         </div>
     </div>
 
-    <form
-        method="GET"
-        class="mb-filter"
-    >
-        <div>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-calendar" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Total Bookings</span>
+                <span class="stat-value"><?= $stats['total'] ?></span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Pending Approval</span>
+                <span class="stat-value"><?= $stats['pending'] ?></span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Confirmed</span>
+                <span class="stat-value"><?= $stats['confirmed'] ?></span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Today's Bookings</span>
+                <span class="stat-value"><?= $stats['today'] ?></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+    <div class="card-body">
+    <form method="GET">
+    <div class="filters-bar mb-filters" role="search" aria-label="Filter bookings">
+        <div class="form-group">
             <label>Status</label>
             <select
                 name="status"
@@ -560,7 +583,7 @@ body.mb-modal-open{overflow:hidden}
             </select>
         </div>
 
-        <div>
+        <div class="form-group">
             <label>Space</label>
             <select
                 name="space"
@@ -581,7 +604,7 @@ body.mb-modal-open{overflow:hidden}
             </select>
         </div>
 
-        <div>
+        <div class="form-group">
             <label>Date</label>
             <input
                 type="date"
@@ -591,7 +614,7 @@ body.mb-modal-open{overflow:hidden}
             >
         </div>
 
-        <div>
+        <div class="form-group">
             <label>Member</label>
             <input
                 type="search"
@@ -602,12 +625,12 @@ body.mb-modal-open{overflow:hidden}
             >
         </div>
 
-        <div style="display:flex;gap:6px;">
+        <div class="filters-actions">
             <button
                 type="submit"
-                class="btn btn-info"
+                class="btn btn-primary"
             >
-                <i class="fas fa-filter"></i>
+                <i class="fas fa-filter" aria-hidden="true"></i>
                 Filter
             </button>
 
@@ -618,23 +641,27 @@ body.mb-modal-open{overflow:hidden}
                 Clear
             </a>
         </div>
+    </div>
     </form>
+    </div>
+    </div>
 
-    <div class="mb-panel">
-        <div class="mb-panel-head">
+    <div class="card">
+        <div class="card-header">
             <h3>
-                <i class="fas fa-table-list"></i>
+                <i class="fas fa-table-list" aria-hidden="true"></i>
                 Space Bookings
             </h3>
 
-            <span style="font-size:9px;color:#64748b;">
+            <span class="cell-muted mb-count">
                 <?= number_format($total_records) ?>
                 record(s)
             </span>
         </div>
 
-        <div class="mb-table-wrap">
-            <table class="mb-table">
+        <div class="card-body">
+        <div class="table-responsive">
+            <table class="table mb-table">
                 <thead>
                     <tr>
                         <th>Ref</th>
@@ -653,15 +680,14 @@ body.mb-modal-open{overflow:hidden}
                 <tbody>
                 <?php if (!$bookings): ?>
                     <tr>
-                        <td
-                            colspan="10"
-                            style="text-align:center;padding:28px;"
-                        >
-                            No bookings match the selected filters.
+                        <td colspan="10">
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-times" aria-hidden="true"></i>
+                                <p>No bookings match the selected filters.</p>
+                            </div>
                         </td>
                     </tr>
                 <?php endif; ?>
-
                 <?php foreach ($bookings as $booking): ?>
                     <?php
                     $status =
@@ -834,7 +860,7 @@ body.mb-modal-open{overflow:hidden}
                                 <?= mb_e($booking['member_name'] ?? 'N/A') ?>
                             </strong>
                             <br>
-                            <small>
+                            <small class="cell-muted">
                                 <?= mb_e($booking['membership_number'] ?? '') ?>
                             </small>
                         </td>
@@ -844,7 +870,7 @@ body.mb-modal-open{overflow:hidden}
                                 <?= mb_e($booking['space_name'] ?? '') ?>
                             </strong>
                             <br>
-                            <small>
+                            <small class="cell-muted">
                                 <?= mb_e($booking['space_type'] ?? '') ?>
                             </small>
                         </td>
@@ -855,7 +881,7 @@ body.mb-modal-open{overflow:hidden}
                                     'd M Y',
                                     strtotime((string)$booking['booking_date'])
                                 )
-                                : '—' ?>
+                                : 'â€”' ?>
                         </td>
 
                         <td>
@@ -864,14 +890,14 @@ body.mb-modal-open{overflow:hidden}
                                     'h:i A',
                                     strtotime((string)$booking['start_time'])
                                 )
-                                : '—' ?>
+                                : 'â€”' ?>
                             -
                             <?= !empty($booking['end_time'])
                                 ? date(
                                     'h:i A',
                                     strtotime((string)$booking['end_time'])
                                 )
-                                : '—' ?>
+                                : 'â€”' ?>
                         </td>
 
                         <td>
@@ -879,11 +905,11 @@ body.mb-modal-open{overflow:hidden}
                                 mb_strimwidth(
                                     (string)(
                                         $booking['purpose']
-                                        ?? '—'
+                                        ?? 'â€”'
                                     ),
                                     0,
                                     45,
-                                    '…'
+                                    'â€¦'
                                 )
                             ) ?>
                         </td>
@@ -896,7 +922,7 @@ body.mb-modal-open{overflow:hidden}
                         </td>
 
                         <td>
-                            <span class="mb-status <?= mb_e($status) ?>">
+                            <span class="status-pill <?= mb_e(['Pending' => 'status-pending', 'Confirmed' => 'status-approved', 'Completed' => 'status-completed', 'Rejected' => 'status-rejected', 'Cancelled' => 'status-cancelled'][$status] ?? 'status-draft') ?>">
                                 <?= mb_e($status) ?>
                             </span>
                         </td>
@@ -998,15 +1024,15 @@ body.mb-modal-open{overflow:hidden}
         </div>
 
         <?php if ($total_pages > 1): ?>
-            <div class="mb-pagination">
+            <div class="pagination mb-pagination">
 
                 <?php if ($page > 1): ?>
-                    <a href="<?= mb_e(mb_page_url(1)) ?>">
-                        <i class="fas fa-angles-left"></i>
+                    <a href="<?= mb_e(mb_page_url(1)) ?>" aria-label="First page">
+                        <i class="fas fa-angles-left" aria-hidden="true"></i>
                     </a>
 
-                    <a href="<?= mb_e(mb_page_url($page - 1)) ?>">
-                        <i class="fas fa-angle-left"></i>
+                    <a href="<?= mb_e(mb_page_url($page - 1)) ?>" aria-label="Previous page">
+                        <i class="fas fa-angle-left" aria-hidden="true"></i>
                     </a>
                 <?php endif; ?>
 
@@ -1030,9 +1056,9 @@ body.mb-modal-open{overflow:hidden}
                     $i++
                 ): ?>
                     <?php if ($i === $page): ?>
-                        <span class="page active">
+                        <a class="active" aria-current="page">
                             <?= $i ?>
-                        </span>
+                        </a>
                     <?php else: ?>
                         <a href="<?= mb_e(mb_page_url($i)) ?>">
                             <?= $i ?>
@@ -1041,23 +1067,24 @@ body.mb-modal-open{overflow:hidden}
                 <?php endfor; ?>
 
                 <?php if ($page < $total_pages): ?>
-                    <a href="<?= mb_e(mb_page_url($page + 1)) ?>">
-                        <i class="fas fa-angle-right"></i>
+                    <a href="<?= mb_e(mb_page_url($page + 1)) ?>" aria-label="Next page">
+                        <i class="fas fa-angle-right" aria-hidden="true"></i>
                     </a>
 
-                    <a href="<?= mb_e(mb_page_url($total_pages)) ?>">
-                        <i class="fas fa-angles-right"></i>
+                    <a href="<?= mb_e(mb_page_url($total_pages)) ?>" aria-label="Last page">
+                        <i class="fas fa-angles-right" aria-hidden="true"></i>
                     </a>
                 <?php endif; ?>
 
-                <span class="summary">
+                <span class="summary cell-muted">
                     Page <?= $page ?> of <?= $total_pages ?>
                 </span>
 
             </div>
         <?php endif; ?>
+        </div>
     </div>
-</div>
+</div><!-- /.page-stack -->
 
 <!-- Booking details modal -->
 <div
@@ -1116,8 +1143,7 @@ body.mb-modal-open{overflow:hidden}
     aria-hidden="true"
 >
     <div
-        class="mb-modal-card"
-        style="max-width:560px;"
+        class="mb-modal-card is-narrow"
     >
         <div class="mb-modal-head">
             <h3>
@@ -1168,30 +1194,12 @@ body.mb-modal-open{overflow:hidden}
 
             <div
                 id="emailMemberError"
-                style="
-                    display:none;
-                    margin-top:10px;
-                    padding:9px 10px;
-                    border-left:4px solid #dc2626;
-                    border-radius:7px;
-                    background:#fef2f2;
-                    color:#991b1b;
-                    font-size:10px;
-                "
+                class="alert alert-danger mb-email-msg"
             ></div>
 
             <div
                 id="emailMemberSuccess"
-                style="
-                    display:none;
-                    margin-top:10px;
-                    padding:9px 10px;
-                    border-left:4px solid #16a34a;
-                    border-radius:7px;
-                    background:#ecfdf5;
-                    color:#166534;
-                    font-size:10px;
-                "
+                class="alert alert-success mb-email-msg"
             ></div>
         </div>
 
@@ -1224,8 +1232,7 @@ body.mb-modal-open{overflow:hidden}
     aria-hidden="true"
 >
     <div
-        class="mb-modal-card"
-        style="max-width:520px;"
+        class="mb-modal-card is-small"
     >
         <div class="mb-modal-head">
             <h3>
@@ -1312,7 +1319,7 @@ function bookingEsc(value) {
 
 function formatDateValue(value) {
     if (!value) {
-        return '—';
+        return 'â€”';
     }
 
     const date =
@@ -1347,7 +1354,7 @@ function formatDateValue(value) {
 
 function formatTimeValue(value) {
     if (!value) {
-        return '—';
+        return 'â€”';
     }
 
     const parts =
@@ -1508,12 +1515,12 @@ function openBookingModal(data) {
 
             <div class="mb-detail">
                 <small>Email</small>
-                <strong>${bookingEsc(data.member_email || '—')}</strong>
+                <strong>${bookingEsc(data.member_email || 'â€”')}</strong>
             </div>
 
             <div class="mb-detail">
                 <small>Phone</small>
-                <strong>${bookingEsc(data.member_phone || '—')}</strong>
+                <strong>${bookingEsc(data.member_phone || 'â€”')}</strong>
             </div>
 
             <div class="mb-detail">
@@ -1533,7 +1540,7 @@ function openBookingModal(data) {
 
             <div class="mb-detail full">
                 <small>Purpose</small>
-                <div>${bookingEsc(data.purpose || '—')}</div>
+                <div>${bookingEsc(data.purpose || 'â€”')}</div>
             </div>
 
             ${
@@ -1558,7 +1565,7 @@ function openBookingModal(data) {
                 data.rejection_reason
                 ?
                 `
-                <div class="mb-detail full" style="border-left:4px solid #dc2626;">
+                <div class="mb-detail full is-danger">
                     <small>Rejection Reason</small>
                     <div>${bookingEsc(data.rejection_reason)}</div>
                 </div>
@@ -1571,7 +1578,7 @@ function openBookingModal(data) {
                 data.cancellation_reason
                 ?
                 `
-                <div class="mb-detail full" style="border-left:4px solid #dc2626;">
+                <div class="mb-detail full is-danger">
                     <small>Cancellation Reason</small>
                     <div>${bookingEsc(data.cancellation_reason)}</div>
                 </div>

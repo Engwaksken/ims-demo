@@ -36,6 +36,9 @@
   --purple-bg: #faf5ff; --purple-fg: #7c3aed; --purple-border: #e9d5ff;
   --teal-bg:   #f0fdfa; --teal-fg:   #0f766e; --teal-border:  #99f6e4;
 
+  /* Modal and drawer backdrop */
+  --overlay: rgba(13,17,23,.55);
+
   /* Geometry */
   --radius-sm:  8px;
   --radius-md:  12px;
@@ -117,9 +120,9 @@ a { color: inherit; }
 }
 
 .btn-dark { background: var(--ink-900); color: var(--ink-0); box-shadow: var(--shadow-sm); }
-.btn-green { background: #16a34a; color: var(--ink-0); }
+.btn-green { background: var(--green-fg); color: var(--ink-0); }
 .btn-red,
-.btn-danger { background: #dc2626; color: var(--ink-0); }
+.btn-danger { background: var(--red-fg); color: var(--ink-0); }
 .btn-warning { background: var(--amber-bg); color: var(--amber-fg); border: 1px solid var(--amber-border); }
 .btn-info { background: var(--blue-bg); color: var(--blue-fg); border: 1px solid var(--blue-border); }
 .btn-soft { background: var(--brand-50); color: var(--brand-600); border: 1px solid var(--brand-100); }
@@ -162,6 +165,8 @@ a { color: inherit; }
 .badge-returned,
 .badge-secondary { background: var(--slate-bg); color: var(--slate-fg); border-color: var(--slate-border); }
 
+.badge-primary { background: var(--brand-50); color: var(--brand-700); border-color: var(--brand-100); }
+.badge-light { background: var(--ink-50); color: var(--ink-500); border-color: var(--ink-100); }
 .badge-purple { background: var(--purple-bg); color: var(--purple-fg); border-color: var(--purple-border); }
 .badge-dark { background: var(--ink-900); color: var(--ink-0); border-color: var(--ink-900); }
 
@@ -214,6 +219,8 @@ a { color: inherit; }
 }
 
 textarea.form-control { resize: vertical; min-height: 90px; }
+.form-control[readonly],
+.form-control:disabled { background: var(--ink-50); color: var(--ink-400); cursor: not-allowed; }
 
 select.form-control {
   cursor: pointer;
@@ -350,6 +357,7 @@ select.form-control {
 .bg-purple { background: var(--purple-bg); color: var(--purple-fg); }
 .bg-slate { background: var(--slate-bg); color: var(--slate-fg); }
 .bg-teal { background: var(--teal-bg); color: var(--teal-fg); }
+.bg-red { background: var(--red-bg); color: var(--red-fg); }
 
 .stat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 
@@ -402,7 +410,7 @@ select.form-control {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(13,17,23,.55);
+  background: var(--overlay);
   z-index: 9999;
   padding: 24px;
   overflow-y: auto;
@@ -413,7 +421,8 @@ select.form-control {
 
 @keyframes modalFade { from { opacity: 0; } to { opacity: 1; } }
 
-.modal.show { display: block; }
+.modal.show,
+.modal.open { display: block; }
 
 .modal-content,
 .modal-card {
@@ -555,6 +564,10 @@ select.form-control {
 .tab-btn i { font-size: 13px; opacity: .7; }
 .tab-btn.active i { opacity: 1; color: var(--brand-500); }
 
+/* Count next to a tab label: <button class="tab-btn">Pending <span class="badge">3</span></button> */
+.tab-btn .badge { margin-left: 6px; padding: 2px 8px; font-size: 10px; background: var(--ink-50); color: var(--ink-400); border-color: var(--ink-100); }
+.tab-btn.active .badge { background: var(--brand-50); color: var(--brand-700); border-color: var(--brand-100); }
+
 .tab-panels { padding: 24px 22px; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -570,6 +583,36 @@ select.form-control {
 }
 
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Multi-line alert: icon top-aligned, content stacked. */
+.alert.alert-stack { align-items: flex-start; }
+.alert.alert-stack > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+/* Label/value facts for record views:
+   <dl class="detail-grid"><div class="detail-item"><dt class="detail-label">Email</dt><dd class="detail-value">â€¦</dd></div></dl> */
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin: 0; }
+.detail-item { padding: 12px 14px; background: var(--ink-50); border-radius: var(--radius-sm); min-width: 0; }
+.detail-item.is-wide { grid-column: 1 / -1; }
+.detail-label { margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-300); }
+.detail-value { margin: 0; font-size: 14px; color: var(--ink-900); overflow-wrap: anywhere; }
+
+/* Slim progress meter: <div class="meter"><div class="meter-fill tone-green" style="width:64%"></div></div> */
+.meter { height: 8px; background: var(--ink-50); border-radius: 999px; overflow: hidden; }
+.meter-fill { height: 100%; width: 0; background: var(--brand-500); border-radius: inherit; transition: width .25s var(--ease-out); }
+.meter-fill.tone-green { background: var(--green-fg); }
+.meter-fill.tone-amber { background: var(--amber-fg); }
+.meter-fill.tone-red { background: var(--red-fg); }
+.meter-fill.tone-blue { background: var(--blue-fg); }
+
+/* Pagination (overrides the legacy rules in style.css). */
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 20px; }
+.pagination > a,
+.pagination > span { padding: 7px 12px; min-width: 36px; text-align: center; border: 1px solid var(--ink-100); border-radius: var(--radius-sm); background: var(--surface-card); color: var(--ink-500); font-size: 13px; font-weight: 600; text-decoration: none; }
+.pagination > a:hover { border-color: var(--brand-400); color: var(--brand-600); }
+.pagination a.active,
+.pagination .current { background: var(--brand-600); border-color: var(--brand-600); color: var(--ink-0); }
+.pagination .disabled { opacity: .5; pointer-events: none; }
+.pagination-info { font-size: 12px; color: var(--ink-300); }
 
 .empty-state {
   display: flex;
@@ -906,13 +949,13 @@ select.form-control {
     margin: 0 4px;
 }
 
-/* Status badges — align with the calendar's Status column values */
-.badge-status-Planned   { background: #e2e8f0; color: #334155; }
-.badge-status-Open      { background: #bfdbfe; color: #1e3a8a; }
-.badge-status-Ongoing   { background: #fde68a; color: #78350f; }
-.badge-status-Closed    { background: #cbd5e1; color: #1f2937; }
-.badge-status-Completed { background: #bbf7d0; color: #14532d; }
-.badge-status-Cancelled { background: #fecaca; color: #7f1d1d; }
+/* Status badges: align with the calendar's Status column values */
+.badge-status-Planned   { background: var(--slate-bg);  color: var(--slate-fg);  border-color: var(--slate-border); }
+.badge-status-Open      { background: var(--blue-bg);   color: var(--blue-fg);   border-color: var(--blue-border); }
+.badge-status-Ongoing   { background: var(--amber-bg);  color: var(--amber-fg);  border-color: var(--amber-border); }
+.badge-status-Closed    { background: var(--ink-50);    color: var(--ink-500);   border-color: var(--ink-100); }
+.badge-status-Completed { background: var(--green-bg);  color: var(--green-fg);  border-color: var(--green-border); }
+.badge-status-Cancelled { background: var(--red-bg);    color: var(--red-fg);    border-color: var(--red-border); }
 
 .activity-expand-toggle {
     background: none;
@@ -950,4 +993,106 @@ select.form-control {
     color: #334155;
     line-height: 1.5;
     white-space: pre-wrap;
+}
+
+/* ----------------------------------------------------------------------
+   PAGE HEADER (global): the orange header at the top of every page.
+   <div class="page-hero">
+     <div><h1><i class="fas fa-..."></i> Title</h1><p>Subtitle</p></div>
+     <div class="hero-actions"> buttons </div>
+   </div>
+   Inside the header .btn-primary is solid white and other buttons are
+   translucent, so pages need no extra classes.
+---------------------------------------------------------------------- */
+.page-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 55%, var(--brand-400) 100%);
+  color: var(--ink-0);
+  border-radius: var(--radius-2xl);
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 16px 40px rgba(234, 88, 12, .28);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.page-hero::before,
+.page-hero::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ink-0);
+  opacity: .10;
+  pointer-events: none;
+}
+.page-hero::before { width: 280px; height: 280px; top: -100px; right: 60px; }
+.page-hero::after  { width: 160px; height: 160px; bottom: -70px; right: 220px; }
+
+.page-hero > * { position: relative; }
+
+.page-hero h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: clamp(20px, 2.6vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  color: var(--ink-0);
+}
+
+.page-hero p {
+  margin: 0;
+  font-size: 14px;
+  opacity: .9;
+  max-width: 560px;
+  color: var(--ink-0);
+}
+
+.page-hero .btn {
+  background: rgba(255, 255, 255, .14);
+  color: var(--ink-0);
+  border: 1px solid rgba(255, 255, 255, .35);
+  box-shadow: none;
+}
+.page-hero .btn:hover { background: rgba(255, 255, 255, .24); opacity: 1; }
+
+.page-hero .btn-primary,
+.page-hero .btn.solid {
+  background: var(--ink-0);
+  color: var(--brand-700);
+  border-color: var(--ink-0);
+  box-shadow: 0 6px 16px rgba(124, 45, 18, .22);
+}
+.page-hero .btn-primary:hover,
+.page-hero .btn.solid:hover { background: var(--brand-50); }
+
+.page-hero .btn-dark { background: var(--ink-900); color: var(--ink-0); border-color: var(--ink-900); }
+
+/* Pages that stack sections with a flex gap don't need the extra margin. */
+.page-stack { display: flex; flex-direction: column; gap: 20px; }
+.page-stack > .page-hero,
+.page-stack > .stats-grid,
+.page-stack > .card,
+.page-stack > .panel,
+.page-stack > .alert { margin-bottom: 0; }
+
+@media (max-width: 900px) {
+  .page-hero { padding: 24px; }
+}
+
+@media (max-width: 640px) {
+  .page-hero { padding: 20px; flex-direction: column; align-items: flex-start; gap: 16px; border-radius: var(--radius-xl); }
+  .page-hero .hero-actions { width: 100%; }
+  .page-hero .hero-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+
+@media print {
+  .page-hero { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page-hero .hero-actions { display: none; }
 }

@@ -172,24 +172,102 @@ while ($row = $result->fetch_assoc()) {
 ?>
 
 <style>
+/* Participants report: page-only layout (rpp- prefix). Header, cards, stat
+   cards, badges, buttons, tables and empty states are global. */
+.rpp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+.rpp-engage { display: grid; grid-template-columns: 1fr 2fr; gap: var(--space-5); }
+.rpp-chart { max-height: 300px; }
+.rpp-legend { margin-top: var(--space-5); }
+
+.rpp-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: var(--radius-sm);
+    background: var(--ink-50);
+}
+.rpp-row:last-child { margin-bottom: 0; }
+.rpp-row.rpp-row-lg { padding: 15px; margin-bottom: 10px; }
+.rpp-row.tone-blue   { background: var(--blue-bg); }
+.rpp-row.tone-green  { background: var(--green-bg); }
+.rpp-row.tone-amber  { background: var(--amber-bg); }
+.rpp-row.tone-red    { background: var(--red-bg); }
+.rpp-row.tone-purple { background: var(--purple-bg); }
+.rpp-row.tone-slate  { background: var(--slate-bg); }
+
+.rpp-c-blue   { color: var(--blue-fg); }
+.rpp-c-green  { color: var(--green-fg); }
+.rpp-c-amber  { color: var(--amber-fg); }
+.rpp-c-purple { color: var(--purple-fg); }
+.rpp-c-slate  { color: var(--ink-200); }
+
+.rpp-bar-row { margin-bottom: 15px; }
+.rpp-bar-row:last-child { margin-bottom: 0; }
+.rpp-bar-head { display: flex; justify-content: space-between; gap: var(--space-3); margin-bottom: 5px; }
+.rpp-progress-thin { height: 8px; }
+
+.rpp-sum-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-5); }
+.rpp-sum {
+    padding: var(--space-5);
+    border-left: 4px solid var(--ink-100);
+    border-radius: var(--radius-sm);
+    background: var(--ink-50);
+}
+.rpp-sum h4 { margin: 0 0 10px; }
+.rpp-sum.tone-blue   { border-left-color: var(--blue-fg); }
+.rpp-sum.tone-blue h4 { color: var(--blue-fg); }
+.rpp-sum.tone-amber  { border-left-color: var(--amber-fg); }
+.rpp-sum.tone-amber h4 { color: var(--amber-fg); }
+.rpp-sum.tone-brand  { border-left-color: var(--brand-600); }
+.rpp-sum.tone-brand h4 { color: var(--brand-600); }
+.rpp-sum.tone-green  { border-left-color: var(--green-fg); }
+.rpp-sum.tone-green h4 { color: var(--green-fg); }
+.rpp-sum.tone-purple { border-left-color: var(--purple-fg); }
+.rpp-sum.tone-purple h4 { color: var(--purple-fg); }
+.rpp-sum-value { margin: 0; font-size: 24px; font-weight: 800; color: var(--ink-700); }
+.rpp-muted { color: var(--ink-300); }
+
+.rpp-rank-1 { color: var(--amber-fg); }
+.rpp-rank-2 { color: var(--ink-200); }
+.rpp-rank-3 { color: var(--brand-700); }
+
+@media (max-width: 900px) {
+    .rpp-grid-2,
+    .rpp-engage { grid-template-columns: 1fr; }
+}
+
 @media print {
     .no-print { display: none !important; }
     .card { page-break-inside: avoid; }
 }
 </style>
 
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-users" aria-hidden="true"></i> Participants Analytics Report</h1>
+        <p>
+            Period: <?php echo date('d M Y', strtotime($date_from)); ?> - <?php echo date('d M Y', strtotime($date_to)); ?>
+            &middot; Generated: <?php echo date('d M Y H:i'); ?> by <?php echo htmlspecialchars($_SESSION['full_name']); ?>
+        </p>
+    </div>
+    <div class="hero-actions no-print">
+        <button type="button" onclick="window.print()" class="btn">
+            <i class="fas fa-print" aria-hidden="true"></i> Print
+        </button>
+        <button type="button" onclick="exportToExcel()" class="btn btn-primary">
+            <i class="fas fa-file-excel" aria-hidden="true"></i> Export Excel
+        </button>
+    </div>
+</div>
+
 <!-- Filters -->
 <div class="card no-print">
     <div class="card-header">
-        <h3><i class="fas fa-filter"></i> Report Filters</h3>
-        <div>
-            <button onclick="window.print()" class="btn btn-secondary">
-                <i class="fas fa-print"></i> Print
-            </button>
-            <button onclick="exportToExcel()" class="btn btn-success">
-                <i class="fas fa-file-excel"></i> Export Excel
-            </button>
-        </div>
+        <h3><i class="fas fa-filter" aria-hidden="true"></i> Report Filters</h3>
     </div>
     <div class="card-body">
         <form method="GET" action="" class="filters-bar">
@@ -249,7 +327,7 @@ while ($row = $result->fetch_assoc()) {
                 <input type="date" name="date_to" class="form-control" value="<?php echo $date_to; ?>">
             </div>
             
-            <div class="filters-actions">
+            <div class="filter-actions">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-search"></i> Apply Filters
                 </button>
@@ -258,19 +336,6 @@ while ($row = $result->fetch_assoc()) {
                 </a>
             </div>
         </form>
-    </div>
-</div>
-
-<!-- Report Header -->
-<div class="card" style="background: linear-gradient(135deg, var(--primary-color), #3498DB); color: white; text-align: center; margin-bottom: 20px;">
-    <div class="card-body">
-        <h1 style="margin: 0; font-size: 32px; color: white;">Participants Analytics Report</h1>
-        <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">
-            Period: <?php echo date('d M Y', strtotime($date_from)); ?> - <?php echo date('d M Y', strtotime($date_to)); ?>
-        </p>
-        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;">
-            Generated: <?php echo date('d M Y H:i'); ?> by <?php echo htmlspecialchars($_SESSION['full_name']); ?>
-        </p>
     </div>
 </div>
 
@@ -334,29 +399,29 @@ while ($row = $result->fetch_assoc()) {
 </div>
 
 <!-- Demographics Overview -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+<div class="rpp-grid-2">
     <!-- Gender Distribution -->
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-venus-mars"></i> Gender Distribution</h3>
         </div>
         <div class="card-body">
-            <canvas id="genderChart" style="max-height: 300px;"></canvas>
+            <canvas id="genderChart" class="rpp-chart"></canvas>
             
-            <div style="margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #E3F2FD; border-radius: 5px; margin-bottom: 5px;">
-                    <span><i class="fas fa-male" style="color: #3498DB;"></i> Male</span>
+            <div class="rpp-legend">
+                <div class="rpp-row tone-blue">
+                    <span><i class="fas fa-male rpp-c-blue" aria-hidden="true"></i> Male</span>
                     <strong><?php echo $stats['male']; ?> (<?php echo $stats['total'] > 0 ? number_format($stats['male'] / $stats['total'] * 100, 1) : 0; ?>%)</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #FCE4EC; border-radius: 5px; margin-bottom: 5px;">
-                    <span><i class="fas fa-female" style="color: #E91E63;"></i> Female</span>
+                <div class="rpp-row tone-purple">
+                    <span><i class="fas fa-female rpp-c-purple" aria-hidden="true"></i> Female</span>
                     <strong><?php echo $stats['female']; ?> (<?php echo $stats['total'] > 0 ? number_format($stats['female'] / $stats['total'] * 100, 1) : 0; ?>%)</strong>
                 </div>
                 <?php 
                 $other = $stats['total'] - $stats['male'] - $stats['female'];
                 if ($other > 0):
                 ?>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #F3E5F5; border-radius: 5px;">
+                <div class="rpp-row tone-purple">
                     <span>Other</span>
                     <strong><?php echo $other; ?> (<?php echo $stats['total'] > 0 ? number_format($other / $stats['total'] * 100, 1) : 0; ?>%)</strong>
                 </div>
@@ -371,13 +436,13 @@ while ($row = $result->fetch_assoc()) {
             <h3><i class="fas fa-birthday-cake"></i> Age Distribution</h3>
         </div>
         <div class="card-body">
-            <canvas id="ageChart" style="max-height: 300px;"></canvas>
+            <canvas id="ageChart" class="rpp-chart"></canvas>
         </div>
     </div>
 </div>
 
 <!-- Education & Location -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+<div class="rpp-grid-2">
     <!-- Education Level -->
     <div class="card">
         <div class="card-header">
@@ -385,11 +450,11 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <div class="card-body">
             <?php if (empty($education_stats)): ?>
-                <p style="text-align: center; color: #7f8c8d; padding: 40px;">No education data available</p>
+                <div class="empty-state"><i class="fas fa-graduation-cap" aria-hidden="true"></i><p>No education data available</p></div>
             <?php else: ?>
                 <?php foreach ($education_stats as $level => $count): ?>
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <div class="rpp-bar-row">
+                        <div class="rpp-bar-head">
                             <span><?php echo htmlspecialchars($level); ?></span>
                             <strong><?php echo $count; ?> (<?php echo $stats['total'] > 0 ? number_format($count / $stats['total'] * 100, 1) : 0; ?>%)</strong>
                         </div>
@@ -409,15 +474,15 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <div class="card-body">
             <?php if (empty($district_stats)): ?>
-                <p style="text-align: center; color: #7f8c8d; padding: 40px;">No location data available</p>
+                <div class="empty-state"><i class="fas fa-map-marker-alt" aria-hidden="true"></i><p>No location data available</p></div>
             <?php else: ?>
                 <?php foreach ($district_stats as $district => $count): ?>
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <div class="rpp-bar-row">
+                        <div class="rpp-bar-head">
                             <span><?php echo htmlspecialchars($district); ?></span>
                             <strong><?php echo $count; ?></strong>
                         </div>
-                        <div class="progress" style="height: 8px;">
+                        <div class="progress rpp-progress-thin">
                             <div class="progress-bar" style="width: <?php echo max($district_stats) > 0 ? ($count / max($district_stats) * 100) : 0; ?>%; background: var(--primary-color);"></div>
                         </div>
                     </div>
@@ -433,34 +498,34 @@ while ($row = $result->fetch_assoc()) {
         <h3><i class="fas fa-chart-line"></i> Enrollment Trend (Last 12 Months)</h3>
     </div>
     <div class="card-body">
-        <canvas id="enrollmentChart" style="max-height: 300px;"></canvas>
+        <canvas id="enrollmentChart" class="rpp-chart"></canvas>
     </div>
 </div>
 
 <!-- Program & Project Participation -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+<div class="rpp-grid-2">
     <!-- Program Participation -->
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-sitemap"></i> Program Participation</h3>
         </div>
         <div class="card-body">
-            <canvas id="programParticipationChart" style="max-height: 300px;"></canvas>
+            <canvas id="programParticipationChart" class="rpp-chart"></canvas>
             
-            <div style="margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #FFEBEE; border-radius: 5px; margin-bottom: 5px;">
+            <div class="rpp-legend">
+                <div class="rpp-row tone-red">
                     <span>No Programs</span>
                     <strong><?php echo $program_participation_stats['no_programs']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #FFF3E0; border-radius: 5px; margin-bottom: 5px;">
+                <div class="rpp-row tone-amber">
                     <span>1 Program</span>
                     <strong><?php echo $program_participation_stats['one_program']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #E8F5E9; border-radius: 5px; margin-bottom: 5px;">
+                <div class="rpp-row tone-green">
                     <span>2 Programs</span>
                     <strong><?php echo $program_participation_stats['two_programs']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #E3F2FD; border-radius: 5px;">
+                <div class="rpp-row tone-blue">
                     <span>3+ Programs</span>
                     <strong><?php echo $program_participation_stats['three_plus_programs']; ?></strong>
                 </div>
@@ -474,22 +539,22 @@ while ($row = $result->fetch_assoc()) {
             <h3><i class="fas fa-project-diagram"></i> Project Participation</h3>
         </div>
         <div class="card-body">
-            <canvas id="projectParticipationChart" style="max-height: 300px;"></canvas>
+            <canvas id="projectParticipationChart" class="rpp-chart"></canvas>
             
-            <div style="margin-top: 20px;">
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #FFEBEE; border-radius: 5px; margin-bottom: 5px;">
+            <div class="rpp-legend">
+                <div class="rpp-row tone-red">
                     <span>No Projects</span>
                     <strong><?php echo $project_participation_stats['no_projects']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #FFF3E0; border-radius: 5px; margin-bottom: 5px;">
+                <div class="rpp-row tone-amber">
                     <span>1 Project</span>
                     <strong><?php echo $project_participation_stats['one_project']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #E8F5E9; border-radius: 5px; margin-bottom: 5px;">
+                <div class="rpp-row tone-green">
                     <span>2 Projects</span>
                     <strong><?php echo $project_participation_stats['two_projects']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 10px; background: #E3F2FD; border-radius: 5px;">
+                <div class="rpp-row tone-blue">
                     <span>3+ Projects</span>
                     <strong><?php echo $project_participation_stats['three_plus_projects']; ?></strong>
                 </div>
@@ -504,24 +569,24 @@ while ($row = $result->fetch_assoc()) {
         <h3><i class="fas fa-chart-bar"></i> Engagement Level (Event Attendance)</h3>
     </div>
     <div class="card-body">
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
-            <canvas id="engagementChart" style="max-height: 300px;"></canvas>
+        <div class="rpp-engage">
+            <canvas id="engagementChart" class="rpp-chart"></canvas>
             
             <div>
-                <div style="display: flex; justify-content: space-between; padding: 15px; background: #E8F5E9; border-radius: 5px; margin-bottom: 10px;">
-                    <span><i class="fas fa-fire" style="color: #2ECC71;"></i> Highly Engaged (5+ events)</span>
+                <div class="rpp-row rpp-row-lg tone-green">
+                    <span><i class="fas fa-fire rpp-c-green" aria-hidden="true"></i> Highly Engaged (5+ events)</span>
                     <strong><?php echo $engagement_stats['highly_engaged']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 15px; background: #FFF3E0; border-radius: 5px; margin-bottom: 10px;">
-                    <span><i class="fas fa-chart-line" style="color: #F39C12;"></i> Moderate (2-4 events)</span>
+                <div class="rpp-row rpp-row-lg tone-amber">
+                    <span><i class="fas fa-chart-line rpp-c-amber" aria-hidden="true"></i> Moderate (2-4 events)</span>
                     <strong><?php echo $engagement_stats['moderately_engaged']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 15px; background: #FCE4EC; border-radius: 5px; margin-bottom: 10px;">
-                    <span><i class="fas fa-chart-bar" style="color: #E91E63;"></i> Low (1 event)</span>
+                <div class="rpp-row rpp-row-lg tone-purple">
+                    <span><i class="fas fa-chart-bar rpp-c-purple" aria-hidden="true"></i> Low (1 event)</span>
                     <strong><?php echo $engagement_stats['low_engagement']; ?></strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 15px; background: #ECEFF1; border-radius: 5px;">
-                    <span><i class="fas fa-times-circle" style="color: #95A5A6;"></i> No Engagement</span>
+                <div class="rpp-row rpp-row-lg tone-slate">
+                    <span><i class="fas fa-times-circle rpp-c-slate" aria-hidden="true"></i> No Engagement</span>
                     <strong><?php echo $engagement_stats['no_engagement']; ?></strong>
                 </div>
             </div>
@@ -537,7 +602,7 @@ while ($row = $result->fetch_assoc()) {
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table data-table">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -556,7 +621,7 @@ while ($row = $result->fetch_assoc()) {
                         <tr>
                             <td>
                                 <?php if ($rank <= 3): ?>
-                                    <i class="fas fa-trophy" style="color: <?php echo $rank == 1 ? '#FFD700' : ($rank == 2 ? '#C0C0C0' : '#CD7F32'); ?>;"></i>
+                                    <i class="fas fa-trophy rpp-rank-<?php echo $rank; ?>" aria-hidden="true"></i>
                                 <?php endif; ?>
                                 <?php echo $rank++; ?>
                             </td>
@@ -565,16 +630,16 @@ while ($row = $result->fetch_assoc()) {
                             </td>
                             <td>
                                 <?php if ($beneficiary['gender'] == 'Male'): ?>
-                                    <i class="fas fa-male" style="color: #3498DB;"></i> Male
+                                    <i class="fas fa-male rpp-c-blue" aria-hidden="true"></i> Male
                                 <?php elseif ($beneficiary['gender'] == 'Female'): ?>
-                                    <i class="fas fa-female" style="color: #E91E63;"></i> Female
+                                    <i class="fas fa-female rpp-c-purple" aria-hidden="true"></i> Female
                                 <?php else: ?>
                                     <?php echo $beneficiary['gender']; ?>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo htmlspecialchars($beneficiary['district'] ?? 'N/A'); ?></td>
                             <td>
-                                <span class="badge" style="background: #E67E22; color: white;"><?php echo $beneficiary['program_count']; ?></span>
+                                <span class="badge badge-warning"><?php echo $beneficiary['program_count']; ?></span>
                             </td>
                             <td>
                                 <span class="badge badge-info"><?php echo $beneficiary['project_count']; ?></span>
@@ -584,9 +649,9 @@ while ($row = $result->fetch_assoc()) {
                             </td>
                             <td>
                                 <?php if ($beneficiary['is_pwd']): ?>
-                                    <i class="fas fa-check-circle" style="color: #2ECC71;"></i>
+                                    <i class="fas fa-check-circle rpp-c-green" aria-hidden="true"></i>
                                 <?php else: ?>
-                                    <i class="fas fa-times-circle" style="color: #95A5A6;"></i>
+                                    <i class="fas fa-times-circle rpp-c-slate" aria-hidden="true"></i>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -604,10 +669,10 @@ while ($row = $result->fetch_assoc()) {
         <h3><i class="fas fa-clipboard-list"></i> Summary Statistics</h3>
     </div>
     <div class="card-body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #3498DB;">
-                <h4 style="margin: 0 0 10px 0; color: var(--primary-color);">Gender Ratio</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 0;">
+        <div class="rpp-sum-grid">
+            <div class="rpp-sum tone-blue">
+                <h4>Gender Ratio</h4>
+                <p class="rpp-sum-value">
                     <?php 
                     if ($stats['female'] > 0) {
                         $ratio = $stats['male'] / $stats['female'];
@@ -617,59 +682,64 @@ while ($row = $result->fetch_assoc()) {
                     }
                     ?>
                 </p>
-                <small style="color: #7f8c8d;">Male to Female Ratio</small>
+                <small class="rpp-muted">Male to Female Ratio</small>
             </div>
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #F39C12;">
-                <h4 style="margin: 0 0 10px 0; color: #F39C12;">PWD Percentage</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 0;">
+            <div class="rpp-sum tone-amber">
+                <h4>PWD Percentage</h4>
+                <p class="rpp-sum-value">
                     <?php echo $stats['total'] > 0 ? number_format($stats['pwd'] / $stats['total'] * 100, 1) : 0; ?>%
                 </p>
-                <small style="color: #7f8c8d;"><?php echo $stats['pwd']; ?> out of <?php echo $stats['total']; ?> participants</small>
+                <small class="rpp-muted"><?php echo $stats['pwd']; ?> out of <?php echo $stats['total']; ?> participants</small>
             </div>
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #E67E22;">
-                <h4 style="margin: 0 0 10px 0; color: #E67E22;">Program Coverage</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 0;">
+            <div class="rpp-sum tone-brand">
+                <h4>Program Coverage</h4>
+                <p class="rpp-sum-value">
                     <?php echo $stats['total'] > 0 ? number_format($stats['with_programs'] / $stats['total'] * 100, 1) : 0; ?>%
                 </p>
-                <small style="color: #7f8c8d;"><?php echo $stats['with_programs']; ?> participants in programs</small>
+                <small class="rpp-muted"><?php echo $stats['with_programs']; ?> participants in programs</small>
             </div>
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #2ECC71;">
-                <h4 style="margin: 0 0 10px 0; color: #2ECC71;">Project Coverage</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 0;">
+            <div class="rpp-sum tone-green">
+                <h4>Project Coverage</h4>
+                <p class="rpp-sum-value">
                     <?php echo $stats['total'] > 0 ? number_format($stats['with_projects'] / $stats['total'] * 100, 1) : 0; ?>%
                 </p>
-                <small style="color: #7f8c8d;"><?php echo $stats['with_projects']; ?> participants in projects</small>
+                <small class="rpp-muted"><?php echo $stats['with_projects']; ?> participants in projects</small>
             </div>
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #9B59B6;">
-                <h4 style="margin: 0 0 10px 0; color: #9B59B6;">Avg Programs per Participant</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 0;">
+            <div class="rpp-sum tone-purple">
+                <h4>Avg Programs per Participant</h4>
+                <p class="rpp-sum-value">
                     <?php 
                     $total_programs = array_sum(array_column($beneficiaries, 'program_count'));
                     echo $stats['with_programs'] > 0 ? number_format($total_programs / $stats['with_programs'], 1) : 0;
                     ?>
                 </p>
-                <small style="color: #7f8c8d;">Among those enrolled in programs</small>
+                <small class="rpp-muted">Among those enrolled in programs</small>
             </div>
             
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #3498DB;">
-                <h4 style="margin: 0 0 10px 0; color: #3498DB;">Avg Projects per Participant</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 0;">
+            <div class="rpp-sum tone-blue">
+                <h4>Avg Projects per Participant</h4>
+                <p class="rpp-sum-value">
                     <?php 
                     $total_projects = array_sum(array_column($beneficiaries, 'project_count'));
                     echo $stats['with_projects'] > 0 ? number_format($total_projects / $stats['with_projects'], 1) : 0;
                     ?>
                 </p>
-                <small style="color: #7f8c8d;">Among those enrolled in projects</small>
+                <small class="rpp-muted">Among those enrolled in projects</small>
             </div>
         </div>
     </div>
 </div>
 
+</div><!-- /.page-stack -->
+
 <script>
+// Chart colours come from the design tokens.
+const rppTok = function (name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); };
+
 // Gender Distribution Chart
 const genderCtx = document.getElementById('genderChart');
 if (genderCtx) {
@@ -679,7 +749,7 @@ if (genderCtx) {
             labels: ['Male', 'Female', 'Other'],
             datasets: [{
                 data: [<?php echo $stats['male']; ?>, <?php echo $stats['female']; ?>, <?php echo $stats['total'] - $stats['male'] - $stats['female']; ?>],
-                backgroundColor: ['#3498DB', '#E91E63', '#9B59B6']
+                backgroundColor: [rppTok('--blue-fg'), rppTok('--purple-fg'), rppTok('--slate-fg')]
             }]
         },
         options: {
@@ -704,7 +774,7 @@ if (ageCtx) {
             datasets: [{
                 label: 'Number of Participants',
                 data: <?php echo json_encode(array_values($age_distribution)); ?>,
-                backgroundColor: '#3498DB'
+                backgroundColor: rppTok('--blue-fg')
             }]
         },
         options: {
@@ -734,8 +804,8 @@ if (enrollmentCtx) {
             datasets: [{
                 label: 'New Participants',
                 data: <?php echo json_encode(array_values($enrollment_trend)); ?>,
-                borderColor: 'var(--primary-color)',
-                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                borderColor: rppTok('--brand-600'),
+                backgroundColor: rppTok('--brand-50'),
                 tension: 0.4,
                 fill: true
             }]
@@ -761,7 +831,7 @@ if (programParticipationCtx) {
             labels: ['No Programs', '1 Program', '2 Programs', '3+ Programs'],
             datasets: [{
                 data: <?php echo json_encode(array_values($program_participation_stats)); ?>,
-                backgroundColor: ['#E74C3C', '#F39C12', '#2ECC71', '#E67E22']
+                backgroundColor: [rppTok('--red-fg'), rppTok('--amber-fg'), rppTok('--green-fg'), rppTok('--brand-500')]
             }]
         },
         options: {
@@ -785,7 +855,7 @@ if (projectParticipationCtx) {
             labels: ['No Projects', '1 Project', '2 Projects', '3+ Projects'],
             datasets: [{
                 data: <?php echo json_encode(array_values($project_participation_stats)); ?>,
-                backgroundColor: ['#E74C3C', '#F39C12', '#2ECC71', '#3498DB']
+                backgroundColor: [rppTok('--red-fg'), rppTok('--amber-fg'), rppTok('--green-fg'), rppTok('--blue-fg')]
             }]
         },
         options: {
@@ -809,7 +879,7 @@ if (engagementCtx) {
             labels: ['Highly Engaged', 'Moderate', 'Low', 'No Engagement'],
             datasets: [{
                 data: <?php echo json_encode(array_values($engagement_stats)); ?>,
-                backgroundColor: ['#2ECC71', '#F39C12', '#E91E63', '#95A5A6']
+                backgroundColor: [rppTok('--green-fg'), rppTok('--amber-fg'), rppTok('--purple-fg'), rppTok('--ink-200')]
             }]
         },
         options: {

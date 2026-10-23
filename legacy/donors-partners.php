@@ -102,7 +102,31 @@ while ($row = $result->fetch_assoc()) {
 /* Funding summary: three figures side by side, stacked on phones. */
 .dp-funding-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 10px; }
 @media (max-width: 768px) { .dp-funding-grid { grid-template-columns: 1fr; } }
+
+/* Detail modals: contact block, section headings and summary strip. */
+.dp-link-sm { font-size: 12px; }
+.dp-detail-box { padding: 20px; background: var(--ink-50); border-radius: var(--radius-lg); margin-bottom: 20px; }
+.dp-detail-box h2 { margin: 0 0 15px; color: var(--brand-600); }
+.dp-detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.dp-detail-grid .dp-span-all { grid-column: 1 / -1; }
+.dp-section-title { margin: 20px 0 10px; }
+.dp-section-title i { color: var(--brand-500); }
+.dp-summary { margin-top: 20px; padding: 15px; border-radius: var(--radius-lg); border-left: 4px solid var(--green-fg); background: var(--green-bg); }
+.dp-summary.is-info { border-left-color: var(--blue-fg); background: var(--blue-bg); }
+.dp-summary-label { font-size: 12px; color: var(--ink-300); }
+.dp-summary-value { font-size: 24px; font-weight: 700; color: var(--ink-900); }
+.dp-confirm-text { font-size: 16px; margin-bottom: 20px; }
+.dp-danger-title { color: var(--red-fg); }
+@media (max-width: 768px) { .dp-detail-grid { grid-template-columns: 1fr; } }
 </style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-handshake" aria-hidden="true"></i> Donors &amp; Partners</h1>
+        <p>Manage the donors that fund programmes and projects, and the partners who help deliver them.</p>
+    </div>
+</div>
 
 <!-- Statistics -->
 <div class="stats-grid reports-stats">
@@ -158,7 +182,7 @@ while ($row = $result->fetch_assoc()) {
     
     <div class="card-body">
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Donor Name</th>
@@ -183,7 +207,7 @@ while ($row = $result->fetch_assoc()) {
                                 <td>
                                     <strong><?php echo htmlspecialchars($donor['donor_name']); ?></strong>
                                     <?php if ($donor['website']): ?>
-                                        <br><a href="<?php echo htmlspecialchars($donor['website']); ?>" target="_blank" style="font-size: 12px; color: #3498DB;">
+                                        <br><a href="<?php echo htmlspecialchars($donor['website']); ?>" target="_blank" class="dp-link-sm">
                                             <i class="fas fa-external-link-alt"></i> Website
                                         </a>
                                     <?php endif; ?>
@@ -215,7 +239,7 @@ while ($row = $result->fetch_assoc()) {
 
                                 <td><?php echo htmlspecialchars($donor['country'] ?? 'N/A'); ?></td>
                                 <td class="text-center">
-                                    <span class="badge" style="background: #E67E22; color: white;"><?php echo $donor['program_count']; ?></span>
+                                    <span class="badge badge-warning"><?php echo $donor['program_count']; ?></span>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-info"><?php echo $donor['project_count']; ?></span>
@@ -261,7 +285,7 @@ while ($row = $result->fetch_assoc()) {
     
     <div class="card-body">
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Partner Name</th>
@@ -285,7 +309,7 @@ while ($row = $result->fetch_assoc()) {
                             <tr>
                                 <td><strong><?php echo htmlspecialchars($partner['partner_name']); ?></strong>
                                  <?php if ($partner['website']): ?>
-                                        <br><a href="<?php echo htmlspecialchars($partner['website']); ?>" target="_blank" style="font-size: 12px; color: #3498DB;">
+                                        <br><a href="<?php echo htmlspecialchars($partner['website']); ?>" target="_blank" class="dp-link-sm">
                                             <i class="fas fa-external-link-alt"></i> Website
                                         </a>
                                     <?php endif; ?>
@@ -305,7 +329,7 @@ while ($row = $result->fetch_assoc()) {
                                         <?php echo $partner['partner_type']; ?>
                                     </span>
                                    <?php if ($partner['letter']): ?>
-                                        <br><a href="<?php echo htmlspecialchars(ims_upload_url($partner['letter'])); ?>" target="_blank" style="font-size: 12px; color: #3498DB;">
+                                        <br><a href="<?php echo htmlspecialchars(ims_upload_url($partner['letter'])); ?>" target="_blank" class="dp-link-sm">
                                             <i class="fas fa-file"></i> Letter
                                         </a>
                                     <?php endif; ?>
@@ -336,7 +360,7 @@ while ($row = $result->fetch_assoc()) {
 
                                 <td><?php echo htmlspecialchars($partner['country'] ?? 'N/A'); ?></td>
                                 <td class="text-center">
-                                    <span class="badge" style="background: #E67E22; color: white;"><?php echo $partner['program_count']; ?></span>
+                                    <span class="badge badge-warning"><?php echo $partner['program_count']; ?></span>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge badge-info"><?php echo $partner['project_count']; ?></span>
@@ -369,6 +393,8 @@ while ($row = $result->fetch_assoc()) {
         </div>
     </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <!-- Add Donor Modal -->
 <div id="addDonorModal" class="modal">
@@ -507,12 +533,12 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <div class="modal-body">
             <?php if ($view_donor): ?>
-                <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
-                    <h2 style="margin: 0 0 15px 0; color: var(--primary-color);">
+                <div class="dp-detail-box">
+                    <h2>
                         <?php echo htmlspecialchars($view_donor['donor_name']); ?>
                     </h2>
                     
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div class="dp-detail-grid">
                         <?php if ($view_donor['contact_person']): ?>
                             <div>
                                 <strong>Contact Person:</strong><br>
@@ -546,7 +572,7 @@ while ($row = $result->fetch_assoc()) {
                         <?php endif; ?>
                         
                         <?php if ($view_donor['website']): ?>
-                            <div style="grid-column: 1 / -1;">
+                            <div class="dp-span-all">
                                 <strong>Website:</strong><br>
                                 <a href="<?php echo htmlspecialchars($view_donor['website']); ?>" target="_blank">
                                     <?php echo htmlspecialchars($view_donor['website']); ?> <i class="fas fa-external-link-alt"></i>
@@ -555,7 +581,7 @@ while ($row = $result->fetch_assoc()) {
                         <?php endif; ?>
                         
                         <?php if ($view_donor['address']): ?>
-                            <div style="grid-column: 1 / -1;">
+                            <div class="dp-span-all">
                                 <strong>Address:</strong><br>
                                 <?php echo nl2br(htmlspecialchars($view_donor['address'])); ?>
                             </div>
@@ -564,15 +590,15 @@ while ($row = $result->fetch_assoc()) {
                 </div>
                 
                 <!-- Programs Section -->
-                <h4 style="margin: 20px 0 10px 0;">
-                    <i class="fas fa-sitemap" style="color: #E67E22;"></i> Funded Programs (<?php echo count($donor_programs); ?>)
+                <h4 class="dp-section-title">
+                    <i class="fas fa-sitemap" aria-hidden="true"></i> Funded Programs (<?php echo count($donor_programs); ?>)
                 </h4>
                 
                 <?php if (empty($donor_programs)): ?>
-                    <p style="color: #7f8c8d; text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">No programs found for this donor.</p>
+                    <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No programs found for this donor.</p></div>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table class="data-table">
+                        <table class="table">
                             <thead>
                                 <tr>
                                     <th>Program Code</th>
@@ -608,15 +634,15 @@ while ($row = $result->fetch_assoc()) {
                 <?php endif; ?>
                 
                 <!-- Projects Section -->
-                <h4 style="margin: 20px 0 10px 0;">
-                    <i class="fas fa-project-diagram" style="color: #3498DB;"></i> Funded Projects (<?php echo count($donor_projects); ?>)
+                <h4 class="dp-section-title">
+                    <i class="fas fa-project-diagram" aria-hidden="true"></i> Funded Projects (<?php echo count($donor_projects); ?>)
                 </h4>
                 
                 <?php if (empty($donor_projects)): ?>
-                    <p style="color: #7f8c8d; text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">No projects found for this donor.</p>
+                    <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No projects found for this donor.</p></div>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table class="data-table">
+                        <table class="table">
                             <thead>
                                 <tr>
                                     <th>Project Code</th>
@@ -659,20 +685,20 @@ while ($row = $result->fetch_assoc()) {
                 
                 <!-- Summary -->
                 <?php if (!empty($donor_programs) || !empty($donor_projects)): ?>
-                    <div style="margin-top: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border-left: 4px solid #2ECC71;">
+                    <div class="dp-summary">
                         <strong>Funding Summary:</strong>
                         <div class="dp-funding-grid">
                             <div>
-                                <div style="font-size: 12px; color: #7f8c8d;">Total Programs</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #E67E22;"><?php echo count($donor_programs); ?></div>
+                                <div class="dp-summary-label">Total Programs</div>
+                                <div class="dp-summary-value"><?php echo count($donor_programs); ?></div>
                             </div>
                             <div>
-                                <div style="font-size: 12px; color: #7f8c8d;">Total Projects</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #3498DB;"><?php echo count($donor_projects); ?></div>
+                                <div class="dp-summary-label">Total Projects</div>
+                                <div class="dp-summary-value"><?php echo count($donor_projects); ?></div>
                             </div>
                             <div>
-                                <div style="font-size: 12px; color: #7f8c8d;">Total Funding</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #2ECC71;">
+                                <div class="dp-summary-label">Total Funding</div>
+                                <div class="dp-summary-value">
                                     <?php 
                                     $total_funding = array_sum(array_column($donor_programs, 'budget')) + array_sum(array_column($donor_projects, 'budget'));
                                     echo format_currency($total_funding); 
@@ -877,12 +903,12 @@ while ($row = $result->fetch_assoc()) {
         </div>
         <div class="modal-body">
             <?php if ($view_partner): ?>
-                <div style="padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
-                    <h2 style="margin: 0 0 15px 0; color: var(--primary-color);">
+                <div class="dp-detail-box">
+                    <h2>
                         <?php echo htmlspecialchars($view_partner['partner_name']); ?>
                     </h2>
                     
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div class="dp-detail-grid">
                         <div>
                             <strong>Partner Type:</strong><br>
                             <?php
@@ -933,7 +959,7 @@ while ($row = $result->fetch_assoc()) {
                         
                          
                         <?php if ($view_partner['website']): ?>
-                            <div style="grid-column: 1 / -1;">
+                            <div class="dp-span-all">
                                 <strong>Website:</strong><br>
                                 <a href="<?php echo htmlspecialchars($view_partner['website']); ?>" target="_blank">
                                     <?php echo htmlspecialchars($view_partner['website']); ?> <i class="fas fa-external-link-alt"></i>
@@ -953,7 +979,7 @@ while ($row = $result->fetch_assoc()) {
                         
                         
                         <?php if ($view_partner['address']): ?>
-                            <div style="grid-column: 1 / -1;">
+                            <div class="dp-span-all">
                                 <strong>Address:</strong><br>
                                 <?php echo nl2br(htmlspecialchars($view_partner['address'])); ?>
                             </div>
@@ -962,15 +988,15 @@ while ($row = $result->fetch_assoc()) {
                 </div>
                 
                 <!-- Programs Section -->
-                <h4 style="margin: 20px 0 10px 0;">
-                    <i class="fas fa-sitemap" style="color: #E67E22;"></i> Collaborative Programs (<?php echo count($partner_programs); ?>)
+                <h4 class="dp-section-title">
+                    <i class="fas fa-sitemap" aria-hidden="true"></i> Collaborative Programs (<?php echo count($partner_programs); ?>)
                 </h4>
                 
                 <?php if (empty($partner_programs)): ?>
-                    <p style="color: #7f8c8d; text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">No programs found for this partner.</p>
+                    <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No programs found for this partner.</p></div>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table class="data-table">
+                        <table class="table">
                             <thead>
                                 <tr>
                                     <th>Program Code</th>
@@ -1006,15 +1032,15 @@ while ($row = $result->fetch_assoc()) {
                 <?php endif; ?>
                 
                 <!-- Projects Section -->
-                <h4 style="margin: 20px 0 10px 0;">
-                    <i class="fas fa-project-diagram" style="color: #3498DB;"></i> Collaborative Projects (<?php echo count($partner_projects); ?>)
+                <h4 class="dp-section-title">
+                    <i class="fas fa-project-diagram" aria-hidden="true"></i> Collaborative Projects (<?php echo count($partner_projects); ?>)
                 </h4>
                 
                 <?php if (empty($partner_projects)): ?>
-                    <p style="color: #7f8c8d; text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px;">No projects found for this partner.</p>
+                    <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No projects found for this partner.</p></div>
                 <?php else: ?>
                     <div class="table-responsive">
-                        <table class="data-table">
+                        <table class="table">
                             <thead>
                                 <tr>
                                     <th>Project Code</th>
@@ -1057,16 +1083,16 @@ while ($row = $result->fetch_assoc()) {
                 
                 <!-- Summary -->
                 <?php if (!empty($partner_programs) || !empty($partner_projects)): ?>
-                    <div style="margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; border-left: 4px solid #2196F3;">
+                    <div class="dp-summary is-info">
                         <strong>Collaboration Summary:</strong>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px;">
+                        <div class="dp-funding-grid">
                             <div>
-                                <div style="font-size: 12px; color: #7f8c8d;">Total Programs</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #E67E22;"><?php echo count($partner_programs); ?></div>
+                                <div class="dp-summary-label">Total Programs</div>
+                                <div class="dp-summary-value"><?php echo count($partner_programs); ?></div>
                             </div>
                             <div>
-                                <div style="font-size: 12px; color: #7f8c8d;">Total Projects</div>
-                                <div style="font-size: 24px; font-weight: bold; color: #3498DB;"><?php echo count($partner_projects); ?></div>
+                                <div class="dp-summary-label">Total Projects</div>
+                                <div class="dp-summary-value"><?php echo count($partner_projects); ?></div>
                             </div>
                         </div>
                     </div>
@@ -1080,11 +1106,11 @@ while ($row = $result->fetch_assoc()) {
 <div id="deleteDonorModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-            <h3 style="color: #E74C3C;"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+            <h3 class="dp-danger-title"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
             <span class="close" onclick="closeModal('deleteDonorModal')">&times;</span>
         </div>
         <div class="modal-body">
-            <p style="font-size: 16px; margin-bottom: 20px;">
+            <p class="dp-confirm-text">
                 Are you sure you want to delete <strong id="deleteDonorName"></strong>?
             </p>
             <div class="alert alert-warning">
@@ -1109,11 +1135,11 @@ while ($row = $result->fetch_assoc()) {
 <div id="deletePartnerModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-            <h3 style="color: #E74C3C;"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+            <h3 class="dp-danger-title"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
             <span class="close" onclick="closeModal('deletePartnerModal')">&times;</span>
         </div>
         <div class="modal-body">
-            <p style="font-size: 16px; margin-bottom: 20px;">
+            <p class="dp-confirm-text">
                 Are you sure you want to delete <strong id="deletePartnerName"></strong>?
             </p>
             <div class="alert alert-warning">

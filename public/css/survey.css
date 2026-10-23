@@ -10,277 +10,25 @@
 ========================================================== */
 
 .surveys-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
 }
 
-/* ==========================================================
-   SURVEY PAGE HERO
-========================================================== */
-
-.surveys-hero {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    overflow: hidden;
-    padding: 32px 36px;
-    color: var(--ink-0);
-    background:
-        linear-gradient(
-            135deg,
-            var(--ink-900) 0%,
-            var(--ink-700) 60%,
-            var(--ink-500) 100%
-        );
-    border-radius: var(--radius-2xl);
-    box-shadow: 0 16px 40px rgba(13, 17, 23, 0.3);
-}
-
-.surveys-hero::before,
-.surveys-hero::after {
-    position: absolute;
-    content: "";
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.surveys-hero::before {
-    top: -120px;
-    right: 80px;
-    width: 300px;
-    height: 300px;
-    background: var(--brand-400);
-    opacity: 0.07;
-}
-
-.surveys-hero::after {
-    right: 260px;
-    bottom: -80px;
-    width: 180px;
-    height: 180px;
-    background: var(--brand-200);
-    opacity: 0.07;
-}
-
-.surveys-hero-text {
-    position: relative;
-    z-index: 1;
-}
-
-.surveys-hero h1 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 6px;
-    font-size: clamp(22px, 3vw, 30px);
-    font-weight: 800;
-    letter-spacing: -0.5px;
-}
-
-.surveys-hero p {
-    position: relative;
-    max-width: 520px;
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.6;
-    opacity: 0.8;
-}
-
-.hero-actions {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* ==========================================================
-   FLASH ALERTS
-========================================================== */
-
-.alert-dismissible {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.alert-dismissible > span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.alert-dismiss-btn {
-    flex-shrink: 0;
-    padding: 0 2px;
-    color: inherit;
-    background: none;
-    border: 0;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0.6;
-    transition: opacity 0.15s ease;
-}
-
-.alert-dismiss-btn:hover {
-    opacity: 1;
-}
-
-/* ==========================================================
-   EMPTY STATE
-========================================================== */
-
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    padding: 64px 24px;
-    text-align: center;
-    background: var(--surface-card);
-    border: 1.5px dashed var(--ink-100);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-md);
-}
-
-.empty-state-icon {
-    display: grid;
-    place-items: center;
-    width: 72px;
-    height: 72px;
-    color: var(--ink-200);
-    background: var(--ink-50);
-    border-radius: var(--radius-xl);
-    font-size: 30px;
-}
-
-.empty-state h3 {
-    margin: 0;
-    color: var(--ink-700);
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -0.2px;
-}
-
-.empty-state p {
-    max-width: 440px;
-    margin: 0;
-    color: var(--ink-300);
-    font-size: 13px;
-    line-height: 1.7;
-}
-
-/* ==========================================================
-   SURVEY TABLE PANEL
-========================================================== */
-
-.survey-table-panel {
-    overflow: hidden;
-    background: var(--surface-card);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-md);
-}
-
-.survey-table-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--ink-100);
-}
-
-.survey-table-title {
-    margin: 0 0 4px;
-    color: var(--ink-700);
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -0.2px;
-}
-
-.survey-table-subtitle {
-    margin: 0;
-    color: var(--ink-300);
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.survey-table-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    min-width: 34px;
-    height: 34px;
-    padding: 0 12px;
+/* Brand-tinted badge for the survey count and survey type. */
+.survey-brand-badge {
     color: var(--brand-600);
     background: var(--brand-50);
-    border: 1px solid var(--brand-100);
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 800;
+    border-color: var(--brand-100);
 }
 
 /* ==========================================================
-   RESPONSIVE TABLE
+   SURVEY TABLE
 ========================================================== */
 
-.survey-table-responsive {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
 .survey-table {
-    width: 100%;
     min-width: 1100px;
-    border-collapse: collapse;
-    border-spacing: 0;
-}
-
-.survey-table thead th {
-    padding: 14px 18px;
-    color: var(--ink-400);
-    background: var(--ink-50);
-    border-bottom: 1px solid var(--ink-100);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-align: left;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.survey-table tbody td {
-    padding: 16px 18px;
-    color: var(--ink-500);
-    border-bottom: 1px solid var(--ink-50);
-    font-size: 13px;
-    vertical-align: middle;
-}
-
-.survey-table tbody tr:last-child td {
-    border-bottom: 0;
-}
-
-.survey-table tbody tr {
-    transition: background-color 0.15s ease;
-}
-
-.survey-table tbody tr:hover {
-    background: var(--ink-50);
 }
 
 .survey-actions-heading {
@@ -310,22 +58,6 @@
     display: block;
     color: var(--ink-300);
     font-size: 11px;
-}
-
-.survey-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    color: var(--brand-600);
-    background: var(--brand-50);
-    border: 1px solid var(--brand-100);
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    white-space: nowrap;
 }
 
 .survey-link-value {
@@ -427,68 +159,6 @@
 /* ==========================================================
    SURVEY BUILDER HERO
 ========================================================== */
-
-.builder-hero {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    overflow: hidden;
-    padding: 28px 36px;
-    color: var(--ink-0);
-    background:
-        linear-gradient(
-            135deg,
-            var(--brand-700) 0%,
-            var(--brand-500) 55%,
-            var(--brand-400) 100%
-        );
-    border-radius: var(--radius-2xl);
-    box-shadow: 0 16px 40px rgba(234, 88, 12, 0.28);
-}
-
-.builder-hero::before,
-.builder-hero::after {
-    position: absolute;
-    content: "";
-    background: var(--ink-0);
-    border-radius: 50%;
-    opacity: 0.1;
-    pointer-events: none;
-}
-
-.builder-hero::before {
-    top: -100px;
-    right: 60px;
-    width: 260px;
-    height: 260px;
-}
-
-.builder-hero::after {
-    right: 230px;
-    bottom: -60px;
-    width: 140px;
-    height: 140px;
-}
-
-.builder-hero-text {
-    position: relative;
-}
-
-.builder-hero h1 {
-    margin: 0 0 4px;
-    font-size: clamp(20px, 2.8vw, 28px);
-    font-weight: 800;
-    letter-spacing: -0.5px;
-}
-
-.builder-hero p {
-    position: relative;
-    margin: 0;
-    font-size: 13px;
-    opacity: 0.82;
-}
 
 /* ==========================================================
    SURVEY BUILDER LAYOUT
@@ -825,72 +495,8 @@
 }
 
 /* ==========================================================
-   ANALYTICS HERO
+   ANALYTICS LIVE INDICATOR
 ========================================================== */
-
-.analytics-hero {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    overflow: hidden;
-    padding: 28px 36px;
-    color: var(--ink-0);
-    background:
-        linear-gradient(
-            135deg,
-            var(--ink-900) 0%,
-            #1a2e44 60%,
-            #1e3a5f 100%
-        );
-    border-radius: var(--radius-2xl);
-    box-shadow: 0 16px 40px rgba(13, 17, 23, 0.32);
-}
-
-.analytics-hero::before,
-.analytics-hero::after {
-    position: absolute;
-    content: "";
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.analytics-hero::before {
-    top: -110px;
-    right: 70px;
-    width: 280px;
-    height: 280px;
-    background: var(--blue-fg);
-    opacity: 0.07;
-}
-
-.analytics-hero::after {
-    right: 250px;
-    bottom: -70px;
-    width: 160px;
-    height: 160px;
-    background: var(--brand-400);
-    opacity: 0.08;
-}
-
-.analytics-hero-text {
-    position: relative;
-}
-
-.analytics-hero h1 {
-    margin: 0 0 4px;
-    font-size: clamp(20px, 2.8vw, 28px);
-    font-weight: 800;
-    letter-spacing: -0.5px;
-}
-
-.analytics-hero p {
-    position: relative;
-    margin: 0;
-    font-size: 13px;
-    opacity: 0.8;
-}
 
 .live-pill {
     position: relative;
@@ -934,10 +540,9 @@
    ANALYTICS STATISTICS
 ========================================================== */
 
+/* Three stat cards here, so override the four-column .reports-stats grid. */
 .analytics-stats {
-    display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
 }
 
 /* ==========================================================
@@ -950,14 +555,10 @@
     gap: 20px;
 }
 
+/* Base look comes from .card; this adds the column layout and hover lift. */
 .chart-card {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    background: var(--surface-card);
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-md);
     transition:
         box-shadow 0.22s var(--ease-out),
         transform 0.22s var(--ease-out);
@@ -996,22 +597,6 @@
     font-size: 14px;
     font-weight: 700;
     line-height: 1.4;
-}
-
-.chart-card-type {
-    display: inline-flex;
-    align-items: center;
-    flex-shrink: 0;
-    gap: 5px;
-    padding: 3px 9px;
-    color: var(--blue-fg);
-    background: var(--blue-bg);
-    border: 1px solid var(--blue-border);
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
 }
 
 .chart-card-body {
@@ -1123,17 +708,7 @@
 
 @media (max-width: 900px) {
     .surveys-wrap {
-        gap: 16px;
         padding: 16px;
-    }
-
-    .surveys-hero,
-    .analytics-hero {
-        padding: 22px 24px;
-    }
-
-    .builder-hero {
-        padding: 22px 24px;
     }
 
     .builder-split {
@@ -1155,35 +730,7 @@
 
 @media (max-width: 640px) {
     .surveys-wrap {
-        gap: 14px;
         padding: 12px;
-    }
-
-    .surveys-hero,
-    .builder-hero,
-    .analytics-hero {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 14px;
-        padding: 18px 20px;
-    }
-
-    .hero-actions {
-        width: 100%;
-    }
-
-    .hero-actions .btn {
-        flex: 1;
-        justify-content: center;
-    }
-
-    .survey-table-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .survey-table-count {
-        align-self: flex-start;
     }
 
     .analytics-stats {

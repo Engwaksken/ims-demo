@@ -786,24 +786,6 @@ function ac_list_page_url(
     margin-bottom: 20px;
 }
 
-.ac-note {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-
-    margin-bottom: 16px;
-    padding: 11px 13px;
-
-    border: 1px solid #bae6fd;
-    border-left: 4px solid #0284c7;
-    border-radius: 8px;
-
-    background: #f0f9ff;
-    color: #0c4a6e;
-
-    font-size: 13px;
-}
-
 .ac-tabs {
     display: flex;
     gap: 0;
@@ -812,7 +794,7 @@ function ac_list_page_url(
 
     overflow-x: auto;
 
-    border-bottom: 2px solid #e2e8f0;
+    border-bottom: 2px solid var(--slate-border);
 }
 
 .ac-tab-btn {
@@ -830,7 +812,7 @@ function ac_list_page_url(
     border-bottom: 2px solid transparent;
 
     background: transparent;
-    color: #64748b;
+    color: var(--ink-300);
 
     font-size: 12.5px;
     font-weight: 800;
@@ -839,8 +821,8 @@ function ac_list_page_url(
 }
 
 .ac-tab-btn.active {
-    border-bottom-color: #0f766e;
-    color: #0f766e;
+    border-bottom-color: var(--brand-600);
+    color: var(--brand-600);
 }
 
 .ac-tab-panel {
@@ -865,10 +847,10 @@ function ac_list_page_url(
 .ac-calendar {
     overflow: hidden;
 
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--slate-border);
     border-radius: 12px;
 
-    background: #fff;
+    background: var(--surface-card);
 }
 
 .ac-toolbar {
@@ -880,7 +862,7 @@ function ac_list_page_url(
 
     padding: 12px 14px;
 
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--slate-border);
 
     flex-wrap: wrap;
 }
@@ -905,11 +887,11 @@ function ac_list_page_url(
 
     padding: 7px 10px;
 
-    border: 1px solid #dbe3ec;
+    border: 1px solid var(--ink-100);
     border-radius: 8px;
 
-    background: #fff;
-    color: #475569;
+    background: var(--surface-card);
+    color: var(--slate-fg);
 
     font-size: 12px;
     font-weight: 800;
@@ -923,9 +905,9 @@ function ac_list_page_url(
 }
 
 .ac-view-btn.active {
-    border-color: #0f766e;
-    background: #ecfdf5;
-    color: #0f766e;
+    border-color: var(--brand-600);
+    background: var(--brand-50);
+    color: var(--brand-600);
 }
 
 .ac-year-select {
@@ -933,11 +915,11 @@ function ac_list_page_url(
 
     padding: 6px 28px 6px 9px;
 
-    border: 1px solid #dbe3ec;
+    border: 1px solid var(--ink-100);
     border-radius: 8px;
 
-    background: #fff;
-    color: #0f172a;
+    background: var(--surface-card);
+    color: var(--ink-900);
 
     font-size: 12px;
     font-weight: 800;
@@ -946,7 +928,7 @@ function ac_list_page_url(
 .ac-calendar-title {
     min-width: 170px;
 
-    color: #0f172a;
+    color: var(--ink-900);
 
     font-size: 17px;
     font-weight: 800;
@@ -967,11 +949,11 @@ function ac_list_page_url(
 .ac-weekday {
     padding: 9px 8px;
 
-    border-right: 1px solid #eef2f7;
-    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid var(--ink-50);
+    border-bottom: 1px solid var(--slate-border);
 
-    background: #f8fafc;
-    color: #64748b;
+    background: var(--surface-hover);
+    color: var(--ink-300);
 
     font-size: 11px;
     font-weight: 800;
@@ -985,18 +967,18 @@ function ac_list_page_url(
 
     padding: 7px;
 
-    border-right: 1px solid #eef2f7;
-    border-bottom: 1px solid #eef2f7;
+    border-right: 1px solid var(--ink-50);
+    border-bottom: 1px solid var(--ink-50);
 
-    background: #fff;
+    background: var(--surface-card);
 }
 
 .ac-day.outside {
-    background: #f8fafc;
+    background: var(--surface-hover);
 }
 
 .ac-day.today {
-    background: #f0fdfa;
+    background: var(--brand-50);
 }
 
 .ac-day-number {
@@ -1011,15 +993,15 @@ function ac_list_page_url(
 
     border-radius: 50%;
 
-    color: #475569;
+    color: var(--slate-fg);
 
     font-size: 11.5px;
     font-weight: 800;
 }
 
 .ac-day.today .ac-day-number {
-    background: #0f766e;
-    color: #fff;
+    background: var(--brand-600);
+    color: var(--ink-0);
 }
 
 .ac-event {
@@ -1036,8 +1018,8 @@ function ac_list_page_url(
     border-left: 4px solid var(--event-color);
     border-radius: 6px;
 
-    background: #f8fafc;
-    color: #334155;
+    background: var(--surface-hover);
+    color: var(--ink-500);
 
     font-size: 11.5px;
     font-weight: 800;
@@ -1051,7 +1033,7 @@ function ac_list_page_url(
 
 /* Agenda / quarter / year */
 .ac-agenda-day {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--slate-border);
 }
 
 .ac-agenda-head {
@@ -1061,9 +1043,9 @@ function ac_list_page_url(
 
     padding: 9px 13px;
 
-    background: #f8fafc;
+    background: var(--surface-hover);
 
-    color: #334155;
+    color: var(--ink-500);
 
     font-size: 12px;
     font-weight: 800;
@@ -1082,17 +1064,17 @@ function ac_list_page_url(
     padding: 10px 12px;
     margin-bottom: 7px;
 
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--slate-border);
     border-left: 4px solid var(--event-color);
     border-radius: 8px;
 
-    background: #fff;
+    background: var(--surface-card);
 
     cursor: pointer;
 }
 
 .ac-agenda-title {
-    color: #0f172a;
+    color: var(--ink-900);
 
     font-size: 13px;
     font-weight: 800;
@@ -1101,7 +1083,7 @@ function ac_list_page_url(
 .ac-agenda-meta {
     margin-top: 3px;
 
-    color: #64748b;
+    color: var(--ink-300);
 
     font-size: 12px;
 }
@@ -1120,16 +1102,16 @@ function ac_list_page_url(
 
     padding: 12px;
 
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--slate-border);
     border-radius: 9px;
 
-    background: #fff;
+    background: var(--surface-card);
 }
 
 .ac-period-card h4 {
     margin: 0 0 9px;
 
-    color: #0f172a;
+    color: var(--ink-900);
 
     font-size: 13px;
 }
@@ -1141,8 +1123,8 @@ function ac_list_page_url(
     border-left: 4px solid var(--event-color);
     border-radius: 6px;
 
-    background: #f8fafc;
-    color: #334155;
+    background: var(--surface-hover);
+    color: var(--ink-500);
 
     font-size: 11.5px;
     font-weight: 800;
@@ -1160,9 +1142,9 @@ function ac_list_page_url(
 
     padding: 10px 13px;
 
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--slate-border);
 
-    color: #475569;
+    color: var(--slate-fg);
 
     font-size: 12px;
 }
@@ -1186,7 +1168,7 @@ function ac_list_page_url(
 
     border-radius: 999px;
 
-    background: #e2e8f0;
+    background: var(--slate-border);
 }
 
 .ac-progress-fill {
@@ -1196,7 +1178,7 @@ function ac_list_page_url(
 
     border-radius: 999px;
 
-    background: linear-gradient(90deg,#0f766e,#22c55e);
+    background: linear-gradient(90deg,var(--brand-600),var(--brand-400));
 }
 
 .ac-status-pill {
@@ -1212,24 +1194,24 @@ function ac_list_page_url(
 }
 
 .ac-status-completed {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--green-bg);
+    color: var(--green-fg);
 }
 
 .ac-status-progress {
-    background: #dbeafe;
-    color: #1d4ed8;
+    background: var(--blue-bg);
+    color: var(--blue-fg);
 }
 
 .ac-status-delayed {
-    background: #fee2e2;
-    color: #b91c1c;
+    background: var(--red-bg);
+    color: var(--red-fg);
 }
 
 .ac-status-cancelled,
 .ac-status-pending {
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--slate-bg);
+    color: var(--slate-fg);
 }
 
 /* Modal */
@@ -1263,7 +1245,7 @@ function ac_list_page_url(
 
     border-radius: 14px;
 
-    background: #fff;
+    background: var(--surface-card);
 
     box-shadow: 0 24px 60px rgba(15,23,42,.24);
 }
@@ -1280,13 +1262,13 @@ function ac_list_page_url(
 }
 
 .ac-modal-head {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--slate-border);
 }
 
 .ac-modal-foot {
     justify-content: flex-end;
 
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--slate-border);
 }
 
 .ac-modal-body {
@@ -1300,8 +1282,8 @@ function ac_list_page_url(
     border: 0;
     border-radius: 8px;
 
-    background: #f8fafc;
-    color: #64748b;
+    background: var(--surface-hover);
+    color: var(--ink-300);
 
     font-size: 20px;
 
@@ -1338,8 +1320,8 @@ function ac_list_page_url(
     gap:6px;
     flex-wrap:wrap;
     padding:14px 12px;
-    border-top:1px solid #e2e8f0;
-    background:#fff;
+    border-top:1px solid var(--slate-border);
+    background:var(--surface-card);
 }
 
 .ac-list-pagination a,
@@ -1350,10 +1332,10 @@ function ac_list_page_url(
     align-items:center;
     justify-content:center;
     padding:0 9px;
-    border:1px solid #dbe3ec;
+    border:1px solid var(--ink-100);
     border-radius:8px;
-    background:#fff;
-    color:#475569;
+    background:var(--surface-card);
+    color:var(--slate-fg);
     text-decoration:none;
     font-size:12px;
     font-weight:800;
@@ -1361,14 +1343,14 @@ function ac_list_page_url(
 
 .ac-list-pagination a:hover,
 .ac-list-pagination .ac-page-number.active {
-    border-color:#0f766e;
-    background:#0f766e;
-    color:#fff;
+    border-color:var(--brand-600);
+    background:var(--brand-600);
+    color:var(--ink-0);
 }
 
 .ac-list-pagination .ac-page-summary {
     margin-left:6px;
-    color:#64748b;
+    color:var(--ink-300);
     font-size:12px;
     font-weight:700;
 }
@@ -1385,16 +1367,12 @@ function ac_list_page_url(
 <div class="activities-wrap">
 
     <!-- HERO -->
-    <div class="milestones-hero">
+    <div class="page-hero">
 
-        <div class="milestones-hero-text">
+        <div>
 
             <h1>
-                <i
-                    class="fas fa-calendar-days"
-                    style="margin-right:10px;opacity:.85;"
-                ></i>
-
+                <i class="fas fa-calendar-days" aria-hidden="true"></i>
                 Workplan Activities Calendar
             </h1>
 
@@ -1417,7 +1395,7 @@ function ac_list_page_url(
             <?php if (!$googleCalendarConnected && ims_allowed('activities.connect_google', IMS_ADMIN_ROLES, 'See the Connect Google Calendar link')): ?>
                 <a
                     href="settings?tab=google"
-                    class="btn btn-gray"
+                    class="btn"
                 >
                     <i class="fas fa-link"></i>
                     Connect in Settings
@@ -1438,7 +1416,7 @@ function ac_list_page_url(
     </div>
 
 
-    <div class="ac-note">
+    <div class="alert alert-info">
         <i class="fas fa-circle-info"></i>
 
         Activities are now read directly from
@@ -1765,7 +1743,7 @@ function ac_list_page_url(
         <div class="filter-actions">
             <button
                 type="submit"
-                class="btn btn-dark"
+                class="btn btn-primary"
             >
                 <i class="fas fa-filter"></i>
                 Filter
@@ -1822,7 +1800,7 @@ function ac_list_page_url(
                 <h3>
                     <i
                         class="fas fa-calendar-days"
-                        style="color:#0f766e;margin-right:8px;"
+                        style="color:var(--brand-600);margin-right:8px;"
                     ></i>
                     Activities Calendar
                 </h3>
@@ -1956,7 +1934,7 @@ function ac_list_page_url(
                     </span>
 
                     <span>
-                        <span class="ac-dot" style="background:#64748b;"></span>
+                        <span class="ac-dot" style="background:var(--ink-300);"></span>
                         Cancelled
                     </span>
                 </div>
@@ -1981,7 +1959,7 @@ function ac_list_page_url(
                 <h3>
                     <i
                         class="fas fa-list-check"
-                        style="color:#0f766e;margin-right:8px;"
+                        style="color:var(--brand-600);margin-right:8px;"
                     ></i>
                     Workplan Activities
                 </h3>
@@ -2140,7 +2118,7 @@ function ac_list_page_url(
                                         <div
                                             style="
                                                 margin-top:3px;
-                                                color:#64748b;
+                                                color:var(--ink-300);
                                                 font-size:12px;
                                             "
                                         >
@@ -2204,7 +2182,7 @@ function ac_list_page_url(
                                                 margin-bottom:4px;
                                                 font-size:12px;
                                                 font-weight:800;
-                                                color:#475569;
+                                                color:var(--slate-fg);
                                             "
                                         >
                                             <?= number_format(
@@ -2264,7 +2242,7 @@ function ac_list_page_url(
 
                                             <a
                                                 href="workplan?workplan_id=<?= (int)$activity['workplan_id'] ?>#wp-builder"
-                                                class="btn btn-sm btn-gray"
+                                                class="btn btn-sm btn-secondary"
                                                 title="Open workplan"
                                             >
                                                 <i class="fas fa-route"></i>
@@ -2400,7 +2378,7 @@ function ac_list_page_url(
             <h3>
                 <i
                     class="fas fa-calendar-check"
-                    style="color:#0f766e;margin-right:7px;"
+                    style="color:var(--brand-600);margin-right:7px;"
                 ></i>
                 Update Activity
             </h3>
@@ -2441,9 +2419,9 @@ function ac_list_page_url(
                     style="
                         margin-bottom:14px;
                         padding:11px 12px;
-                        border-left:4px solid #0f766e;
-                        border-radius:8px;
-                        background:#f8fafc;
+                        border-left:4px solid var(--brand-600);
+                        border-radius:var(--radius-sm);
+                        background:var(--surface-hover);
                     "
                 >
                     <strong id="acModalTitle"></strong>
@@ -2452,7 +2430,7 @@ function ac_list_page_url(
                         id="acModalMeta"
                         style="
                             margin-top:4px;
-                            color:#64748b;
+                            color:var(--ink-300);
                             font-size:12px;
                         "
                     ></div>
@@ -2464,10 +2442,10 @@ function ac_list_page_url(
                         display:none;
                         margin-bottom:14px;
                         padding:10px 12px;
-                        border-left:4px solid #4285f4;
+                        border-left:4px solid var(--blue-fg);
                         border-radius:8px;
-                        background:#f8fafc;
-                        color:#475569;
+                        background:var(--surface-hover);
+                        color:var(--slate-fg);
                         font-size:11px;
                     "
                 >
@@ -2949,7 +2927,7 @@ function ac_list_page_url(
                     <div
                         style="
                             padding:8px 4px;
-                            color:#94a3b8;
+                            color:var(--ink-200);
                             font-size:10.5px;
                         "
                     >
@@ -3087,7 +3065,7 @@ function ac_list_page_url(
                 html += `
                     <div
                         style="
-                            color:#94a3b8;
+                            color:var(--ink-200);
                             font-size:10px;
                         "
                     >
@@ -3165,7 +3143,7 @@ function ac_list_page_url(
 
                         <span
                             style="
-                                color:#94a3b8;
+                                color:var(--ink-200);
                                 font-size:9px;
                                 margin-left:4px;
                             "
@@ -3193,7 +3171,7 @@ function ac_list_page_url(
                 html += `
                     <div
                         style="
-                            color:#0f766e;
+                            color:var(--brand-600);
                             font-size:9px;
                             font-weight:800;
                         "

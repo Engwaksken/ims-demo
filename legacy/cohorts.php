@@ -309,10 +309,10 @@ if (isset($_GET['edit'])) {
 
 <link rel="stylesheet" href="/css/reports.css">
 
-<div class="reports-wrap">
+<div class="reports-wrap page-stack">
 
-    <section class="reports-hero">
-        <div class="reports-hero-text">
+    <div class="page-hero">
+        <div>
             <h1>
                 <i class="fas fa-layer-group" aria-hidden="true"></i>
                 Cohorts
@@ -334,7 +334,7 @@ if (isset($_GET['edit'])) {
                 Add Cohort
             </button>
         </div>
-    </section>
+    </div>
 
     <?php if (function_exists('show_flash')): ?>
         <?php show_flash('cohorts'); ?>
@@ -346,7 +346,7 @@ if (isset($_GET['edit'])) {
         </div>
     <?php endif; ?>
 
-    <section class="reports-stats">
+    <section class="stats-grid reports-stats">
 
         <article class="stat-card">
             <div class="stat-icon bg-blue">
@@ -590,7 +590,7 @@ if (isset($_GET['edit'])) {
                                                 (string) $cohort['tagline'],
                                                 0,
                                                 90,
-                                                '…'
+                                                'â€¦'
                                             )) ?>
                                         </div>
                                     <?php endif; ?>
@@ -1222,8 +1222,8 @@ if (isset($_GET['edit'])) {
 
             submitText.textContent =
                 fields.id.value
-                    ? 'Updating…'
-                    : 'Saving…';
+                    ? 'Updatingâ€¦'
+                    : 'Savingâ€¦';
         }
     );
 

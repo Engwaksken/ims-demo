@@ -227,79 +227,6 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
     .import-steps li { flex-wrap: wrap; }
     .import-steps .btn { width: 100%; justify-content: center; }
 }
-
-/* -- Tab Navigation -- */
-.tab-nav {
-    display: flex;
-    align-items: flex-end;
-    gap: 0;
-    border-bottom: 2px solid var(--border-color, #e5e7eb);
-    margin-bottom: 1.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-.tab-nav::-webkit-scrollbar { display: none; }
-
-.tab-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.75rem 1.25rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-muted, #6b7280);
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color .18s, border-color .18s;
-    text-decoration: none;
-}
-.tab-btn:hover {
-    color: var(--text, #111827);
-}
-.tab-btn.active {
-    color: var(--primary, #ff5722);
-    border-bottom-color: var(--primary, #ff5722);
-    font-weight: 600;
-}
-.tab-btn .tab-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.35rem;
-    height: 1.35rem;
-    padding: 0 .35rem;
-    font-size: 0.7rem;
-    font-weight: 700;
-    border-radius: 999px;
-    background: var(--border-color, #e5e7eb);
-    color: var(--text-muted, #6b7280);
-    line-height: 1;
-    transition: background .18s, color .18s;
-}
-.tab-btn.active .tab-badge {
-    background: var(--primary, #ff5722);
-    color: #fff;
-}
-
-/* -- Tab Panels -- */
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-
-/* -- Tab Toolbar -- */
-.tab-toolbar {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-}
-.tab-toolbar .tab-toolbar-left { flex: 1; min-width: 200px; max-width: 340px; }
-.tab-toolbar .tab-toolbar-right { display: flex; align-items: center; gap: 0.5rem; }
-@media (max-width: 768px) { .tab-toolbar .tab-toolbar-left { flex: 1 1 100%; max-width: none; } }
 </style>
 
 <div class="assets-wrap">
@@ -316,14 +243,14 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
                 <button type="button" class="btn btn-primary" onclick="openModal('addAssetModal')">
                     <i class="fas fa-plus-circle"></i> Add Asset
                 </button>
-                <button type="button" class="btn btn-soft" onclick="openModal('importAssetsModal')">
+                <button type="button" class="btn" onclick="openModal('importAssetsModal')">
                     <i class="fas fa-file-import"></i> Import CSV
                 </button>
-                <a href="asset_categories" class="btn btn-dark">
+                <a href="asset_categories" class="btn">
                     <i class="fas fa-tags"></i> Asset Categories
                 </a>
             <?php endif; ?>
-            <a href="asset_maintenance" class="btn btn-soft">
+            <a href="asset_maintenance" class="btn">
                 <i class="fas fa-screwdriver-wrench"></i> Asset Maintenance
             </a>
         </div>

@@ -123,31 +123,39 @@ while ($d = $donorRes->fetch_assoc()) {
 
 ?>
 
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-chart-bar" aria-hidden="true"></i> Programs Report</h1>
+        <p>Programs by status, donor and period, with budgets, participants and indicators.</p>
+    </div>
+    <div class="hero-actions">
+        <button type="button" class="btn" onclick="window.print()">
+            <i class="fas fa-print"></i> Print
+        </button>
+
+        <a href="exports/report-programs-export.php?<?= h(http_build_query($_GET)); ?>" 
+           class="btn">
+            <i class="fas fa-file-csv"></i> CSV
+        </a>
+
+        <a href="exports/report-programs.php?<?= h(http_build_query($_GET)); ?>" 
+           class="btn">
+            <i class="fas fa-file-pdf"></i> PDF
+        </a>
+    </div>
+</div>
+
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h3><i class="fas fa-chart-bar"></i> programs Report</h3>
-
-        <div class="btn-group">
-            <button class="btn btn-secondary btn-sm" onclick="window.print()">
-                <i class="fas fa-print"></i> Print
-            </button>
-
-            <a href="exports/report-programs-export.php?<?= h(http_build_query($_GET)); ?>" 
-               class="btn btn-success btn-sm">
-                <i class="fas fa-file-csv"></i> CSV
-            </a>
-
-            <a href="exports/report-programs.php?<?= h(http_build_query($_GET)); ?>" 
-               class="btn btn-danger btn-sm">
-                <i class="fas fa-file-pdf"></i> PDF
-            </a>
-        </div>
+    <div class="card-header">
+        <h3><i class="fas fa-filter" aria-hidden="true"></i> Filters</h3>
     </div>
 
     <div class="card-body">
 
         <!-- Filters -->
-        <form method="GET" class="filters-bar mb-20">
+        <form method="GET" class="filters-bar">
             <select name="status" class="form-control">
                 <option value="">All Status</option>
                 <?php foreach($status_count as $s=>$c): ?>
@@ -170,6 +178,8 @@ while ($d = $donorRes->fetch_assoc()) {
             <button class="btn btn-info"><i class="fas fa-filter"></i> Apply</button>
             <a href="report-programs" class="btn btn-secondary">Clear</a>
         </form>
+    </div>
+</div>
 
         <!-- Summary -->
         <div class="stats-grid reports-stats">
@@ -206,8 +216,13 @@ while ($d = $donorRes->fetch_assoc()) {
         </div>
 
         <!-- Report Table -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-layer-group" aria-hidden="true"></i> Programs</h3>
+    </div>
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table data-table">
                 <thead>
                     <tr>
                         <th>Code</th>
@@ -223,7 +238,7 @@ while ($d = $donorRes->fetch_assoc()) {
                 <tbody>
                     <?php if(empty($programs)): ?>
                         <tr>
-                            <td colspan="8" class="text-center">No data available</td>
+                            <td colspan="8"><div class="empty-state"><i class="fas fa-inbox" aria-hidden="true"></i><p>No data available</p></div></td>
                         </tr>
                     <?php else: foreach($programs as $p): ?>
                         <tr>
@@ -233,7 +248,7 @@ while ($d = $donorRes->fetch_assoc()) {
                             <td>
                                 <?= $p['start_date'] && $p['end_date']
                                     ? date('M Y',strtotime($p['start_date'])).' - '.date('M Y',strtotime($p['end_date']))
-                                    : '—'; ?>
+                                    : 'â€”'; ?>
                             </td>
                             <td>
                                 <?php $badge=['Ongoing'=>'success','Completed'=>'info','Pending'=>'warning','Cancelled'=>'danger'][$p['status']]; ?>
@@ -251,11 +266,18 @@ while ($d = $donorRes->fetch_assoc()) {
     </div>
 </div>
 
-<div class="charts-container d-flex flex-column align-items-center">
-    <!-- Smaller pie chart -->
-    <canvas id="statusChart" width="300" height="300"></canvas>
-    <canvas id="budgetChart" height="120" class="mt-3" style="max-width: 100%;"></canvas>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-chart-pie" aria-hidden="true"></i> Charts</h3>
+    </div>
+    <div class="card-body charts-container d-flex flex-column align-items-center">
+        <!-- Smaller pie chart -->
+        <canvas id="statusChart" width="300" height="300"></canvas>
+        <canvas id="budgetChart" height="120" class="mt-3" style="max-width: 100%;"></canvas>
+    </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <script>
 // ----------------------

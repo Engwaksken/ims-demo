@@ -45,285 +45,242 @@ $page_title = 'Manage AI APIs';
 require_once 'includes/header.php';
 ?>
 
-<link rel="stylesheet" href="css/opportunities.css">
-
 <style>
-#apiModal.opp-modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    width:100%;
-    height:100%;
-    z-index:999999;
-    background:rgba(15,23,42,.72);
-    padding:18px;
-    overflow:hidden;
-    align-items:center;
-    justify-content:center;
-    backdrop-filter:blur(4px);
-    -webkit-backdrop-filter:blur(4px);
+/* Manage AI APIs: page-only layout (ai- prefix) */
+.ai-name { font-weight: 800; color: var(--ink-700); font-size: var(--fs-base); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ai-provider {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 5px;
+    font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: var(--radius-pill);
+    background: var(--brand-50); color: var(--brand-700); border: 1px solid var(--brand-100);
 }
-
-#apiModal.opp-modal.show{
-    display:flex !important;
+.ai-model { font-size: var(--fs-xs); color: var(--ink-700); background: var(--ink-50); padding: 3px 7px; border-radius: var(--radius-sm); }
+.ai-endpoint { display: block; max-width: 180px; font-size: 11px; color: var(--ink-300); word-break: break-all; }
+.ai-key { font-size: var(--fs-xs); color: var(--ink-400); letter-spacing: .08em; background: none; }
+.ai-settings { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.ai-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--ink-400); background: var(--ink-50);
+    border: 1px solid var(--ink-100); padding: 3px 8px; border-radius: var(--radius-pill);
 }
+.ai-dot { font-size: 7px; }
+.ai-updated { font-size: 11px; color: var(--ink-300); white-space: nowrap; }
+.ai-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ai-inline-form { display: inline; margin: 0; padding: 0; }
 
-#apiModal .modal-card{
-    width:100%;
-    max-width:850px;
-    height:auto;
-    max-height:90vh;
-    margin:auto;
-    background:var(--surface-card,#fff);
-    border-radius:var(--radius-2xl,24px);
-    box-shadow:0 25px 80px rgba(0,0,0,.35);
-    overflow:hidden;
-    display:flex;
-    flex-direction:column;
+/* Modal form (global .modal/.modal-card; JS toggles .show and body.modal-open) */
+body.modal-open { overflow: hidden !important; }
+.modal-backdrop { display: none !important; }
+#apiModal .modal-card { max-width: 850px; }
+.ai-head-icon { color: var(--brand-600); }
+.ai-form-row { margin-top: 14px; }
+.ai-req { color: var(--red-fg); }
+.ai-key-hint { display: none; margin-top: 5px; font-size: 11px; color: var(--ink-300); }
+.ai-form-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ai-toggles {
+    display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+    padding: 10px 14px; background: var(--ink-50); border: 1px solid var(--ink-100); border-radius: var(--radius-md);
 }
+.ai-toggle { display: flex; align-items: center; gap: 8px; font-size: var(--fs-sm); font-weight: 700; color: var(--ink-500); cursor: pointer; margin: 0; }
+.ai-toggle input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--brand-500); cursor: pointer; }
+.ai-toggle .fa-circle-check { color: var(--green-fg); }
+.ai-toggle .fa-star { color: var(--amber-fg); }
 
-#apiModal #apiForm{
-    display:flex;
-    flex-direction:column;
-    flex:1;
-    min-height:0;
-}
-
-#apiModal .modal-head,
-#apiModal .modal-foot{
-    flex-shrink:0;
-    background:var(--surface-card,#fff);
-    z-index:2;
-}
-
-#apiModal .modal-body{
-    flex:1 1 auto;
-    min-height:0;
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding-bottom:22px;
-}
-
-body.modal-open{
-    overflow:hidden !important;
-}
-
-.modal-backdrop{
-    display:none !important;
-}
-
-@media(max-width:768px){
-    #apiModal.opp-modal{
-        padding:8px;
-        align-items:flex-start;
-    }
-
-    #apiModal .modal-card{
-        max-height:96vh;
-        border-radius:18px;
-    }
+@media (max-width: 768px) {
+    .ai-form-3 { grid-template-columns: 1fr; }
 }
 </style>
 
-<div class="ai-page">
-    <div class="opp-hero">
-        <div class="opp-hero-left">
-            <div class="opp-eyebrow"><span class="opp-dot"></span> AI Infrastructure</div>
-            <h1><i class="fas fa-robot"></i> Manage AI APIs</h1>
+<div class="page-stack ai-page">
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-robot" aria-hidden="true"></i> Manage AI APIs</h1>
             <p>Configure, activate and monitor AI providers used for automated application reviews.</p>
         </div>
 
-        <div class="opp-hero-actions">
-            <a href="startups-shortlisting" class="btn btn-white btn-sm">
-                <i class="fas fa-arrow-left"></i> Back
+        <div class="hero-actions">
+            <a href="startups-shortlisting" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
             </a>
-            <button type="button" class="btn btn-white btn-sm js-open-api-modal">
-                <i class="fas fa-plus"></i> Add AI API
+            <button type="button" class="btn btn-primary js-open-api-modal">
+                <i class="fas fa-plus" aria-hidden="true"></i> Add AI API
             </button>
         </div>
     </div>
 
     <?php if ($success): ?>
-        <div class="flash flash-success"><i class="fas fa-check-circle"></i><?= h($success) ?></div>
+        <div class="alert alert-success"><i class="fas fa-check-circle" aria-hidden="true"></i><?= h($success) ?></div>
     <?php endif; ?>
 
     <?php if ($error): ?>
-        <div class="flash flash-error"><i class="fas fa-exclamation-circle"></i><?= h($error) ?></div>
+        <div class="alert alert-danger"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><?= h($error) ?></div>
     <?php endif; ?>
 
     <div class="stats-grid reports-stats">
         <div class="stat-card">
-            <div class="stat-icon bg-primary"><i class="fas fa-robot"></i></div>
+            <div class="stat-icon bg-primary"><i class="fas fa-robot" aria-hidden="true"></i></div>
             <div class="stat-info"><span class="stat-label">Total APIs</span><span class="stat-value"><?= (int)$total ?></span></div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-green"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
             <div class="stat-info"><span class="stat-label">Active</span><span class="stat-value"><?= (int)$active ?></span></div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-amber"><i class="fas fa-star"></i></div>
+            <div class="stat-icon bg-amber"><i class="fas fa-star" aria-hidden="true"></i></div>
             <div class="stat-info"><span class="stat-label">Default</span><span class="stat-value"><?= (int)$defaults ?></span></div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon bg-purple"><i class="fas fa-ban"></i></div>
+            <div class="stat-icon bg-purple"><i class="fas fa-ban" aria-hidden="true"></i></div>
             <div class="stat-info"><span class="stat-label">Inactive</span><span class="stat-value"><?= (int)$inactive ?></span></div>
         </div>
     </div>
 
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-list" style="color:var(--brand-500)"></i> Configured AI APIs</h3>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list" aria-hidden="true"></i> Configured AI APIs</h3>
             <button type="button" class="btn btn-primary btn-sm js-open-api-modal">
-                <i class="fas fa-plus"></i> Add API
+                <i class="fas fa-plus" aria-hidden="true"></i> Add API
             </button>
         </div>
 
-        <div class="opp-panel-body" style="padding:0">
-            <div class="table-overflow">
-                <table class="api-table">
-                    <thead>
-                    <tr>
-                        <th>API / Provider</th>
-                        <th>Model</th>
-                        <th>Endpoint</th>
-                        <th>Key</th>
-                        <th>Settings</th>
-                        <th>Status</th>
-                        <th>Updated</th>
-                        <th>Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php if (empty($apis)): ?>
-                        <tr class="empty-row">
-                            <td colspan="8">
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-                                    <div class="opp-empty-icon"><i class="fas fa-robot"></i></div>
-                                    <strong style="color:var(--ink-700);font-size:15px">No AI APIs configured yet</strong>
-                                    <p style="color:var(--ink-300);font-size:13px">Click <em>Add API</em> to connect your first provider.</p>
-                                    <button type="button" class="btn btn-primary btn-sm js-open-api-modal">
-                                        <i class="fas fa-plus"></i> Add API
+        <?php if (empty($apis)): ?>
+            <div class="empty-state">
+                <i class="fas fa-robot" aria-hidden="true"></i>
+                <p>No AI APIs configured yet. Click <em>Add API</em> to connect your first provider.</p>
+                <button type="button" class="btn btn-primary btn-sm js-open-api-modal">
+                    <i class="fas fa-plus" aria-hidden="true"></i> Add API
+                </button>
+            </div>
+        <?php else: ?>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>API / Provider</th>
+                    <th>Model</th>
+                    <th>Endpoint</th>
+                    <th>Key</th>
+                    <th>Settings</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($apis as $api): ?>
+                        <?php
+                        $apiJson = htmlspecialchars(
+                            json_encode($api, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+                        ?>
+                        <tr>
+                            <td>
+                                <div class="ai-name">
+                                    <?= h($api['api_name'] ?? '') ?>
+                                    <?php if ((int)($api['is_default'] ?? 0) === 1): ?>
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-star" aria-hidden="true"></i> Default
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="ai-provider">
+                                    <i class="fas fa-microchip" aria-hidden="true"></i><?= h($api['provider_name'] ?? '') ?>
+                                </span>
+                            </td>
+
+                            <td>
+                                <code class="ai-model">
+                                    <?= h($api['model_name'] ?? '') ?>
+                                </code>
+                            </td>
+
+                            <td>
+                                <?php if (!empty($api['api_endpoint'])): ?>
+                                    <span class="ai-endpoint">
+                                        <?= h($api['api_endpoint']) ?>
+                                    </span>
+                                <?php else: ?>
+                                    <span class="cell-muted">-</span>
+                                <?php endif; ?>
+                            </td>
+
+                            <td>
+                                <?php if (!empty($api['api_key_last4'])): ?>
+                                    <code class="ai-key">....<?= h($api['api_key_last4']) ?></code>
+                                <?php else: ?>
+                                    <span class="badge badge-secondary">No key</span>
+                                <?php endif; ?>
+                            </td>
+
+                            <td>
+                                <div class="ai-settings">
+                                    <span class="ai-chip"><i class="fas fa-thermometer-half" aria-hidden="true"></i> <?= h($api['temperature'] ?? '0.30') ?></span>
+                                    <span class="ai-chip"><i class="fas fa-coins" aria-hidden="true"></i> <?= number_format((int)($api['max_tokens'] ?? 0)) ?> tok</span>
+                                    <span class="ai-chip"><i class="fas fa-clock" aria-hidden="true"></i> <?= h($api['timeout_seconds'] ?? '60') ?>s</span>
+                                </div>
+                            </td>
+
+                            <td>
+                                <?php if ((int)($api['is_active'] ?? 0) === 1): ?>
+                                    <span class="badge badge-success"><i class="fas fa-circle ai-dot" aria-hidden="true"></i> Active</span>
+                                <?php else: ?>
+                                    <span class="badge badge-secondary"><i class="fas fa-circle ai-dot" aria-hidden="true"></i> Inactive</span>
+                                <?php endif; ?>
+                            </td>
+
+                            <td class="ai-updated">
+                                <?= h(substr(($api['updated_at'] ?: $api['created_at']) ?? '', 0, 16)) ?>
+                            </td>
+
+                            <td>
+                                <div class="ai-actions">
+                                    <button type="button" class="btn btn-secondary btn-sm js-edit-api" title="Edit" aria-label="Edit" data-api="<?= $apiJson ?>">
+                                        <i class="fas fa-pencil" aria-hidden="true"></i>
                                     </button>
+
+                                    <form class="ai-inline-form" method="post">
+                                        <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                        <input type="hidden" name="action" value="default">
+                                        <input type="hidden" name="ai_api_id" value="<?= (int)($api['ai_api_id'] ?? 0) ?>">
+                                        <button class="btn btn-sm <?= (int)($api['is_default'] ?? 0) === 1 ? 'btn-warning' : 'btn-secondary' ?>" title="Set as default" aria-label="Set as default" type="submit">
+                                            <i class="fas fa-star" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+
+                                    <form class="ai-inline-form" method="post">
+                                        <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                        <input type="hidden" name="action" value="toggle">
+                                        <input type="hidden" name="ai_api_id" value="<?= (int)($api['ai_api_id'] ?? 0) ?>">
+                                        <button class="btn btn-sm <?= (int)($api['is_active'] ?? 0) === 1 ? 'btn-green' : 'btn-secondary' ?>" title="<?= (int)($api['is_active'] ?? 0) === 1 ? 'Deactivate' : 'Activate' ?>" aria-label="<?= (int)($api['is_active'] ?? 0) === 1 ? 'Deactivate' : 'Activate' ?>" type="submit">
+                                            <i class="fas fa-power-off" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+
+                                    <form class="ai-inline-form" method="post" onsubmit="return confirm('Delete this AI API?\n\nIf it has review history it will be deactivated instead.');">
+                                        <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="ai_api_id" value="<?= (int)($api['ai_api_id'] ?? 0) ?>">
+                                        <button class="btn btn-danger btn-sm" title="Delete" aria-label="Delete" type="submit">
+                                            <i class="fas fa-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($apis as $api): ?>
-                            <?php
-                            $apiJson = htmlspecialchars(
-                                json_encode($api, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-                                ENT_QUOTES,
-                                'UTF-8'
-                            );
-                            ?>
-                            <tr>
-                                <td>
-                                    <div class="api-name">
-                                        <?= h($api['api_name'] ?? '') ?>
-                                        <?php if ((int)($api['is_default'] ?? 0) === 1): ?>
-                                            <span class="badge badge-warning" style="font-size:9px">
-                                                <i class="fas fa-star"></i> Default
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <span class="provider-pill" style="margin-top:5px;display:inline-flex">
-                                        <i class="fas fa-microchip"></i><?= h($api['provider_name'] ?? '') ?>
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <code style="font-size:12px;color:var(--ink-700);background:var(--ink-50);padding:3px 7px;border-radius:5px">
-                                        <?= h($api['model_name'] ?? '') ?>
-                                    </code>
-                                </td>
-
-                                <td>
-                                    <?php if (!empty($api['api_endpoint'])): ?>
-                                        <span style="font-size:11px;color:var(--ink-300);word-break:break-all;max-width:180px;display:block">
-                                            <?= h($api['api_endpoint']) ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span style="color:var(--ink-200);font-size:12px">-</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <td>
-                                    <?php if (!empty($api['api_key_last4'])): ?>
-                                        <span class="key-hint">....<?= h($api['api_key_last4']) ?></span>
-                                    <?php else: ?>
-                                        <span class="badge badge-secondary">No key</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <td>
-                                    <div style="display:flex;flex-direction:column;gap:4px">
-                                        <span class="setting-chip"><i class="fas fa-thermometer-half"></i> <?= h($api['temperature'] ?? '0.30') ?></span>
-                                        <span class="setting-chip"><i class="fas fa-coins"></i> <?= number_format((int)($api['max_tokens'] ?? 0)) ?> tok</span>
-                                        <span class="setting-chip"><i class="fas fa-clock"></i> <?= h($api['timeout_seconds'] ?? '60') ?>s</span>
-                                    </div>
-                                </td>
-
-                                <td>
-                                    <?php if ((int)($api['is_active'] ?? 0) === 1): ?>
-                                        <span class="badge badge-published"><i class="fas fa-circle" style="font-size:7px"></i> Active</span>
-                                    <?php else: ?>
-                                        <span class="badge badge-secondary"><i class="fas fa-circle" style="font-size:7px"></i> Inactive</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <td style="font-size:11px;color:var(--ink-300);white-space:nowrap">
-                                    <?= h(substr(($api['updated_at'] ?: $api['created_at']) ?? '', 0, 16)) ?>
-                                </td>
-
-                                <td>
-                                    <div class="tbl-actions">
-                                        <button type="button" class="btn btn-secondary btn-sm js-edit-api" title="Edit" data-api="<?= $apiJson ?>">
-                                            <i class="fas fa-pencil"></i>
-                                        </button>
-
-                                        <form class="inline-f" method="post">
-                                            <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
-                                            <input type="hidden" name="action" value="default">
-                                            <input type="hidden" name="ai_api_id" value="<?= (int)($api['ai_api_id'] ?? 0) ?>">
-                                            <button class="btn btn-sm <?= (int)($api['is_default'] ?? 0) === 1 ? 'btn-warning' : 'btn-light' ?>" title="Set as default" type="submit">
-                                                <i class="fas fa-star"></i>
-                                            </button>
-                                        </form>
-
-                                        <form class="inline-f" method="post">
-                                            <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
-                                            <input type="hidden" name="action" value="toggle">
-                                            <input type="hidden" name="ai_api_id" value="<?= (int)($api['ai_api_id'] ?? 0) ?>">
-                                            <button class="btn btn-sm <?= (int)($api['is_active'] ?? 0) === 1 ? 'btn-success' : 'btn-secondary' ?>" title="<?= (int)($api['is_active'] ?? 0) === 1 ? 'Deactivate' : 'Activate' ?>" type="submit">
-                                                <i class="fas fa-power-off"></i>
-                                            </button>
-                                        </form>
-
-                                        <form class="inline-f" method="post" onsubmit="return confirm('Delete this AI API?\n\nIf it has review history it will be deactivated instead.');">
-                                            <input type="hidden" name="csrf" value="<?= h($csrf) ?>">
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="ai_api_id" value="<?= (int)($api['ai_api_id'] ?? 0) ?>">
-                                            <button class="btn btn-danger btn-sm" title="Delete" type="submit">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
+        <?php endif; ?>
     </div>
-</div>
+</div><!-- /.page-stack -->
 
-<div class="opp-modal" id="apiModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
+<div class="modal" id="apiModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
     <div class="modal-card" role="document">
         <div class="modal-head">
             <h3 id="modalTitle">
-                <i class="fas fa-robot" style="color:var(--brand-500)"></i>
+                <i class="fas fa-robot ai-head-icon" aria-hidden="true"></i>
                 <span id="modalHeadingText">Add AI API</span>
             </h3>
             <button type="button" class="modal-close js-close-api-modal" aria-label="Close">&times;</button>
@@ -352,7 +309,7 @@ body.modal-open{
                     </div>
                 </div>
 
-                <div class="form-grid" style="margin-top:14px">
+                <div class="form-grid ai-form-row">
                     <div class="form-group">
                         <label class="form-label required" for="fModel">Model Name</label>
                         <input class="form-control" type="text" name="model_name" id="fModel" required placeholder="e.g. gemini-1.5-flash">
@@ -364,21 +321,21 @@ body.modal-open{
                     </div>
                 </div>
 
-                <div class="form-grid" style="margin-top:14px">
+                <div class="form-grid ai-form-row">
                     <div class="form-group full">
                         <label class="form-label" for="fApiKey">
-                            API Key <span id="fKeyRequired" style="color:var(--red-fg)">*</span>
+                            API Key <span id="fKeyRequired" class="ai-req">*</span>
                         </label>
                         <input class="form-control" type="password" name="api_key" id="fApiKey" placeholder="Paste API key securely">
-                        <div id="fKeyHint" style="font-size:11px;color:var(--ink-300);margin-top:5px;display:none">
-                            Current key ends: <span class="key-hint" id="fKeyLast4"></span> - leave blank to keep.
+                        <div id="fKeyHint" class="ai-key-hint">
+                            Current key ends: <code class="ai-key" id="fKeyLast4"></code> - leave blank to keep.
                         </div>
                     </div>
                 </div>
 
-                <div class="form-section-label" style="margin-top:16px">Parameters</div>
+                <div class="modal-section-label">Parameters</div>
 
-                <div class="form-grid cols-3">
+                <div class="ai-form-3">
                     <div class="form-group">
                         <label class="form-label" for="fTemp">Temperature</label>
                         <input class="form-control" type="number" step="0.01" min="0" max="2" name="temperature" id="fTemp" value="0.30">
@@ -395,32 +352,32 @@ body.modal-open{
                     </div>
                 </div>
 
-                <div style="margin-top:14px">
-                    <div class="toggle-group">
-                        <label class="toggle-item">
+                <div class="ai-form-row">
+                    <div class="ai-toggles">
+                        <label class="ai-toggle">
                             <input type="checkbox" name="is_active" id="fActive" checked>
-                            <i class="fas fa-circle-check" style="color:var(--green-fg)"></i> Active
+                            <i class="fas fa-circle-check" aria-hidden="true"></i> Active
                         </label>
-                        <label class="toggle-item">
+                        <label class="ai-toggle">
                             <input type="checkbox" name="is_default" id="fDefault">
-                            <i class="fas fa-star" style="color:var(--amber-fg)"></i> Set as Default
+                            <i class="fas fa-star" aria-hidden="true"></i> Set as Default
                         </label>
                     </div>
                 </div>
 
-                <div class="form-group" style="margin-top:14px">
+                <div class="form-group ai-form-row">
                     <label class="form-label" for="fNotes">Notes</label>
                     <textarea class="form-control" name="notes" id="fNotes" placeholder="Optional notes about this API configuration..."></textarea>
                 </div>
-            </div>
 
-            <div class="modal-foot">
-                <button type="button" class="btn btn-secondary js-close-api-modal">
-                    <i class="fas fa-times"></i> Cancel
-                </button>
-                <button type="submit" class="btn btn-primary" id="fSubmitBtn">
-                    <i class="fas fa-save"></i> <span id="fSubmitLabel">Save API</span>
-                </button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary js-close-api-modal">
+                        <i class="fas fa-times" aria-hidden="true"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="fSubmitBtn">
+                        <i class="fas fa-save" aria-hidden="true"></i> <span id="fSubmitLabel">Save API</span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

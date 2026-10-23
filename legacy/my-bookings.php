@@ -97,86 +97,36 @@ $bank_details = [
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js" integrity="sha384-5/vsv56401Wf+RP3yE5/aIKW4wutk4nLY3HjueTXN0rA+DmweMtrYaN6RSjdv31b" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <style>
-.bookings-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
+/* My bookings: calendar legend, table row accents, booking overlays and
+   the payment details panel. */
+.mb-filters { margin-bottom: 0; }
 
-.bookings-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.filter-bar {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-.filter-bar > .filters-bar {
-    margin-bottom: 0;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-}
-
-.empty-state i {
-    font-size: 64px;
-    color: #bdc3c7;
-    margin-bottom: 20px;
-}
-
-.empty-state h3 {
-    color: #7f8c8d;
-    margin-bottom: 15px;
-}
-
-
-.booking-calendar {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-}
-
-.calendar-legend {
+.mb-legend {
     display: flex;
-    gap: 18px;
+    gap: var(--space-4);
     flex-wrap: wrap;
-    margin-bottom: 10px;
-    font-size: 13px;
-    color: #555;
+    margin-bottom: var(--space-3);
+    font-size: var(--fs-sm);
+    color: var(--ink-400);
 }
 
-.calendar-legend span {
+.mb-legend span {
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 
-.legend-dot {
+.mb-legend .mb-dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     display: inline-block;
 }
 
-.calendar-hint {
-    background: #eaf6ff;
-    border-left: 4px solid #3498DB;
-    color: #1c5d80;
-    font-size: 13px;
-    padding: 10px 14px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-}
+.mb-dot.is-pending   { background: var(--amber-fg); }
+.mb-dot.is-confirmed { background: var(--green-fg); }
+.mb-dot.is-completed { background: var(--blue-fg); }
+.mb-dot.is-no-show   { background: var(--slate-fg); }
 
 #calendar {
     max-width: 100%;
@@ -186,104 +136,58 @@ $bank_details = [
     cursor: pointer;
 }
 
-.bookings-table-wrapper {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    overflow-x: auto;
-    margin-bottom: 30px;
-}
-
-.bookings-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 900px;
-    font-size: 14px;
-}
-
-.bookings-table thead th {
-    background: #f8f9fa;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    font-size: 11px;
-    letter-spacing: 0.5px;
-    text-align: left;
-    padding: 14px 16px;
-    border-bottom: 2px solid #ecf0f1;
-    white-space: nowrap;
-}
-
-.bookings-table tbody td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #ecf0f1;
-    vertical-align: top;
-}
-
-.bookings-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.bookings-table tbody tr:hover {
-    background: #fbfbfb;
-}
-
-.bookings-table tbody tr.cancelled {
+.mb-table tbody tr.cancelled {
     opacity: 0.6;
 }
 
-.bt-space-name {
-    font-weight: 700;
-    color: #2c3e50;
-}
-
-.bt-space-type {
-    font-size: 12px;
-    color: #95a5a6;
-}
-
-.bt-row-left {
+.mb-table .bt-row-left td:first-child {
     border-left: 4px solid transparent;
 }
 
-.bt-row-left.pending    { border-left-color: #F39C12; }
-.bt-row-left.confirmed  { border-left-color: #2ECC71; }
-.bt-row-left.cancelled  { border-left-color: #E74C3C; }
-.bt-row-left.completed  { border-left-color: #3498DB; }
+.mb-table .bt-row-left.pending td:first-child   { border-left-color: var(--amber-fg); }
+.mb-table .bt-row-left.confirmed td:first-child { border-left-color: var(--green-fg); }
+.mb-table .bt-row-left.cancelled td:first-child { border-left-color: var(--red-fg); }
+.mb-table .bt-row-left.completed td:first-child { border-left-color: var(--blue-fg); }
 
-.bt-meta-line {
-    font-size: 12px;
-    color: #7f8c8d;
+.mb-space-name {
+    font-weight: 700;
+    color: var(--ink-900);
+}
+
+.mb-meta {
+    font-size: var(--fs-xs);
+    color: var(--ink-300);
     margin-top: 3px;
 }
 
-.bt-actions {
+.mb-meta.is-danger {
+    color: var(--red-fg);
+}
+
+.mb-id {
+    font-size: var(--fs-xs);
+    color: var(--ink-200);
+    margin-top: 4px;
+}
+
+.mb-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.bt-actions .btn {
-    padding: 6px 10px;
-    font-size: 12px;
-}
-
-.bt-id {
-    font-size: 11px;
-    color: #b6bcc2;
-    margin-top: 4px;
-}
-
-
+/* Self-contained overlays toggled by .mo-open (kept separate from the
+   global .modal so the open/close JS stays unchanged). */
 .mo-overlay {
     display: none;
     position: fixed !important;
-    top: 0; left: 0; right: 0; bottom: 0;
+    inset: 0;
     width: 100vw; height: 100vh;
-    background: rgba(20, 20, 20, 0.55);
+    background: color-mix(in srgb, var(--ink-900) 55%, transparent);
     z-index: 9999;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: var(--space-5);
     box-sizing: border-box;
 }
 
@@ -292,13 +196,13 @@ $bank_details = [
 }
 
 .mo-modal {
-    background: #ffffff;
+    background: var(--surface-card);
     width: 100%;
     max-width: 640px;
     max-height: 90vh;
     overflow-y: auto;
-    border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
     animation: moFadeIn 0.18s ease-out;
 }
 
@@ -315,18 +219,18 @@ $bank_details = [
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid #ecf0f1;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--ink-100);
     position: sticky;
     top: 0;
-    background: #fff;
-    border-radius: 14px 14px 0 0;
+    z-index: 1;
+    background: var(--surface-card);
 }
 
 .mo-modal-header h3 {
     margin: 0;
-    font-size: 19px;
-    color: #2c3e50;
+    font-size: var(--fs-lg);
+    color: var(--ink-900);
 }
 
 .mo-close {
@@ -334,117 +238,63 @@ $bank_details = [
     border: none;
     font-size: 26px;
     line-height: 1;
-    color: #95a5a6;
+    color: var(--ink-200);
     cursor: pointer;
     padding: 0 4px;
 }
 
 .mo-close:hover {
-    color: #2c3e50;
+    color: var(--ink-900);
 }
 
 .mo-modal-body {
-    padding: 24px;
+    padding: var(--space-6);
 }
 
 .mo-modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    padding: 16px 24px;
-    border-top: 1px solid #ecf0f1;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--ink-100);
 }
 
-.mo-alert-info {
-    background: #eaf6ff;
-    border-left: 4px solid #3498DB;
-    color: #1c5d80;
-    font-size: 13px;
-    padding: 12px 14px;
-    border-radius: 6px;
-    margin-bottom: 20px;
-}
-
-.mo-alert-warning {
-    background: #fff3cd;
-    border-left: 4px solid #F39C12;
-    color: #8a6d1a;
-    font-size: 13px;
-    padding: 12px 14px;
-    border-radius: 6px;
-    margin-bottom: 20px;
+.mo-modal-body .mo-modal-footer {
+    padding: var(--space-4) 0 0;
 }
 
 .mo-space-readonly {
-    background: #f8f9fa;
-    border: 1px solid #e5e8eb;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 14px;
-    color: #2c3e50;
-    margin-bottom: 18px;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--fs-sm);
+    color: var(--ink-900);
+    margin-bottom: var(--space-4);
 }
 
-.mo-form-group {
-    margin-bottom: 18px;
-}
-
-.mo-form-group label {
-    display: block;
-    font-weight: 600;
-    font-size: 14px;
-    color: #2c3e50;
-    margin-bottom: 6px;
-}
-
-.mo-form-group label .required {
-    color: #e74c3c;
-}
-
-.mo-form-control {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #dfe4e8;
-    border-radius: 8px;
-    font-size: 14px;
-    box-sizing: border-box;
-    font-family: inherit;
-}
-
-.mo-form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-}
-
-.mo-overlap-warning {
-    background: #fdecea;
-    border: 1px solid #e74c3c;
-    color: #7d1a1a;
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    margin-bottom: 14px;
+/* Overlap warning: global alert, hidden until JS adds .show. */
+.alert.mo-overlap-warning {
     display: none;
 }
 
-.mo-overlap-warning.show {
-    display: block;
+.alert.mo-overlap-warning.show {
+    display: flex;
 }
 
 .existing-bookings-panel {
-    background: #fff8f0;
-    border: 1px solid #ffe0c2;
-    border-radius: 8px;
-    padding: 14px 16px;
-    margin-bottom: 18px;
-    font-size: 13px;
+    background: var(--brand-50);
+    border: 1px solid var(--brand-100);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+    font-size: var(--fs-sm);
 }
 
 .existing-bookings-panel h5 {
-    margin: 0 0 8px 0;
-    color: #ff6b35;
-    font-size: 13px;
+    margin: 0 0 var(--space-2);
+    color: var(--brand-600);
+    font-size: var(--fs-sm);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -453,7 +303,7 @@ $bank_details = [
     display: flex;
     justify-content: space-between;
     padding: 5px 0;
-    border-bottom: 1px dashed #f0d9c4;
+    border-bottom: 1px dashed var(--brand-200);
 }
 
 .existing-bookings-panel .slot-row:last-child {
@@ -461,79 +311,143 @@ $bank_details = [
 }
 
 .existing-bookings-panel .empty {
-    color: #95a5a6;
+    color: var(--ink-300);
     font-style: italic;
+}
+
+.mb-space-info {
+    background: var(--ink-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-5);
+}
+
+.mb-space-info:empty {
+    display: none;
+}
+
+.mb-space-info h4 {
+    margin: 0 0 var(--space-2);
+}
+
+.mb-space-meta {
+    display: flex;
+    gap: var(--space-5);
+    flex-wrap: wrap;
+    font-size: var(--fs-sm);
+    color: var(--ink-300);
+}
+
+.mb-total {
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    margin: var(--space-5) 0;
+}
+
+.mb-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.mb-total-label {
+    font-size: var(--fs-md);
+    color: var(--ink-900);
+}
+
+.mb-total-value {
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    color: var(--green-fg);
+}
+
+.mb-total small {
+    display: block;
+    margin-top: var(--space-2);
+}
+
+.mb-pricing-note {
+    margin: var(--space-2) 0 0;
+    font-size: var(--fs-sm);
 }
 
 /* View Details modal content */
 .vw-info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
 }
 
 .vw-info-item .label {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #7f8c8d;
+    color: var(--ink-300);
     margin-bottom: 4px;
 }
 
 .vw-info-item .value {
-    font-size: 15px;
-    color: #2c3e50;
+    font-size: var(--fs-md);
+    color: var(--ink-900);
     font-weight: 600;
 }
 
 .vw-notes-box {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 15px;
-    font-size: 14px;
-    color: #555;
+    background: var(--ink-50);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    font-size: var(--fs-sm);
+    color: var(--ink-500);
 }
 
 .vw-notes-box p {
     margin: 6px 0;
 }
 
+.vw-notes-empty {
+    color: var(--ink-300);
+    font-style: italic;
+}
+
 /* Make Payment modal content */
 .pm-amount-display {
-    background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
-    color: white;
-    padding: 25px;
-    border-radius: 12px;
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    color: var(--green-fg);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: var(--space-5);
 }
 
 .pm-amount-display .pm-label {
-    font-size: 14px;
-    opacity: 0.9;
+    font-size: var(--fs-sm);
 }
 
 .pm-amount-display .pm-amount {
-    font-size: 38px;
+    font-size: 34px;
     font-weight: 700;
-    margin: 8px 0;
+    margin: var(--space-2) 0;
 }
 
 .pm-bank-box {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 20px 24px;
-    border-radius: 12px;
-    margin-bottom: 20px;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-lg);
 }
 
 .pm-bank-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--ink-100);
 }
 
 .pm-bank-item:last-child {
@@ -541,44 +455,40 @@ $bank_details = [
 }
 
 .pm-bank-item .pm-label {
-    font-size: 13px;
-    opacity: 0.9;
+    font-size: var(--fs-sm);
+    color: var(--ink-300);
 }
 
 .pm-bank-item .pm-value {
-    font-size: 16px;
+    font-size: var(--fs-md);
     font-weight: 700;
-    font-family: monospace;
+    color: var(--ink-900);
+    font-variant-numeric: tabular-nums;
     display: flex;
     align-items: center;
-    gap: 10px;
-}
-
-.pm-copy-btn {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
-    padding: 4px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 11px;
-}
-
-.pm-copy-btn:hover {
-    background: rgba(255,255,255,0.3);
+    gap: var(--space-2);
+    text-align: right;
 }
 
 @media (max-width: 480px) {
-    .mo-form-row {
+    #bkOverlay .form-row {
         grid-template-columns: 1fr;
     }
 }
 </style>
 
-<!-- Header -->
-<div class="bookings-header">
-    <h1><i class="fas fa-calendar-check"></i> My Bookings</h1>
-    <p style="margin: 0; opacity: 0.9;">View and manage your space bookings</p>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-calendar-check" aria-hidden="true"></i> My Bookings</h1>
+        <p>View and manage your space bookings.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="book-space" class="btn"><i class="fas fa-door-open" aria-hidden="true"></i> Browse Spaces</a>
+        <button type="button" class="btn btn-primary" onclick="openNewBookingModal()">
+            <i class="fas fa-plus" aria-hidden="true"></i> New Booking
+        </button>
+    </div>
 </div>
 
 <!-- Statistics -->
@@ -590,7 +500,7 @@ $bank_details = [
             <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-green"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -598,7 +508,7 @@ $bank_details = [
             <span class="stat-value"><?php echo $stats['upcoming']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -606,7 +516,7 @@ $bank_details = [
             <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-purple"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -617,8 +527,10 @@ $bank_details = [
 </div>
 
 <!-- Filter Bar -->
-<form method="GET" action="" class="filter-bar">
-    <div class="filters-bar" role="search" aria-label="Filter bookings">
+<div class="card">
+<div class="card-body">
+<form method="GET" action="">
+    <div class="filters-bar mb-filters" role="search" aria-label="Filter bookings">
         <div class="form-group">
             <label for="status">Status</label>
             <select name="status" id="status" class="form-control">
@@ -629,51 +541,52 @@ $bank_details = [
                 <option value="Cancelled" <?php echo $filter_status == 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
             </select>
         </div>
-        
+
         <div class="form-group">
             <label for="date_from">From Date</label>
-            <input type="date" name="date_from" id="date_from" class="form-control" 
+            <input type="date" name="date_from" id="date_from" class="form-control"
                    value="<?php echo htmlspecialchars($filter_date_from); ?>">
         </div>
-        
+
         <div class="form-group">
             <label for="date_to">To Date</label>
-            <input type="date" name="date_to" id="date_to" class="form-control" 
+            <input type="date" name="date_to" id="date_to" class="form-control"
                    value="<?php echo htmlspecialchars($filter_date_to); ?>">
         </div>
-        
+
         <div class="filters-actions">
-            <button type="submit" class="btn btn-info">
-                <i class="fas fa-filter"></i> Filter
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter" aria-hidden="true"></i> Filter
             </button>
             <a href="my-bookings" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Clear
+                <i class="fas fa-times" aria-hidden="true"></i> Clear
             </a>
         </div>
     </div>
 </form>
-
-<div style="margin-bottom: 25px;">
-    <button type="button" class="btn btn-primary" onclick="openNewBookingModal()">
-        <i class="fas fa-plus"></i> New Booking
-    </button>
+</div>
 </div>
 
-
-<div class="booking-calendar">
-    <h3 style="margin-bottom: 15px;"><i class="fas fa-calendar-alt"></i> Booking Calendar</h3>
-    <div class="calendar-hint">
-        <i class="fas fa-info-circle"></i>
-        Click a date to start a booking on that day, or switch to <strong>Week</strong> / <strong>Day</strong> view
-        and click-drag across a time range to pick a start and end time automatically.
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-calendar-alt" aria-hidden="true"></i> Booking Calendar</h3>
     </div>
-    <div class="calendar-legend">
-        <span><span class="legend-dot" style="background:#F39C12;"></span> Pending</span>
-        <span><span class="legend-dot" style="background:#27AE60;"></span> Confirmed</span>
-        <span><span class="legend-dot" style="background:#3498DB;"></span> Completed</span>
-        <span><span class="legend-dot" style="background:#95A5A6;"></span> No Show</span>
+    <div class="card-body">
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span>
+            Click a date to start a booking on that day, or switch to <strong>Week</strong> / <strong>Day</strong> view
+            and click-drag across a time range to pick a start and end time automatically.
+        </span>
+    </div>
+    <div class="mb-legend">
+        <span><span class="mb-dot is-pending"></span> Pending</span>
+        <span><span class="mb-dot is-confirmed"></span> Confirmed</span>
+        <span><span class="mb-dot is-completed"></span> Completed</span>
+        <span><span class="mb-dot is-no-show"></span> No Show</span>
     </div>
     <div id="calendar"></div>
+    </div>
 </div>
 
 <!-- Bookings Table -->
@@ -681,9 +594,8 @@ $bank_details = [
     <div class="card">
         <div class="card-body">
             <div class="empty-state">
-                <i class="fas fa-calendar-times"></i>
-                <h3>No bookings found</h3>
-                <p style="color: #7f8c8d; margin-bottom: 20px;">
+                <i class="fas fa-calendar-times" aria-hidden="true"></i>
+                <p>
                     <?php if ($filter_status || $filter_date_from || $filter_date_to): ?>
                         No bookings match your filter criteria.
                     <?php else: ?>
@@ -691,14 +603,19 @@ $bank_details = [
                     <?php endif; ?>
                 </p>
                 <button type="button" class="btn btn-primary" onclick="openNewBookingModal()">
-                    <i class="fas fa-plus"></i> Book a Space
+                    <i class="fas fa-plus" aria-hidden="true"></i> Book a Space
                 </button>
             </div>
         </div>
     </div>
 <?php else: ?>
-    <div class="bookings-table-wrapper">
-        <table class="bookings-table">
+    <div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-list" aria-hidden="true"></i> Bookings</h3>
+    </div>
+    <div class="card-body">
+    <div class="table-responsive">
+        <table class="table table-stack mb-table">
             <thead>
                 <tr>
                     <th>Space</th>
@@ -755,35 +672,35 @@ $bank_details = [
                     $row_payload['end_time']     = date('H:i', strtotime($booking['end_time']));
                 ?>
                 <tr class="bt-row-left <?php echo $card_class; ?> <?php echo $card_class == 'cancelled' ? 'cancelled' : ''; ?>">
-                    <td>
-                        <div class="bt-space-name"><?php echo htmlspecialchars($booking['space_name']); ?></div>
-                        <div class="bt-space-type"><?php echo htmlspecialchars($booking['space_type']); ?></div>
+                    <td data-label="Space">
+                        <div class="mb-space-name"><?php echo htmlspecialchars($booking['space_name']); ?></div>
+                        <div class="cell-muted"><?php echo htmlspecialchars($booking['space_type']); ?></div>
                         <?php if (!empty($extra_bits)): ?>
-                            <div class="bt-meta-line"><?php echo htmlspecialchars(implode(' . ', $extra_bits)); ?></div>
+                            <div class="mb-meta"><?php echo htmlspecialchars(implode(' . ', $extra_bits)); ?></div>
                         <?php endif; ?>
                         <?php if ($booking['booking_status'] == 'Cancelled' && $booking['cancellation_reason']): ?>
-                            <div class="bt-meta-line" style="color:#c0392b;">
+                            <div class="mb-meta is-danger">
                                 Cancelled: <?php echo htmlspecialchars($booking['cancellation_reason']); ?>
                             </div>
                         <?php endif; ?>
-                        <div class="bt-id">#<?php echo $booking['booking_id']; ?></div>
+                        <div class="mb-id">#<?php echo $booking['booking_id']; ?></div>
                     </td>
-                    <td><?php echo date('d M Y', strtotime($booking['booking_date'])); ?></td>
-                    <td>
+                    <td data-label="Date"><?php echo date('d M Y', strtotime($booking['booking_date'])); ?></td>
+                    <td data-label="Time">
                         <?php echo date('h:i A', strtotime($booking['start_time'])); ?> -
                         <?php echo date('h:i A', strtotime($booking['end_time'])); ?>
-                        <div class="bt-meta-line"><?php echo $booking['duration_hours']; ?> hrs</div>
+                        <div class="mb-meta"><?php echo $booking['duration_hours']; ?> hrs</div>
                     </td>
-                    <td><?php echo $booking['number_of_attendees']; ?></td>
-                    <td><?php echo format_currency($booking['booking_amount']); ?></td>
-                    <td>
+                    <td data-label="Attendees"><?php echo $booking['number_of_attendees']; ?></td>
+                    <td data-label="Amount"><?php echo format_currency($booking['booking_amount']); ?></td>
+                    <td data-label="Payment">
                         <span class="badge badge-<?php echo $payment_badge; ?>"><?php echo $booking['payment_status']; ?></span>
                     </td>
-                    <td>
+                    <td data-label="Status">
                         <span class="badge badge-<?php echo $badge; ?>"><?php echo $booking['booking_status']; ?></span>
                     </td>
-                    <td>
-                        <div class="bt-actions">
+                    <td data-label="Actions">
+                        <div class="mb-actions">
                             <button type="button" class="btn btn-info btn-sm" title="View Details"
                                     onclick="openViewModal(<?php echo htmlspecialchars(json_encode($row_payload)); ?>)">
                                 <i class="fas fa-eye"></i>
@@ -816,7 +733,11 @@ $bank_details = [
             </tbody>
         </table>
     </div>
+    </div>
+    </div>
 <?php endif; ?>
+
+</div><!-- /.page-stack -->
 
 
 <div id="bkOverlay" class="mo-overlay" onclick="if (event.target === this) closeBookingModal();">
@@ -834,14 +755,15 @@ $bank_details = [
                 <input type="hidden" name="booking_id" id="field_booking_id" disabled>
                 <input type="hidden" name="return_to" value="my-bookings">
 
-                <div id="editModeNote" class="mo-alert-warning" style="display:none;">
-                    <i class="fas fa-info-circle"></i> Saving changes will reset this booking to <strong>Pending</strong>
-                    and it will need to be re-confirmed.
+                <div id="editModeNote" class="alert alert-warning" style="display:none;">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <span>Saving changes will reset this booking to <strong>Pending</strong>
+                    and it will need to be re-confirmed.</span>
                 </div>
 
-                <div class="mo-form-group" id="spaceSelectGroup">
+                <div class="form-group" id="spaceSelectGroup">
                     <label for="modalSpaceSelect" class="required">Space</label>
-                    <select id="modalSpaceSelect" class="mo-form-control" required>
+                    <select id="modalSpaceSelect" class="form-control" required>
                         <option value="">Select a space...</option>
                         <?php foreach ($spaces as $space): ?>
                             <option value="<?php echo $space['availability_id']; ?>">
@@ -853,22 +775,22 @@ $bank_details = [
 
                 <div class="mo-space-readonly" id="spaceReadonlyBox" style="display:none;"></div>
 
-                <div id="selectedSpaceInfo" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;"></div>
+                <div id="selectedSpaceInfo" class="mb-space-info"></div>
 
                 <div class="existing-bookings-panel" id="existingBookingsPanel" style="display:none;">
                     <h5><i class="fas fa-info-circle"></i> Already booked on this date</h5>
                     <div id="existingBookingsList"></div>
                 </div>
 
-                <div class="mo-form-group">
+                <div class="form-group">
                     <label for="booking_date" class="required">Booking Date</label>
-                    <input type="date" id="booking_date" name="booking_date" class="mo-form-control"
+                    <input type="date" id="booking_date" name="booking_date" class="form-control"
                            min="<?php echo date('Y-m-d'); ?>" required onchange="loadExistingBookings(); updateBookingAmount();">
                 </div>
 
-                <div class="mo-form-group" id="bookingTypeGroup">
+                <div class="form-group" id="bookingTypeGroup">
                     <label for="booking_type" class="required">Booking Type</label>
-                    <select id="booking_type" name="booking_type" class="mo-form-control" required onchange="updateBookingAmount()">
+                    <select id="booking_type" name="booking_type" class="form-control" required onchange="updateBookingAmount()">
                         <option value="">Select Type</option>
                         <option value="hourly">Hourly</option>
                         <option value="half_day">Half Day (4 hours)</option>
@@ -876,36 +798,36 @@ $bank_details = [
                     </select>
                 </div>
 
-                <div class="mo-form-row" id="timeFields">
-                    <div class="mo-form-group">
+                <div class="form-row" id="timeFields">
+                    <div class="form-group">
                         <label for="start_time" class="required">Start Time</label>
-                        <input type="time" id="start_time" name="start_time" class="mo-form-control" required onchange="updateBookingAmount()">
+                        <input type="time" id="start_time" name="start_time" class="form-control" required onchange="updateBookingAmount()">
                     </div>
-                    <div class="mo-form-group">
+                    <div class="form-group">
                         <label for="end_time" class="required">End Time</label>
-                        <input type="time" id="end_time" name="end_time" class="mo-form-control" required onchange="updateBookingAmount()">
+                        <input type="time" id="end_time" name="end_time" class="form-control" required onchange="updateBookingAmount()">
                     </div>
                 </div>
 
-                <div class="mo-overlap-warning" id="overlapWarning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    This time overlaps with an existing booking for this space. Please choose a different time.
+                <div class="alert alert-danger mo-overlap-warning" id="overlapWarning">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <span>This time overlaps with an existing booking for this space. Please choose a different time.</span>
                 </div>
 
                 <div id="editableDetailFields">
-                    <div class="mo-form-group">
+                    <div class="form-group">
                         <label for="number_of_attendees">Number of Attendees</label>
-                        <input type="number" id="number_of_attendees" name="number_of_attendees" class="mo-form-control" min="1">
+                        <input type="number" id="number_of_attendees" name="number_of_attendees" class="form-control" min="1">
                     </div>
 
-                    <div class="mo-form-group">
-                        <label for="purpose">Purpose of Booking <span class="required">*</span></label>
-                        <textarea id="purpose" name="purpose" class="mo-form-control" rows="2" required></textarea>
+                    <div class="form-group">
+                        <label for="purpose" class="required">Purpose of Booking</label>
+                        <textarea id="purpose" name="purpose" class="form-control" rows="2" required></textarea>
                     </div>
 
-                    <div class="mo-form-group">
+                    <div class="form-group">
                         <label for="setup_required">Setup Required</label>
-                        <select id="setup_required" name="setup_required" class="mo-form-control">
+                        <select id="setup_required" name="setup_required" class="form-control">
                             <option value="None">None</option>
                             <option value="Theater">Theater Style</option>
                             <option value="Classroom">Classroom Style</option>
@@ -915,40 +837,40 @@ $bank_details = [
                         </select>
                     </div>
 
-                    <div class="mo-form-group">
+                    <div class="form-group">
                         <label for="equipment_needed">Equipment Needed</label>
-                        <input type="text" id="equipment_needed" name="equipment_needed" class="mo-form-control"
+                        <input type="text" id="equipment_needed" name="equipment_needed" class="form-control"
                                placeholder="e.g., Projector, Microphones, Flip charts">
                     </div>
 
-                    <div class="mo-form-group">
+                    <div class="form-group">
                         <label>
                             <input type="checkbox" name="catering_required" id="catering_required" value="1" onchange="toggleCateringDetails()">
                             <strong>Catering Required</strong>
                         </label>
                     </div>
 
-                    <div class="mo-form-group" id="cateringDetails" style="display:none;">
+                    <div class="form-group" id="cateringDetails" style="display:none;">
                         <label for="catering_description">Catering Details</label>
-                        <textarea id="catering_description" name="catering_description" class="mo-form-control" rows="2"
+                        <textarea id="catering_description" name="catering_description" class="form-control" rows="2"
                                   placeholder="Number of people, meal preferences, dietary restrictions..."></textarea>
                     </div>
 
-                    <div class="mo-form-group">
+                    <div class="form-group">
                         <label for="special_requests">Special Requests</label>
-                        <textarea id="special_requests" name="special_requests" class="mo-form-control" rows="2"></textarea>
+                        <textarea id="special_requests" name="special_requests" class="form-control" rows="2"></textarea>
                     </div>
                 </div>
 
-                <div id="pricingDisplayBox" style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div><strong style="font-size: 16px; color: #2c3e50;">Total Amount:</strong></div>
+                <div id="pricingDisplayBox" class="mb-total">
+                    <div class="mb-total-row">
+                        <div><strong class="mb-total-label">Total Amount:</strong></div>
                         <div>
-                            <span style="font-size: 28px; font-weight: bold; color: #27AE60;" id="totalAmount">UGX 0</span>
+                            <span class="mb-total-value" id="totalAmount">UGX 0</span>
                         </div>
                     </div>
-                    <div id="pricingNote" style="display:none; margin-top: 10px; font-size: 13px; color: #1c8a4c; background: #d4f4e2; border-radius: 6px; padding: 8px 12px;"></div>
-                    <small style="color: #7f8c8d; display: block; margin-top: 8px;">
+                    <div id="pricingNote" class="alert alert-success mb-pricing-note" style="display:none;"></div>
+                    <small class="cell-muted">
                         <i class="fas fa-info-circle"></i> Payment can be made via Mobile Money, Bank Transfer, or at the Hub
                     </small>
                 </div>
@@ -994,10 +916,10 @@ $bank_details = [
                 <div class="pm-label">Reference: <span id="pmReference"></span></div>
             </div>
 
-            <div class="mo-alert-info">
-                <i class="fas fa-info-circle"></i>
-                Use the reference above as your payment note, then contact the Hub to confirm - your booking
-                will be marked <strong>Paid</strong> once verified.
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                <span>Use the reference above as your payment note, then contact the Hub to confirm - your booking
+                will be marked <strong>Paid</strong> once verified.</span>
             </div>
 
             <div class="pm-bank-box">
@@ -1005,21 +927,21 @@ $bank_details = [
                     <span class="pm-label">Bank Name</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['bank_name']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['bank_name'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="btn btn-secondary btn-sm pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['bank_name'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">
                     <span class="pm-label">Account Name</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['account_name']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['account_name'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="btn btn-secondary btn-sm pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['account_name'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">
                     <span class="pm-label">Account Number</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['account_number']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['account_number'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="btn btn-secondary btn-sm pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['account_number'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">
@@ -1030,7 +952,7 @@ $bank_details = [
                     <span class="pm-label">SWIFT Code</span>
                     <span class="pm-value">
                         <?php echo htmlspecialchars($bank_details['swift_code']); ?>
-                        <button type="button" class="pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['swift_code'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
+                        <button type="button" class="btn btn-secondary btn-sm pm-copy-btn" onclick="copyToClipboard(<?= htmlspecialchars(json_encode((string)($bank_details['swift_code'])), ENT_QUOTES, 'UTF-8') ?>, this)"><i class="fas fa-copy"></i></button>
                     </span>
                 </div>
                 <div class="pm-bank-item">
@@ -1087,6 +1009,20 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         selectable: true,
         selectMirror: true,
+        // Colour events from the design tokens so they match the legend.
+        eventDataTransform: function(ev) {
+            const token = {
+                'Pending': '--amber-fg',
+                'Confirmed': '--green-fg',
+                'Completed': '--blue-fg',
+                'No Show': '--slate-fg'
+            }[ev.extendedProps && ev.extendedProps.status] || '--red-fg';
+            const color = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+            if (color) {
+                ev.color = color;
+            }
+            return ev;
+        },
         events: function(info, successCallback, failureCallback) {
             fetch('get-bookings?start=' + info.startStr + '&end=' + info.endStr)
                 .then(response => response.json())
@@ -1190,12 +1126,13 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-const EVENT_STATUS_COLORS = {
-    'Pending':   '#F39C12',
-    'Confirmed': '#27AE60',
-    'Completed': '#3498DB',
-    'No Show':   '#95A5A6',
-    'Cancelled': '#E74C3C',
+// Status -> global .status-pill modifier for the event details modal.
+const EVENT_STATUS_PILLS = {
+    'Pending':   'status-pending',
+    'Confirmed': 'status-approved',
+    'Completed': 'status-completed',
+    'No Show':   'status-draft',
+    'Cancelled': 'status-cancelled',
 };
 
 
@@ -1203,14 +1140,14 @@ function showEventDetailsModal(event) {
     const props = event.extendedProps;
     const dateStr = new Date(props.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
     const timeStr = formatTime(props.start_time) + ' - ' + formatTime(props.end_time);
-    const statusColor = EVENT_STATUS_COLORS[props.status] || '#95a5a6';
+    const statusPill = EVENT_STATUS_PILLS[props.status] || 'status-draft';
 
     const items = [
         ['Space', props.space_name],
         ['Type', props.space_type],
         ['Date', dateStr],
         ['Time', timeStr],
-        ['Status', `<span class="badge" style="background:${statusColor};color:#fff;">${props.status}</span>`],
+        ['Status', `<span class="status-pill ${statusPill}">${props.status}</span>`],
     ];
 
     document.getElementById('evInfoGrid').innerHTML = items.map(([label, value]) => `
@@ -1277,8 +1214,8 @@ function resetModalFields() {
 
 function renderSelectedSpaceInfo(space) {
     document.getElementById('selectedSpaceInfo').innerHTML = `
-        <h4 style="margin-bottom: 10px;">${space.space_name}</h4>
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 14px; color: #7f8c8d;">
+        <h4>${space.space_name}</h4>
+        <div class="mb-space-meta">
             <span><i class="fas fa-tag"></i> ${space.space_type}</span>
             <span><i class="fas fa-users"></i> Capacity: ${space.capacity}</span>
         </div>
@@ -1454,8 +1391,7 @@ function resetAmountDisplay(message) {
     const note = document.getElementById('pricingNote');
     if (message) {
         note.style.display = 'block';
-        note.style.color = '#c0392b';
-        note.style.background = '#fdecea';
+        note.className = 'alert alert-danger mb-pricing-note';
         note.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + message;
     } else {
         note.style.display = 'none';
@@ -1468,8 +1404,7 @@ function renderQuote(data) {
     document.getElementById('total_amount_hidden').value = data.amount;
 
     const note = document.getElementById('pricingNote');
-    note.style.color = '#1c8a4c';
-    note.style.background = '#d4f4e2';
+    note.className = 'alert alert-success mb-pricing-note';
     if (data.special_offer) {
         note.style.display = 'block';
         note.innerHTML = '<i class="fas fa-gift"></i> ' + data.free_hours_applied + ' free hour(s) applied'
@@ -1541,7 +1476,7 @@ function openViewModal(booking) {
     if (booking.special_requests) notesHtml += `<p><strong>Special Requests:</strong> ${booking.special_requests}</p>`;
     if (booking.booking_status === 'Cancelled' && booking.cancellation_reason) notesHtml += `<p><strong>Cancellation Reason:</strong> ${booking.cancellation_reason}</p>`;
 
-    document.getElementById('vwNotesBox').innerHTML = notesHtml || '<p style="color:#95a5a6;font-style:italic;">No additional notes.</p>';
+    document.getElementById('vwNotesBox').innerHTML = notesHtml || '<p class="vw-notes-empty">No additional notes.</p>';
 
     document.getElementById('vwOverlay').classList.add('mo-open');
     document.body.style.overflow = 'hidden';

@@ -157,10 +157,10 @@ $sql = "
         CASE
             WHEN (m.entity_type = 'Project' AND m.entity_id IS NOT NULL)
               OR (m.entity_type IS NULL AND m.project_id IS NOT NULL)
-                THEN CONCAT(COALESCE(p.project_code,''), ' – ', COALESCE(p.project_name,''))
+                THEN CONCAT(COALESCE(p.project_code,''), ' â€“ ', COALESCE(p.project_name,''))
             WHEN (m.entity_type = 'Program' AND m.entity_id IS NOT NULL)
               OR (m.entity_type IS NULL AND m.program_id IS NOT NULL)
-                THEN CONCAT(COALESCE(pr.program_code,''), ' – ', COALESCE(pr.program_name,''))
+                THEN CONCAT(COALESCE(pr.program_code,''), ' â€“ ', COALESCE(pr.program_name,''))
             ELSE 'Unknown'
         END AS entity_name,
         CASE
@@ -367,15 +367,15 @@ $entityIcon  = strtolower($entityType) === 'project' ? 'fa-project-diagram' : 'f
 @media (max-width: 768px) { .form-row.md-form-row-3 { grid-template-columns: 1fr; } }
 </style>
 
-<div class="milestones-wrap">
+<div class="milestones-wrap page-stack">
 
     <!-- ================================================================
          HERO
     ================================================================ -->
-    <div class="milestones-hero">
-        <div class="milestones-hero-text">
+    <div class="page-hero">
+        <div>
             <h1>
-                <i class="fas fa-flag-checkered" style="margin-right:10px;opacity:.9;"></i>
+                <i class="fas fa-flag-checkered" aria-hidden="true"></i>
                 <?= h($milestone['milestone_name'] ?? 'Milestone') ?>
             </h1>
 
@@ -388,7 +388,7 @@ $entityIcon  = strtolower($entityType) === 'project' ? 'fa-project-diagram' : 'f
                 </span>
 
                 <?php if (!empty($milestone['milestone_type'])): ?>
-                <span class="badge badge-secondary" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.35);">
+                <span class="badge badge-secondary" style="background:rgba(255,255,255,.18);color:var(--ink-0);border-color:rgba(255,255,255,.35);">
                     <i class="fas fa-layer-group"></i>
                     <?= h($milestone['milestone_type']) ?>
                 </span>
@@ -411,10 +411,10 @@ $entityIcon  = strtolower($entityType) === 'project' ? 'fa-project-diagram' : 'f
         </div>
 
         <div class="hero-actions">
-            <a href="milestones" class="btn btn-secondary">
+            <a href="milestones" class="btn">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
-            <a href="milestones?edit=<?= (int)$milestone_id ?>" class="btn btn-dark">
+            <a href="milestones?edit=<?= (int)$milestone_id ?>" class="btn btn-primary">
                 <i class="fas fa-edit"></i> Edit Milestone
             </a>
         </div>

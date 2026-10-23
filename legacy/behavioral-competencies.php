@@ -139,83 +139,51 @@ $page_title = 'Manage Behavioral Competencies';
 include 'includes/header.php';
 ?>
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-:root {
-    --ink:#0d1117;--surface:#f0f2f5;--panel:#fff;--accent:#5b5ef4;--accent-lt:#ededfd;
-    --success:#16a34a;--success-lt:#dcfce7;--danger:#dc2626;--danger-lt:#fee2e2;
-    --warning:#d97706;--warning-lt:#fef3c7;--border:#e2e8f0;--muted:#94a3b8;
-    --sans:'Plus Jakarta Sans',sans-serif;--mono:'JetBrains Mono',monospace;
-    --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-size:14px;}
-.hero{background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);color:#fff;padding:26px 32px;border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;}
-.hero h2{font-size:20px;font-weight:700;letter-spacing:-.3px;}
-.hero p{font-size:12px;color:#a5b4fc;margin-top:3px;}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:7px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .15s;text-decoration:none;white-space:nowrap;}
-.btn-primary{background:var(--accent);color:#fff;}.btn-primary:hover{background:#4f46e5;}
-.btn-success{background:var(--success);color:#fff;}.btn-success:hover{background:#15803d;}
-.btn-outline{background:#fff;color:var(--ink);border-color:var(--border);}.btn-outline:hover{border-color:#94a3b8;}
-.btn-danger{background:#fff;color:var(--danger);border-color:var(--border);}.btn-danger:hover{background:var(--danger-lt);border-color:var(--danger);}
-.btn-sm{padding:5px 12px;font-size:12px;}.btn-xs{padding:3px 9px;font-size:11px;}
-.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:18px;display:flex;align-items:center;gap:10px;}
-.alert-success{background:var(--success-lt);color:#166534;border-left:4px solid var(--success);}
-.alert-danger{background:var(--danger-lt);color:#991b1b;border-left:4px solid var(--danger);}
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden;}
-.panel-head{padding:14px 20px;border-bottom:1px solid var(--border);background:#fafbfc;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.panel-head h4{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
-.panel-head h4 i{color:var(--accent);}
-.panel-body{padding:20px;}
-.field-row{display:grid;gap:14px;margin-bottom:16px;}
-.col-2{grid-template-columns:1fr 1fr;}.col-3{grid-template-columns:1fr 1fr 100px;}
-.field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:5px;}
-.field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:13px;color:var(--ink);background:#fff;outline:none;transition:border-color .15s;}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,94,244,.1);}
-.group-card{border:1.5px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;transition:box-shadow .15s;}
-.group-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);}
-.group-card-head{padding:12px 16px;background:#1e1b4b;color:#fff;display:flex;align-items:center;gap:10px;}
-.group-card-head .g-name{flex:1;font-weight:700;font-size:14px;}
-.group-card-head .g-meta{font-size:11px;color:#a5b4fc;}
-.group-card-head .badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(255,255,255,.15);color:#fff;}
-.group-card-head .badge.inactive{background:rgba(239,68,68,.3);}
-.indicator-list{padding:0;}
-.indicator-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #f1f5f9;transition:background .12s;}
+/* Behavioral Competencies: page-only layout (components come from reports.css) */
+.bc-page .field-row{display:grid;gap:14px;margin-bottom:16px;}
+.bc-page .col-2{grid-template-columns:1fr 1fr;}
+.bc-page .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-300);margin-bottom:5px;}
+.bc-page .field input,.bc-page .field select,.bc-page .field textarea,
+.bc-page .add-indicator-form input{width:100%;padding:8px 11px;border:1px solid var(--ink-100);border-radius:var(--radius-sm);font-size:13px;color:var(--ink-700);background:var(--surface-card);outline:none;transition:border-color .15s;}
+.bc-page .field input:focus,.bc-page .field select:focus,.bc-page .field textarea:focus,
+.bc-page .add-indicator-form input:focus{border-color:var(--brand-500);box-shadow:var(--focus-ring);}
+.bc-page .req{color:var(--red-fg);}
+.group-card{margin-bottom:16px;}
+.group-card-head{padding:12px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--ink-50);background:var(--surface-hover);}
+.group-card-head .g-name{flex:1;font-weight:700;font-size:14px;color:var(--ink-700);}
+.group-card-head .g-meta{font-size:12px;color:var(--ink-300);}
+.indicator-row{display:flex;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid var(--ink-50);transition:background .12s;}
 .indicator-row:last-child{border-bottom:none;}
-.indicator-row:hover{background:#f8fafc;}
-.drag-handle{color:#cbd5e1;font-size:14px;flex-shrink:0;cursor:grab;}
-.ind-seq{width:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted);flex-shrink:0;}
+.indicator-row:hover{background:var(--surface-hover);}
+.drag-handle{color:var(--ink-100);font-size:14px;flex-shrink:0;cursor:grab;}
+.ind-seq{width:24px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--ink-300);flex-shrink:0;}
 .ind-text{flex:1;font-size:13px;line-height:1.5;}
-.ind-text.inactive{color:var(--muted);text-decoration:line-through;}
+.ind-text.inactive{color:var(--ink-200);text-decoration:line-through;}
 .ind-actions{display:flex;gap:6px;flex-shrink:0;}
-.add-indicator-form{padding:12px 16px;background:#f8fafc;border-top:1.5px dashed var(--border);display:none;}
+.ind-empty{padding:16px 20px;color:var(--ink-300);font-size:13px;font-style:italic;}
+.add-indicator-form{padding:12px 18px;background:var(--surface-hover);border-top:1px dashed var(--ink-100);display:none;}
 .add-indicator-form.open{display:block;}
 .add-indicator-form .irow{display:flex;gap:10px;align-items:flex-end;}
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;}
+.group-card-foot{padding:10px 18px;border-top:1px solid var(--ink-50);background:var(--surface-hover);}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(13,17,23,.55);z-index:9000;align-items:center;justify-content:center;padding:24px;}
 .modal-backdrop.open{display:flex;}
-.modal{background:#fff;border-radius:var(--radius);width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:modalIn .18s ease;}
-@keyframes modalIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
-.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.modal-head h3{font-size:15px;font-weight:700;}
-.modal-body{padding:20px;}
-.modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;}
-.empty-state{text-align:center;padding:48px 24px;color:var(--muted);}
-.empty-state i{font-size:36px;margin-bottom:12px;display:block;}
-.pill{padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;}
-.pill-active{background:var(--success-lt);color:#166534;}
-.pill-inactive{background:#f1f5f9;color:var(--muted);}
-@media(max-width:768px){.col-2,.col-3{grid-template-columns:1fr;}.hero{flex-direction:column;}}
+.modal-backdrop .modal-card{width:100%;max-width:520px;margin:auto;}
+.modal-backdrop .modal-foot{padding:14px 24px;border-top:1px solid var(--ink-50);display:flex;gap:10px;justify-content:flex-end;}
+@media(max-width:768px){.bc-page .col-2{grid-template-columns:1fr;}}
 </style>
 
-<div class="hero">
+<div class="page-stack bc-page">
+<div class="page-hero">
     <div>
-        <h2><i class="fas fa-brain"></i> &nbsp;Behavioral Competencies</h2>
+        <h1><i class="fas fa-brain" aria-hidden="true"></i> Behavioral Competencies</h1>
         <p>Manage competency groups and their behavior indicators for staff appraisals.</p>
     </div>
-    <button class="btn btn-primary" onclick="openAddGroupModal()">
-        <i class="fas fa-plus"></i> Add Competency Group
-    </button>
+    <div class="hero-actions">
+        <button type="button" class="btn btn-primary" onclick="openAddGroupModal()">
+            <i class="fas fa-plus" aria-hidden="true"></i> Add Competency Group
+        </button>
+    </div>
 </div>
 
 <?php if ($success): ?>
@@ -235,30 +203,30 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
 <?php else: ?>
 <div id="groupsContainer">
 <?php foreach ($groups as $gi => $g): ?>
-<div class="group-card" data-gid="<?php echo $g['group_id']; ?>">
+<div class="panel group-card" data-gid="<?php echo $g['group_id']; ?>">
     <div class="group-card-head">
         <span class="g-meta"><?php echo $gi+1; ?>.</span>
         <span class="g-name"><?php echo htmlspecialchars($g['group_name']); ?></span>
         <?php if ($g['description']): ?>
             <span class="g-meta" title="<?php echo htmlspecialchars($g['description']); ?>"><i class="fas fa-info-circle"></i></span>
         <?php endif; ?>
-        <span class="badge <?php echo $g['is_active'] ? '' : 'inactive'; ?>">
+        <span class="badge <?php echo $g['is_active'] ? 'badge-success' : 'badge-secondary'; ?>">
             <?php echo $g['is_active'] ? 'Active' : 'Inactive'; ?>
         </span>
         <span class="g-meta"><?php echo count($g['indicators']); ?> indicators</span>
-        <button class="btn btn-outline btn-xs" onclick='openEditGroupModal(<?php echo json_encode($g); ?>)'>
+        <button class="btn btn-secondary btn-sm" onclick='openEditGroupModal(<?php echo json_encode($g); ?>)'>
             <i class="fas fa-edit"></i> Edit
         </button>
         <form method="POST" style="display:inline" onsubmit="return confirm('Delete this group and ALL its indicators?')">
             <input type="hidden" name="action" value="delete_group">
             <input type="hidden" name="group_id" value="<?php echo $g['group_id']; ?>">
-            <button class="btn btn-danger btn-xs" type="submit"><i class="fas fa-trash"></i></button>
+            <button class="btn btn-danger btn-sm" type="submit"><i class="fas fa-trash"></i></button>
         </form>
     </div>
 
     <div class="indicator-list" id="indList-<?php echo $g['group_id']; ?>">
         <?php if (empty($g['indicators'])): ?>
-        <div style="padding:16px 20px;color:var(--muted);font-size:13px;font-style:italic;">No indicators yet — add one below.</div>
+        <div class="ind-empty">No indicators yet — add one below.</div>
         <?php else: ?>
         <?php foreach ($g['indicators'] as $ii => $ind): ?>
         <div class="indicator-row" data-iid="<?php echo $ind['indicator_id']; ?>">
@@ -267,17 +235,17 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
             <span class="ind-text <?php echo $ind['is_active'] ? '' : 'inactive'; ?>">
                 <?php echo htmlspecialchars($ind['indicator_text']); ?>
             </span>
-            <span class="pill <?php echo $ind['is_active'] ? 'pill-active' : 'pill-inactive'; ?>">
+            <span class="badge <?php echo $ind['is_active'] ? 'badge-success' : 'badge-secondary'; ?>">
                 <?php echo $ind['is_active'] ? 'Active' : 'Off'; ?>
             </span>
             <div class="ind-actions">
-                <button class="btn btn-outline btn-xs" onclick='openEditIndicatorModal(<?php echo json_encode($ind); ?>)'>
+                <button class="btn btn-secondary btn-sm" onclick='openEditIndicatorModal(<?php echo json_encode($ind); ?>)'>
                     <i class="fas fa-edit"></i>
                 </button>
                 <form method="POST" style="display:inline" onsubmit="return confirm('Delete this indicator?')">
                     <input type="hidden" name="action" value="delete_indicator">
                     <input type="hidden" name="indicator_id" value="<?php echo $ind['indicator_id']; ?>">
-                    <button class="btn btn-danger btn-xs" type="submit"><i class="fas fa-times"></i></button>
+                    <button class="btn btn-danger btn-sm" type="submit"><i class="fas fa-times"></i></button>
                 </form>
             </div>
         </div>
@@ -292,20 +260,19 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
             <div class="irow">
                 <div style="flex:1">
                     <input type="text" name="indicator_text" placeholder="e.g., Demonstrates respect in all interactions"
-                           required style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:13px;">
+                           required>
                 </div>
                 <div style="width:80px">
-                    <input type="number" name="sort_order" placeholder="Order" min="1"
-                           style="width:100%;padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:13px;">
+                    <input type="number" name="sort_order" placeholder="Order" min="1">
                 </div>
                 <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Add</button>
-                <button type="button" class="btn btn-outline btn-sm" onclick="toggleAddForm(<?php echo $g['group_id']; ?>)">Cancel</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddForm(<?php echo $g['group_id']; ?>)">Cancel</button>
             </div>
         </form>
     </div>
 
-    <div style="padding:10px 16px;border-top:1px solid var(--border);background:#fafbfc;">
-        <button class="btn btn-outline btn-sm" onclick="toggleAddForm(<?php echo $g['group_id']; ?>)">
+    <div class="group-card-foot">
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddForm(<?php echo $g['group_id']; ?>)">
             <i class="fas fa-plus"></i> Add Indicator
         </button>
     </div>
@@ -313,19 +280,20 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
 <?php endforeach; ?>
 </div>
 <?php endif; ?>
+</div>
 
 <!-- ADD GROUP MODAL -->
-<div class="modal-backdrop" id="addGroupModal">
-    <div class="modal">
+<div class="modal-backdrop bc-page" id="addGroupModal">
+    <div class="modal-card">
         <div class="modal-head">
-            <h3><i class="fas fa-plus-circle" style="color:var(--accent)"></i> &nbsp;Add Competency Group</h3>
-            <button class="btn btn-outline btn-xs" onclick="closeModal('addGroupModal')"><i class="fas fa-times"></i></button>
+            <h3><i class="fas fa-plus-circle" aria-hidden="true"></i> Add Competency Group</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal('addGroupModal')"><i class="fas fa-times"></i></button>
         </div>
         <form method="POST">
         <input type="hidden" name="action" value="add_group">
         <div class="modal-body">
             <div class="field-row"><div class="field">
-                <label>Group Name <span style="color:var(--danger)">*</span></label>
+                <label>Group Name <span class="req">*</span></label>
                 <input type="text" name="group_name" placeholder="e.g., Acting as a Team Player" required>
             </div></div>
             <div class="field-row"><div class="field">
@@ -338,7 +306,7 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
             </div></div>
         </div>
         <div class="modal-foot">
-            <button type="button" class="btn btn-outline" onclick="closeModal('addGroupModal')">Cancel</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('addGroupModal')">Cancel</button>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Group</button>
         </div>
         </form>
@@ -346,18 +314,18 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
 </div>
 
 <!-- EDIT GROUP MODAL -->
-<div class="modal-backdrop" id="editGroupModal">
-    <div class="modal">
+<div class="modal-backdrop bc-page" id="editGroupModal">
+    <div class="modal-card">
         <div class="modal-head">
-            <h3><i class="fas fa-edit" style="color:var(--accent)"></i> &nbsp;Edit Competency Group</h3>
-            <button class="btn btn-outline btn-xs" onclick="closeModal('editGroupModal')"><i class="fas fa-times"></i></button>
+            <h3><i class="fas fa-edit" aria-hidden="true"></i> Edit Competency Group</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal('editGroupModal')"><i class="fas fa-times"></i></button>
         </div>
         <form method="POST">
         <input type="hidden" name="action" value="edit_group">
         <input type="hidden" name="group_id" id="editGroupId">
         <div class="modal-body">
             <div class="field-row"><div class="field">
-                <label>Group Name <span style="color:var(--danger)">*</span></label>
+                <label>Group Name <span class="req">*</span></label>
                 <input type="text" name="group_name" id="editGroupName" required>
             </div></div>
             <div class="field-row"><div class="field">
@@ -374,7 +342,7 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
             </div>
         </div>
         <div class="modal-foot">
-            <button type="button" class="btn btn-outline" onclick="closeModal('editGroupModal')">Cancel</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('editGroupModal')">Cancel</button>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Group</button>
         </div>
         </form>
@@ -382,18 +350,18 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
 </div>
 
 <!-- EDIT INDICATOR MODAL -->
-<div class="modal-backdrop" id="editIndicatorModal">
-    <div class="modal">
+<div class="modal-backdrop bc-page" id="editIndicatorModal">
+    <div class="modal-card">
         <div class="modal-head">
-            <h3><i class="fas fa-edit" style="color:var(--accent)"></i> &nbsp;Edit Indicator</h3>
-            <button class="btn btn-outline btn-xs" onclick="closeModal('editIndicatorModal')"><i class="fas fa-times"></i></button>
+            <h3><i class="fas fa-edit" aria-hidden="true"></i> Edit Indicator</h3>
+            <button class="btn btn-secondary btn-sm" onclick="closeModal('editIndicatorModal')"><i class="fas fa-times"></i></button>
         </div>
         <form method="POST">
         <input type="hidden" name="action" value="edit_indicator">
         <input type="hidden" name="indicator_id" id="editIndId">
         <div class="modal-body">
             <div class="field-row"><div class="field">
-                <label>Indicator Text <span style="color:var(--danger)">*</span></label>
+                <label>Indicator Text <span class="req">*</span></label>
                 <textarea name="indicator_text" id="editIndText" rows="3" required></textarea>
             </div></div>
             <div class="field-row col-2">
@@ -406,7 +374,7 @@ body{font-family:var(--sans);background:var(--surface);color:var(--ink);font-siz
             </div>
         </div>
         <div class="modal-foot">
-            <button type="button" class="btn btn-outline" onclick="closeModal('editIndicatorModal')">Cancel</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('editIndicatorModal')">Cancel</button>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Indicator</button>
         </div>
         </form>

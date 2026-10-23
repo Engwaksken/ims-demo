@@ -51,22 +51,6 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
 ?>
 
 <style>
-.progress-update-card {
-    background: white;
-    border-radius: 8px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.kpi-summary-box {
-    background: linear-gradient(135deg, #2c3e50 0%, #ff6b35 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-}
-
 .quarter-selector {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -76,30 +60,30 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
 
 .quarter-option {
     padding: 20px;
-    background: #f8f9fa;
-    border: 3px solid #ecf0f1;
-    border-radius: 8px;
+    background: var(--surface-hover);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
     text-align: center;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
     position: relative;
 }
 
 .quarter-option:hover {
-    border-color: var(--primary-color);
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: var(--brand-500);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .quarter-option.selected {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
-    border-color: var(--primary-color);
+    background: var(--brand-50);
+    color: var(--ink-900);
+    border-color: var(--brand-600);
 }
 
 .quarter-option.completed {
-    background: #e8f5e9;
-    border-color: #27AE60;
+    background: var(--green-bg);
+    border-color: var(--green-border);
 }
 
 .quarter-label {
@@ -110,26 +94,32 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
 
 .quarter-period {
     font-size: 12px;
-    opacity: 0.8;
+    color: var(--ink-300);
     margin-bottom: 10px;
 }
 
 .quarter-target {
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 600;
     margin-top: 10px;
+}
+
+.quarter-actual {
+    margin-top: 5px;
+    font-size: 13px;
+    color: var(--green-fg);
 }
 
 .quarter-current {
     position: absolute;
     top: -10px;
     right: -10px;
-    background: #FF6B35;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 12px;
+    background: var(--brand-600);
+    color: var(--ink-0);
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
     font-size: 10px;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 .quarter-status-badge {
@@ -137,104 +127,111 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
     bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 11px;
-    padding: 4px 10px;
-    border-radius: 10px;
 }
 
 .progress-form-section {
-    background: #f8f9fa;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
     padding: 25px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    border-radius: var(--radius-md);
 }
 
 .achievement-preview {
-    background: white;
+    background: var(--surface-card);
     padding: 20px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     text-align: center;
-    border: 2px dashed #bdc3c7;
+    border: 2px dashed var(--ink-100);
 }
 
 .achievement-number {
     font-size: 48px;
-    font-weight: bold;
-    color: var(--primary-color);
+    font-weight: 700;
+    color: var(--brand-600);
     margin: 10px 0;
 }
 
 .achievement-label {
     font-size: 14px;
-    color: #7f8c8d;
+    color: var(--ink-300);
 }
 
 .calculation-box {
-    background: #e8f4f8;
+    background: var(--blue-bg);
     padding: 15px;
-    border-radius: 5px;
-    border-left: 4px solid #3498DB;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--blue-fg);
     margin: 15px 0;
 }
 
 .tips-box {
-    background: #fff3cd;
+    background: var(--amber-bg);
     padding: 15px;
-    border-radius: 5px;
-    border-left: 4px solid #ffc107;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--amber-fg);
     margin-top: 20px;
-}
-
-.historical-progress {
-    margin-top: 30px;
 }
 
 .progress-timeline {
     display: flex;
     gap: 15px;
-    margin-top: 15px;
 }
 
 .timeline-item {
     flex: 1;
-    background: #f8f9fa;
+    background: var(--surface-hover);
     padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid #ecf0f1;
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--border);
 }
 
 .timeline-item.completed {
-    border-left-color: #27AE60;
+    border-left-color: var(--green-fg);
 }
 
 .timeline-item.pending {
-    border-left-color: #95A5A6;
+    border-left-color: var(--ink-200);
+}
+
+.select-quarter-message {
+    text-align: center;
+    padding: 40px;
+    color: var(--ink-300);
+}
+
+.select-quarter-message i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+    .quarter-selector { grid-template-columns: repeat(2, 1fr); }
+    .progress-timeline { flex-direction: column; }
 }
 </style>
 
-<!-- KPI Summary -->
-<div class="kpi-summary-box">
-    <div style="text-align: center;">
-        <h2 style="margin: 0 0 10px 0;"><?php echo htmlspecialchars($kpi['kpi_title']); ?></h2>
-        <p style="margin: 0; font-size: 14px; opacity: 0.9;">
-            <?php echo htmlspecialchars($kpi['department_name']); ?> | 
-            <?php echo htmlspecialchars($kpi['category_name']); ?> | 
-            Weight: <?php echo $kpi['weight_percentage']; ?>%
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-chart-line" aria-hidden="true"></i> <?php echo htmlspecialchars($kpi['kpi_title']); ?></h1>
+        <p>
+            <?php echo htmlspecialchars($kpi['department_name']); ?> |
+            <?php echo htmlspecialchars($kpi['category_name']); ?> |
+            Weight: <?php echo $kpi['weight_percentage']; ?>% |
+            Annual Target: <?php echo $kpi['target_value']; ?> <?php echo htmlspecialchars($kpi['unit_of_measure']); ?>
         </p>
-        <p style="margin: 10px 0 0 0; font-size: 16px;">
-            <strong>Annual Target:</strong> <?php echo $kpi['target_value']; ?> <?php echo htmlspecialchars($kpi['unit_of_measure']); ?>
-        </p>
+    </div>
+    <div class="hero-actions">
+        <a href="view-kpi?id=<?php echo $kpi_id; ?>" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to KPI Details
+        </a>
     </div>
 </div>
 
-<div style="margin-bottom: 20px;">
-    <a href="view-kpi?id=<?php echo $kpi_id; ?>" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Back to KPI Details
-    </a>
-</div>
-
-<div class="progress-update-card">
-    <h3 style="margin-bottom: 20px;"><i class="fas fa-chart-line"></i> Update Quarterly Progress</h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-chart-line" aria-hidden="true"></i> Update Quarterly Progress</h3></div>
+    <div class="card-body">
     
     <!-- Quarter Selection -->
     <div class="quarter-selector" id="quarterSelector">
@@ -273,17 +270,17 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
                 <div class="quarter-target">Target: <?php echo $target; ?></div>
                 
                 <?php if ($has_data): ?>
-                    <div style="margin-top: 5px; font-size: 13px; color: #27AE60;">
+                    <div class="quarter-actual">
                         Actual: <?php echo $actual; ?>
                     </div>
                 <?php endif; ?>
                 
                 <?php if ($is_completed): ?>
-                    <span class="quarter-status-badge" style="background: #27AE60; color: white;">
+                    <span class="quarter-status-badge badge badge-success">
                         ? Completed
                     </span>
                 <?php elseif ($has_data): ?>
-                    <span class="quarter-status-badge" style="background: #3498DB; color: white;">
+                    <span class="quarter-status-badge badge badge-info">
                         Recorded
                     </span>
                 <?php endif; ?>
@@ -351,27 +348,28 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
-                <button type="button" onclick="cancelUpdate()" class="btn btn-secondary" style="padding: 12px 30px;">
+                <button type="button" onclick="cancelUpdate()" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Cancel
                 </button>
-                <button type="submit" class="btn btn-primary" style="padding: 12px 30px; margin-left: 10px;">
+                <button type="submit" class="btn btn-primary" style="margin-left: 10px;">
                     <i class="fas fa-save"></i> Save Progress
                 </button>
             </div>
         </div>
     </form>
     
-    <div id="selectQuarterMessage" style="text-align: center; padding: 40px; color: #7f8c8d;">
-        <i class="fas fa-hand-pointer" style="font-size: 48px; margin-bottom: 15px; opacity: 0.5;"></i>
+    <div id="selectQuarterMessage" class="select-quarter-message">
+        <i class="fas fa-hand-pointer" aria-hidden="true"></i>
         <h4>Select a quarter above to update progress</h4>
         <p>Click on any quarter to enter or update its progress data</p>
+    </div>
     </div>
 </div>
 
 <!-- Historical Progress -->
-<div class="progress-update-card historical-progress">
-    <h3 style="margin-bottom: 20px;"><i class="fas fa-history"></i> Progress Timeline</h3>
-    
+<div class="card historical-progress">
+    <div class="card-header"><h3><i class="fas fa-history" aria-hidden="true"></i> Progress Timeline</h3></div>
+    <div class="card-body">
     <div class="progress-timeline">
         <?php
         foreach ($quarters as $q_key => $q_info):
@@ -385,7 +383,7 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
         ?>
             <div class="timeline-item <?php echo $is_completed ? 'completed' : 'pending'; ?>">
                 <div style="font-weight: 600; margin-bottom: 8px;"><?php echo $q_key; ?></div>
-                <div style="font-size: 12px; color: #7f8c8d; margin-bottom: 8px;">
+                <div class="cell-muted" style="font-size: 12px; margin-bottom: 8px;">
                     <?php echo $q_info['period']; ?>
                 </div>
                 
@@ -393,7 +391,7 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
                     <div style="font-size: 13px; margin-bottom: 5px;">
                         <strong>Target:</strong> <?php echo $target; ?>
                     </div>
-                    <div style="font-size: 13px; margin-bottom: 5px; color: #27AE60;">
+                    <div style="font-size: 13px; margin-bottom: 5px; color: var(--green-fg);">
                         <strong>Actual:</strong> <?php echo $actual; ?>
                     </div>
                     <div style="font-size: 13px; margin-bottom: 5px;">
@@ -403,20 +401,22 @@ elseif ($current_month >= 10 && $current_month <= 12) $current_quarter = 'Q4';
                         echo $status == 'Completed' ? 'success' : 
                             ($status == 'In Progress' ? 'info' : 
                             ($status == 'Delayed' ? 'danger' : 'secondary')); 
-                    ?>" style="font-size: 10px;">
+                    ?>">
                         <?php echo $status; ?>
                     </span>
                 <?php else: ?>
                     <div style="font-size: 13px; margin-bottom: 5px;">
                         <strong>Target:</strong> <?php echo $target; ?>
                     </div>
-                    <div style="color: #95A5A6; font-style: italic; font-size: 12px;">
+                    <div class="cell-muted" style="font-style: italic; font-size: 12px;">
                         Not yet updated
                     </div>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
     </div>
+    </div>
+</div>
 </div>
 
 <?php include 'includes/footer.php'; ?>
@@ -494,16 +494,16 @@ function calculateAchievement() {
         
         if (achievement >= 100) {
             statusText = 'Excellent! Target Exceeded!';
-            statusColor = '#27AE60';
+            statusColor = 'var(--green-fg)';
         } else if (achievement >= 80) {
             statusText = 'Good Progress! On Track';
-            statusColor = '#3498DB';
+            statusColor = 'var(--blue-fg)';
         } else if (achievement >= 60) {
             statusText = 'Below Target - Action Needed';
-            statusColor = '#F39C12';
+            statusColor = 'var(--amber-fg)';
         } else {
             statusText = 'Significantly Below Target';
-            statusColor = '#E74C3C';
+            statusColor = 'var(--red-fg)';
         }
         
         document.getElementById('achievementStatus').textContent = statusText;

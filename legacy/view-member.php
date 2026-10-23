@@ -297,6 +297,12 @@ if ($can_open_folder && ($fstmt = $conn->prepare('SELECT COUNT(*) FROM member_do
     @media (max-width: 480px) {
         .vm-hero-main { align-items: flex-start; }
     }
+    .vm-fb-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+    .vm-fb-subject { color: var(--ink-900); font-size: 16px; }
+    .vm-fb-badges { margin-top: 5px; }
+    .vm-fb-stars { margin-bottom: 10px; font-size: 14px; color: var(--ink-100); }
+    .vm-fb-stars .is-on { color: var(--amber-fg); }
+    .vm-fb-message { color: var(--ink-400); margin: 10px 0; line-height: 1.6; }
 </style>
 
 <div class="vm-page">
@@ -869,13 +875,13 @@ if ($can_open_folder && ($fstmt = $conn->prepare('SELECT COUNT(*) FROM member_do
                             </div>
 
                             <div class="timeline-content">
-                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                                <div class="vm-fb-head">
                                     <div>
-                                        <strong style="color: #2C3E50; font-size: 16px;">
+                                        <strong class="vm-fb-subject">
                                             <?php echo h($feedback['subject'] ?? 'No Subject'); ?>
                                         </strong>
 
-                                        <div style="margin-top: 5px;">
+                                        <div class="vm-fb-badges">
                                             <span class="badge badge-info">
                                                 <?php echo h($feedback['feedback_type'] ?? 'General'); ?>
                                             </span>
@@ -894,15 +900,14 @@ if ($can_open_folder && ($fstmt = $conn->prepare('SELECT COUNT(*) FROM member_do
                                 </div>
 
                                 <?php if (!empty($feedback['rating'])): ?>
-                                    <div style="margin-bottom: 10px;">
+                                    <div class="vm-fb-stars">
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star"
-                                               style="color: <?php echo $i <= (int)$feedback['rating'] ? '#F39C12' : '#ddd'; ?>; font-size: 14px;"></i>
+                                            <i class="fas fa-star<?php echo $i <= (int)$feedback['rating'] ? ' is-on' : ''; ?>" aria-hidden="true"></i>
                                         <?php endfor; ?>
                                     </div>
                                 <?php endif; ?>
 
-                                <p style="color: #7f8c8d; margin: 10px 0; line-height: 1.6;">
+                                <p class="vm-fb-message">
                                     <?php echo nl2br(h($feedback['feedback_message'] ?? '')); ?>
                                 </p>
 

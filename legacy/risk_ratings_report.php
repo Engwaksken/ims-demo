@@ -388,253 +388,197 @@ foreach ($ratings as $rr) {
 ?>
 
 <style>
-/* ---- Layout ---- */
-.rrr-wrap { max-width:1450px; margin:0 auto; }
-.rrr-header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px; }
-.rrr-header h2 { margin:0 0 4px; font-weight:800; font-size:24px; color:#111827; }
-.rrr-header .sub { color:#6b7280; font-size:14px; }
+/* risk_ratings_report.php: heat-map cells and legend unique to this page.
+   Hero, stat cards, card, table, buttons and empty state come from reports.css. */
+.rrr-stats { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.rrr-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.rrr-legend-item { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--ink-500); }
+.rrr-swatch { width: 14px; height: 14px; flex-shrink: 0; border-radius: 3px; border: 1px solid var(--ink-100); }
+.rrr-swatch.score-low  { background: var(--green-bg); border-color: var(--green-border); }
+.rrr-swatch.score-mid  { background: var(--amber-bg); border-color: var(--amber-border); }
+.rrr-swatch.score-high { background: var(--red-bg);   border-color: var(--red-border); }
+.rrr-swatch.score-none { background: var(--ink-50); }
 
-/* ---- Stats strip ---- */
-.rrr-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(105px,1fr)); gap:10px; margin-bottom:18px; }
-.rstat { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; box-shadow:0 2px 6px rgba(15,23,42,.04); }
-.rstat .sl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:#9ca3af; margin-bottom:3px; }
-.rstat .sv { font-size:22px; font-weight:800; color:#111827; line-height:1; }
-.rstat.c-blue .sv  { color:#1d4ed8; }
-.rstat.c-green .sv { color:#16a34a; }
-.rstat.c-amber .sv { color:#d97706; }
-.rstat.c-red .sv   { color:#dc2626; }
+.rrr-table th { text-align: center; }
+.rrr-table th.left { text-align: left; }
+.rrr-table th small { display: block; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.rrr-table td.center { text-align: center; }
+.rrr-table td.rrr-no { color: var(--ink-300); font-size: var(--fs-xs); }
+.rrr-table td.rrr-entity { font-weight: 600; color: var(--ink-700); }
+.rrr-table td.rrr-small { font-size: var(--fs-xs); }
+.rrr-table td.rrr-comment { font-size: var(--fs-xs); color: var(--ink-300); max-width: 200px; }
 
-/* ---- Legend ---- */
-.legend-row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
-.legend-item { display:flex; align-items:center; gap:6px; font-size:12px; color:#374151; }
-.legend-swatch { width:14px; height:14px; border-radius:3px; border:1px solid #ccc; flex-shrink:0; }
-.ls-low  { background:#C6EFCE; }
-.ls-mid  { background:#FFEB9C; }
-.ls-high { background:#FFC7CE; }
-.ls-none { background:#F2F2F2; }
+/* Heat-map cells: risk level maps to green / amber / red tokens. */
+.rrr-table td.score-none { background: var(--ink-50); color: var(--ink-300); text-align: center; }
+.rrr-table td.score-low  { background: var(--green-bg); color: var(--green-fg); font-weight: 700; text-align: center; }
+.rrr-table td.score-mid  { background: var(--amber-bg); color: var(--amber-fg); font-weight: 700; text-align: center; }
+.rrr-table td.score-high { background: var(--red-bg);   color: var(--red-fg);   font-weight: 700; text-align: center; }
+.rrr-table td.rec-proceed { background: var(--green-bg); color: var(--green-fg); }
+.rrr-table td.rec-cond    { background: var(--amber-bg); color: var(--amber-fg); }
+.rrr-table td.rec-decline { background: var(--red-bg);   color: var(--red-fg); }
 
-/* ---- Card ---- */
-.rrr-card { background:#fff; border:1px solid #e5e7eb; border-radius:16px; box-shadow:0 4px 16px rgba(15,23,42,.06); overflow:hidden; }
-.rrr-card-head {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:14px 20px; border-bottom:1px solid #f3f4f6; gap:12px; flex-wrap:wrap;
-    background:linear-gradient(135deg,#1F4E79,#2E75B6);
-}
-.rrr-card-head .ctitle { font-weight:700; font-size:15px; color:#fff; }
-.rrr-card-head .sub2   { font-size:11px; color:rgba(255,255,255,.7); margin-top:2px; }
-.count-pill { background:rgba(255,255,255,.2); color:#fff; border-radius:999px; padding:3px 10px; font-size:12px; font-weight:700; }
-
-/* ---- Table ---- */
-.rrr-table { width:100%; border-collapse:collapse; font-size:12px; }
-.rrr-table thead tr { background:#2E75B6; }
-.rrr-table th {
-    padding:9px 10px; text-align:center; font-size:10.5px; font-weight:700;
-    text-transform:uppercase; letter-spacing:.35px; color:#fff;
-    white-space:nowrap; border:1px solid #1F4E79;
-}
-.rrr-table th.left { text-align:left; }
-.rrr-table td { padding:8px 10px; border:1px solid #d1d5db; vertical-align:middle; color:#374151; }
-.rrr-table td.center { text-align:center; }
-.rrr-table tbody tr:nth-child(even) td { background:#eef2f9; }
-.rrr-table tbody tr:hover td { filter:brightness(.96); }
-
-/* ---- Score cells ---- */
-.score-none { background:#F2F2F2 !important; color:#9ca3af; text-align:center; }
-.score-low  { background:#C6EFCE !important; color:#276221; font-weight:700; text-align:center; }
-.score-mid  { background:#FFEB9C !important; color:#7D4E17; font-weight:700; text-align:center; }
-.score-high { background:#FFC7CE !important; color:#9C0006; font-weight:700; text-align:center; }
-
-/* ---- Recommendation cells ---- */
-.rec-proceed { background:#C6EFCE !important; color:#276221; }
-.rec-cond    { background:#FFEB9C !important; color:#7D4E17; }
-.rec-decline { background:#FFC7CE !important; color:#9C0006; }
-
-/* ---- Empty state ---- */
-.rrr-empty { text-align:center; padding:60px 20px; color:#6b7280; }
-.rrr-empty i { font-size:48px; color:#d1d5db; display:block; margin-bottom:12px; }
-
-/* ---- Download button ---- */
-.btn-pdf {
-    display:inline-flex; align-items:center; gap:8px;
-    padding:9px 20px; background:#dc2626; color:#fff;
-    border-radius:10px; font-size:13px; font-weight:700;
-    text-decoration:none; transition:filter .15s, transform .1s;
-}
-.btn-pdf:hover { filter:brightness(.88); color:#fff; text-decoration:none; transform:translateY(-1px); }
-.btn-pdf:active { transform:translateY(0); }
-
-/* ---- Table footer ---- */
-.table-foot { padding:12px 20px; border-top:1px solid #f3f4f6; font-size:11px; color:#9ca3af; text-align:right; background:#fafbfc; }
-
-@media(max-width:900px){ .rrr-stats{grid-template-columns:repeat(3,1fr);} }
-@media(max-width:600px){ .rrr-stats{grid-template-columns:repeat(2,1fr);} }
+.rrr-foot { padding: 12px 22px; border-top: 1px solid var(--ink-50); text-align: right; }
 </style>
 
-<div class="container-fluid py-4">
-  <div class="rrr-wrap">
+<div class="page-stack">
+
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-chart-bar" aria-hidden="true"></i> Risk Ratings Report</h1>
+            <p>All generated risk assessments, averaged across the 6 risk categories.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="manage_risk_ratings" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+            </a>
+            <?php if ($totalCount > 0): ?>
+                <a href="risk_ratings_report?pdf=1" class="btn btn-primary">
+                    <i class="fas fa-file-pdf" aria-hidden="true"></i> Download PDF Report
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
 
     <?php if (!empty($_SESSION['error'])): ?>
-      <div class="alert alert-danger alert-dismissible fade show">
-        <?= h(strip_tags((string)$_SESSION['error'])) ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-      <?php unset($_SESSION['error']); ?>
+        <div class="alert alert-danger">
+            <?= h(strip_tags((string)$_SESSION['error'])) ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
-    <!-- Page header -->
-    <div class="rrr-header">
-      <div>
-        <h2><i class="fas fa-chart-bar me-2 text-primary"></i>Risk Ratings Report</h2>
-        <div class="sub">All generated risk assessments - average across 6 risk categories</div>
-      </div>
-      <div class="d-flex gap-2 flex-wrap align-items-center">
-        <?php if ($totalCount > 0): ?>
-          <a href="risk_ratings_report?pdf=1" class="btn-pdf">
-            <i class="fas fa-file-pdf"></i> Download PDF Report
-          </a>
-        <?php endif; ?>
-        <a href="manage_risk_ratings" class="btn btn-light border">
-          <i class="fas fa-arrow-left me-1"></i> Back
-        </a>
-      </div>
-    </div>
-
-    <!-- Stats strip -->
-    <div class="rrr-stats">
-      <div class="rstat c-blue">
-        <div class="sl">Total</div>
-        <div class="sv"><?= $totalCount ?></div>
-      </div>
-      <div class="rstat c-green">
-        <div class="sl">Low Risk</div>
-        <div class="sv"><?= $lowCount ?></div>
-      </div>
-      <div class="rstat c-amber">
-        <div class="sl">Moderate</div>
-        <div class="sv"><?= $midCount ?></div>
-      </div>
-      <div class="rstat c-red">
-        <div class="sl">High Risk</div>
-        <div class="sv"><?= $highCount ?></div>
-      </div>
-      <div class="rstat">
-        <div class="sl">No Score</div>
-        <div class="sv"><?= $noScore ?></div>
-      </div>
-      <div class="rstat c-green">
-        <div class="sl">Proceed</div>
-        <div class="sv"><?= $proceedCount ?></div>
-      </div>
-      <div class="rstat c-amber">
-        <div class="sl">Hold/Maybe</div>
-        <div class="sv"><?= $holdCount ?></div>
-      </div>
-      <div class="rstat c-red">
-        <div class="sl">Decline</div>
-        <div class="sv"><?= $declineCount ?></div>
-      </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="legend-row">
-      <div class="legend-item"><span class="legend-swatch ls-low"></span>Avg 1.0-1.5 &nbsp;Low Risk / Yes for Cohort One</div>
-      <div class="legend-item"><span class="legend-swatch ls-mid"></span>Avg 1.6-2.5 &nbsp;Moderate Risk / Maybe</div>
-      <div class="legend-item"><span class="legend-swatch ls-high"></span>Avg 2.6-5.0 &nbsp;High Risk / Not Yet Ready</div>
-      <div class="legend-item"><span class="legend-swatch ls-none"></span>No score recorded</div>
+    <!-- Stats -->
+    <div class="stats-grid reports-stats rrr-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-blue" aria-hidden="true"><i class="fas fa-list"></i></div>
+            <div class="stat-info"><span class="stat-label">Total</span><span class="stat-value"><?= $totalCount ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-info"><span class="stat-label">Low Risk</span><span class="stat-value"><?= $lowCount ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-exclamation"></i></div>
+            <div class="stat-info"><span class="stat-label">Moderate</span><span class="stat-value"><?= $midCount ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-red" aria-hidden="true"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="stat-info"><span class="stat-label">High Risk</span><span class="stat-value"><?= $highCount ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-slate" aria-hidden="true"><i class="fas fa-minus"></i></div>
+            <div class="stat-info"><span class="stat-label">No Score</span><span class="stat-value"><?= $noScore ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-info"><span class="stat-label">Proceed</span><span class="stat-value"><?= $proceedCount ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-pause"></i></div>
+            <div class="stat-info"><span class="stat-label">Hold/Maybe</span><span class="stat-value"><?= $holdCount ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-red" aria-hidden="true"><i class="fas fa-circle-xmark"></i></div>
+            <div class="stat-info"><span class="stat-label">Decline</span><span class="stat-value"><?= $declineCount ?></span></div>
+        </div>
     </div>
 
     <!-- Table card -->
-    <div class="rrr-card">
-      <div class="rrr-card-head">
-        <div>
-          <div class="ctitle">
-            <i class="fas fa-shield-alt me-2"></i> Risk Rating Report - Due Diligence
-          </div>
-          <div class="sub2">
-            Avg = (Governance + Operational + Delivery + Fiducial + Safeguarding + Reputational) &divide; 6
-            &nbsp;&bull;&nbsp; Scale: 1 = Low &rarr; 5 = High
-          </div>
-        </div>
-        <span class="count-pill"><?= $totalCount ?> startup<?= $totalCount !== 1 ? 's' : '' ?></span>
-      </div>
-
-      <?php if ($totalCount === 0): ?>
-        <div class="rrr-empty">
-          <i class="fas fa-folder-open"></i>
-          <div style="font-size:15px;font-weight:600;">No generated risk ratings found</div>
-          <div style="font-size:13px;color:#9ca3af;margin-top:6px;">
-            Only risk ratings with status <strong>Generated</strong> appear here.
-            Go to <a href="manage_risk_ratings">Manage Risk Ratings</a> to generate assessments.
-          </div>
-        </div>
-      <?php else: ?>
-
-        <div class="table-responsive">
-          <table class="rrr-table">
-            <thead>
-              <tr>
-                <th style="width:3%">No</th>
-                <th class="left" style="width:13%">Entity Name</th>
-                <th class="left" style="width:9%">Prepared By</th>
-                <th style="width:6%">Governance<br>Risks</th>
-                <th style="width:6%">Operational<br>Risk</th>
-                <th style="width:6%">Delivery<br>Risk</th>
-                <th style="width:6%">Fiducial<br>Risk</th>
-                <th style="width:7%">Safeguarding<br>Risks</th>
-                <th style="width:7%">Reputational<br>Risk</th>
-                <th style="width:7%">
-                  Avg Score
-                  <br><span style="font-size:9px;font-weight:400;text-transform:none;">(out of 5)</span>
-                </th>
-                <th style="width:9%">Recommendation</th>
-                <th class="left" style="width:21%">Comments</th>
-              </tr>
-            </thead>
-            <tbody>
-              <?php foreach ($ratings as $i => $rr):
-                $scores  = $rr['scores'];
-                $avg     = $rr['avg_score'];
-                $rec     = (string)($rr['recommendation']    ?? '');
-                $comment = (string)($rr['reviewer_comments'] ?? '');
-                $gov  = (float)($scores['governance']   ?? 0);
-                $oper = (float)($scores['operational']  ?? 0);
-                $del  = (float)($scores['delivery']     ?? 0);
-                $fid  = (float)($scores['fiducial']     ?? 0);
-                $safe = (float)($scores['safeguarding'] ?? 0);
-                $rep  = (float)($scores['reputational'] ?? 0);
-              ?>
-              <tr>
-                <td class="center" style="color:#9ca3af;font-size:11px;"><?= $i + 1 ?></td>
-                <td style="font-weight:600;color:#111827;"><?= h($rr['startup_name'] ?? '-') ?></td>
-                <td style="font-size:11px;"><?= h($rr['preparer']) ?></td>
-                <td class="<?= scoreClass($gov)  ?>"><?= fmtScore($gov)  ?></td>
-                <td class="<?= scoreClass($oper) ?>"><?= fmtScore($oper) ?></td>
-                <td class="<?= scoreClass($del)  ?>"><?= fmtScore($del)  ?></td>
-                <td class="<?= scoreClass($fid)  ?>"><?= fmtScore($fid)  ?></td>
-                <td class="<?= scoreClass($safe) ?>"><?= fmtScore($safe) ?></td>
-                <td class="<?= scoreClass($rep)  ?>"><?= fmtScore($rep)  ?></td>
-                <td class="<?= scoreClass($avg)  ?>"><?= $avg > 0 ? number_format($avg, 2) : '-' ?></td>
-                <td class="<?= recClass($rec) ?>"><?= h($rec ?: '-') ?></td>
-                <td style="font-size:11px;color:#6b7280;max-width:200px;"><?= h($comment ?: '-') ?></td>
-              </tr>
-              <?php endforeach; ?>
-            </tbody>
-          </table>
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <h3><i class="fas fa-shield-alt" aria-hidden="true"></i> Risk Rating Report - Due Diligence</h3>
+                <span class="cell-muted">
+                    Avg = (Governance + Operational + Delivery + Fiducial + Safeguarding + Reputational) &divide; 6
+                    &nbsp;&bull;&nbsp; Scale: 1 = Low &rarr; 5 = High
+                </span>
+            </div>
+            <span class="badge badge-info"><?= $totalCount ?> startup<?= $totalCount !== 1 ? 's' : '' ?></span>
         </div>
 
-        <div class="table-foot">
-          <i class="fas fa-calculator me-1"></i>
-          Avg Score = (Governance + Operational + Delivery + Fiducial + Safeguarding + Reputational) &divide; 6
-          &nbsp;&nbsp;|&nbsp;&nbsp;
-          Report generated: <?= date('d M Y, H:i') ?>
-          &nbsp;&nbsp;|&nbsp;&nbsp;
-          <?= $totalCount ?> startup<?= $totalCount !== 1 ? 's' : '' ?> displayed
+        <!-- Legend -->
+        <div class="card-body rrr-legend">
+            <div class="rrr-legend-item"><span class="rrr-swatch score-low"></span>Avg 1.0-1.5 &nbsp;Low Risk / Yes for Cohort One</div>
+            <div class="rrr-legend-item"><span class="rrr-swatch score-mid"></span>Avg 1.6-2.5 &nbsp;Moderate Risk / Maybe</div>
+            <div class="rrr-legend-item"><span class="rrr-swatch score-high"></span>Avg 2.6-5.0 &nbsp;High Risk / Not Yet Ready</div>
+            <div class="rrr-legend-item"><span class="rrr-swatch score-none"></span>No score recorded</div>
         </div>
 
-      <?php endif; ?>
-    </div><!-- /.rrr-card -->
+        <?php if ($totalCount === 0): ?>
+            <div class="empty-state">
+                <i class="fas fa-folder-open" aria-hidden="true"></i>
+                <h4>No generated risk ratings found</h4>
+                <p>
+                    Only risk ratings with status <strong>Generated</strong> appear here.
+                    Go to <a href="manage_risk_ratings">Manage Risk Ratings</a> to generate assessments.
+                </p>
+            </div>
+        <?php else: ?>
 
-  </div><!-- /.rrr-wrap -->
-</div><!-- /.container-fluid -->
+            <div class="table-responsive">
+                <table class="table rrr-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th class="left">Entity Name</th>
+                            <th class="left">Prepared By</th>
+                            <th>Governance<br>Risks</th>
+                            <th>Operational<br>Risk</th>
+                            <th>Delivery<br>Risk</th>
+                            <th>Fiducial<br>Risk</th>
+                            <th>Safeguarding<br>Risks</th>
+                            <th>Reputational<br>Risk</th>
+                            <th>
+                                Avg Score
+                                <small>(out of 5)</small>
+                            </th>
+                            <th>Recommendation</th>
+                            <th class="left">Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($ratings as $i => $rr):
+                            $scores  = $rr['scores'];
+                            $avg     = $rr['avg_score'];
+                            $rec     = (string)($rr['recommendation']    ?? '');
+                            $comment = (string)($rr['reviewer_comments'] ?? '');
+                            $gov  = (float)($scores['governance']   ?? 0);
+                            $oper = (float)($scores['operational']  ?? 0);
+                            $del  = (float)($scores['delivery']     ?? 0);
+                            $fid  = (float)($scores['fiducial']     ?? 0);
+                            $safe = (float)($scores['safeguarding'] ?? 0);
+                            $rep  = (float)($scores['reputational'] ?? 0);
+                        ?>
+                        <tr>
+                            <td class="center rrr-no"><?= $i + 1 ?></td>
+                            <td class="rrr-entity"><?= h($rr['startup_name'] ?? '-') ?></td>
+                            <td class="rrr-small"><?= h($rr['preparer']) ?></td>
+                            <td class="<?= scoreClass($gov)  ?>"><?= fmtScore($gov)  ?></td>
+                            <td class="<?= scoreClass($oper) ?>"><?= fmtScore($oper) ?></td>
+                            <td class="<?= scoreClass($del)  ?>"><?= fmtScore($del)  ?></td>
+                            <td class="<?= scoreClass($fid)  ?>"><?= fmtScore($fid)  ?></td>
+                            <td class="<?= scoreClass($safe) ?>"><?= fmtScore($safe) ?></td>
+                            <td class="<?= scoreClass($rep)  ?>"><?= fmtScore($rep)  ?></td>
+                            <td class="<?= scoreClass($avg)  ?>"><?= $avg > 0 ? number_format($avg, 2) : '-' ?></td>
+                            <td class="<?= recClass($rec) ?>"><?= h($rec ?: '-') ?></td>
+                            <td class="rrr-comment"><?= h($comment ?: '-') ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="rrr-foot cell-muted">
+                <i class="fas fa-calculator" aria-hidden="true"></i>
+                Avg Score = (Governance + Operational + Delivery + Fiducial + Safeguarding + Reputational) &divide; 6
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                Report generated: <?= date('d M Y, H:i') ?>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                <?= $totalCount ?> startup<?= $totalCount !== 1 ? 's' : '' ?> displayed
+            </div>
+
+        <?php endif; ?>
+    </div>
+
+</div><!-- /.page-stack -->
 
 <?php require_once 'includes/footer.php'; ?>

@@ -673,24 +673,6 @@ function ms_page_url(int $page): string
    WORKPLAN-BASED MILESTONES
    ========================================================================== */
 
-.ms-workplan-note {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-
-    margin-bottom: 16px;
-    padding: 11px 13px;
-
-    border: 1px solid #bae6fd;
-    border-left: 4px solid #0284c7;
-    border-radius: 8px;
-
-    background: #f0f9ff;
-    color: #0c4a6e;
-
-    font-size: 12px;
-}
-
 .ms-stat-click {
     color: inherit;
     text-decoration: none;
@@ -707,7 +689,7 @@ function ms_page_url(int $page): string
 .ms-stat-click:hover .stat-card {
     transform: translateY(-2px);
 
-    box-shadow: 0 8px 20px rgba(15,23,42,.08);
+    box-shadow: var(--shadow-md);
 }
 
 .ms-workplan-cell {
@@ -717,14 +699,14 @@ function ms_page_url(int $page): string
 }
 
 .ms-workplan-title {
-    color: #0f172a;
+    color: var(--ink-700);
 
     font-size: 12px;
     font-weight: 800;
 }
 
 .ms-workplan-year {
-    color: #64748b;
+    color: var(--ink-300);
 
     font-size: 10.5px;
     font-weight: 700;
@@ -749,15 +731,15 @@ function ms_page_url(int $page): string
 
     border-radius: 999px;
 
-    background: #ecfdf5;
-    color: #047857;
+    background: var(--green-bg);
+    color: var(--green-fg);
 
     font-size: 10.5px;
     font-weight: 800;
 }
 
 .ms-activity-range {
-    color: #64748b;
+    color: var(--ink-300);
 
     font-size: 10.5px;
 }
@@ -773,7 +755,7 @@ function ms_page_url(int $page): string
 
     margin-bottom: 5px;
 
-    color: #475569;
+    color: var(--ink-400);
 
     font-size: 10.5px;
     font-weight: 800;
@@ -786,7 +768,7 @@ function ms_page_url(int $page): string
 
     border-radius: 999px;
 
-    background: #e2e8f0;
+    background: var(--ink-100);
 }
 
 .ms-progress-fill {
@@ -798,15 +780,15 @@ function ms_page_url(int $page): string
 }
 
 .ms-progress-fill.high {
-    background: #22c55e;
+    background: var(--green-fg);
 }
 
 .ms-progress-fill.mid {
-    background: #f59e0b;
+    background: var(--amber-fg);
 }
 
 .ms-progress-fill.low {
-    background: #0ea5e9;
+    background: var(--blue-fg);
 }
 
 .ms-frequency {
@@ -818,8 +800,8 @@ function ms_page_url(int $page): string
 
     border-radius: 999px;
 
-    background: #f8fafc;
-    color: #475569;
+    background: var(--slate-bg);
+    color: var(--slate-fg);
 
     font-size: 10px;
     font-weight: 800;
@@ -834,11 +816,11 @@ function ms_page_url(int $page): string
 
     padding: 14px 16px;
 
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--ink-100);
 }
 
 .ms-pagination-info {
-    color: #64748b;
+    color: var(--ink-300);
 
     font-size: 11.5px;
     font-weight: 700;
@@ -860,11 +842,11 @@ function ms_page_url(int $page): string
 
     padding: 0 9px;
 
-    border: 1px solid #dbe3ec;
-    border-radius: 8px;
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-sm);
 
-    background: #fff;
-    color: #475569;
+    background: var(--surface-card);
+    color: var(--ink-400);
 
     font-size: 11px;
     font-weight: 800;
@@ -873,15 +855,15 @@ function ms_page_url(int $page): string
 }
 
 .ms-page-btn:hover {
-    background: #f0fdfa;
-    color: #0f766e;
+    background: var(--brand-50);
+    color: var(--brand-700);
 }
 
 .ms-page-btn.active {
-    border-color: #0f766e;
+    border-color: var(--brand-500);
 
-    background: #0f766e;
-    color: #fff;
+    background: var(--brand-500);
+    color: var(--ink-0);
 }
 
 @media (max-width: 800px) {
@@ -892,21 +874,21 @@ function ms_page_url(int $page): string
 }
 </style>
 
-<div class="milestones-wrap">
+<div class="milestones-wrap page-stack">
 
     <!-- ================================================================
          HERO
          ================================================================ -->
 
-    <div class="milestones-hero">
+    <div class="page-hero">
 
-        <div class="milestones-hero-text">
+        <div>
 
             <h1>
 
                 <i
                     class="fas fa-flag-checkered"
-                    style="margin-right:10px;opacity:.85;"
+                    aria-hidden="true"
                 ></i>
 
                 Workplan Milestones
@@ -938,7 +920,7 @@ function ms_page_url(int $page): string
     </div>
 
 
-    <div class="ms-workplan-note">
+    <div class="alert alert-info">
 
         <i class="fas fa-circle-info"></i>
 
@@ -954,7 +936,7 @@ function ms_page_url(int $page): string
          STATS
          ================================================================ -->
 
-    <div class="milestones-stats">
+    <div class="stats-grid reports-stats milestones-stats">
 
         <a
             href="milestones"
@@ -1489,7 +1471,7 @@ function ms_page_url(int $page): string
 
                 <i
                     class="fas fa-flag-checkered"
-                    style="color:#0f766e;margin-right:8px;"
+                    style="color:var(--brand-500);margin-right:8px;"
                 ></i>
 
                 Workplan Milestones
@@ -1867,7 +1849,7 @@ function ms_page_url(int $page): string
 
                                             <span
                                                 style="
-                                                    color:#94a3b8;
+                                                    color:var(--ink-200);
                                                     font-size:11px;
                                                 "
                                             >
@@ -1913,8 +1895,8 @@ function ms_page_url(int $page): string
                                             style="
                                                 color:
                                                 <?= $isOverdue
-                                                    ? '#dc2626'
-                                                    : '#475569' ?>;
+                                                    ? 'var(--red-fg)'
+                                                    : 'var(--ink-400)' ?>;
                                             "
                                         >
 
@@ -2066,7 +2048,7 @@ function ms_page_url(int $page): string
 
                                         <span
                                             style="
-                                                color:#94a3b8;
+                                                color:var(--ink-200);
                                                 font-size:11px;
                                             "
                                         >

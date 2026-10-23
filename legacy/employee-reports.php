@@ -126,44 +126,146 @@ function h($v): string {
 }
 ?>
 
-<link rel="stylesheet" href="css/opportunities.css">
+<style>
+/* Employee reports (er-) */
+.er-filters { margin-bottom: 0; }
 
-<div class="rpt-page">
+.er-chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
 
-    <!-- -- Hero --------------------------------------------------------------- -->
-    <div class="opp-hero">
-        <div class="opp-hero-left">
-            <div class="opp-eyebrow">
-                <span class="opp-dot"></span>
-                People &amp; Analytics
-            </div>
-            <h1><i class="fas fa-chart-bar"></i> Employee Reports</h1>
+.er-chart-wrap {
+    position: relative;
+    height: 260px;
+    margin: 4px 0 12px;
+}
+
+.er-legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px; }
+.er-legend-item { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-500); }
+.er-legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.er-dot-blue   { background: var(--blue-fg); }
+.er-dot-brand  { background: var(--brand-500); }
+.er-dot-purple { background: var(--purple-fg); }
+.er-dot-slate  { background: var(--slate-fg); }
+.er-dot-red    { background: var(--red-fg); }
+
+.er-progress-row + .er-progress-row { margin-top: 14px; }
+.er-progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 7px;
+    font-size: 13px;
+    color: var(--ink-500);
+}
+.er-progress-label strong { color: var(--ink-700); font-weight: 700; }
+.er-progress-label span { color: var(--ink-300); font-size: 12px; white-space: nowrap; }
+.er-progress-bg {
+    height: 22px;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+}
+.er-progress-fill {
+    height: 100%;
+    min-width: 36px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, var(--brand-600), var(--brand-400));
+    color: var(--ink-0);
+    font-size: 11px;
+    font-weight: 700;
+    transition: width .5s var(--ease-out);
+}
+
+.er-mini-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+}
+.er-mini-grid + .er-chart-wrap { margin-top: 20px; }
+.er-mini {
+    padding: 16px;
+    text-align: center;
+    background: var(--surface-card);
+    border: 1px solid var(--ink-100);
+    border-left: 4px solid var(--ink-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+.er-mini-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 6px; }
+.er-mini-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-300);
+    line-height: 1.4;
+}
+.er-mini.red    { border-left-color: var(--red-fg); }
+.er-mini.amber  { border-left-color: var(--amber-fg); }
+.er-mini.blue   { border-left-color: var(--blue-fg); }
+.er-mini.purple { border-left-color: var(--purple-fg); }
+.er-mini.green  { border-left-color: var(--green-fg); }
+.er-mini.slate  { border-left-color: var(--slate-fg); }
+.er-mini.red    .er-mini-value { color: var(--red-fg); }
+.er-mini.amber  .er-mini-value { color: var(--amber-fg); }
+.er-mini.blue   .er-mini-value { color: var(--blue-fg); }
+.er-mini.purple .er-mini-value { color: var(--purple-fg); }
+.er-mini.green  .er-mini-value { color: var(--green-fg); }
+.er-mini.slate  .er-mini-value { color: var(--slate-fg); }
+
+.er-expiring .table-responsive { margin-top: 0; }
+
+@media (max-width: 900px) {
+    .er-chart-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .er-mini-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 400px) {
+    .er-mini-grid { grid-template-columns: 1fr; }
+    .er-mini-value { font-size: 26px; }
+}
+</style>
+
+<div class="page-stack">
+
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-chart-bar" aria-hidden="true"></i> Employee Reports</h1>
             <p>Workforce insights, contract tracking and profile completion for <?= h($filter_year) ?>.</p>
         </div>
 
-        <div class="opp-hero-actions">
-            <a href="employees-list" class="btn btn-white btn-sm">
-                <i class="fas fa-arrow-left"></i> Directory
+        <div class="hero-actions">
+            <a href="employees-list" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Directory
             </a>
-            <button onclick="exportToExcel()" class="btn btn-white btn-sm">
-                <i class="fas fa-file-excel"></i> Excel
+            <button type="button" onclick="exportToExcel()" class="btn">
+                <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
             </button>
-            <button onclick="exportToPDF(this)" class="btn btn-white btn-sm">
-                <i class="fas fa-file-pdf"></i> PDF
+            <button type="button" onclick="exportToPDF(this)" class="btn">
+                <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
             </button>
-            <button onclick="window.print()" class="btn btn-white btn-sm">
-                <i class="fas fa-print"></i> Print
+            <button type="button" onclick="window.print()" class="btn">
+                <i class="fas fa-print" aria-hidden="true"></i> Print
             </button>
         </div>
     </div>
 
     <!-- -- Filters ------------------------------------------------------------ -->
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-filter icon-brand"></i> Filters</h3>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-filter" aria-hidden="true"></i> Filters</h3>
         </div>
-        <div class="opp-panel-body">
-            <form method="GET" action="" class="rpt-filter-form filters-bar" aria-label="Report filters">
+        <div class="card-body">
+            <form method="GET" action="" class="filters-bar er-filters" aria-label="Report filters">
                 <div class="form-group">
                     <label class="form-label" for="fDept">Department</label>
                     <select name="department" id="fDept" class="form-control">
@@ -188,10 +290,10 @@ function h($v): string {
 
                 <div class="filters-actions">
                     <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="fas fa-filter"></i> Apply
+                        <i class="fas fa-filter" aria-hidden="true"></i> Apply
                     </button>
                     <a href="employee-reports" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-times"></i> Clear
+                        <i class="fas fa-times" aria-hidden="true"></i> Clear
                     </a>
                 </div>
             </form>
@@ -201,7 +303,7 @@ function h($v): string {
     <!-- -- KPI Stats ---------------------------------------------------------- -->
     <div class="stats-grid reports-stats">
         <div class="stat-card">
-            <div class="stat-icon bg-primary"><i class="fas fa-users"></i></div>
+            <div class="stat-icon bg-primary"><i class="fas fa-users" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Total</span>
                 <span class="stat-value"><?= $total_employees ?></span>
@@ -209,7 +311,7 @@ function h($v): string {
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Approved</span>
                 <span class="stat-value"><?= $approved ?></span>
@@ -217,7 +319,7 @@ function h($v): string {
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-amber"><i class="fas fa-user-tie"></i></div>
+            <div class="stat-icon bg-amber"><i class="fas fa-user-tie" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Staff</span>
                 <span class="stat-value"><?= $staff ?></span>
@@ -225,7 +327,7 @@ function h($v): string {
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-purple"><i class="fas fa-briefcase"></i></div>
+            <div class="stat-icon bg-purple"><i class="fas fa-briefcase" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Consultants</span>
                 <span class="stat-value"><?= $consultants ?></span>
@@ -233,9 +335,7 @@ function h($v): string {
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-teal">
-                <i class="fas fa-venus-mars"></i>
-            </div>
+            <div class="stat-icon bg-teal"><i class="fas fa-venus-mars" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Female %</span>
                 <span class="stat-value"><?= pct($female, $safe_total) ?>%</span>
@@ -243,9 +343,7 @@ function h($v): string {
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-amber">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
+            <div class="stat-icon bg-amber"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Expiring</span>
                 <span class="stat-value"><?= count($contracts_expiring) ?></span>
@@ -254,32 +352,32 @@ function h($v): string {
     </div>
 
     <!-- -- Charts row --------------------------------------------------------- -->
-    <div class="rpt-chart-grid">
+    <div class="er-chart-grid">
 
         <!-- Contract Type -->
-        <div class="opp-panel">
-            <div class="opp-panel-head">
-                <h3><i class="fas fa-briefcase icon-brand"></i> Contract Type Distribution</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-briefcase" aria-hidden="true"></i> Contract Type Distribution</h3>
             </div>
-            <div class="opp-panel-body">
-                <div class="rpt-chart-wrap">
+            <div class="card-body">
+                <div class="er-chart-wrap">
                     <canvas id="contractTypeChart"></canvas>
                 </div>
-                <div class="rpt-legend">
-                    <div class="rpt-legend-item">
-                        <div class="rpt-legend-dot rpt-legend-dot-blue"></div>
+                <div class="er-legend">
+                    <div class="er-legend-item">
+                        <div class="er-legend-dot er-dot-blue"></div>
                         Staff: <?= $staff ?> (<?= pct($staff, $safe_total) ?>%)
                     </div>
-                    <div class="rpt-legend-item">
-                        <div class="rpt-legend-dot rpt-legend-dot-brand"></div>
+                    <div class="er-legend-item">
+                        <div class="er-legend-dot er-dot-brand"></div>
                         Consultant: <?= $consultants ?> (<?= pct($consultants, $safe_total) ?>%)
                     </div>
-                    <div class="rpt-legend-item">
-                        <div class="rpt-legend-dot rpt-legend-dot-purple"></div>
+                    <div class="er-legend-item">
+                        <div class="er-legend-dot er-dot-purple"></div>
                         Temp: <?= $temp ?> (<?= pct($temp, $safe_total) ?>%)
                     </div>
-                    <div class="rpt-legend-item">
-                        <div class="rpt-legend-dot rpt-legend-dot-slate"></div>
+                    <div class="er-legend-item">
+                        <div class="er-legend-dot er-dot-slate"></div>
                         Casual: <?= $casual ?> (<?= pct($casual, $safe_total) ?>%)
                     </div>
                 </div>
@@ -287,21 +385,21 @@ function h($v): string {
         </div>
 
         <!-- Gender -->
-        <div class="opp-panel">
-            <div class="opp-panel-head">
-                <h3><i class="fas fa-venus-mars icon-brand"></i> Gender Distribution</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-venus-mars" aria-hidden="true"></i> Gender Distribution</h3>
             </div>
-            <div class="opp-panel-body">
-                <div class="rpt-chart-wrap">
+            <div class="card-body">
+                <div class="er-chart-wrap">
                     <canvas id="genderChart"></canvas>
                 </div>
-                <div class="rpt-legend">
-                    <div class="rpt-legend-item">
-                        <div class="rpt-legend-dot rpt-legend-dot-blue"></div>
+                <div class="er-legend">
+                    <div class="er-legend-item">
+                        <div class="er-legend-dot er-dot-blue"></div>
                         Male: <?= $male ?> (<?= pct($male, $safe_total) ?>%)
                     </div>
-                    <div class="rpt-legend-item">
-                        <div class="rpt-legend-dot rpt-legend-dot-red"></div>
+                    <div class="er-legend-item">
+                        <div class="er-legend-dot er-dot-red"></div>
                         Female: <?= $female ?> (<?= pct($female, $safe_total) ?>%)
                     </div>
                 </div>
@@ -310,22 +408,25 @@ function h($v): string {
     </div>
 
     <!-- -- Department Distribution -------------------------------------------- -->
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-building icon-brand"></i> Department Distribution</h3>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-building" aria-hidden="true"></i> Department Distribution</h3>
         </div>
-        <div class="opp-panel-body">
+        <div class="card-body">
             <?php if (empty($dept_stats)): ?>
-                <p class="text-muted-sm">No department data available.</p>
+                <div class="empty-state">
+                    <i class="fas fa-building" aria-hidden="true"></i>
+                    <p>No department data available.</p>
+                </div>
             <?php else: ?>
                 <?php foreach ($dept_stats as $dept): ?>
-                    <div class="rpt-progress-row">
-                        <div class="rpt-progress-label">
+                    <div class="er-progress-row">
+                        <div class="er-progress-label">
                             <strong><?= h($dept['name']) ?></strong>
-                            <span><?= $dept['count'] ?> employee<?= $dept['count'] !== 1 ? 's' : '' ?> &nbsp;·&nbsp; <?= $dept['percentage'] ?>%</span>
+                            <span><?= $dept['count'] ?> employee<?= $dept['count'] !== 1 ? 's' : '' ?> &nbsp;&middot;&nbsp; <?= $dept['percentage'] ?>%</span>
                         </div>
-                        <div class="rpt-progress-bg">
-                            <div class="rpt-progress-fill" style="width:<?= $dept['percentage'] ?>%">
+                        <div class="er-progress-bg">
+                            <div class="er-progress-fill" style="width:<?= $dept['percentage'] ?>%">
                                 <?= $dept['percentage'] ?>%
                             </div>
                         </div>
@@ -336,70 +437,70 @@ function h($v): string {
     </div>
 
     <!-- -- Tenure Analysis ---------------------------------------------------- -->
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-calendar-alt icon-brand"></i> Employee Tenure Analysis</h3>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-calendar-alt" aria-hidden="true"></i> Employee Tenure Analysis</h3>
         </div>
-        <div class="opp-panel-body">
-            <div class="rpt-mini-grid">
-                <div class="rpt-mini red">
-                    <div class="rpt-mini-value"><?= $tenure_ranges['new'] ?></div>
-                    <div class="rpt-mini-label">New&ensp;&lt;&nbsp;6 months</div>
+        <div class="card-body">
+            <div class="er-mini-grid">
+                <div class="er-mini red">
+                    <div class="er-mini-value"><?= $tenure_ranges['new'] ?></div>
+                    <div class="er-mini-label">New&ensp;&lt;&nbsp;6 months</div>
                 </div>
-                <div class="rpt-mini amber">
-                    <div class="rpt-mini-value"><?= $tenure_ranges['junior'] ?></div>
-                    <div class="rpt-mini-label">Junior&ensp;6m - 1y</div>
+                <div class="er-mini amber">
+                    <div class="er-mini-value"><?= $tenure_ranges['junior'] ?></div>
+                    <div class="er-mini-label">Junior&ensp;6m - 1y</div>
                 </div>
-                <div class="rpt-mini blue">
-                    <div class="rpt-mini-value"><?= $tenure_ranges['mid'] ?></div>
-                    <div class="rpt-mini-label">Mid-Level&ensp;1 - 3y</div>
+                <div class="er-mini blue">
+                    <div class="er-mini-value"><?= $tenure_ranges['mid'] ?></div>
+                    <div class="er-mini-label">Mid-Level&ensp;1 - 3y</div>
                 </div>
-                <div class="rpt-mini purple">
-                    <div class="rpt-mini-value"><?= $tenure_ranges['senior'] ?></div>
-                    <div class="rpt-mini-label">Senior&ensp;3 - 5y</div>
+                <div class="er-mini purple">
+                    <div class="er-mini-value"><?= $tenure_ranges['senior'] ?></div>
+                    <div class="er-mini-label">Senior&ensp;3 - 5y</div>
                 </div>
-                <div class="rpt-mini green">
-                    <div class="rpt-mini-value"><?= $tenure_ranges['veteran'] ?></div>
-                    <div class="rpt-mini-label">Veteran&ensp;5y+</div>
+                <div class="er-mini green">
+                    <div class="er-mini-value"><?= $tenure_ranges['veteran'] ?></div>
+                    <div class="er-mini-label">Veteran&ensp;5y+</div>
                 </div>
             </div>
 
-            <div class="rpt-chart-wrap">
+            <div class="er-chart-wrap">
                 <canvas id="tenureChart"></canvas>
             </div>
         </div>
     </div>
 
     <!-- -- Profile Completion Status ------------------------------------------ -->
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-tasks icon-brand"></i> Profile Completion Status</h3>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-tasks" aria-hidden="true"></i> Profile Completion Status</h3>
         </div>
-        <div class="opp-panel-body">
-            <div class="rpt-mini-grid">
-                <div class="rpt-mini green">
-                    <div class="rpt-mini-value"><?= $approved ?></div>
-                    <div class="rpt-mini-label">Approved</div>
+        <div class="card-body">
+            <div class="er-mini-grid">
+                <div class="er-mini green">
+                    <div class="er-mini-value"><?= $approved ?></div>
+                    <div class="er-mini-label">Approved</div>
                 </div>
-                <div class="rpt-mini blue">
-                    <div class="rpt-mini-value"><?= $submitted ?></div>
-                    <div class="rpt-mini-label">Submitted</div>
+                <div class="er-mini blue">
+                    <div class="er-mini-value"><?= $submitted ?></div>
+                    <div class="er-mini-label">Submitted</div>
                 </div>
-                <div class="rpt-mini slate">
-                    <div class="rpt-mini-value"><?= $draft ?></div>
-                    <div class="rpt-mini-label">Draft</div>
+                <div class="er-mini slate">
+                    <div class="er-mini-value"><?= $draft ?></div>
+                    <div class="er-mini-label">Draft</div>
                 </div>
-                <div class="rpt-mini red">
-                    <div class="rpt-mini-value"><?= $rejected ?></div>
-                    <div class="rpt-mini-label">Rejected</div>
+                <div class="er-mini red">
+                    <div class="er-mini-value"><?= $rejected ?></div>
+                    <div class="er-mini-label">Rejected</div>
                 </div>
-                <div class="rpt-mini green">
-                    <div class="rpt-mini-value"><?= $profiles_complete ?></div>
-                    <div class="rpt-mini-label">Fully Complete</div>
+                <div class="er-mini green">
+                    <div class="er-mini-value"><?= $profiles_complete ?></div>
+                    <div class="er-mini-label">Fully Complete</div>
                 </div>
-                <div class="rpt-mini amber">
-                    <div class="rpt-mini-value"><?= $profiles_incomplete ?></div>
-                    <div class="rpt-mini-label">Incomplete</div>
+                <div class="er-mini amber">
+                    <div class="er-mini-value"><?= $profiles_incomplete ?></div>
+                    <div class="er-mini-label">Incomplete</div>
                 </div>
             </div>
         </div>
@@ -407,22 +508,20 @@ function h($v): string {
 
     <!-- -- Contracts Expiring ------------------------------------------------- -->
     <?php if (!empty($contracts_expiring)): ?>
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-exclamation-triangle icon-amber"></i> Contracts Expiring in Next 90 Days</h3>
+    <div class="card er-expiring">
+        <div class="card-header">
+            <h3><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Contracts Expiring in Next 90 Days</h3>
             <span class="badge badge-warning"><?= count($contracts_expiring) ?> contract<?= count($contracts_expiring) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="opp-panel-body opp-panel-body-flush">
-            <div class="rpt-warning">
-                <i class="fas fa-info-circle"></i>
-                <div>
-                    <strong><?= count($contracts_expiring) ?> contract<?= count($contracts_expiring) !== 1 ? 's' : '' ?></strong> expiring soon.
-                    <span>Please review and take necessary action.</span>
-                </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                <strong><?= count($contracts_expiring) ?> contract<?= count($contracts_expiring) !== 1 ? 's' : '' ?></strong> expiring soon.
+                Please review and take necessary action.
             </div>
 
-            <div class="table-overflow">
-                <table class="rpt-table">
+            <div class="table-responsive">
+                <table class="table table-stack">
                     <thead>
                         <tr>
                             <th>Employee</th>
@@ -436,22 +535,22 @@ function h($v): string {
                     <tbody>
                         <?php foreach ($contracts_expiring as $c): ?>
                             <tr>
-                                <td><strong><?= h($c['name']) ?></strong></td>
-                                <td><?= h($c['job_title']) ?></td>
-                                <td><?= h($c['department']) ?></td>
-                                <td><?= date('d M Y', strtotime($c['end_date'])) ?></td>
-                                <td>
-                                    <span class="badge <?= $c['days_remaining'] <= 30 ? 'badge-urgent' : ($c['days_remaining'] <= 60 ? 'badge-action' : 'badge-monitor') ?>">
+                                <td data-label="Employee"><strong><?= h($c['name']) ?></strong></td>
+                                <td data-label="Job Title"><?= h($c['job_title']) ?></td>
+                                <td data-label="Department"><?= h($c['department']) ?></td>
+                                <td data-label="End Date"><?= date('d M Y', strtotime($c['end_date'])) ?></td>
+                                <td data-label="Days Left">
+                                    <span class="badge <?= $c['days_remaining'] <= 30 ? 'badge-danger' : ($c['days_remaining'] <= 60 ? 'badge-warning' : 'badge-info') ?>">
                                         <?= $c['days_remaining'] ?> days
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Urgency">
                                     <?php if ($c['days_remaining'] <= 30): ?>
-                                        <span class="badge badge-urgent"><i class="fas fa-fire"></i> Urgent</span>
+                                        <span class="badge badge-danger"><i class="fas fa-fire" aria-hidden="true"></i> Urgent</span>
                                     <?php elseif ($c['days_remaining'] <= 60): ?>
-                                        <span class="badge badge-action"><i class="fas fa-clock"></i> Action Needed</span>
+                                        <span class="badge badge-warning"><i class="fas fa-clock" aria-hidden="true"></i> Action Needed</span>
                                     <?php else: ?>
-                                        <span class="badge badge-monitor"><i class="fas fa-eye"></i> Monitor</span>
+                                        <span class="badge badge-info"><i class="fas fa-eye" aria-hidden="true"></i> Monitor</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -463,15 +562,19 @@ function h($v): string {
     </div>
     <?php endif; ?>
 
-</div><!-- /.rpt-page -->
+</div><!-- /.page-stack -->
 
 <script>
 (function () {
     'use strict';
 
     // -- Shared chart defaults ------------------------------------------------
-    Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
-    Chart.defaults.color       = '#6b7280'; // --ink-300
+    // Chart colours come from the design tokens so the canvas matches the page.
+    const rootStyle = getComputedStyle(document.documentElement);
+    const tok = name => rootStyle.getPropertyValue(name).trim();
+
+    Chart.defaults.font.family = tok('--font-body');
+    Chart.defaults.color       = tok('--ink-300');
 
     // -- Contract Type doughnut -----------------------------------------------
     new Chart(document.getElementById('contractTypeChart'), {
@@ -480,9 +583,9 @@ function h($v): string {
             labels: ['Staff', 'Consultant', 'Temp', 'Casual'],
             datasets: [{
                 data: [<?= $staff ?>, <?= $consultants ?>, <?= $temp ?>, <?= $casual ?>],
-                backgroundColor: ['#3b82f6', '#f97316', '#7e22ce', '#475569'],
+                backgroundColor: [tok('--blue-fg'), tok('--brand-500'), tok('--purple-fg'), tok('--slate-fg')],
                 borderWidth: 3,
-                borderColor: '#ffffff',
+                borderColor: tok('--surface-card'),
                 hoverOffset: 6
             }]
         },
@@ -501,9 +604,9 @@ function h($v): string {
             labels: ['Male', 'Female'],
             datasets: [{
                 data: [<?= $male ?>, <?= $female ?>],
-                backgroundColor: ['#3b82f6', '#b91c1c'],
+                backgroundColor: [tok('--blue-fg'), tok('--red-fg')],
                 borderWidth: 3,
-                borderColor: '#ffffff',
+                borderColor: tok('--surface-card'),
                 hoverOffset: 6
             }]
         },
@@ -524,7 +627,7 @@ function h($v): string {
                 data: [<?= $tenure_ranges['new'] ?>, <?= $tenure_ranges['junior'] ?>,
                        <?= $tenure_ranges['mid'] ?>, <?= $tenure_ranges['senior'] ?>,
                        <?= $tenure_ranges['veteran'] ?>],
-                backgroundColor: ['#b91c1c', '#b45309', '#1d4ed8', '#7e22ce', '#15803d'],
+                backgroundColor: [tok('--red-fg'), tok('--amber-fg'), tok('--blue-fg'), tok('--purple-fg'), tok('--green-fg')],
                 borderRadius: 6,
                 borderSkipped: false
             }]
@@ -537,7 +640,7 @@ function h($v): string {
                 y: {
                     beginAtZero: true,
                     ticks: { stepSize: 1 },
-                    grid: { color: 'rgba(0,0,0,.04)' }
+                    grid: { color: tok('--ink-50') }
                 }
             },
             plugins: { legend: { display: false } }

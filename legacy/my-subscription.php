@@ -77,227 +77,84 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
 ?>
 
 <style>
-.subscription-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
-
-.subscription-header h1 {
-    font-size: 32px;
-    margin-bottom: 5px;
-}
-
-.subscription-card {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-}
-
-.subscription-overview {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 25px;
-    margin-bottom: 30px;
-}
-
-.overview-item {
-    text-align: center;
-    padding: 25px;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 2px solid #ecf0f1;
-}
-
-.overview-item.primary {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    border: none;
-}
-
-.overview-item h3 {
-    font-size: 36px;
-    margin: 10px 0;
-    font-weight: 700;
-}
-
-.overview-item p {
-    margin: 0;
-    opacity: 0.8;
-    font-size: 14px;
-}
-
-.status-banner {
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.status-banner.success {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
-}
-
-.status-banner.warning {
-    background: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
-}
-
-.status-banner.danger {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
-}
-
-.status-banner i {
-    font-size: 32px;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin: 25px 0;
-}
-
-.info-item {
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.info-item label {
-    font-size: 12px;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.info-item .value {
-    font-size: 18px;
-    color: #2c3e50;
-    font-weight: 600;
-}
-
-.payment-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.payment-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 1000px;
-}
-
-.payment-table thead {
-    background: #f8f9fa;
-}
-
-.payment-table th {
-    padding: 14px 12px;
-    text-align: left;
-    font-size: 13px;
-    color: #2c3e50;
-    border-bottom: 2px solid #ecf0f1;
-    white-space: nowrap;
-}
-
-.payment-table td {
-    padding: 14px 12px;
-    border-bottom: 1px solid #ecf0f1;
-    font-size: 14px;
-    color: #2c3e50;
-    vertical-align: middle;
-}
-
-.payment-table tbody tr:hover {
-    background: #fff8f3;
-}
-
-.payment-table .amount {
-    color: #2ECC71;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
-.payment-table .actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.payment-table code {
-    background: #f1f3f5;
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-size: 13px;
-}
-
-.renewal-reminder {
-    background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
-    color: white;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    text-align: center;
-}
-
-.renewal-reminder h3 {
-    margin: 0 0 10px 0;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: #7f8c8d;
-}
-
-.empty-state i {
-    font-size: 48px;
-    margin-bottom: 15px;
-    color: #bdc3c7;
-}
+/* My Subscription: overview tiles, detail tiles and the payments table extras. */
+.ms-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
+.ms-tile { text-align: center; padding: 22px; background: var(--ink-50); border-radius: var(--radius-lg); border: 1px solid var(--ink-100); }
+.ms-tile > i { font-size: 24px; }
+.ms-tile-value { font-size: 22px; margin: 10px 0; font-weight: 700; color: var(--ink-900); }
+.ms-tile p { margin: 0; font-size: 14px; color: var(--ink-400); }
+.ms-tile.is-primary { background: var(--brand-50); border-color: var(--brand-200); }
+.ms-tile.is-primary > i,
+.ms-tile.is-primary .ms-tile-value { color: var(--brand-600); }
+.ms-tile.is-primary > i { font-size: 32px; }
+.ms-tile.is-primary .ms-tile-value { font-size: 34px; }
+.ms-icon-brand { color: var(--brand-500); }
+.ms-icon-success { color: var(--green-fg); }
+.ms-icon-warning { color: var(--amber-fg); }
+.ms-icon-danger { color: var(--red-fg); }
+.ms-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+.ms-info-item { padding: 15px; background: var(--ink-50); border-radius: var(--radius-md); }
+.ms-info-item label { display: block; font-size: 12px; color: var(--ink-300); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+.ms-info-value { font-size: 16px; color: var(--ink-900); font-weight: 600; }
+.ms-on { color: var(--green-fg); }
+.ms-off { color: var(--red-fg); }
+.ms-amount { color: var(--green-fg); font-weight: 700; white-space: nowrap; }
+.ms-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.ms-more { text-align: center; margin-top: 20px; }
+.ms-banner-body { flex: 1; }
+.ms-banner-body p { margin: 5px 0 0; }
+.ms-check-label { display: flex; align-items: center; gap: 10px; cursor: pointer; text-transform: none; letter-spacing: 0; }
 </style>
 
-<div class="subscription-header">
-    <h1><i class="fas fa-credit-card"></i> My Subscription</h1>
-    <p style="margin: 0; opacity: 0.9;">Manage your membership and subscription details</p>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-credit-card" aria-hidden="true"></i> My Subscription</h1>
+        <p>Manage your membership and subscription details.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="payment-history" class="btn">
+            <i class="fas fa-history" aria-hidden="true"></i> Full Payment History
+        </a>
+        <button onclick="openModal('autoRenewModal')" class="btn">
+            <i class="fas fa-cog" aria-hidden="true"></i> Auto-Renew Settings
+        </button>
+        <button onclick="openModal('upgradeModal')" class="btn">
+            <i class="fas fa-arrow-up" aria-hidden="true"></i> Change Plan
+        </button>
+        <?php if ($days_remaining <= 30 || $status == 'Expired'): ?>
+            <button onclick="openModal('renewModal')" class="btn btn-primary">
+                <i class="fas fa-sync" aria-hidden="true"></i> Renew Subscription
+            </button>
+        <?php endif; ?>
+    </div>
 </div>
 
 <?php if ($status == 'Expiring Soon'): ?>
-<div class="renewal-reminder">
-    <h3><i class="fas fa-bell"></i> Subscription Expiring Soon!</h3>
-    <p style="margin: 10px 0;">Your subscription will expire in <strong><?php echo $days_remaining; ?> days</strong>. Renew now to continue enjoying all membership benefits.</p>
-    <button onclick="openModal('renewModal')" class="btn btn-light btn-lg" style="margin-top: 10px;">
+<div class="alert alert-warning">
+    <i class="fas fa-bell" aria-hidden="true"></i>
+    <div class="ms-banner-body">
+        <strong>Subscription Expiring Soon!</strong>
+        <p>Your subscription will expire in <strong><?php echo $days_remaining; ?> days</strong>. Renew now to continue enjoying all membership benefits.</p>
+    </div>
+    <button onclick="openModal('renewModal')" class="btn btn-warning">
         <i class="fas fa-sync"></i> Renew Now
     </button>
 </div>
 <?php elseif ($status == 'Expired'): ?>
-<div class="status-banner danger">
-    <i class="fas fa-times-circle"></i>
-    <div>
+<div class="alert alert-danger">
+    <i class="fas fa-times-circle" aria-hidden="true"></i>
+    <div class="ms-banner-body">
         <strong>Subscription Expired</strong>
-        <p style="margin: 5px 0 0 0;">Your subscription expired on <?php echo date('d M Y', strtotime($member['subscription_end_date'])); ?>. Please renew to continue using our services.</p>
+        <p>Your subscription expired on <?php echo date('d M Y', strtotime($member['subscription_end_date'])); ?>. Please renew to continue using our services.</p>
     </div>
 </div>
 <?php elseif ($status == 'Active'): ?>
-<div class="status-banner success">
-    <i class="fas fa-check-circle"></i>
-    <div>
+<div class="alert alert-success">
+    <i class="fas fa-check-circle" aria-hidden="true"></i>
+    <div class="ms-banner-body">
         <strong>Subscription Active</strong>
-        <p style="margin: 5px 0 0 0;">Your subscription is active and in good standing. Expires on <?php echo date('d M Y', strtotime($member['subscription_end_date'])); ?>.</p>
+        <p>Your subscription is active and in good standing. Expires on <?php echo date('d M Y', strtotime($member['subscription_end_date'])); ?>.</p>
     </div>
 </div>
 <?php endif; ?>
@@ -336,115 +193,96 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
     </div>
 </div>
 
-<div class="subscription-card">
-    <h3 style="margin-bottom: 25px; color: #2c3e50;">
-        <i class="fas fa-info-circle"></i> Subscription Details
-    </h3>
-
-    <div class="subscription-overview">
-        <div class="overview-item primary">
-            <i class="fas fa-calendar" style="font-size: 36px;"></i>
-            <h3><?php echo abs($days_remaining); ?></h3>
-            <p><?php echo $days_remaining >= 0 ? 'Days Remaining' : 'Days Overdue'; ?></p>
-        </div>
-
-        <div class="overview-item">
-            <i class="fas fa-tag" style="font-size: 24px; color: #ff6b35;"></i>
-            <h3 style="font-size: 24px;"><?php echo htmlspecialchars($member['subscription_plan']); ?></h3>
-            <p>Current Plan</p>
-        </div>
-
-        <div class="overview-item">
-            <i class="fas fa-money-bill" style="font-size: 24px; color: #2ECC71;"></i>
-            <h3 style="font-size: 24px;"><?php echo format_currency($member['subscription_amount']); ?></h3>
-            <p>Monthly Amount</p>
-        </div>
-
-        <div class="overview-item">
-            <i class="fas fa-<?php echo $status_icon; ?>" style="font-size: 24px; color: <?php
-                echo $status_color == 'success' ? '#2ECC71' :
-                     ($status_color == 'warning' ? '#F39C12' : '#E74C3C');
-            ?>;"></i>
-            <h3 style="font-size: 24px;"><?php echo $status; ?></h3>
-            <p>Status</p>
-        </div>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-info-circle" aria-hidden="true"></i> Subscription Details</h3>
     </div>
+    <div class="card-body">
+        <div class="ms-overview">
+            <div class="ms-tile is-primary">
+                <i class="fas fa-calendar"></i>
+                <div class="ms-tile-value"><?php echo abs($days_remaining); ?></div>
+                <p><?php echo $days_remaining >= 0 ? 'Days Remaining' : 'Days Overdue'; ?></p>
+            </div>
 
-    <div class="info-grid">
-        <div class="info-item">
-            <label>Membership Number</label>
-            <div class="value">
-                <code><?php echo htmlspecialchars($member['membership_number']); ?></code>
+            <div class="ms-tile">
+                <i class="fas fa-tag ms-icon-brand"></i>
+                <div class="ms-tile-value"><?php echo htmlspecialchars($member['subscription_plan']); ?></div>
+                <p>Current Plan</p>
+            </div>
+
+            <div class="ms-tile">
+                <i class="fas fa-money-bill ms-icon-success"></i>
+                <div class="ms-tile-value"><?php echo format_currency($member['subscription_amount']); ?></div>
+                <p>Monthly Amount</p>
+            </div>
+
+            <div class="ms-tile">
+                <i class="fas fa-<?php echo $status_icon; ?> <?php
+                    echo $status_color == 'success' ? 'ms-icon-success' :
+                         ($status_color == 'warning' ? 'ms-icon-warning' : 'ms-icon-danger');
+                ?>"></i>
+                <div class="ms-tile-value"><?php echo $status; ?></div>
+                <p>Status</p>
             </div>
         </div>
 
-        <div class="info-item">
-            <label>Member Type</label>
-            <div class="value"><?php echo htmlspecialchars($member['member_type']); ?></div>
-        </div>
+        <div class="ms-info-grid">
+            <div class="ms-info-item">
+                <label>Membership Number</label>
+                <div class="ms-info-value">
+                    <code><?php echo htmlspecialchars($member['membership_number']); ?></code>
+                </div>
+            </div>
 
-        <div class="info-item">
-            <label>Registration Date</label>
-            <div class="value"><?php echo date('d M Y', strtotime($member['registration_date'])); ?></div>
-        </div>
+            <div class="ms-info-item">
+                <label>Member Type</label>
+                <div class="ms-info-value"><?php echo htmlspecialchars($member['member_type']); ?></div>
+            </div>
 
-        <div class="info-item">
-            <label>Start Date</label>
-            <div class="value"><?php echo date('d M Y', strtotime($member['subscription_start_date'])); ?></div>
-        </div>
+            <div class="ms-info-item">
+                <label>Registration Date</label>
+                <div class="ms-info-value"><?php echo date('d M Y', strtotime($member['registration_date'])); ?></div>
+            </div>
 
-        <div class="info-item">
-            <label>End Date</label>
-            <div class="value"><?php echo date('d M Y', strtotime($member['subscription_end_date'])); ?></div>
-        </div>
+            <div class="ms-info-item">
+                <label>Start Date</label>
+                <div class="ms-info-value"><?php echo date('d M Y', strtotime($member['subscription_start_date'])); ?></div>
+            </div>
 
-        <div class="info-item">
-            <label>Auto-Renew</label>
-            <div class="value">
-                <?php if ($member['auto_renew']): ?>
-                    <span style="color: #2ECC71;"><i class="fas fa-check"></i> Enabled</span>
-                <?php else: ?>
-                    <span style="color: #E74C3C;"><i class="fas fa-times"></i> Disabled</span>
-                <?php endif; ?>
+            <div class="ms-info-item">
+                <label>End Date</label>
+                <div class="ms-info-value"><?php echo date('d M Y', strtotime($member['subscription_end_date'])); ?></div>
+            </div>
+
+            <div class="ms-info-item">
+                <label>Auto-Renew</label>
+                <div class="ms-info-value">
+                    <?php if ($member['auto_renew']): ?>
+                        <span class="ms-on"><i class="fas fa-check"></i> Enabled</span>
+                    <?php else: ?>
+                        <span class="ms-off"><i class="fas fa-times"></i> Disabled</span>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div style="display: flex; gap: 10px; margin-top: 25px; flex-wrap: wrap;">
-        <?php if ($days_remaining <= 30 || $status == 'Expired'): ?>
-            <button onclick="openModal('renewModal')" class="btn btn-primary">
-                <i class="fas fa-sync"></i> Renew Subscription
-            </button>
-        <?php endif; ?>
-
-        <button onclick="openModal('upgradeModal')" class="btn btn-success">
-            <i class="fas fa-arrow-up"></i> Change Plan
-        </button>
-
-        <button onclick="openModal('autoRenewModal')" class="btn btn-info">
-            <i class="fas fa-cog"></i> Auto-Renew Settings
-        </button>
-
-        <a href="payment-history" class="btn btn-secondary">
-            <i class="fas fa-history"></i> Full Payment History
-        </a>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-history"></i> Recent Payment History</h3>
+        <h3><i class="fas fa-history" aria-hidden="true"></i> Recent Payment History</h3>
     </div>
 
     <div class="card-body">
         <?php if (empty($payments)): ?>
             <div class="empty-state">
-                <i class="fas fa-receipt"></i>
+                <i class="fas fa-receipt" aria-hidden="true"></i>
                 <p>No payment history available</p>
             </div>
         <?php else: ?>
-            <div class="payment-table-wrapper">
-                <table class="payment-table">
+            <div class="table-responsive">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Invoice</th>
@@ -495,12 +333,12 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
                                 </td>
 
                                 <td>
-                                    <span class="badge badge-primary">
+                                    <span class="badge badge-info">
                                         <?php echo htmlspecialchars($payment['subscription_plan'] ?? '-'); ?>
                                     </span>
                                 </td>
 
-                                <td class="amount">
+                                <td class="ms-amount">
                                     <?php echo format_currency($payment['amount'] ?? 0); ?>
                                 </td>
 
@@ -531,7 +369,7 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
                                 </td>
 
                                 <td>
-                                    <div class="actions">
+                                    <div class="ms-actions">
                                         <?php if (($payment['payment_status'] ?? '') == 'Pending'): ?>
                                             <a href="make-payment?payment_id=<?php echo (int) $payment['payment_id']; ?>" class="btn btn-success btn-sm">
                                                 <i class="fas fa-money-bill"></i> Pay
@@ -549,7 +387,7 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
                                         <?php endif; ?>
 
                                         <?php if (($payment['payment_status'] ?? '') != 'Pending' && empty($payment['receipt_path'])): ?>
-                                            <span style="color: #7f8c8d;">-</span>
+                                            <span class="cell-muted">-</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -560,7 +398,7 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
             </div>
 
             <?php if (count($payments) >= 10): ?>
-                <div style="text-align: center; margin-top: 20px;">
+                <div class="ms-more">
                     <a href="payment-history" class="btn btn-primary">
                         <i class="fas fa-list"></i> View All Payments
                     </a>
@@ -569,6 +407,8 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
         <?php endif; ?>
     </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <div id="renewModal" class="modal">
     <div class="modal-content">
@@ -690,7 +530,7 @@ $stats['days_member'] = ceil((time() - $registration_date) / (60 * 60 * 24));
                 <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
 
                 <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <label class="ms-check-label">
                         <input type="checkbox" name="auto_renew" value="1"
                             <?php echo $member['auto_renew'] ? 'checked' : ''; ?>>
                         <span>Enable automatic subscription renewal</span>

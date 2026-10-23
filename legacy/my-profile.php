@@ -32,27 +32,9 @@ $can_edit = true; // Always allow editing regardless of status
 ?>
 
 <style>
-.profile-section {
-    background: #fff;
-    padding: 26px 30px;
-    margin-bottom: 22px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
-    border: 1px solid #eef2f7;
-}
-.profile-section h4 {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #ecf0f1;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 .hint-text {
     font-size: 12px;
-    color: #7f8c8d;
+    color: var(--ink-300);
     font-style: italic;
     margin-top: 5px;
 }
@@ -60,51 +42,35 @@ $can_edit = true; // Always allow editing regardless of status
     display: flex;
     align-items: center;
     padding: 10px 14px;
-    background: #f8f9fa;
-    border-radius: 6px;
+    background: var(--surface-hover);
+    border-radius: var(--radius-sm);
     margin-top: 8px;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--border);
 }
 .signature-pad {
-    border: 2px dashed #3498DB;
-    border-radius: 6px;
+    border: 2px dashed var(--brand-500);
+    border-radius: var(--radius-sm);
     cursor: crosshair;
-    background: #fff;
+    background: var(--ink-0);
     display: block;
     max-width: 100%;
 }
-
-/* Status banner for approved � informational only, no lock */
 .status-info-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 10px;
-    padding: 14px 18px;
-    border-radius: 9px;
-    margin-bottom: 20px;
-    font-size: 14px;
-}
-.status-info-bar.approved { background:#d4edda; color:#155724; border-left:4px solid #28a745; }
-.status-info-bar.submitted{ background:#d1ecf1; color:#0c5460; border-left:4px solid #17a2b8; }
-.status-info-bar.rejected { background:#f8d7da; color:#721c24; border-left:4px solid #dc3545; }
-.status-info-bar.draft    { background:#fff3cd; color:#856404; border-left:4px solid #ffc107; }
-
-.edit-notice {
-    background: #fffbeb;
-    border: 1px solid #fcd34d;
-    border-left: 4px solid #f59e0b;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #92400e;
-    margin-bottom: 22px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
 }
 </style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-id-badge" aria-hidden="true"></i> My Employee Profile</h1>
+        <p>Keep your personal, contact and official details up to date for HR.</p>
+    </div>
+</div>
 
 <?php
 /* -- Status banner --------------------------------- */
@@ -113,13 +79,14 @@ if ($employee):
     $cls    = strtolower($st);
     $icons  = ['Approved'=>'fa-check-circle','Submitted'=>'fa-clock','Rejected'=>'fa-times-circle','Draft'=>'fa-edit'];
     $icon   = $icons[$st] ?? 'fa-info-circle';
+    $alertCls = ['Approved'=>'alert-success','Submitted'=>'alert-info','Rejected'=>'alert-danger','Draft'=>'alert-warning'][$st] ?? 'alert-info';
 ?>
-<div class="status-info-bar <?= $cls ?>">
+<div class="alert <?= $alertCls ?> status-info-bar <?= $cls ?>">
     <div>
         <i class="fas <?= $icon ?>"></i>
         <strong>Profile Status: <?= htmlspecialchars($st) ?></strong>
         <?php if ($st === 'Approved'): ?>
-            &mdash; Approved by <strong><?= htmlspecialchars($employee['approved_by_name'] ?? '�') ?></strong>
+            &mdash; Approved by <strong><?= htmlspecialchars($employee['approved_by_name'] ?? '—') ?></strong>
             on <?= date('d M Y', strtotime($employee['approved_at'])) ?>
         <?php elseif ($st === 'Submitted'): ?>
             &mdash; Pending review by HR.
@@ -135,7 +102,7 @@ if ($employee):
 </div>
 
 <?php if ($st === 'Approved'): ?>
-<div class="edit-notice">
+<div class="alert alert-warning">
     <i class="fas fa-pen"></i>
     Your profile is <strong>Approved</strong> but you can still update your information below.
     Re-submitting will set the status back to <strong>Submitted</strong> for HR to re-approve.
@@ -145,14 +112,15 @@ if ($employee):
 <?php endif; ?>
 
 
-<form method="POST" action="my-employee-profile-process" enctype="multipart/form-data" id="employeeForm">
+<form method="POST" action="my-employee-profile-process" enctype="multipart/form-data" id="employeeForm" class="page-stack">
     <?php if ($employee): ?>
         <input type="hidden" name="employee_id" value="<?= $employee['employee_id'] ?>">
     <?php endif; ?>
 
     <!-- -- Personal Information  -->
-    <div class="profile-section">
-        <h4><i class="fas fa-user"></i> Personal Information</h4>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-user" aria-hidden="true"></i> Personal Information</h3></div>
+        <div class="card-body">
 
         <div class="form-group">
             <label for="full_name" class="required">Full Name</label>
@@ -242,11 +210,13 @@ if ($employee):
             <input type="text" id="nationality" name="nationality" class="form-control"
                    value="<?= htmlspecialchars($employee['nationality'] ?? '') ?>">
         </div>
+        </div>
     </div>
 
     <!-- -- Contact Information ------------------ -->
-    <div class="profile-section">
-        <h4><i class="fas fa-address-book"></i> Contact Information</h4>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-address-book" aria-hidden="true"></i> Contact Information</h3></div>
+        <div class="card-body">
 
         <div class="form-row">
             <div class="form-group">
@@ -279,11 +249,13 @@ if ($employee):
             <textarea id="residence_address" name="residence_address" class="form-control" rows="3"><?= htmlspecialchars($employee['residence_address'] ?? '') ?></textarea>
             <div class="hint-text">Please give clear directions that one can use to get to your current residence.</div>
         </div>
+        </div>
     </div>
 
     <!-- -- Emergency Contact -------------------- -->
-    <div class="profile-section">
-        <h4><i class="fas fa-phone-alt"></i> Emergency Contact</h4>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-phone-alt" aria-hidden="true"></i> Emergency Contact</h3></div>
+        <div class="card-body">
 
         <div class="form-row">
             <div class="form-group">
@@ -315,11 +287,13 @@ if ($employee):
                        value="<?= $employee['number_of_dependants'] ?? '0' ?>">
             </div>
         </div>
+        </div>
     </div>
 
     <!-- -- Official Details --------------------- -->
-    <div class="profile-section">
-        <h4><i class="fas fa-id-card"></i> Official Details</h4>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-id-card" aria-hidden="true"></i> Official Details</h3></div>
+        <div class="card-body">
 
         <div class="form-row">
             <div class="form-group">
@@ -345,13 +319,15 @@ if ($employee):
             <input type="text" id="nin" name="nin" class="form-control"
                    value="<?= htmlspecialchars($employee['nin'] ?? '') ?>">
         </div>
+        </div>
     </div>
 
     <!-- -- Document Uploads --------------------- -->
-    <div class="profile-section">
-        <h4><i class="fas fa-file-upload"></i> Document Uploads</h4>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-file-upload" aria-hidden="true"></i> Document Uploads</h3></div>
+        <div class="card-body">
 
-        <div class="alert alert-info" style="margin-bottom:18px;">
+        <div class="alert alert-info">
             <i class="fas fa-info-circle"></i>
             Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 10 MB per file).
             Leave a field blank to keep the existing file.
@@ -386,10 +362,10 @@ if ($employee):
             <?php endif; ?>
             <?php if ($file_path): ?>
             <div class="document-preview">
-                <i class="fas fa-file-circle-check" style="font-size:22px;margin-right:10px;color:#3498DB;"></i>
+                <i class="fas fa-file-circle-check" style="font-size:22px;margin-right:10px;color:var(--brand-600);"></i>
                 <div style="flex:1;">
                     <small><strong>Current file:</strong> <?= basename($file_path) ?></small><br>
-                    <small style="color:#7f8c8d;">Upload a new file to replace it.</small>
+                    <small class="cell-muted">Upload a new file to replace it.</small>
                 </div>
                 <a href="<?= htmlspecialchars(ims_upload_url($file_path)) ?>" target="_blank" class="btn btn-sm btn-info">
                     <i class="fas fa-eye"></i> View
@@ -398,11 +374,13 @@ if ($employee):
             <?php endif; ?>
         </div>
         <?php endforeach; ?>
+        </div>
     </div>
 
     <!-- -- Certification / Signature ----------- -->
-    <div class="profile-section">
-        <h4><i class="fas fa-signature"></i> Certification</h4>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-signature" aria-hidden="true"></i> Certification</h3></div>
+        <div class="card-body">
 
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle"></i>
@@ -426,10 +404,12 @@ if ($employee):
             <input type="date" id="form_completion_date" name="form_completion_date"
                    class="form-control" required value="<?= date('Y-m-d') ?>" readonly>
         </div>
+        </div>
     </div>
 
     <!-- -- Action Buttons ----------------------- -->
-    <div class="profile-section">
+    <div class="card">
+        <div class="card-body">
         <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
             <button type="submit" name="save_draft" class="btn btn-secondary">
                 <i class="fas fa-save"></i> Save Draft
@@ -440,14 +420,16 @@ if ($employee):
             </button>
         </div>
         <?php if ($employee && $employee['status'] === 'Approved'): ?>
-        <p style="text-align:right;font-size:12px;color:#856404;margin-top:8px;">
+        <p style="text-align:right;font-size:12px;color:var(--amber-fg);margin-top:8px;">
             <i class="fas fa-info-circle"></i>
             Any change you save (including Save Draft) sends your profile back to <strong>Submitted</strong> for HR review.
         </p>
         <?php endif; ?>
+        </div>
     </div>
 
 </form>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js" integrity="sha384-WlgD02h8MN9icrgEOX8hj4xb9fs/MgaMecdLh5G2cdgDLPn1DNJSm6o2/MMVPt7m" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>

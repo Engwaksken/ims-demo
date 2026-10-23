@@ -94,183 +94,31 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
 ?>
 
 <style>
-.portal-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.member-info {
-    flex: 1;
-}
-
-.member-info h1 {
-    font-size: 28px;
-    margin-bottom: 8px;
-}
-
-.member-badge {
-    background: rgba(255,255,255,0.2);
-    padding: 10px 20px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-}
-
-.subscription-status {
-    text-align: center;
-    min-width: 200px;
-}
-
-.subscription-status .status-badge {
-    display: inline-block;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.subscription-status .status-badge.active {
-    background: #27AE60;
-}
-
-.subscription-status .status-badge.expiring {
-    background: #F39C12;
-}
-
-.subscription-status .status-badge.expired {
-    background: #E74C3C;
-}
-
-.quick-actions {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.quick-actions h3 {
-    margin-bottom: 20px;
-    color: #2c3e50;
-}
-
-.action-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.action-card {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 25px;
-    border-radius: 10px;
-    text-align: center;
-    text-decoration: none;
-    transition: all 0.3s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-}
-
-.action-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-    color: white;
-}
-
-.action-card i {
-    font-size: 40px;
-}
-
-.action-card .action-title {
-    font-weight: 600;
-    font-size: 16px;
-}
-
-.section-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.section-card h3 {
-    color: #ff6b35;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #f0f0f0;
-}
-
-.booking-item, .event-item, .payment-item {
-    background: #f8f9fa;
+/* Member dashboard: status chip in the hero, two-column lists of upcoming items. */
+.md-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; position: relative; }
+.md-status-note { font-size: 13px; opacity: .9; }
+.md-hero-meta { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.md-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.md-item {
+    background: var(--surface-hover);
     padding: 15px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin-bottom: 10px;
-    border-left: 4px solid var(--primary-color);
+    border-left: 4px solid var(--brand-500);
 }
-
-.booking-item h4, .event-item h4, .payment-item h4 {
-    margin-bottom: 8px;
-    color: #2c3e50;
-    font-size: 16px;
-}
-
-.item-meta {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    font-size: 13px;
-    color: #7f8c8d;
-    margin-bottom: 10px;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 40px;
-    color: #95a5a6;
-}
-
-.empty-state i {
-    font-size: 48px;
-    margin-bottom: 15px;
-}
-
-.alert-warning {
-    background: #fff3cd;
-    border: 2px solid #F39C12;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
-.alert-danger {
-    background: #f8d7da;
-    border: 2px solid #E74C3C;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
+.md-item h4 { margin: 0 0 8px; color: var(--ink-700); font-size: 16px; }
+.md-item-meta { display: flex; gap: 20px; flex-wrap: wrap; font-size: 13px; color: var(--ink-300); margin-bottom: 10px; }
+.md-alert-text { margin: 5px 0 10px; }
+@media (max-width: 900px) { .md-columns { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .md-status { align-items: flex-start; } }
 </style>
 
-<!-- Portal Header -->
-<div class="portal-header">
-    <div class="member-info">
-        <h1>Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h1>
-        <div class="member-badge">
-            <i class="fas fa-id-card"></i>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-house-user" aria-hidden="true"></i> Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h1>
+        <p class="md-hero-meta">
+            <i class="fas fa-id-card" aria-hidden="true"></i>
             <span><?php echo htmlspecialchars($member['membership_number']); ?></span>
             <span>|</span>
             <span><?php echo htmlspecialchars($member['member_type']); ?> Member</span>
@@ -278,18 +126,18 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
                 <span>|</span>
                 <span><?php echo htmlspecialchars($member['company_name']); ?></span>
             <?php endif; ?>
-        </div>
+        </p>
     </div>
-    
-    <div class="subscription-status">
-        <div class="status-badge <?php 
-            echo $member['membership_status'] == 'Active' ? 'active' : 
-                ($days_until_expiry <= 7 && $days_until_expiry > 0 ? 'expiring' : 'expired'); 
+
+    <div class="md-status">
+        <span class="badge badge-<?php 
+            echo $member['membership_status'] == 'Active' ? 'success' : 
+                ($days_until_expiry <= 7 && $days_until_expiry > 0 ? 'warning' : 'danger'); 
         ?>">
             <?php echo $member['membership_status']; ?>
-        </div>
+        </span>
         <?php if ($member['subscription_end_date']): ?>
-            <div style="font-size: 13px; opacity: 0.9;">
+            <div class="md-status-note">
                 <?php if ($days_until_expiry > 0): ?>
                     Expires in <?php echo $days_until_expiry; ?> days
                 <?php elseif ($days_until_expiry == 0): ?>
@@ -304,31 +152,37 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
 
 <!-- Expiry Warnings -->
 <?php if ($days_until_expiry <= 7 && $days_until_expiry > 0): ?>
-<div class="alert-warning">
-    <strong><i class="fas fa-exclamation-triangle"></i> Subscription Expiring Soon!</strong>
-    <p style="margin: 5px 0 0 0;">Your membership expires in <?php echo $days_until_expiry; ?> days. Please renew to continue enjoying hub services.</p>
-    <a href="my-subscription" class="btn btn-warning btn-sm" style="margin-top: 10px;">
-        <i class="fas fa-redo"></i> Renew Now
-    </a>
+<div class="alert alert-warning">
+    <div>
+        <strong><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Subscription Expiring Soon!</strong>
+        <p class="md-alert-text">Your membership expires in <?php echo $days_until_expiry; ?> days. Please renew to continue enjoying hub services.</p>
+        <a href="my-subscription" class="btn btn-warning btn-sm">
+            <i class="fas fa-redo" aria-hidden="true"></i> Renew Now
+        </a>
+    </div>
 </div>
 <?php elseif ($days_until_expiry < 0): ?>
-<div class="alert-danger">
-    <strong><i class="fas fa-times-circle"></i> Subscription Expired!</strong>
-    <p style="margin: 5px 0 0 0;">Your membership expired <?php echo abs($days_until_expiry); ?> days ago. Renew now to regain access.</p>
-    <a href="my-subscription" class="btn btn-danger btn-sm" style="margin-top: 10px;">
-        <i class="fas fa-redo"></i> Renew Membership
-    </a>
+<div class="alert alert-danger">
+    <div>
+        <strong><i class="fas fa-times-circle" aria-hidden="true"></i> Subscription Expired!</strong>
+        <p class="md-alert-text">Your membership expired <?php echo abs($days_until_expiry); ?> days ago. Renew now to regain access.</p>
+        <a href="my-subscription" class="btn btn-danger btn-sm">
+            <i class="fas fa-redo" aria-hidden="true"></i> Renew Membership
+        </a>
+    </div>
 </div>
 <?php endif; ?>
 
 <!-- Pending Payments -->
 <?php if (!empty($pending_payments)): ?>
-<div class="alert-warning">
-    <strong><i class="fas fa-exclamation-circle"></i> Pending Payments</strong>
-    <p style="margin: 5px 0;">You have <?php echo count($pending_payments); ?> pending payment(s).</p>
-    <a href="payment-history" class="btn btn-warning btn-sm" style="margin-top: 10px;">
-        <i class="fas fa-money-bill"></i> View Payments
-    </a>
+<div class="alert alert-warning">
+    <div>
+        <strong><i class="fas fa-exclamation-circle" aria-hidden="true"></i> Pending Payments</strong>
+        <p class="md-alert-text">You have <?php echo count($pending_payments); ?> pending payment(s).</p>
+        <a href="payment-history" class="btn btn-warning btn-sm">
+            <i class="fas fa-money-bill" aria-hidden="true"></i> View Payments
+        </a>
+    </div>
 </div>
 <?php endif; ?>
 
@@ -369,14 +223,15 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
 
 
 <!-- Two Column Layout -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+<div class="md-columns">
     
     <!-- Upcoming Bookings -->
-    <div class="section-card">
-        <h3><i class="fas fa-calendar-check"></i> Upcoming Bookings</h3>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-calendar-check" aria-hidden="true"></i> Upcoming Bookings</h3></div>
+        <div class="card-body">
         <?php if (empty($upcoming_bookings)): ?>
             <div class="empty-state">
-                <i class="fas fa-calendar-times"></i>
+                <i class="fas fa-calendar-times" aria-hidden="true"></i>
                 <p>No upcoming bookings</p>
                 <a href="book-space" class="btn btn-primary btn-sm">
                     Book Now
@@ -384,9 +239,9 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
             </div>
         <?php else: ?>
             <?php foreach ($upcoming_bookings as $booking): ?>
-            <div class="booking-item">
+            <div class="md-item">
                 <h4><?php echo htmlspecialchars($booking['space_type']); ?> - <?php echo htmlspecialchars($booking['space_name']); ?></h4>
-                <div class="item-meta">
+                <div class="md-item-meta">
                     <span><i class="fas fa-calendar"></i> <?php echo date('d M Y', strtotime($booking['booking_date'])); ?></span>
                     <span><i class="fas fa-clock"></i> <?php echo date('h:i A', strtotime($booking['start_time'])); ?> - <?php echo date('h:i A', strtotime($booking['end_time'])); ?></span>
                 </div>
@@ -409,14 +264,16 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
                 <i class="fas fa-list"></i> View All Bookings
             </a>
         <?php endif; ?>
+        </div>
     </div>
     
     <!-- Upcoming Events -->
-    <div class="section-card">
-        <h3><i class="fas fa-calendar-day"></i> Upcoming Events</h3>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-calendar-day" aria-hidden="true"></i> Upcoming Events</h3></div>
+        <div class="card-body">
         <?php if (empty($upcoming_events)): ?>
             <div class="empty-state">
-                <i class="fas fa-calendar-times"></i>
+                <i class="fas fa-calendar-times" aria-hidden="true"></i>
                 <p>No upcoming events</p>
                 <a href="hub-events" class="btn btn-primary btn-sm">
                     Browse Events
@@ -424,9 +281,9 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
             </div>
         <?php else: ?>
             <?php foreach ($upcoming_events as $event): ?>
-            <div class="event-item">
+            <div class="md-item">
                 <h4><?php echo htmlspecialchars($event['event_title']); ?></h4>
-                <div class="item-meta">
+                <div class="md-item-meta">
                     <span><i class="fas fa-calendar"></i> <?php echo date('d M Y', strtotime($event['event_date'])); ?></span>
                     <span><i class="fas fa-clock"></i> <?php echo date('h:i A', strtotime($event['start_time'])); ?></span>
                     <span><i class="fas fa-tag"></i> <?php echo $event['event_type']; ?></span>
@@ -444,7 +301,9 @@ $total_events_attended = $conn->query("SELECT COUNT(*) as count FROM event_regis
                 <i class="fas fa-calendar-alt"></i> View All Events
             </a>
         <?php endif; ?>
+        </div>
     </div>
 </div>
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>

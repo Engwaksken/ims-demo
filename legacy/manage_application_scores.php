@@ -41,9 +41,9 @@ function fmt_dt(?string $dt): string {
     } catch (Throwable) { return '-'; }
 }
 function rec_pill(string $rec): string {
-    $map = ['Accept'=>'green','Shortlist'=>'blue','Reject'=>'red','Needs More Info'=>'yellow'];
-    $cls = $map[$rec] ?? 'slate';
-    return '<span class="pill '.$cls.'">'.e($rec).'</span>';
+    $map = ['Accept'=>'badge-success','Shortlist'=>'badge-info','Reject'=>'badge-danger','Needs More Info'=>'badge-warning'];
+    $cls = $map[$rec] ?? 'badge-secondary';
+    return '<span class="badge '.$cls.'">'.e($rec).'</span>';
 }
 function pgRange(int $cur, int $total): array {
     $r = [];
@@ -177,38 +177,40 @@ function pgUrl(int $p): string {
 }
 ?>
 
-<link rel="stylesheet" href="css/assets.css">
-<link rel="stylesheet" href="css/progress_board.css">
 <style>
-/* -- Page-specific --------------------------------------------- */
+/* -- manage_application_scores page-specific layout -- */
+.mas-tab-nav .badge { padding: 1px 7px; font-size: 10px; }
+.mas-filters.filters-bar { margin-bottom: 0; }
 
-/* Criteria score item in the edit form */
-.score-item {
+/* Active filter chips */
+.mas-chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 22px 14px; }
+.mas-chips .badge a { color: inherit; text-decoration: none; margin-left: 2px; opacity: .7; }
+.mas-chips .badge a:hover { opacity: 1; }
+
+/* Result meta bar */
+.mas-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 22px;
     background: var(--ink-50);
-    border: 1px solid var(--ink-100);
-    border-radius: var(--radius-md);
-    padding: 14px 16px;
-}
-
-.score-item-head {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--ink-700);
-    margin-bottom: 3px;
-}
-
-.score-item-sub {
+    border-top: 1px solid var(--ink-100);
+    border-bottom: 1px solid var(--ink-100);
     font-size: 12px;
-    color: var(--ink-300);
-    margin-bottom: 10px;
-    line-height: 1.5;
+    color: var(--ink-400);
 }
+.mas-meta strong { color: var(--ink-700); }
 
-.score-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 14px;
-}
+/* Score bar */
+.mas-bar { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+.mas-bar-track { flex: 1; height: 6px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; }
+.mas-bar-fill { height: 100%; border-radius: var(--radius-pill); }
+.mas-bar-fill.high { background: var(--green-fg); }
+.mas-bar-fill.mid  { background: var(--amber-fg); }
+.mas-bar-fill.low  { background: var(--red-fg); }
+.mas-bar-val { font-size: 12px; font-weight: 700; color: var(--ink-700); white-space: nowrap; }
+.mas-date { font-size: 11px; white-space: nowrap; }
 
 /* Comment preview row */
 .comment-row td {
@@ -219,48 +221,55 @@ function pgUrl(int $p): string {
     line-height: 1.6;
     padding: 8px 14px 10px 32px;
 }
+.comment-row i { color: var(--brand-400); margin-right: 6px; }
 
-/* Rec pill colours already in progress_board.css */
+/* Pagination row */
+.mas-pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 22px; border-top: 1px solid var(--ink-50); }
+.mas-pager .pagination { margin: 0; }
 
-/* Per-page select in toolbar */
-.filters-bar > .pp-select { min-width: 100px; }
-.pp-select {
-    height: 38px;
-    padding: 0 32px 0 10px;
-    border: 1.5px solid var(--ink-100);
+/* Edit form */
+.mas-edit-sub { margin-top: 4px; }
+.mas-overall { margin-bottom: 20px; }
+.mas-crit-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    background: var(--ink-50);
     border-radius: var(--radius-md);
-    font-family: var(--font-body);
-    font-size: 12px;
-    color: var(--ink-500);
-    background: var(--surface-card)
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")
-        no-repeat right 8px center;
-    appearance: none;
-    cursor: pointer;
-    outline: none;
+    padding: 12px 16px;
+    margin-bottom: 14px;
 }
-
-.pp-select:focus {
-    border-color: var(--brand-500);
-    box-shadow: 0 0 0 3px rgba(249,115,22,.12);
-}
+.mas-crit-head h3 { font-size: 13px; margin: 0; color: var(--ink-700); }
+.mas-crit { margin-bottom: 14px; }
+.score-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.score-item { background: var(--ink-50); border: 1px solid var(--ink-100); border-radius: var(--radius-md); padding: 14px 16px; }
+.score-item-head { font-size: 13px; font-weight: 700; color: var(--ink-700); margin-bottom: 3px; }
+.score-item-head .badge { font-size: 9px; margin-right: 6px; }
+.score-item-sub { font-size: 12px; color: var(--ink-300); margin-bottom: 10px; line-height: 1.5; }
+.mas-score-fields { grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 10px; }
+.mas-score-fields textarea { min-height: 70px; }
+.mas-opt { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.mas-form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.mas-inline-form { display: inline; }
 
 @media (max-width: 768px) {
     .score-grid { grid-template-columns: 1fr; }
+    .mas-score-fields { grid-template-columns: 1fr; }
 }
 </style>
 
-<div class="assets-wrap pb-wrap">
+<div class="page-stack">
 
     <!-- -- Page Hero ------------------------------------------------ -->
     <div class="page-hero">
         <div>
-            <h1><i class="fas fa-star-half-stroke"></i> Manage Application Scores</h1>
+            <h1><i class="fas fa-star-half-stroke" aria-hidden="true"></i> Manage Application Scores</h1>
             <p>Review, edit, and audit all submitted evaluation scores</p>
         </div>
         <div class="hero-actions">
             <a href="progress-board" class="btn btn-primary">
-                <i class="fas fa-chart-line"></i> Progress Report
+                <i class="fas fa-chart-line" aria-hidden="true"></i> Progress Report
             </a>
         </div>
     </div>
@@ -270,7 +279,7 @@ function pgUrl(int $p): string {
         <div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= e($success_msg) ?></div>
     <?php endif; ?>
     <?php if ($error_msg !== ''): ?>
-        <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?= e($error_msg) ?></div>
+        <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?= e($error_msg) ?></div>
     <?php endif; ?>
 
     <!-- -- Stats strip ---------------------------------------------- -->
@@ -306,11 +315,12 @@ function pgUrl(int $p): string {
     </div>
 
     <!-- -- Tab navigation ------------------------------------------- -->
-    <nav class="tab-nav" role="tablist">
+    <div class="tab-shell">
+    <nav class="tab-nav mas-tab-nav" role="tablist">
         <a href="manage_application_scores?<?= e(http_build_query(array_filter(['review_type_id'=>$f_type,'reviewer_id'=>$f_rev,'application_id'=>$f_app,'q'=>$q,'per_page'=>$pp,'page'=>$page],fn($v)=>$v!==''&&$v!==0&&$v!=='0'))) ?>"
            class="tab-btn<?= $activeTab==='scores'?' active':'' ?>" role="tab">
             <i class="fas fa-table-list"></i> All Reviews
-            <span class="tab-badge"><?= number_format($total_rows) ?></span>
+            <span class="badge badge-secondary"><?= number_format($total_rows) ?></span>
         </a>
         <?php if ($editReview): ?>
         <a href="#" class="tab-btn active" role="tab">
@@ -319,6 +329,7 @@ function pgUrl(int $p): string {
         </a>
         <?php endif; ?>
     </nav>
+    </div>
 
     <!-- --------------------------------------------------------------
          TAB: ALL REVIEWS
@@ -327,24 +338,24 @@ function pgUrl(int $p): string {
     <div class="panel">
 
         <!-- Filter toolbar -->
-        <div class="pb-toolbar">
-            <form method="GET" class="filters-bar" id="filterForm" role="search" aria-label="Filter reviews">
+        <div class="panel-body">
+            <form method="GET" class="filters-bar mas-filters" id="filterForm" role="search" aria-label="Filter reviews">
 
-                <select name="review_type_id" class="form-control" style="height:38px;padding:0 32px 0 10px;font-size:13px;min-width:160px;" onchange="this.form.submit()">
+                <select name="review_type_id" class="form-control" onchange="this.form.submit()">
                     <option value="0">All review types</option>
                     <?php foreach ($review_types as $rt): ?>
                         <option value="<?= (int)$rt['review_type_id'] ?>" <?= $f_type===(int)$rt['review_type_id']?'selected':'' ?>><?= e($rt['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
 
-                <select name="reviewer_id" class="form-control" style="height:38px;padding:0 32px 0 10px;font-size:13px;min-width:160px;" onchange="this.form.submit()">
+                <select name="reviewer_id" class="form-control" onchange="this.form.submit()">
                     <option value="0">All reviewers</option>
                     <?php foreach ($reviewers as $rv): ?>
                         <option value="<?= (int)$rv['user_id'] ?>" <?= $f_rev===(int)$rv['user_id']?'selected':'' ?>><?= e($rv['full_name']) ?></option>
                     <?php endforeach; ?>
                 </select>
 
-                <select name="application_id" class="form-control" style="height:38px;padding:0 32px 0 10px;font-size:13px;min-width:160px;" onchange="this.form.submit()">
+                <select name="application_id" class="form-control" onchange="this.form.submit()">
                     <option value="0">All applications</option>
                     <?php foreach ($apps_list as $ap): ?>
                         <option value="<?= (int)$ap['application_id'] ?>" <?= $f_app===(int)$ap['application_id']?'selected':'' ?>><?= e($ap['startup_name']) ?></option>
@@ -352,25 +363,25 @@ function pgUrl(int $p): string {
                 </select>
 
                 <!-- Search -->
-                <div class="pb-toolbar-search">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="search" name="q" id="qInput" value="<?= e($q) ?>"
+                <div class="search-input-wrap">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search" name="q" id="qInput" value="<?= e($q) ?>" class="form-control"
                            placeholder="Startup, reviewer, recommendation..." autocomplete="off">
                 </div>
 
                 <!-- Per-page -->
-                <select name="per_page" class="pp-select" onchange="this.form.submit()">
+                <select name="per_page" class="form-control" onchange="this.form.submit()">
                     <?php foreach ([10,20,50,100] as $n): ?>
                         <option value="<?= $n ?>" <?= $pp===$n?'selected':'' ?>><?= $n ?> / page</option>
                     <?php endforeach; ?>
                 </select>
 
-                <button type="submit" class="btn btn-sm btn-dark">
+                <button type="submit" class="btn btn-sm btn-primary">
                     <i class="fas fa-search"></i> Search
                 </button>
 
                 <?php if ($f_type||$f_rev||$f_app||$q): ?>
-                    <a href="manage_application_scores" class="btn btn-sm btn-gray">
+                    <a href="manage_application_scores" class="btn btn-sm btn-secondary">
                         <i class="fas fa-times"></i> Clear
                     </a>
                 <?php endif; ?>
@@ -379,36 +390,36 @@ function pgUrl(int $p): string {
 
         <!-- Active filter chips -->
         <?php if ($f_type||$f_rev||$f_app||$q): ?>
-        <div class="active-filters">
+        <div class="mas-chips">
             <?php
             if ($f_type) {
                 $tn = '';
                 foreach ($review_types as $rt) if ((int)$rt['review_type_id']===$f_type) { $tn=$rt['name']; break; }
                 $u = http_build_query(array_filter(['reviewer_id'=>$f_rev,'application_id'=>$f_app,'q'=>$q,'per_page'=>$pp],fn($v)=>$v!==''&&$v!==0));
-                echo '<span class="filter-chip">Type: '.e($tn).' <a href="manage_application_scores'.($u?'?'.$u:'').'">×</a></span>';
+                echo '<span class="badge badge-secondary">Type: '.e($tn).' <a href="manage_application_scores'.($u?'?'.$u:'').'">Ã—</a></span>';
             }
             if ($f_rev) {
                 $rn = '';
                 foreach ($reviewers as $rv) if ((int)$rv['user_id']===$f_rev) { $rn=$rv['full_name']; break; }
                 $u = http_build_query(array_filter(['review_type_id'=>$f_type,'application_id'=>$f_app,'q'=>$q,'per_page'=>$pp],fn($v)=>$v!==''&&$v!==0));
-                echo '<span class="filter-chip">Reviewer: '.e($rn).' <a href="manage_application_scores'.($u?'?'.$u:'').'">×</a></span>';
+                echo '<span class="badge badge-secondary">Reviewer: '.e($rn).' <a href="manage_application_scores'.($u?'?'.$u:'').'">Ã—</a></span>';
             }
             if ($f_app) {
                 $an = '';
                 foreach ($apps_list as $ap) if ((int)$ap['application_id']===$f_app) { $an=$ap['startup_name']; break; }
                 $u = http_build_query(array_filter(['review_type_id'=>$f_type,'reviewer_id'=>$f_rev,'q'=>$q,'per_page'=>$pp],fn($v)=>$v!==''&&$v!==0));
-                echo '<span class="filter-chip">App: '.e($an).' <a href="manage_application_scores'.($u?'?'.$u:'').'">×</a></span>';
+                echo '<span class="badge badge-secondary">App: '.e($an).' <a href="manage_application_scores'.($u?'?'.$u:'').'">Ã—</a></span>';
             }
             if ($q) {
                 $u = http_build_query(array_filter(['review_type_id'=>$f_type,'reviewer_id'=>$f_rev,'application_id'=>$f_app,'per_page'=>$pp],fn($v)=>$v!==''&&$v!==0));
-                echo '<span class="filter-chip">Search: "'.e($q).'" <a href="manage_application_scores'.($u?'?'.$u:'').'">×</a></span>';
+                echo '<span class="badge badge-secondary">Search: "'.e($q).'" <a href="manage_application_scores'.($u?'?'.$u:'').'">Ã—</a></span>';
             }
             ?>
         </div>
         <?php endif; ?>
 
         <!-- Meta bar -->
-        <div class="pb-meta">
+        <div class="mas-meta">
             <span><strong><?= number_format($total_rows) ?></strong> review<?= $total_rows!==1?'s':'' ?></span>
             <span>
                 <?= number_format(($page-1)*$pp+1) ?>-<?= number_format(min($page*$pp,$total_rows)) ?>
@@ -417,7 +428,7 @@ function pgUrl(int $p): string {
         </div>
 
         <!-- Table -->
-        <div class="table-wrap">
+        <div class="table-responsive">
             <table class="table">
                 <thead>
                 <tr>
@@ -435,9 +446,11 @@ function pgUrl(int $p): string {
                 </thead>
                 <tbody>
                 <?php if (empty($rows)): ?>
-                    <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--ink-200);">
-                        <i class="fas fa-inbox" style="display:block;font-size:1.8rem;margin-bottom:10px;opacity:.3;"></i>
-                        No review records found.
+                    <tr><td colspan="10">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox" aria-hidden="true"></i>
+                            <p>No review records found.</p>
+                        </div>
                     </td></tr>
                 <?php else: ?>
                     <?php foreach ($rows as $i => $row):
@@ -454,39 +467,39 @@ function pgUrl(int $p): string {
                         ],fn($v)=>$v!==''&&$v!==0&&$v!=='0'));
                     ?>
                     <tr>
-                        <td class="note"><?= $offset + $i + 1 ?></td>
+                        <td class="cell-muted"><?= $offset + $i + 1 ?></td>
                         <td>
                             <strong><?= e($row['startup_name']) ?></strong><br>
-                            <span class="note">App #<?= (int)$row['application_id'] ?></span>
+                            <span class="cell-muted">App #<?= (int)$row['application_id'] ?></span>
                         </td>
                         <td><?= e($row['reviewer_name']) ?></td>
-                        <td><span class="pill blue"><?= e($row['rt_name']) ?></span></td>
+                        <td><span class="badge badge-info"><?= e($row['rt_name']) ?></span></td>
                         <td>
-                            <div class="score-bar-wrap" style="min-width:110px;">
-                                <div class="score-bar-track">
-                                    <div class="score-bar-fill <?= $sc ?>" style="width:<?= min(100,$pct) ?>%"></div>
+                            <div class="mas-bar">
+                                <div class="mas-bar-track">
+                                    <div class="mas-bar-fill <?= $sc ?>" style="width:<?= min(100,$pct) ?>%"></div>
                                 </div>
-                                <span class="score-val"><?= number_format($pct,2) ?>%</span>
+                                <span class="mas-bar-val"><?= number_format($pct,2) ?>%</span>
                             </div>
                         </td>
                         <td><?= rec_pill((string)($row['recommendation']??'')) ?></td>
-                        <td><span class="pill slate"><?= (int)$row['criteria_count'] ?></span></td>
-                        <td class="note" style="font-size:11px;"><?= e(fmt_dt($row['created_at']??null)) ?></td>
-                        <td class="note" style="font-size:11px;"><?= e(fmt_dt($row['updated_at']??null)) ?></td>
+                        <td><span class="badge badge-secondary"><?= (int)$row['criteria_count'] ?></span></td>
+                        <td class="cell-muted mas-date"><?= e(fmt_dt($row['created_at']??null)) ?></td>
+                        <td class="cell-muted mas-date"><?= e(fmt_dt($row['updated_at']??null)) ?></td>
                         <td>
-                            <div class="tbl-actions">
+                            <div class="table-actions">
                                 <a href="<?= e($editHref) ?>" class="btn btn-sm btn-soft" title="Edit review">
                                     <i class="fas fa-pen-to-square"></i>
                                 </a>
                                 <form method="POST" action="includes/process_manage_application_scores.php"
                                       onsubmit="return confirm('Delete this review and all its criterion scores? This cannot be undone.');"
-                                      style="display:inline;">
+                                      class="mas-inline-form">
                                     <input type="hidden" name="action"         value="delete_review">
                                     <input type="hidden" name="review_id"      value="<?= (int)$row['review_id'] ?>">
                                     <input type="hidden" name="application_id" value="<?= (int)$row['application_id'] ?>">
                                     <input type="hidden" name="reviewer_id"    value="<?= (int)$row['reviewer_id'] ?>">
                                     <input type="hidden" name="review_type_id" value="<?= (int)$row['review_type_id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-red" title="Delete review">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete review">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
@@ -498,7 +511,7 @@ function pgUrl(int $p): string {
                     <tr class="comment-row">
                         <td></td>
                         <td colspan="9">
-                            <i class="fas fa-comment-dots" style="color:var(--brand-400);margin-right:6px;"></i>
+                            <i class="fas fa-comment-dots"></i>
                             <?= nl2br(e(trim((string)$row['comments']))) ?>
                         </td>
                     </tr>
@@ -511,25 +524,25 @@ function pgUrl(int $p): string {
 
         <!-- Pagination -->
         <?php if ($total_pages > 1): ?>
-        <div class="pb-pagination">
-            <span class="subtle-note">
+        <div class="mas-pager">
+            <span class="cell-muted">
                 Showing <?= number_format(($page-1)*$pp+1) ?>-<?= number_format(min($page*$pp,$total_rows)) ?>
                 of <?= number_format($total_rows) ?>
             </span>
-            <div class="pg-links">
-                <a href="<?= e(pgUrl($page-1)) ?>" class="pg-btn <?= $page<=1?'pg-disabled':'' ?>">
+            <div class="pagination">
+                <a href="<?= e(pgUrl($page-1)) ?>" class="<?= $page<=1?'disabled':'' ?>">
                     <i class="fas fa-chevron-left"></i>
                 </a>
                 <?php foreach (pgRange($page,$total_pages) as $pn): ?>
                     <?php if ($pn==='...'): ?>
-                        <span class="pg-ellipsis">...</span>
+                        <span class="disabled">...</span>
                     <?php elseif ($pn===$page): ?>
-                        <span class="pg-btn pg-active"><?= $pn ?></span>
+                        <span class="current"><?= $pn ?></span>
                     <?php else: ?>
-                        <a href="<?= e(pgUrl((int)$pn)) ?>" class="pg-btn"><?= $pn ?></a>
+                        <a href="<?= e(pgUrl((int)$pn)) ?>"><?= $pn ?></a>
                     <?php endif; ?>
                 <?php endforeach; ?>
-                <a href="<?= e(pgUrl($page+1)) ?>" class="pg-btn <?= $page>=$total_pages?'pg-disabled':'' ?>">
+                <a href="<?= e(pgUrl($page+1)) ?>" class="<?= $page>=$total_pages?'disabled':'' ?>">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             </div>
@@ -548,14 +561,14 @@ function pgUrl(int $p): string {
         <div class="panel-head">
             <div>
                 <h3><i class="fas fa-pen-to-square"></i> Edit Review</h3>
-                <div class="note" style="margin-top:4px;">
+                <div class="cell-muted mas-edit-sub">
                     <strong><?= e($editReview['startup_name']) ?></strong>
                     &middot; Reviewer: <?= e($editReview['reviewer_name']) ?>
-                    &middot; Type: <span class="pill blue"><?= e($editReview['rt_name']) ?></span>
+                    &middot; Type: <span class="badge badge-info"><?= e($editReview['rt_name']) ?></span>
                 </div>
             </div>
             <a href="manage_application_scores?<?= e(http_build_query(array_filter(['review_type_id'=>$f_type,'reviewer_id'=>$f_rev,'application_id'=>$f_app,'q'=>$q,'per_page'=>$pp,'page'=>$page],fn($v)=>$v!==''&&$v!==0&&$v!=='0'))) ?>"
-               class="btn btn-gray">
+               class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to List
             </a>
         </div>
@@ -569,14 +582,14 @@ function pgUrl(int $p): string {
                 <input type="hidden" name="review_type_id" value="<?= (int)$editReview['review_type_id'] ?>">
 
                 <!-- Overall score + recommendation -->
-                <div class="form-grid" style="margin-bottom:20px;">
+                <div class="form-grid mas-overall">
                     <div class="form-group">
-                        <label class="form-label">Overall Score (%) <sup style="color:var(--red-fg)">*</sup></label>
+                        <label class="form-label">Overall Score (%) <span class="required-mark"></span></label>
                         <input type="number" step="0.01" min="0" max="100" name="overall_score"
                                class="form-control" value="<?= e($editReview['overall_score']) ?>" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Recommendation <sup style="color:var(--red-fg)">*</sup></label>
+                        <label class="form-label">Recommendation <span class="required-mark"></span></label>
                         <select name="recommendation" class="form-control" required>
                             <?php foreach (['Accept','Shortlist','Reject','Needs More Info'] as $rec): ?>
                                 <option value="<?= e($rec) ?>" <?= (($editReview['recommendation']??'')===$rec)?'selected':'' ?>>
@@ -586,23 +599,23 @@ function pgUrl(int $p): string {
                         </select>
                     </div>
                     <div class="form-group full">
-                        <label class="form-label">Review Comments <sup style="color:var(--red-fg)">*</sup></label>
+                        <label class="form-label">Review Comments <span class="required-mark"></span></label>
                         <textarea name="review_comments" class="form-control" rows="4" required><?= e($editReview['comments']??'') ?></textarea>
                     </div>
                 </div>
 
                 <!-- Criteria scores -->
                 <?php if (!empty($editScores)): ?>
-                <div style="margin-bottom:14px;">
-                    <div class="panel-head" style="background:var(--ink-50);border-radius:var(--radius-md);padding:12px 16px;margin-bottom:14px;">
-                        <h3 style="font-size:13px;"><i class="fas fa-list-check"></i> Criterion Scores</h3>
+                <div class="mas-crit">
+                    <div class="mas-crit-head">
+                        <h3><i class="fas fa-list-check"></i> Criterion Scores</h3>
                         <span class="note"><?= count($editScores) ?> criteria</span>
                     </div>
                     <div class="score-grid">
                         <?php foreach ($editScores as $sc): ?>
                         <div class="score-item">
                             <div class="score-item-head">
-                                <span class="pill slate" style="font-size:9px;margin-right:6px;"><?= e($sc['category']) ?></span>
+                                <span class="badge badge-secondary"><?= e($sc['category']) ?></span>
                                 <?= e($sc['question']) ?>
                             </div>
                             <?php if (!empty($sc['description'])): ?>
@@ -611,9 +624,9 @@ function pgUrl(int $p): string {
 
                             <input type="hidden" name="score_ids[]" value="<?= (int)$sc['score_id'] ?>">
 
-                            <div class="form-grid" style="grid-template-columns:1fr 2fr;gap:10px;margin-top:10px;">
+                            <div class="form-grid mas-score-fields">
                                 <div class="form-group">
-                                    <label class="form-label">Score <small style="font-weight:400;text-transform:none;letter-spacing:0;">(Max <?= e($sc['max_score']) ?>)</small></label>
+                                    <label class="form-label">Score <small class="mas-opt">(Max <?= e($sc['max_score']) ?>)</small></label>
                                     <input type="number" step="0.01" min="0" max="<?= e($sc['max_score']) ?>"
                                            name="scores[<?= (int)$sc['score_id'] ?>]"
                                            class="form-control" value="<?= e($sc['score']) ?>" required>
@@ -621,7 +634,7 @@ function pgUrl(int $p): string {
                                 <div class="form-group">
                                     <label class="form-label">Criterion Comment</label>
                                     <textarea name="criterion_comments[<?= (int)$sc['score_id'] ?>]"
-                                              class="form-control" style="min-height:70px;"><?= e($sc['sc_comments']??'') ?></textarea>
+                                              class="form-control"><?= e($sc['sc_comments']??'') ?></textarea>
                                 </div>
                             </div>
                         </div>
@@ -630,12 +643,12 @@ function pgUrl(int $p): string {
                 </div>
                 <?php endif; ?>
 
-                <div class="actions" style="display:flex;gap:10px;margin-top:4px;">
-                    <button type="submit" class="btn btn-dark">
+                <div class="mas-form-actions">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Update Review
                     </button>
                     <a href="manage_application_scores?<?= e(http_build_query(array_filter(['review_type_id'=>$f_type,'reviewer_id'=>$f_rev,'application_id'=>$f_app,'q'=>$q,'per_page'=>$pp,'page'=>$page],fn($v)=>$v!==''&&$v!==0&&$v!=='0'))) ?>"
-                       class="btn btn-gray">
+                       class="btn btn-secondary">
                         <i class="fas fa-times"></i> Cancel
                     </a>
                 </div>
@@ -644,7 +657,7 @@ function pgUrl(int $p): string {
     </div>
     <?php endif; ?>
 
-</div><!-- /.pb-wrap -->
+</div><!-- /.page-stack -->
 
 <script>
 /* Debounce search input */

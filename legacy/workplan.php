@@ -231,35 +231,35 @@ foreach ($calendarEvents as $event) {
     /* Global .stats-grid.reports-stats inside a panel: pad it, drop the outer gap. */
     .stats-grid.reports-stats.wp-stats-grid { padding:16px; margin-bottom:0; }
     .wp-status-bar-wrap { padding:0 16px 16px; }
-    .wp-status-bar { display:flex; height:14px; border-radius:7px; overflow:hidden; background:#e2e8f0; }
+    .wp-status-bar { display:flex; height:14px; border-radius:7px; overflow:hidden; background:var(--slate-border); }
     .wp-status-bar-seg { height:100%; }
-    .wp-status-legend-inline { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:12px; color:#475569; }
+    .wp-status-legend-inline { display:flex; gap:14px; flex-wrap:wrap; margin-top:8px; font-size:12px; color:var(--slate-fg); }
     .wp-status-legend-inline .swatch { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:middle; }
     .wp-load-picker { display:flex; gap:10px; align-items:flex-end; padding:16px; flex-wrap:wrap; }
     .wp-export-actions { display:flex; gap:10px; padding:0 16px 16px; }
 
     /* Google-style Workplan Calendar */
-    .wp-calendar-shell{overflow:hidden;background:#fff;border:1px solid #e2e8f0;border-radius:12px}
-    .wp-calendar-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid #e2e8f0}
+    .wp-calendar-shell{overflow:hidden;background:var(--surface-card);border:1px solid var(--slate-border);border-radius:12px}
+    .wp-calendar-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--slate-border)}
     .wp-calendar-toolbar-left,.wp-calendar-toolbar-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-    .wp-cal-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:7px 10px;border:1px solid #dbe3ec;border-radius:8px;background:#fff;color:#475569;font-size:12px;font-weight:700;cursor:pointer}
-    .wp-cal-btn.active{background:#ecfdf5;border-color:#0f766e;color:#0f766e}
-    .wp-cal-nav{width:34px;height:34px;border:1px solid #dbe3ec;border-radius:50%;background:#fff;color:#475569;cursor:pointer}
-    .wp-calendar-title{min-width:190px;font-size:17px;font-weight:800;color:#0f172a;text-align:center}
+    .wp-cal-btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:7px 10px;border:1px solid var(--ink-100);border-radius:8px;background:var(--surface-card);color:var(--slate-fg);font-size:12px;font-weight:700;cursor:pointer}
+    .wp-cal-btn.active{background:var(--brand-50);border-color:var(--brand-600);color:var(--brand-600)}
+    .wp-cal-nav{width:34px;height:34px;border:1px solid var(--ink-100);border-radius:50%;background:var(--surface-card);color:var(--slate-fg);cursor:pointer}
+    .wp-calendar-title{min-width:190px;font-size:17px;font-weight:800;color:var(--ink-900);text-align:center}
     .wp-calendar-scroll{overflow-x:auto}.wp-month-grid{display:grid;grid-template-columns:repeat(7,1fr);min-width:900px}
-    .wp-weekday{padding:8px;border-right:1px solid #eef2f7;border-bottom:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:11px;font-weight:800;text-align:center;text-transform:uppercase}
-    .wp-day-cell{min-height:128px;padding:6px;border-right:1px solid #eef2f7;border-bottom:1px solid #eef2f7;background:#fff}
-    .wp-day-cell.outside{background:#f8fafc}.wp-day-cell.today{background:#f0fdfa}
-    .wp-day-head{display:flex;justify-content:flex-end;margin-bottom:5px}.wp-day-number{width:25px;height:25px;display:grid;place-items:center;border-radius:50%;font-size:11.5px;font-weight:800;color:#475569}.wp-day-cell.today .wp-day-number{background:#0f766e;color:#fff}
-    .wp-event{display:block;width:100%;margin-bottom:4px;padding:5px 6px;overflow:hidden;border:0;border-left:4px solid var(--event-color);border-radius:6px;background:#f8fafc;color:#334155;font-size:11.5px;font-weight:700;text-align:left;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
-    .wp-event-kind{font-size:9.5px;opacity:.65;text-transform:uppercase;margin-right:3px}.wp-more{border:0;background:transparent;color:#0f766e;font-size:11px;font-weight:800;cursor:pointer}
-    .wp-agenda-day{border-bottom:1px solid #e2e8f0}.wp-agenda-day-head{display:flex;justify-content:space-between;padding:10px 13px;background:#f8fafc;color:#334155;font-size:12px;font-weight:800}.wp-agenda-items{padding:8px 10px}
-    .wp-agenda-event{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 11px;margin-bottom:7px;border:1px solid #e2e8f0;border-left:4px solid var(--event-color);border-radius:8px;background:#fff;cursor:pointer}
-    .wp-agenda-title{font-size:13px;font-weight:800;color:#0f172a}.wp-agenda-meta{font-size:12px;color:#64748b;margin-top:2px}.wp-agenda-status{padding:4px 8px;border-radius:999px;color:#fff;font-size:11px;font-weight:800}
-    .wp-period-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:14px}.wp-period-card{padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}.wp-period-card h4{margin:0 0 9px;font-size:12.5px;color:#0f172a}.wp-period-event{padding:6px 7px;margin-bottom:5px;border-left:4px solid var(--event-color);border-radius:6px;background:#f8fafc;color:#334155;font-size:11.5px;font-weight:700;cursor:pointer}
-    .wp-calendar-legend{display:flex;gap:13px;flex-wrap:wrap;padding:9px 13px;border-top:1px solid #e2e8f0;color:#475569;font-size:12px}.wp-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
-    .wp-modal{display:none;position:fixed;inset:0;z-index:99999;padding:20px;overflow-y:auto;background:rgba(15,23,42,.58)}.wp-modal.open{display:flex;align-items:flex-start;justify-content:center}.wp-modal-card{width:min(100%,560px);margin:45px auto;overflow:hidden;border-radius:14px;background:#fff;box-shadow:0 24px 60px rgba(15,23,42,.25)}.wp-modal-head,.wp-modal-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px}.wp-modal-head{border-bottom:1px solid #e2e8f0}.wp-modal-foot{justify-content:flex-end;border-top:1px solid #e2e8f0}.wp-modal-body{padding:18px}.wp-modal-close{width:34px;height:34px;border:0;border-radius:8px;background:#f8fafc;color:#64748b;font-size:20px;cursor:pointer}
-    .wp-event-summary{padding:11px 13px;margin-bottom:13px;border-left:4px solid #0f766e;border-radius:8px;background:#f8fafc}.wp-event-summary h4{margin:0 0 4px;font-size:14px;color:#0f172a}.wp-event-summary p{margin:0;font-size:12px;color:#64748b;line-height:1.5}
+    .wp-weekday{padding:8px;border-right:1px solid var(--ink-50);border-bottom:1px solid var(--slate-border);background:var(--surface-hover);color:var(--ink-300);font-size:11px;font-weight:800;text-align:center;text-transform:uppercase}
+    .wp-day-cell{min-height:128px;padding:6px;border-right:1px solid var(--ink-50);border-bottom:1px solid var(--ink-50);background:var(--surface-card)}
+    .wp-day-cell.outside{background:var(--surface-hover)}.wp-day-cell.today{background:var(--brand-50)}
+    .wp-day-head{display:flex;justify-content:flex-end;margin-bottom:5px}.wp-day-number{width:25px;height:25px;display:grid;place-items:center;border-radius:50%;font-size:11.5px;font-weight:800;color:var(--slate-fg)}.wp-day-cell.today .wp-day-number{background:var(--brand-600);color:var(--ink-0)}
+    .wp-event{display:block;width:100%;margin-bottom:4px;padding:5px 6px;overflow:hidden;border:0;border-left:4px solid var(--event-color);border-radius:6px;background:var(--surface-hover);color:var(--ink-500);font-size:11.5px;font-weight:700;text-align:left;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+    .wp-event-kind{font-size:9.5px;opacity:.65;text-transform:uppercase;margin-right:3px}.wp-more{border:0;background:transparent;color:var(--brand-600);font-size:11px;font-weight:800;cursor:pointer}
+    .wp-agenda-day{border-bottom:1px solid var(--slate-border)}.wp-agenda-day-head{display:flex;justify-content:space-between;padding:10px 13px;background:var(--surface-hover);color:var(--ink-500);font-size:12px;font-weight:800}.wp-agenda-items{padding:8px 10px}
+    .wp-agenda-event{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 11px;margin-bottom:7px;border:1px solid var(--slate-border);border-left:4px solid var(--event-color);border-radius:8px;background:var(--surface-card);cursor:pointer}
+    .wp-agenda-title{font-size:13px;font-weight:800;color:var(--ink-900)}.wp-agenda-meta{font-size:12px;color:var(--ink-300);margin-top:2px}.wp-agenda-status{padding:4px 8px;border-radius:999px;color:var(--ink-0);font-size:11px;font-weight:800}
+    .wp-period-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;padding:14px}.wp-period-card{padding:12px;border:1px solid var(--slate-border);border-radius:10px;background:var(--surface-card)}.wp-period-card h4{margin:0 0 9px;font-size:12.5px;color:var(--ink-900)}.wp-period-event{padding:6px 7px;margin-bottom:5px;border-left:4px solid var(--event-color);border-radius:6px;background:var(--surface-hover);color:var(--ink-500);font-size:11.5px;font-weight:700;cursor:pointer}
+    .wp-calendar-legend{display:flex;gap:13px;flex-wrap:wrap;padding:9px 13px;border-top:1px solid var(--slate-border);color:var(--slate-fg);font-size:12px}.wp-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+    .wp-modal{display:none;position:fixed;inset:0;z-index:99999;padding:20px;overflow-y:auto;background:rgba(15,23,42,.58)}.wp-modal.open{display:flex;align-items:flex-start;justify-content:center}.wp-modal-card{width:min(100%,560px);margin:45px auto;overflow:hidden;border-radius:14px;background:var(--surface-card);box-shadow:0 24px 60px rgba(15,23,42,.25)}.wp-modal-head,.wp-modal-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 18px}.wp-modal-head{border-bottom:1px solid var(--slate-border)}.wp-modal-foot{justify-content:flex-end;border-top:1px solid var(--slate-border)}.wp-modal-body{padding:18px}.wp-modal-close{width:34px;height:34px;border:0;border-radius:8px;background:var(--surface-hover);color:var(--ink-300);font-size:20px;cursor:pointer}
+    .wp-event-summary{padding:11px 13px;margin-bottom:13px;border-left:4px solid var(--brand-600);border-radius:8px;background:var(--surface-hover)}.wp-event-summary h4{margin:0 0 4px;font-size:14px;color:var(--ink-900)}.wp-event-summary p{margin:0;font-size:12px;color:var(--ink-300);line-height:1.5}
     @media(max-width:1200px){.wp-period-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:760px){.wp-calendar-toolbar-left,.wp-calendar-toolbar-right{width:100%}.wp-calendar-toolbar-right{overflow-x:auto;flex-wrap:nowrap}.wp-calendar-title{width:100%;text-align:left;order:3}.wp-agenda-event{grid-template-columns:1fr}.wp-period-grid{grid-template-columns:1fr}}
 
@@ -270,7 +270,7 @@ foreach ($calendarEvents as $event) {
         gap:0;
         margin:16px 0 18px;
         overflow-x:auto;
-        border-bottom:2px solid #e2e8f0;
+        border-bottom:2px solid var(--slate-border);
         scrollbar-width:none
     }
     .wp-main-tabs::-webkit-scrollbar{display:none}
@@ -284,14 +284,14 @@ foreach ($calendarEvents as $event) {
         border:0;
         border-bottom:2px solid transparent;
         background:transparent;
-        color:#64748b;
+        color:var(--ink-300);
         font-size:12.5px;
         font-weight:800;
         white-space:nowrap;
         cursor:pointer
     }
-    .wp-main-tab:hover{color:#0f172a}
-    .wp-main-tab.active{color:#0f766e;border-bottom-color:#0f766e}
+    .wp-main-tab:hover{color:var(--ink-900)}
+    .wp-main-tab.active{color:var(--brand-600);border-bottom-color:var(--brand-600)}
     .wp-tab-badge{
         display:inline-flex;
         align-items:center;
@@ -300,12 +300,12 @@ foreach ($calendarEvents as $event) {
         height:20px;
         padding:0 6px;
         border-radius:999px;
-        background:#e2e8f0;
-        color:#475569;
+        background:var(--slate-border);
+        color:var(--slate-fg);
         font-size:10px;
         font-weight:800
     }
-    .wp-main-tab.active .wp-tab-badge{background:#ccfbf1;color:#0f766e}
+    .wp-main-tab.active .wp-tab-badge{background:var(--brand-100);color:var(--brand-600)}
     .wp-tab-panel{display:none}
     .wp-tab-panel.active{display:block}
 
@@ -314,16 +314,16 @@ foreach ($calendarEvents as $event) {
         min-height:36px;
         min-width:92px;
         padding:6px 30px 6px 10px;
-        border:1px solid #dbe3ec;
+        border:1px solid var(--ink-100);
         border-radius:8px;
-        background:#fff;
-        color:#0f172a;
+        background:var(--surface-card);
+        color:var(--ink-900);
         font-size:12px;
         font-weight:800;
         cursor:pointer
     }
     .wp-calendar-year-select:focus{
-        border-color:#0f766e;
+        border-color:var(--brand-600);
         outline:none;
         box-shadow:0 0 0 3px rgba(15,118,110,.10)
     }
@@ -343,16 +343,16 @@ foreach ($calendarEvents as $event) {
 .wp-activity-list-card {
     overflow: hidden;
 
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--slate-border);
     border-radius: 11px;
 
-    background: #fff;
+    background: var(--surface-card);
 
     box-shadow: 0 2px 7px rgba(15, 23, 42, .05);
 }
 
 .wp-milestone-list-card.open {
-    border-color: #99f6e4;
+    border-color: var(--brand-200);
 }
 
 .wp-list-card-head {
@@ -370,7 +370,7 @@ foreach ($calendarEvents as $event) {
 
     border: 0;
 
-    background: #fff;
+    background: var(--surface-card);
 
     text-align: left;
 
@@ -378,7 +378,7 @@ foreach ($calendarEvents as $event) {
 }
 
 .wp-list-card-head:hover {
-    background: #f8fafc;
+    background: var(--surface-hover);
 }
 
 .wp-list-card-main {
@@ -400,7 +400,7 @@ foreach ($calendarEvents as $event) {
 .wp-list-card-title {
     min-width: 0;
 
-    color: #0f172a;
+    color: var(--ink-900);
 
     font-size: 13px;
     font-weight: 800;
@@ -411,7 +411,7 @@ foreach ($calendarEvents as $event) {
 }
 
 .wp-list-card-sub {
-    color: #64748b;
+    color: var(--ink-300);
 
     font-size: 10.5px;
     font-weight: 700;
@@ -426,7 +426,7 @@ foreach ($calendarEvents as $event) {
 }
 
 .wp-list-chevron {
-    color: #94a3b8;
+    color: var(--ink-200);
 
     font-size: 11px;
 
@@ -443,7 +443,7 @@ foreach ($calendarEvents as $event) {
 
     padding: 14px;
 
-    border-top: 1px solid #eef2f7;
+    border-top: 1px solid var(--ink-50);
 }
 
 .wp-milestone-list-card.open > .wp-list-card-body,
@@ -470,7 +470,7 @@ foreach ($calendarEvents as $event) {
 
     border-radius: 999px;
 
-    background: #e2e8f0;
+    background: var(--slate-border);
 }
 
 .wp-progress-fill {
@@ -483,7 +483,7 @@ foreach ($calendarEvents as $event) {
 
     background: linear-gradient(
         90deg,
-        #0f766e,
+        var(--brand-600),
         #22c55e
     );
 
@@ -493,7 +493,7 @@ foreach ($calendarEvents as $event) {
 .wp-progress-pct {
     width: 40px;
 
-    color: #0f766e;
+    color: var(--brand-600);
 
     font-size: 10.5px;
     font-weight: 800;
@@ -525,8 +525,8 @@ foreach ($calendarEvents as $event) {
 
     border-radius: 999px;
 
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--slate-bg);
+    color: var(--slate-fg);
 
     font-size: 10px;
     font-weight: 800;
@@ -613,7 +613,7 @@ foreach ($calendarEvents as $event) {
     gap: 12px;
     margin-top: 16px;
     padding-top: 14px;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--slate-border);
 }
 
 .wp-milestone-pagination.show {
@@ -621,7 +621,7 @@ foreach ($calendarEvents as $event) {
 }
 
 .wp-pagination-info {
-    color: #64748b;
+    color: var(--ink-300);
     font-size: 11.5px;
     font-weight: 700;
 }
@@ -640,25 +640,25 @@ foreach ($calendarEvents as $event) {
     align-items: center;
     justify-content: center;
     padding: 0 9px;
-    border: 1px solid #dbe3ec;
+    border: 1px solid var(--ink-100);
     border-radius: 8px;
-    background: #fff;
-    color: #475569;
+    background: var(--surface-card);
+    color: var(--slate-fg);
     font-size: 11.5px;
     font-weight: 800;
     cursor: pointer;
 }
 
 .wp-page-btn:hover:not(:disabled) {
-    border-color: #99f6e4;
-    background: #f0fdfa;
-    color: #0f766e;
+    border-color: var(--brand-200);
+    background: var(--brand-50);
+    color: var(--brand-600);
 }
 
 .wp-page-btn.active {
-    border-color: #0f766e;
-    background: #0f766e;
-    color: #fff;
+    border-color: var(--brand-600);
+    background: var(--brand-600);
+    color: var(--ink-0);
 }
 
 .wp-page-btn:disabled {
@@ -684,9 +684,9 @@ foreach ($calendarEvents as $event) {
 
 <div class="workplan-wrap">
 
-    <div class="milestones-hero workplan-hero">
-        <div class="milestones-hero-text">
-            <h1><i class="fas fa-route" style="margin-right:10px;opacity:.85;"></i> <?php echo $existingWorkplan ? 'Edit Workplan' : 'Create Workplan'; ?></h1>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-route" aria-hidden="true"></i> <?php echo $existingWorkplan ? 'Edit Workplan' : 'Create Workplan'; ?></h1>
             <p>
                 Build an annual workplan for a project or program: add milestones, break each one into
                 activities/deliverables with a responsible actor, and track month-by-month status.
@@ -695,7 +695,7 @@ foreach ($calendarEvents as $event) {
 
         <div class="hero-actions">
             <button type="button" class="btn btn-primary" id="wpImportOpen"><i class="fas fa-file-import"></i> Import CSV</button>
-            <a href="milestones" class="btn btn-gray"><i class="fas fa-flag-checkered"></i> Back to Milestones</a>
+            <a href="milestones" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Milestones</a>
         </div>
     </div>
 
@@ -703,7 +703,7 @@ foreach ($calendarEvents as $event) {
     <!-- LOAD EXISTING WORKPLAN -->
     <div class="panel">
         <div class="panel-head">
-            <h3><i class="fas fa-folder-open" style="color:#0f766e;margin-right:8px;"></i> Load an Existing Workplan</h3>
+            <h3><i class="fas fa-folder-open" style="color:var(--brand-600);margin-right:8px;"></i> Load an Existing Workplan</h3>
         </div>
         <div class="wp-load-picker">
             <div class="form-group" style="min-width:320px;">
@@ -751,7 +751,7 @@ foreach ($calendarEvents as $event) {
     <!-- STATS DASHBOARD -->
     <div class="panel">
         <div class="panel-head">
-            <h3><i class="fas fa-chart-column" style="color:#0f766e;margin-right:8px;"></i> Workplan Stats</h3>
+            <h3><i class="fas fa-chart-column" style="color:var(--brand-600);margin-right:8px;"></i> Workplan Stats</h3>
         </div>
 
         <div class="stats-grid reports-stats wp-stats-grid">
@@ -787,7 +787,7 @@ foreach ($calendarEvents as $event) {
                 <div class="stat-icon bg-amber"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
                 <div class="stat-info">
                     <span class="stat-label">Overdue Flags</span>
-                    <span class="stat-value"><span style="color:<?php echo $existingStats['overdue_count'] > 0 ? '#dc2626' : 'inherit'; ?>;"><?php echo $existingStats['overdue_count']; ?></span></span>
+                    <span class="stat-value"><span style="color:<?php echo $existingStats['overdue_count'] > 0 ? 'var(--red-fg)' : 'inherit'; ?>;"><?php echo $existingStats['overdue_count']; ?></span></span>
                 </div>
             </div>
             <div class="stat-card">
@@ -821,7 +821,7 @@ foreach ($calendarEvents as $event) {
         </div>
 
         <div class="wp-export-actions">
-            <a class="btn btn-gray" href="actions/workplan-export.php?workplan_id=<?php echo $existingWorkplanId; ?>&format=csv">
+            <a class="btn btn-secondary" href="actions/workplan-export.php?workplan_id=<?php echo $existingWorkplanId; ?>&format=csv">
                 <i class="fas fa-file-csv"></i> Export CSV
             </a>
             <a class="btn btn-primary" href="actions/workplan-export.php?workplan_id=<?php echo $existingWorkplanId; ?>&format=pdf">
@@ -834,9 +834,9 @@ foreach ($calendarEvents as $event) {
     <?php if (!$existingWorkplan): ?>
         <div class="panel">
             <div class="panel-head">
-                <h3><i class="fas fa-circle-info" style="color:#0f766e;margin-right:8px;"></i> Workplan Overview</h3>
+                <h3><i class="fas fa-circle-info" style="color:var(--brand-600);margin-right:8px;"></i> Workplan Overview</h3>
             </div>
-            <div style="padding:18px;color:#64748b;font-size:13px;">
+            <div style="padding:18px;color:var(--ink-300);font-size:13px;">
                 Create and save a workplan first. After saving, this tab will show statistics and completion progress.
             </div>
         </div>
@@ -848,7 +848,7 @@ foreach ($calendarEvents as $event) {
     <section class="wp-tab-panel" id="wp-tab-calendar" role="tabpanel">
     <div class="panel">
         <div class="panel-head">
-            <h3><i class="fas fa-calendar-alt" style="color:#0f766e;margin-right:8px;"></i> Workplan Calendar</h3>
+            <h3><i class="fas fa-calendar-alt" style="color:var(--brand-600);margin-right:8px;"></i> Workplan Calendar</h3>
         </div>
         <div style="padding:16px;">
             <div class="wp-calendar-shell">
@@ -906,7 +906,7 @@ foreach ($calendarEvents as $event) {
     <!-- STEP 1: Entity + Year -->
     <div class="panel">
         <div class="panel-head">
-            <h3><i class="fas fa-bullseye" style="color:#0f766e;margin-right:8px;"></i> Workplan Target</h3>
+            <h3><i class="fas fa-bullseye" style="color:var(--brand-600);margin-right:8px;"></i> Workplan Target</h3>
         </div>
 
         <div style="padding:16px;">
@@ -983,7 +983,7 @@ foreach ($calendarEvents as $event) {
     <!-- STEP 2/3: Milestones builder -->
     <div class="panel">
         <div class="panel-head">
-            <h3><i class="fas fa-flag-checkered" style="color:#0f766e;margin-right:8px;"></i> Milestones</h3>
+            <h3><i class="fas fa-flag-checkered" style="color:var(--brand-600);margin-right:8px;"></i> Milestones</h3>
             <button type="button" class="btn btn-primary btn-sm" onclick="wpAddMilestone()">
                 <i class="fas fa-plus"></i> Add Milestone
             </button>
@@ -1015,7 +1015,7 @@ foreach ($calendarEvents as $event) {
     </div>
 
     <div class="panel workplan-actionbar">
-        <button type="button" class="btn btn-gray" onclick="window.location.href='milestones'">Cancel</button>
+        <button type="button" class="btn btn-secondary" onclick="window.location.href='milestones'">Cancel</button>
         <button type="button" class="btn btn-primary" id="saveWorkplanBtn" onclick="wpSaveWorkplan()">
             <i class="fas fa-save"></i> <?php echo $existingWorkplan ? 'Update Workplan' : 'Save Workplan'; ?>
         </button>
@@ -1028,7 +1028,7 @@ foreach ($calendarEvents as $event) {
 <div class="wp-modal" id="wpImportModal" role="dialog" aria-modal="true" aria-labelledby="wpImportTitle">
     <div class="wp-modal-card wp-import-card">
         <div class="wp-modal-head">
-            <h3 id="wpImportTitle"><i class="fas fa-file-import" style="color:#0f766e;margin-right:7px;" aria-hidden="true"></i> Import Workplan from CSV</h3>
+            <h3 id="wpImportTitle"><i class="fas fa-file-import" style="color:var(--brand-600);margin-right:7px;" aria-hidden="true"></i> Import Workplan from CSV</h3>
             <button type="button" class="wp-modal-close" id="wpImportClose" aria-label="Close">&times;</button>
         </div>
         <form id="wpImportForm" enctype="multipart/form-data">
@@ -1040,7 +1040,7 @@ foreach ($calendarEvents as $event) {
                             <strong>Download the template</strong>
                             <span>One row per activity. Repeat the milestone name for each of its activities.</span>
                         </div>
-                        <a href="actions/workplan-actions.php?action=template" class="btn btn-gray"><i class="fas fa-download" aria-hidden="true"></i> Template</a>
+                        <a href="actions/workplan-actions.php?action=template" class="btn btn-secondary"><i class="fas fa-download" aria-hidden="true"></i> Template</a>
                     </li>
                     <li>
                         <div>
@@ -1106,7 +1106,7 @@ foreach ($calendarEvents as $event) {
                 <div class="wp-import-result" id="wpImportResult" role="alert" hidden></div>
             </div>
             <div class="wp-modal-foot">
-                <button type="button" class="btn btn-gray" id="wpImportCancel">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="wpImportCancel">Cancel</button>
                 <button type="submit" class="btn btn-primary" id="wpImportSubmit"><i class="fas fa-upload" aria-hidden="true"></i> Import</button>
             </div>
         </form>
@@ -1116,14 +1116,14 @@ foreach ($calendarEvents as $event) {
 <style>
 .wp-import-card { width: min(100%, 680px); }
 .wp-import-steps { list-style: none; counter-reset: wpstep; margin: 0 0 16px; padding: 0; display: grid; gap: 10px; }
-.wp-import-steps li { counter-increment: wpstep; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; background: var(--surface-hover, #f9fafb); font-size: 13px; }
-.wp-import-steps li::before { content: counter(wpstep); flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: #0f766e; color: #fff; font-weight: 700; font-size: 12px; }
+.wp-import-steps li { counter-increment: wpstep; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--slate-border); border-radius: 12px; background: var(--surface-hover); font-size: 13px; }
+.wp-import-steps li::before { content: counter(wpstep); flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-600); color: var(--ink-0); font-weight: 700; font-size: 12px; }
 .wp-import-steps li > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.wp-import-steps li span { color: var(--ink-400, #4b5563); }
+.wp-import-steps li span { color: var(--ink-400); }
 .wp-import-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
 .wp-import-full { grid-column: 1 / -1; }
-.wp-import-result { margin-top: 6px; padding: 12px 14px; border-radius: 10px; font-size: 13px; border: 1px solid var(--red-border, #fecaca); background: var(--red-bg, #fef2f2); color: var(--red-fg, #b91c1c); }
-.wp-import-result ul { margin: 8px 0 0; padding-left: 18px; max-height: 200px; overflow-y: auto; color: var(--ink-600, #2f3744); }
+.wp-import-result { margin-top: 6px; padding: 12px 14px; border-radius: 10px; font-size: 13px; border: 1px solid var(--red-border); background: var(--red-bg); color: var(--red-fg); }
+.wp-import-result ul { margin: 8px 0 0; padding-left: 18px; max-height: 200px; overflow-y: auto; color: var(--ink-600); }
 @media (max-width: 640px) {
     .wp-import-grid { grid-template-columns: 1fr; }
     .wp-import-steps li { flex-wrap: wrap; }
@@ -1203,7 +1203,7 @@ foreach ($calendarEvents as $event) {
 <div class="wp-modal" id="wpCalendarStatusModal">
     <div class="wp-modal-card">
         <div class="wp-modal-head">
-            <h3><i class="fas fa-calendar-check" style="color:#0f766e;margin-right:7px;"></i> Update Calendar Item</h3>
+            <h3><i class="fas fa-calendar-check" style="color:var(--brand-600);margin-right:7px;"></i> Update Calendar Item</h3>
             <button type="button" class="wp-modal-close" id="wpCalendarModalClose">&times;</button>
         </div>
         <form id="wpCalendarStatusForm">
@@ -1243,7 +1243,7 @@ foreach ($calendarEvents as $event) {
                 </div>
             </div>
             <div class="wp-modal-foot">
-                <button type="button" class="btn btn-gray" id="wpCalendarModalCancel">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="wpCalendarModalCancel">Cancel</button>
                 <button type="submit" class="btn btn-primary" id="wpCalendarStatusSave"><i class="fas fa-save"></i> Update Status</button>
             </div>
         </form>
@@ -1402,11 +1402,11 @@ foreach ($calendarEvents as $event) {
                     <span
                         style="
                             padding:0 2px;
-                            color:#94a3b8;
+                            color:var(--ink-200);
                             font-size:11px;
                         "
                     >
-                        …
+                        â€¦
                     </span>
                 `;
             }
@@ -1809,7 +1809,7 @@ foreach ($calendarEvents as $event) {
             >
                 <span class="wp-list-card-main">
                     <span class="wp-list-card-title-row">
-                        <i class="fas fa-flag" style="color:#0f766e;"></i>
+                        <i class="fas fa-flag" style="color:var(--brand-600);"></i>
                         <span class="wp-list-card-title milestone-summary-title">
                             Milestone ${mIndex}
                         </span>
@@ -1882,7 +1882,7 @@ foreach ($calendarEvents as $event) {
 
                 <div class="activities-block">
                     <div class="activities-block-head">
-                        <h4><i class="fas fa-list-check" style="color:#0f766e;margin-right:6px;"></i> Activities / Deliverables</h4>
+                        <h4><i class="fas fa-list-check" style="color:var(--brand-600);margin-right:6px;"></i> Activities / Deliverables</h4>
                         <button type="button" class="btn btn-sm btn-soft" onclick="wpAddActivity(this)">
                             <i class="fas fa-plus"></i> Add Activity
                         </button>
@@ -1970,7 +1970,7 @@ foreach ($calendarEvents as $event) {
             >
                 <span class="wp-list-card-main">
                     <span class="wp-list-card-title-row">
-                        <i class="fas fa-list-check" style="color:#0f766e;"></i>
+                        <i class="fas fa-list-check" style="color:var(--brand-600);"></i>
                         <span class="wp-list-card-title activity-summary-title">
                             Activity ${activityIndex}
                         </span>
@@ -2048,7 +2048,7 @@ foreach ($calendarEvents as $event) {
             </div>
 
             <div class="monthly-toggle">
-                <button type="button" class="btn btn-sm btn-gray" onclick="wpToggleMonthly(this)">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="wpToggleMonthly(this)">
                     <i class="fas fa-calendar-alt"></i> Set Monthly Status
                 </button>
             </div>
@@ -2489,13 +2489,13 @@ foreach ($calendarEvents as $event) {
                 </div><div class="wp-agenda-items">`;
 
             if (!dayEvents.length) {
-                html += '<div style="color:#94a3b8;font-size:10.5px;padding:7px 4px;">No milestones or activities.</div>';
+                html += '<div style="color:var(--ink-200);font-size:10.5px;padding:7px 4px;">No milestones or activities.</div>';
             }
 
             dayEvents.forEach(e => {
                 const c = wpColor(e.status);
                 html += `<div class="wp-agenda-event" style="--event-color:${c}" data-wp-event-id="${wpEsc(e.id)}">
-                    <div style="font-size:10px;color:#64748b;font-weight:700;">${wpEsc(e.kind)}<br>${wpEsc(e.frequency || '')}</div>
+                    <div style="font-size:10px;color:var(--ink-300);font-weight:700;">${wpEsc(e.kind)}<br>${wpEsc(e.frequency || '')}</div>
                     <div><div class="wp-agenda-title">${wpEsc(e.title)}</div>
                     <div class="wp-agenda-meta">${wpEsc(e.milestone_name || e.responsible || '')}</div></div>
                     <span class="wp-agenda-status" style="background:${c}">${wpEsc(e.status)}</span>
@@ -2533,7 +2533,7 @@ foreach ($calendarEvents as $event) {
             });
 
             html += `<section class="wp-period-card"><h4>${new Intl.DateTimeFormat('en-GB',{month:'long'}).format(ms)}
-                <span style="color:#94a3b8;font-size:9px;margin-left:4px">${monthEvents.length}</span></h4>`;
+                <span style="color:var(--ink-200);font-size:9px;margin-left:4px">${monthEvents.length}</span></h4>`;
 
             monthEvents.slice(0, 8).forEach(e => {
                 html += `<div class="wp-period-event" style="--event-color:${wpColor(e.status)}"
@@ -2541,7 +2541,7 @@ foreach ($calendarEvents as $event) {
             });
 
             if (monthEvents.length > 8) {
-                html += '<div style="color:#0f766e;font-size:9.5px;font-weight:800">+' + (monthEvents.length - 8) + ' more</div>';
+                html += '<div style="color:var(--brand-600);font-size:9.5px;font-weight:800">+' + (monthEvents.length - 8) + ' more</div>';
             }
 
             html += '</section>';
@@ -2554,7 +2554,7 @@ foreach ($calendarEvents as $event) {
         }).length;
 
         if (selectedYearCount === 0 && events.length > 0) {
-            html += '<div style="margin:12px 14px 14px;padding:10px 12px;border:1px solid #fed7aa;border-radius:8px;background:#fff7ed;color:#9a3412;font-size:11px;font-weight:700;">'
+            html += '<div style="margin:12px 14px 14px;padding:10px 12px;border:1px solid var(--amber-border);border-radius:8px;background:var(--amber-bg);color:var(--amber-fg);font-size:11px;font-weight:700;">'
                 + 'No calendar items fall within ' + year
                 + '. Select another year from the year dropdown to view the '
                 + events.length + ' saved calendar item' + (events.length === 1 ? '' : 's') + '.'

@@ -121,6 +121,40 @@ $error_msg       = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
 ?>
 
+<style>
+/* risk_rating_form.php: layout and JS states unique to this page.
+   Cards, buttons, alerts and form controls come from reports.css. */
+#toast { display: none; align-items: flex-start; gap: 12px; position: fixed; right: 20px; bottom: 20px; z-index: 1000; max-width: 360px; padding: 14px 16px; border: 1px solid var(--slate-border); border-radius: var(--radius-lg); background: var(--surface-card); box-shadow: var(--shadow-lg); }
+#toast.show { display: flex; }
+#toast.success { background: var(--green-bg); border-color: var(--green-border); color: var(--green-fg); }
+#toast.error { background: var(--red-bg); border-color: var(--red-border); color: var(--red-fg); }
+#toast .toast-body { display: flex; flex-direction: column; gap: 2px; }
+#toast .toast-icon { font-weight: 800; }
+.rrf-tag { display: inline-grid; place-items: center; min-width: 28px; height: 24px; margin-right: 4px; padding: 0 6px; border-radius: var(--radius-sm); background: var(--brand-50); color: var(--brand-700); font-size: var(--fs-xs); font-weight: 800; }
+.rrf-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+#pillarPills .pill { padding: 6px 12px; border: 1px solid var(--ink-100); border-radius: var(--radius-pill); background: var(--surface-card); color: var(--ink-500); font-size: var(--fs-sm); font-weight: 600; cursor: pointer; user-select: none; }
+#pillarPills .pill:hover { border-color: var(--brand-400); color: var(--brand-700); }
+#pillarPills .pill.selected { background: var(--brand-50); border-color: var(--brand-500); color: var(--brand-700); }
+.rrf-score-row { display: flex; align-items: center; gap: 14px; }
+.rrf-score-row input[type="range"] { flex: 1 1 auto; accent-color: var(--brand-500); }
+.score-display { min-width: 48px; padding: 6px 10px; border-radius: var(--radius-md); background: var(--brand-50); color: var(--brand-700); font-size: var(--fs-lg); font-weight: 800; text-align: center; }
+.score-display.null-val { background: var(--ink-50); color: var(--ink-300); }
+.err-msg { display: none; color: var(--red-fg); font-size: var(--fs-xs); font-weight: 600; }
+.err-msg.visible { display: block; }
+.error-field { border-color: var(--red-fg) !important; }
+.char-counter { color: var(--ink-300); font-size: var(--fs-xs); }
+.char-counter.warn { color: var(--amber-fg); }
+.char-counter.over { color: var(--red-fg); font-weight: 700; }
+.rrf-counter-row { display: flex; justify-content: space-between; gap: 8px; }
+.rrf-counter-row .char-counter { margin-left: auto; }
+.rrf-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rrf-actions .cell-muted { margin: 0 0 0 auto; }
+#rrsForm { display: flex; flex-direction: column; gap: 20px; }
+.btn-spinner { display: none; width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: rrf-spin .7s linear infinite; }
+#submitBtn.loading .btn-spinner { display: inline-block; }
+@keyframes rrf-spin { to { transform: rotate(360deg); } }
+</style>
+
 <div id="toast" role="alert" aria-live="assertive">
     <div class="toast-icon" id="toastIcon"></div>
     <div class="toast-body">
@@ -129,47 +163,41 @@ unset($_SESSION['success'], $_SESSION['error']);
     </div>
 </div>
 
-<header>
-    <div class="header-text">
-        <div class="header-badge">Risk Management System</div>
-        <h1>New <em>Risk Rating</em> Section</h1>
-        <p>Add a pillar entry to an existing risk rating record. Required fields are marked with a gold dot.</p>
-    </div>
-    <div class="header-meta">
-        <span>risk_rating_sections</span>
-        <span>INSERT</span>
-    </div>
-</header>
+<div class="page-stack">
 
-<main>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-shield-alt" aria-hidden="true"></i> New Risk Rating Section</h1>
+            <p>Add a pillar entry to an existing risk rating record. Required fields are marked with <span class="required-mark">*</span>.</p>
+        </div>
+    </div>
+
     <?php if (!empty($success_msg)): ?>
-        <div class="alert success"><?= h($success_msg) ?></div>
+        <div class="alert alert-success"><?= h($success_msg) ?></div>
     <?php endif; ?>
 
     <?php if (!empty($error_msg)): ?>
-        <div class="alert error"><?= h($error_msg) ?></div>
+        <div class="alert alert-danger"><?= h($error_msg) ?></div>
     <?php endif; ?>
 
     <form id="rrsForm" novalidate autocomplete="off">
+
         <div class="card">
-
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-tag">01</span>
-                    <h2>Reference</h2>
-                </div>
-
-                <div class="field-grid">
-                    <div class="field">
+            <div class="card-header">
+                <h3><span class="rrf-tag">01</span> Reference</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
                         <label for="risk_rating_id">
                             Risk Rating ID
-                            <span class="req" title="Optional">?</span>
-                            <span class="hint">integer or NULL</span>
+                            <span class="cell-muted">optional: integer or NULL</span>
                         </label>
                         <input
                             type="number"
                             id="risk_rating_id"
                             name="risk_rating_id"
+                            class="form-control"
                             placeholder="e.g. 1"
                             min="1"
                         >
@@ -177,19 +205,19 @@ unset($_SESSION['success'], $_SESSION['error']);
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-tag">02</span>
-                    <h2>Pillar</h2>
-                </div>
-
-                <div class="field span-2 field-block">
+        <div class="card">
+            <div class="card-header">
+                <h3><span class="rrf-tag">02</span> Pillar</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
                     <label>
-                        Pillar Key <span class="req">?</span>
+                        Pillar Key <span class="required-mark">*</span>
                     </label>
 
-                    <div class="pillar-pills" id="pillarPills">
+                    <div class="rrf-pills" id="pillarPills">
                         <span class="pill" data-val="summary">summary</span>
                         <span class="pill" data-val="governance">governance</span>
                         <span class="pill" data-val="operational">operational</span>
@@ -204,38 +232,37 @@ unset($_SESSION['success'], $_SESSION['error']);
                     <span class="err-msg" id="err_pillar_key">Please select a pillar key.</span>
                 </div>
 
-                <div class="field-grid">
-                    <div class="field span-2">
-                        <label for="pillar_label">
-                            Pillar Label <span class="req">?</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="pillar_label"
-                            name="pillar_label"
-                            placeholder="e.g. Governance Risks"
-                            maxlength="255"
-                        >
-                        <span class="char-counter" id="cc_pillar_label">0 / 255</span>
-                        <span class="err-msg" id="err_pillar_label">Pillar label is required.</span>
-                    </div>
+                <div class="form-group">
+                    <label for="pillar_label">
+                        Pillar Label <span class="required-mark">*</span>
+                    </label>
+                    <input
+                        type="text"
+                        id="pillar_label"
+                        name="pillar_label"
+                        class="form-control"
+                        placeholder="e.g. Governance Risks"
+                        maxlength="255"
+                    >
+                    <span class="char-counter" id="cc_pillar_label">0 / 255</span>
+                    <span class="err-msg" id="err_pillar_label">Pillar label is required.</span>
                 </div>
             </div>
+        </div>
 
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-tag">03</span>
-                    <h2>Rating</h2>
-                </div>
-
-                <div class="field-grid">
-                    <div class="field">
+        <div class="card">
+            <div class="card-header">
+                <h3><span class="rrf-tag">03</span> Rating</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
                         <label for="rating_score_range">
                             Rating Score
-                            <span class="hint" id="scoreHint">NULL</span>
+                            <span class="cell-muted" id="scoreHint">NULL</span>
                         </label>
 
-                        <div class="score-row">
+                        <div class="rrf-score-row">
                             <input
                                 type="range"
                                 id="rating_score_range"
@@ -245,108 +272,111 @@ unset($_SESSION['success'], $_SESSION['error']);
                                 value="0"
                                 aria-label="Rating score"
                             >
-                            <div class="score-display null-val" id="scoreDisplay">—</div>
+                            <div class="score-display null-val" id="scoreDisplay">â€”</div>
                         </div>
 
-                        <small class="helper-text">
+                        <span class="cell-muted">
                             Drag to set (0 = NULL). Composite scores use 13; Minor = 1; Moderate = 2; Major = 3.
-                        </small>
+                        </span>
 
                         <input type="hidden" id="rating_score" name="rating_score">
                     </div>
 
-                    <div class="field">
+                    <div class="form-group">
                         <label for="rating_label">Rating Label</label>
-                        <div class="select-wrap">
-                            <select id="rating_label" name="rating_label">
-                                <option value="">None / NULL</option>
-                                <option value="Minor">Minor</option>
-                                <option value="Moderate">Moderate</option>
-                                <option value="Major">Major</option>
-                                <option value="Critical">Critical</option>
-                                <option value="Composite">Composite</option>
-                            </select>
-                        </div>
+                        <select id="rating_label" name="rating_label" class="form-control">
+                            <option value="">None / NULL</option>
+                            <option value="Minor">Minor</option>
+                            <option value="Moderate">Moderate</option>
+                            <option value="Major">Major</option>
+                            <option value="Critical">Critical</option>
+                            <option value="Composite">Composite</option>
+                        </select>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="form-section">
-                <div class="section-header">
-                    <span class="section-tag">04</span>
-                    <h2>Content</h2>
+        <div class="card">
+            <div class="card-header">
+                <h3><span class="rrf-tag">04</span> Content</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="key_findings">Key Findings</label>
+                    <textarea
+                        id="key_findings"
+                        name="key_findings"
+                        class="form-control"
+                        placeholder="Describe the key findings for this pillar..."
+                        rows="4"
+                    ></textarea>
+                    <div class="rrf-counter-row">
+                        <span class="err-msg" id="err_key_findings"></span>
+                        <span class="char-counter align-right" id="cc_key_findings">0</span>
+                    </div>
                 </div>
 
-                <div class="field-grid">
-                    <div class="field span-2">
-                        <label for="key_findings">Key Findings</label>
-                        <textarea
-                            id="key_findings"
-                            name="key_findings"
-                            placeholder="Describe the key findings for this pillar..."
-                            rows="4"
-                        ></textarea>
-                        <div class="counter-row">
-                            <span class="err-msg" id="err_key_findings"></span>
-                            <span class="char-counter align-right" id="cc_key_findings">0</span>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label for="recommendations">Recommendations</label>
+                    <textarea
+                        id="recommendations"
+                        name="recommendations"
+                        class="form-control"
+                        placeholder="List recommendations for this pillar..."
+                        rows="3"
+                    ></textarea>
+                    <span class="char-counter" id="cc_recommendations">0</span>
+                </div>
 
-                    <div class="field span-2">
-                        <label for="recommendations">Recommendations</label>
-                        <textarea
-                            id="recommendations"
-                            name="recommendations"
-                            placeholder="List recommendations for this pillar..."
-                            rows="3"
-                        ></textarea>
-                        <span class="char-counter" id="cc_recommendations">0</span>
-                    </div>
+                <div class="form-group">
+                    <label for="follow_up_actions">Follow-up Actions</label>
+                    <textarea
+                        id="follow_up_actions"
+                        name="follow_up_actions"
+                        class="form-control"
+                        placeholder="Specify follow-up actions to be taken..."
+                        rows="3"
+                    ></textarea>
+                    <span class="char-counter" id="cc_follow_up_actions">0</span>
+                </div>
 
-                    <div class="field span-2">
-                        <label for="follow_up_actions">Follow-up Actions</label>
-                        <textarea
-                            id="follow_up_actions"
-                            name="follow_up_actions"
-                            placeholder="Specify follow-up actions to be taken..."
-                            rows="3"
-                        ></textarea>
-                        <span class="char-counter" id="cc_follow_up_actions">0</span>
-                    </div>
-
-                    <div class="field span-2">
-                        <label for="notes">
-                            Notes
-                            <span class="hint">internal use</span>
-                        </label>
-                        <textarea
-                            id="notes"
-                            name="notes"
-                            placeholder="Any internal notes, status flags, or caveats..."
-                            rows="3"
-                        ></textarea>
-                        <span class="char-counter" id="cc_notes">0</span>
-                    </div>
+                <div class="form-group">
+                    <label for="notes">
+                        Notes
+                        <span class="cell-muted">internal use</span>
+                    </label>
+                    <textarea
+                        id="notes"
+                        name="notes"
+                        class="form-control"
+                        placeholder="Any internal notes, status flags, or caveats..."
+                        rows="3"
+                    ></textarea>
+                    <span class="char-counter" id="cc_notes">0</span>
                 </div>
             </div>
+        </div>
 
-            <div class="form-actions">
+        <div class="card">
+            <div class="card-body rrf-actions">
                 <button type="submit" class="btn btn-primary" id="submitBtn">
                     <div class="btn-spinner"></div>
                     <span class="btn-text">Insert Record</span>
                 </button>
 
-                <button type="button" class="btn btn-ghost" id="resetBtn">Clear Form</button>
-                <span class="action-info" id="actionInfo">All times stored as UTC</span>
+                <button type="button" class="btn btn-secondary" id="resetBtn">Clear Form</button>
+                <span class="action-info cell-muted" id="actionInfo">All times stored as UTC</span>
             </div>
         </div>
     </form>
-</main>
 
-<footer>
-    <span>risk_rating_sections . INSERT INTO</span>
-    <span id="tsDisplay"></span>
-</footer>
+    <p class="cell-muted">
+        <span>risk_rating_sections . INSERT INTO</span>
+        <span id="tsDisplay"></span>
+    </p>
+
+</div><!-- /.page-stack -->
 
 <script>
 (function tick() {
@@ -415,7 +445,7 @@ const scoreHint   = document.getElementById('scoreHint');
 
 function syncSlider(val) {
     if (val === 0) {
-        display.textContent = '—';
+        display.textContent = 'â€”';
         display.classList.add('null-val');
         scoreHidden.value = '';
         scoreHint.textContent = 'NULL';
@@ -479,7 +509,7 @@ function showToast(success, title, msg) {
 
     toast.className = success ? 'show success' : 'show error';
     icon.className = success ? 'toast-icon s' : 'toast-icon e';
-    icon.textContent = success ? '' : '×';
+    icon.textContent = success ? '' : 'Ã—';
     titleEl.textContent = title;
     msgEl.textContent = msg;
 

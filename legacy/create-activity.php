@@ -25,524 +25,180 @@ while ($row = $result->fetch_assoc()) {
 $current_year = date('Y');
 ?>
 
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
-
 <style>
-:root {
-    --ink: #ff5722;
-    --surface: #f5f4f0;
-    --panel: #ffffff;
-    --accent: #ff9800;
-    --accent-soft: #e8effe;
-    --success: #1a9e5c;
-    --success-soft: #e3f7ed;
-    --warning: #d97706;
-    --warning-soft: #fef3c7;
-    --danger: #dc2626;
-    --danger-soft: #fee2e2;
-    --border: #e2e0d8;
-    --muted: #8a8880;
-    --mono: 'DM Mono', monospace;
-    --sans: 'Sora', sans-serif;
-    --radius: 10px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+/* Create Activity Plan: page-only layout (ca- prefix) */
+.ca-page .ca-meta-grid { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 16px; }
+.ca-page .ca-meta-grid .form-group { margin-bottom: 0; }
+.ca-weight-total { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-300); }
+.ca-mono { font-variant-numeric: tabular-nums; }
+
+/* Weight indicator */
+.ca-weight-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; margin-bottom: 16px;
+    background: var(--brand-50); border-radius: var(--radius-sm);
+    font-size: var(--fs-sm);
+}
+.ca-weight-bar .ca-weight-title { font-size: var(--fs-xs); color: var(--brand-700); font-weight: 600; }
+.ca-weight-bar .bar-wrap { flex: 1; height: 8px; background: var(--brand-100); border-radius: var(--radius-pill); overflow: hidden; }
+.ca-weight-bar .bar-fill { height: 100%; width: 0%; background: var(--brand-500); border-radius: var(--radius-pill); transition: width .3s; }
+.ca-weight-bar .bar-fill.over { background: var(--red-fg); }
+.ca-weight-bar .ca-weight-label { font-weight: 600; min-width: 70px; text-align: right; }
+
+/* Activity entry table: compact inputs inside table cells */
+.ca-page .ca-activity-table { min-width: 900px; }
+.ca-page .ca-activity-table td { padding: 8px; }
+.ca-page .ca-activity-table td .form-control,
+.ca-page .ca-week-table td .form-control { padding: 7px 9px; font-size: var(--fs-sm); }
+.ca-page .ca-activity-table td.td-num { width: 36px; text-align: center; font-size: var(--fs-xs); color: var(--ink-300); }
+.ca-page .ca-activity-table td.td-del { width: 48px; text-align: center; }
+.ca-page .ca-activity-table td.td-weight { width: 90px; }
+.ca-page .ca-col-num { width: 36px; }
+.ca-page .ca-col-wide { min-width: 200px; }
+.ca-page .ca-col-weight { width: 90px; }
+.ca-page .ca-col-unit { min-width: 120px; }
+.ca-page .ca-col-target { min-width: 100px; }
+.ca-page .ca-col-del { width: 48px; }
+.ca-req { color: var(--red-fg); }
+.ca-add-row { margin-top: 14px; }
+
+/* Quarter tabs (JS toggles .q-tab / .q-tab-content .active) */
+.ca-tabs-wrap { padding: 20px 22px 0; }
+.ca-page .quarter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.ca-page .q-tab {
+    padding: 8px 18px; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    font-size: var(--fs-sm); font-weight: 600; cursor: pointer; user-select: none;
+    border: 1px solid var(--ink-100); border-bottom: none;
+    background: var(--ink-50); color: var(--ink-300); transition: all .15s;
+}
+.ca-page .q-tab.active { background: var(--surface-card); color: var(--brand-600); position: relative; z-index: 1; }
+.ca-page .q-tab .ca-q-months { font-size: 10px; font-weight: 400; opacity: .7; }
+.ca-page .q-tab-content { display: none; padding: 0 22px 22px; }
+.ca-page .q-tab-content.active { display: block; }
+.ca-quarter-panel {
+    border: 1px solid var(--ink-100);
+    border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
+    background: var(--surface-card); overflow: hidden;
 }
 
-* { box-sizing: border-box; }
+/* Week selector chips (JS toggles .week-chip.selected) */
+.ca-week-selector {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    padding: 12px 16px; background: var(--surface-hover); border-bottom: 1px solid var(--ink-100);
+}
+.ca-week-selector > label { font-size: var(--fs-xs); font-weight: 600; color: var(--ink-300); margin: 0 4px 0 0; }
+.ca-week-selector .ca-chip-all { margin-left: auto; }
+.ca-page .week-chip {
+    padding: 4px 11px; border-radius: var(--radius-pill);
+    border: 1px solid var(--ink-100); background: var(--surface-card);
+    font-size: var(--fs-xs); font-weight: 600; cursor: pointer; user-select: none;
+    color: var(--ink-300); transition: all .12s;
+}
+.ca-page .week-chip.selected { background: var(--brand-600); border-color: var(--brand-600); color: var(--ink-0); }
+.ca-no-weeks { padding: 32px; }
 
-body { font-family: var(--sans); background: var(--surface); color: var(--ink); }
-
-/* -- Page header -- */
-.page-hero {
-    background: var(--ink);
-    color: #fff;
-    padding: 28px 32px;
-    border-radius: var(--radius);
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-.page-hero h2 {
-    font-size: 22px;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: -0.4px;
-}
-.page-hero p { margin: 4px 0 0; font-size: 13px; color: #ffffff; }
-.dept-badge {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.15);
-    padding: 8px 16px;
-    border-radius: 30px;
-    font-size: 13px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-.dept-badge i { margin-right: 6px; color: var(--accent); }
-
-/* -- Panels -- */
-.panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-}
-.panel-head {
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    background: #fafaf8;
-}
-.panel-head h4 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    color: var(--ink);
-}
-.panel-head h4 i { color: var(--accent); font-size: 14px; }
-.panel-body { padding: 24px; }
-
-/* -- Meta row -- */
-.meta-grid {
-    display: grid;
-    grid-template-columns: 180px 1fr 1fr;
-    gap: 16px;
+/* Weekly entry table */
+.ca-page .ca-week-table th { text-align: center; }
+.ca-page .ca-week-table th.th-activity { text-align: left; min-width: 180px; }
+.ca-page .ca-week-table th.th-week { min-width: 110px; }
+.ca-page .ca-week-table td { padding: 8px; }
+.ca-page .ca-week-table td.td-activity-name { font-weight: 500; color: var(--ink-700); padding-left: 16px; border-left: 3px solid var(--brand-500); }
+.ca-page .ca-week-table td.td-activity-name .key-result { display: block; margin-top: 2px; font-size: 11px; font-weight: 400; color: var(--ink-300); }
+.ca-page .ca-week-table td.td-actual { min-width: 100px; }
+.ca-page .ca-week-table td.td-comment { min-width: 180px; }
+.ca-page .ca-week-table tr.ca-week-subhead td {
+    background: var(--surface-hover); padding: 4px 8px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--ink-300); text-align: center;
 }
 
-/* -- Form controls -- */
-.field { margin-bottom: 0; }
-.field label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-    color: var(--muted);
-    margin-bottom: 6px;
-}
-.field label .req { color: var(--danger); margin-left: 2px; }
-.field input, .field select, .field textarea {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 7px;
-    font-family: var(--sans);
-    font-size: 13.5px;
-    color: var(--ink);
-    background: #fff;
-    transition: border-color .15s, box-shadow .15s;
-    outline: none;
-}
-.field input:focus, .field select:focus, .field textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(42,110,245,0.12);
-}
-.field textarea { resize: vertical; }
-.field .hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+/* Form actions */
+.ca-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-/* -- Weight indicator -- */
-.weight-total-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: var(--accent-soft);
-    border-radius: 8px;
-    margin-bottom: 16px;
-    font-size: 13px;
-}
-.weight-total-bar .bar-wrap {
-    flex: 1;
-    height: 8px;
-    background: #c8d8fd;
-    border-radius: 99px;
-    overflow: hidden;
-}
-.weight-total-bar .bar-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 99px;
-    transition: width .3s;
-    width: 0%;
-}
-.weight-total-bar .bar-fill.over { background: var(--danger); }
-.weight-total-bar .label { font-weight: 600; font-family: var(--mono); min-width: 70px; text-align: right; }
-
-/* -- Activity table -- */
-.activity-table-wrap { overflow-x: auto; }
-.activity-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 13px;
-}
-.activity-table thead th {
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--muted);
-    border-bottom: 2px solid var(--border);
-    white-space: nowrap;
-    background: #fafaf8;
-}
-.activity-table tbody tr { transition: background .12s; }
-.activity-table tbody tr:hover { background: #fafaf8; }
-.activity-table td {
-    padding: 10px 8px;
-    border-bottom: 1px solid #f0eeea;
-    vertical-align: middle;
-}
-.activity-table td input,
-.activity-table td select,
-.activity-table td textarea {
-    width: 100%;
-    padding: 7px 9px;
-    border: 1.5px solid var(--border);
-    border-radius: 6px;
-    font-family: var(--sans);
-    font-size: 13px;
-    color: var(--ink);
-    background: #fff;
-    outline: none;
-    transition: border-color .15s;
-}
-.activity-table td input:focus,
-.activity-table td select:focus,
-.activity-table td textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(42,110,245,0.1);
-}
-.activity-table td.td-num { width: 36px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.activity-table td.td-del { width: 40px; text-align: center; }
-.activity-table td.td-weight { width: 90px; }
-
-.btn-del-row {
-    background: none;
-    border: none;
-    color: #ccc;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px 8px;
-    border-radius: 5px;
-    transition: color .15s, background .15s;
-}
-.btn-del-row:hover { color: var(--danger); background: var(--danger-soft); }
-
-.btn-add-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 14px;
-    padding: 9px 18px;
-    background: var(--accent-soft);
-    color: var(--accent);
-    border: 1.5px dashed var(--accent);
-    border-radius: 7px;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .15s;
-}
-.btn-add-row:hover { background: #d8e7fe; }
-
-/* -- Quarter tabs -- */
-.quarter-tabs { display: flex; gap: 6px; margin-bottom: 0; }
-.q-tab {
-    padding: 8px 18px;
-    border-radius: 8px 8px 0 0;
-    font-size: 12.5px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1.5px solid var(--border);
-    border-bottom: none;
-    background: #f0eeea;
-    color: var(--muted);
-    transition: all .15s;
-    user-select: none;
-}
-.q-tab.active {
-    background: var(--panel);
-    color: var(--accent);
-    border-color: var(--border);
-    border-bottom-color: var(--panel);
-    z-index: 1;
-    position: relative;
-}
-.q-tab-content { display: none; }
-.q-tab-content.active { display: block; }
-.quarter-panel {
-    border: 1.5px solid var(--border);
-    border-radius: 0 var(--radius) var(--radius) var(--radius);
-    background: var(--panel);
-    overflow: hidden;
-}
-
-/* -- Weekly sub-table -- */
-.week-table-wrap { overflow-x: auto; }
-.week-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 12.5px;
-    min-width: 900px;
-}
-.week-table thead th {
-    padding: 9px 10px;
-    text-align: center;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    color: var(--muted);
-    border-bottom: 2px solid var(--border);
-    white-space: nowrap;
-    background: #fafaf8;
-}
-.week-table thead th.th-activity { text-align: left; min-width: 180px; }
-.week-table thead th.th-week { min-width: 110px; }
-.week-table tbody tr:hover { background: #fafaf8; }
-.week-table td {
-    padding: 8px 8px;
-    border-bottom: 1px solid #f0eeea;
-    vertical-align: middle;
-}
-.week-table td.td-activity-name {
-    font-weight: 500;
-    color: var(--ink);
-    padding-left: 16px;
-    border-left: 3px solid var(--accent);
-}
-.week-table td.td-activity-name .key-result {
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 400;
-    margin-top: 2px;
-    display: block;
-}
-.week-table td input,
-.week-table td select {
-    width: 100%;
-    padding: 6px 8px;
-    border: 1.5px solid var(--border);
-    border-radius: 5px;
-    font-family: var(--sans);
-    font-size: 12px;
-    color: var(--ink);
-    background: #fff;
-    outline: none;
-    transition: border-color .15s;
-}
-.week-table td input:focus,
-.week-table td select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(42,110,245,0.1);
-}
-.week-selector-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 12px 16px;
-    background: #f7f6f2;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-}
-.week-selector-wrap label { font-size: 11.5px; font-weight: 600; color: var(--muted); margin-right: 4px; }
-.week-chip {
-    padding: 4px 11px;
-    border-radius: 20px;
-    border: 1.5px solid var(--border);
-    background: #fff;
-    font-size: 11.5px;
-    font-weight: 600;
-    font-family: var(--mono);
-    cursor: pointer;
-    color: var(--muted);
-    transition: all .12s;
-    user-select: none;
-}
-.week-chip.selected {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-}
-.week-entry-area { padding: 0; }
-.no-weeks-msg {
-    padding: 32px;
-    text-align: center;
-    color: var(--muted);
-    font-size: 13px;
-}
-.no-weeks-msg i { font-size: 24px; margin-bottom: 8px; display: block; }
-
-/* column widths */
-.week-table td.td-actual { min-width: 100px; }
-.week-table td.td-comment { min-width: 180px; }
-
-/* -- Actions bar -- */
-.actions-bar {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    padding: 24px;
-    background: #fafaf8;
-    border-top: 1px solid var(--border);
-    border-radius: 0 0 var(--radius) var(--radius);
-}
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 11px 24px;
-    border-radius: 8px;
-    font-family: var(--sans);
-    font-size: 13.5px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all .15s;
-    text-decoration: none;
-}
-.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.btn-primary:hover { background: #1a5ce0; }
-.btn-outline { background: #fff; color: var(--ink); border-color: var(--border); }
-.btn-outline:hover { border-color: #aaa; background: #f5f4f0; }
-.btn-success { background: var(--success); color: #fff; border-color: var(--success); }
-.btn-success:hover { background: #148049; }
-.btn-danger { background: #fff; color: var(--danger); border-color: var(--border); }
-.btn-danger:hover { background: var(--danger-soft); border-color: var(--danger); }
-
-/* -- Misc -- */
-.info-strip {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: var(--accent-soft);
-    border-radius: 8px;
-    font-size: 13px;
-    color: #ff9800;
-    margin-bottom: 20px;
-}
-.info-strip i { font-size: 15px; flex-shrink: 0; }
-.section-divider {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    padding: 0 8px;
-    margin: 20px 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.section-divider::before, .section-divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-}
-
-/* responsive */
-@media(max-width: 768px) {
-    .meta-grid { grid-template-columns: 1fr 1fr; }
-    .page-hero { flex-direction: column; align-items: flex-start; }
-    .actions-bar { flex-wrap: wrap; }
+@media (max-width: 768px) {
+    .ca-page .ca-meta-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
 
+<div class="page-stack ca-page">
+
 <div class="page-hero">
     <div>
-        <h2><i class="fas fa-tasks"></i> &nbsp;Create Activity Plan</h2>
-        <p>Define activities, key results, weightings, and weekly tracking targets.</p>
+        <h1><i class="fas fa-tasks" aria-hidden="true"></i> Create Activity Plan</h1>
+        <p>Define activities, key results, weightings, and weekly tracking targets for <?php echo htmlspecialchars($user_dept['department_name']); ?>.</p>
     </div>
-    <div class="dept-badge">
-        <i class="fas fa-building"></i>
-        <?php echo htmlspecialchars($user_dept['department_name']); ?>
+    <div class="hero-actions">
+        <a href="my-kpis" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
     </div>
 </div>
 
-<form method="POST" action="activity-process" id="activityForm">
+<form method="POST" action="activity-process" id="activityForm" class="page-stack">
     <input type="hidden" name="action" value="create">
     <input type="hidden" name="department_id" value="<?php echo $user_dept['department_id']; ?>">
 
     <!-- -- Meta -- -->
-    <div class="panel">
-        <div class="panel-head">
-            <h4><i class="fas fa-sliders-h"></i> Plan Details</h4>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-sliders-h" aria-hidden="true"></i> Plan Details</h3>
         </div>
-        <div class="panel-body">
-            <div class="meta-grid">
-                <div class="field">
-                    <label>Fiscal Year <span class="req">*</span></label>
-                    <select name="fiscal_year" required>
+        <div class="card-body">
+            <div class="ca-meta-grid">
+                <div class="form-group">
+                    <label>Fiscal Year <span class="ca-req">*</span></label>
+                    <select name="fiscal_year" class="form-control" required>
                         <option value="<?php echo $current_year; ?>"><?php echo $current_year; ?></option>
                         <option value="<?php echo $current_year+1; ?>"><?php echo $current_year+1; ?></option>
                     </select>
                 </div>
-                <div class="field">
-                    <label>Category <span class="req">*</span></label>
-                    <select name="category_id" required>
+                <div class="form-group">
+                    <label>Category <span class="ca-req">*</span></label>
+                    <select name="category_id" class="form-control" required>
                         <option value="">Select category...</option>
                         <?php foreach ($categories as $cat): ?>
                             <option value="<?php echo $cat['category_id']; ?>"><?php echo htmlspecialchars($cat['category_name']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="field">
-                    <label>Plan Title <span class="req">*</span></label>
-                    <input type="text" name="plan_title" placeholder="e.g., Q1 Operational Goals" required maxlength="200">
+                <div class="form-group">
+                    <label>Plan Title <span class="ca-req">*</span></label>
+                    <input type="text" name="plan_title" class="form-control" placeholder="e.g., Q1 Operational Goals" required maxlength="200">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- -- Activities -- -->
-    <div class="panel">
-        <div class="panel-head">
-            <h4><i class="fas fa-list-check"></i> Activities</h4>
-            <div id="weightDisplay" style="font-size:13px;font-weight:600;color:var(--muted);">
-                Total Weight: <span id="totalWeightVal" style="font-family:var(--mono);">0%</span>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list-check" aria-hidden="true"></i> Activities</h3>
+            <div id="weightDisplay" class="ca-weight-total">
+                Total Weight: <span id="totalWeightVal" class="ca-mono">0%</span>
             </div>
         </div>
-        <div class="panel-body">
-            <div class="info-strip">
-                <i class="fas fa-info-circle"></i>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
                 Add each activity with its key result and relative weight. Weights should sum to 100%.
             </div>
 
             <!-- Weight progress bar -->
-            <div class="weight-total-bar">
-                <span style="font-size:12px;color:var(--accent);font-weight:600;">Weight Total</span>
+            <div class="ca-weight-bar">
+                <span class="ca-weight-title">Weight Total</span>
                 <div class="bar-wrap"><div class="bar-fill" id="weightBar"></div></div>
-                <span class="label"><span id="weightPct">0</span> / 100%</span>
+                <span class="ca-weight-label ca-mono"><span id="weightPct">0</span> / 100%</span>
             </div>
 
-            <div class="activity-table-wrap">
-                <table class="activity-table" id="activityTable">
+            <div class="table-responsive">
+                <table class="table ca-activity-table" id="activityTable">
                     <thead>
                         <tr>
-                            <th style="width:36px">#</th>
-                            <th style="min-width:200px">Activity Description <span style="color:var(--danger)">*</span></th>
-                            <th style="min-width:200px">Key Result <span style="color:var(--danger)">*</span></th>
-                            <th style="width:90px">Weight (%) <span style="color:var(--danger)">*</span></th>
-                            <th style="min-width:120px">Unit of Measure</th>
-                            <th style="min-width:100px">Annual Target</th>
-                            <th style="width:40px"></th>
+                            <th class="ca-col-num">#</th>
+                            <th class="ca-col-wide">Activity Description <span class="ca-req">*</span></th>
+                            <th class="ca-col-wide">Key Result <span class="ca-req">*</span></th>
+                            <th class="ca-col-weight">Weight (%) <span class="ca-req">*</span></th>
+                            <th class="ca-col-unit">Unit of Measure</th>
+                            <th class="ca-col-target">Annual Target</th>
+                            <th class="ca-col-del"></th>
                         </tr>
                     </thead>
                     <tbody id="activityRows">
@@ -550,92 +206,92 @@ body { font-family: var(--sans); background: var(--surface); color: var(--ink); 
                     </tbody>
                 </table>
             </div>
-            <button type="button" class="btn-add-row" id="btnAddActivity">
-                <i class="fas fa-plus"></i> Add Activity
+            <button type="button" class="btn btn-soft ca-add-row" id="btnAddActivity">
+                <i class="fas fa-plus" aria-hidden="true"></i> Add Activity
             </button>
         </div>
     </div>
 
     <!-- -- Weekly Tracking -- -->
-    <div class="panel">
-        <div class="panel-head">
-            <h4><i class="fas fa-calendar-week"></i> Weekly Tracking by Quarter</h4>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-calendar-week" aria-hidden="true"></i> Weekly Tracking by Quarter</h3>
         </div>
-        <div class="panel-body" style="padding: 0;">
 
-            <!-- Quarter tabs -->
-            <div style="padding: 20px 24px 0;">
-                <div class="quarter-tabs">
-                    <div class="q-tab active" data-q="q1">Q1 <span style="font-size:10px;font-weight:400;opacity:.7">Jan-Mar</span></div>
-                    <div class="q-tab" data-q="q2">Q2 <span style="font-size:10px;font-weight:400;opacity:.7">Apr-Jun</span></div>
-                    <div class="q-tab" data-q="q3">Q3 <span style="font-size:10px;font-weight:400;opacity:.7">Jul-Sep</span></div>
-                    <div class="q-tab" data-q="q4">Q4 <span style="font-size:10px;font-weight:400;opacity:.7">Oct-Dec</span></div>
-                </div>
+        <!-- Quarter tabs -->
+        <div class="ca-tabs-wrap">
+            <div class="quarter-tabs">
+                <div class="q-tab active" data-q="q1">Q1 <span class="ca-q-months">Jan-Mar</span></div>
+                <div class="q-tab" data-q="q2">Q2 <span class="ca-q-months">Apr-Jun</span></div>
+                <div class="q-tab" data-q="q3">Q3 <span class="ca-q-months">Jul-Sep</span></div>
+                <div class="q-tab" data-q="q4">Q4 <span class="ca-q-months">Oct-Dec</span></div>
             </div>
+        </div>
 
-            <!-- Q panels -->
-            <?php
-            $quarters = [
-                'q1' => ['label'=>'Q1','months'=>'Jan - Mar','weeks'=>12],
-                'q2' => ['label'=>'Q2','months'=>'Apr - Jun','weeks'=>12],
-                'q3' => ['label'=>'Q3','months'=>'Jul - Sep','weeks'=>12],
-                'q4' => ['label'=>'Q4','months'=>'Oct - Dec','weeks'=>12],
-            ];
-            foreach ($quarters as $qk => $qv): ?>
-            <div class="q-tab-content <?php echo $qk==='q1'?'active':''; ?>" id="tab-<?php echo $qk; ?>" style="padding: 0 24px 24px;">
-                <div class="quarter-panel">
-                    <!-- Week selector -->
-                    <div class="week-selector-wrap" id="chipWrap-<?php echo $qk; ?>">
-                        <label>Select weeks to track:</label>
-                        <?php for ($w = 1; $w <= $qv['weeks']; $w++): ?>
-                        <div class="week-chip" data-q="<?php echo $qk; ?>" data-week="<?php echo $w; ?>" onclick="toggleWeek(this)">W<?php echo $w; ?></div>
-                        <?php endfor; ?>
-                        <button type="button" style="margin-left:auto;font-size:11px;padding:4px 10px;border:1.5px solid var(--border);border-radius:5px;background:#fff;cursor:pointer;font-family:var(--sans);" onclick="selectAllWeeks('<?php echo $qk; ?>')">All</button>
-                        <button type="button" style="font-size:11px;padding:4px 10px;border:1.5px solid var(--border);border-radius:5px;background:#fff;cursor:pointer;font-family:var(--sans);" onclick="clearAllWeeks('<?php echo $qk; ?>')">Clear</button>
+        <!-- Q panels -->
+        <?php
+        $quarters = [
+            'q1' => ['label'=>'Q1','months'=>'Jan - Mar','weeks'=>12],
+            'q2' => ['label'=>'Q2','months'=>'Apr - Jun','weeks'=>12],
+            'q3' => ['label'=>'Q3','months'=>'Jul - Sep','weeks'=>12],
+            'q4' => ['label'=>'Q4','months'=>'Oct - Dec','weeks'=>12],
+        ];
+        foreach ($quarters as $qk => $qv): ?>
+        <div class="q-tab-content <?php echo $qk==='q1'?'active':''; ?>" id="tab-<?php echo $qk; ?>">
+            <div class="ca-quarter-panel">
+                <!-- Week selector -->
+                <div class="ca-week-selector" id="chipWrap-<?php echo $qk; ?>">
+                    <label>Select weeks to track:</label>
+                    <?php for ($w = 1; $w <= $qv['weeks']; $w++): ?>
+                    <div class="week-chip" data-q="<?php echo $qk; ?>" data-week="<?php echo $w; ?>" onclick="toggleWeek(this)">W<?php echo $w; ?></div>
+                    <?php endfor; ?>
+                    <button type="button" class="btn btn-sm btn-secondary ca-chip-all" onclick="selectAllWeeks('<?php echo $qk; ?>')">All</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearAllWeeks('<?php echo $qk; ?>')">Clear</button>
+                </div>
+
+                <!-- Week entry table -->
+                <div class="week-entry-area" id="weekArea-<?php echo $qk; ?>">
+                    <div class="empty-state ca-no-weeks" id="noWeeksMsg-<?php echo $qk; ?>">
+                        <i class="fas fa-mouse-pointer" aria-hidden="true"></i>
+                        <p>Select weeks above to begin entering tracking data.</p>
                     </div>
-
-                    <!-- Week entry table -->
-                    <div class="week-entry-area" id="weekArea-<?php echo $qk; ?>">
-                        <div class="no-weeks-msg" id="noWeeksMsg-<?php echo $qk; ?>">
-                            <i class="fas fa-mouse-pointer"></i>
-                            Select weeks above to begin entering tracking data.
-                        </div>
-                        <div class="week-table-wrap" id="weekTableWrap-<?php echo $qk; ?>" style="display:none;">
-                            <table class="week-table">
-                                <thead>
-                                    <tr id="weekTableHead-<?php echo $qk; ?>">
-                                        <th class="th-activity">Activity</th>
-                                        <!-- week columns injected -->
-                                    </tr>
-                                </thead>
-                                <tbody id="weekTableBody-<?php echo $qk; ?>">
-                                    <!-- rows injected -->
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="table-responsive" id="weekTableWrap-<?php echo $qk; ?>" style="display:none;">
+                        <table class="table ca-week-table">
+                            <thead>
+                                <tr id="weekTableHead-<?php echo $qk; ?>">
+                                    <th class="th-activity">Activity</th>
+                                    <!-- week columns injected -->
+                                </tr>
+                            </thead>
+                            <tbody id="weekTableBody-<?php echo $qk; ?>">
+                                <!-- rows injected -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            <?php endforeach; ?>
         </div>
+        <?php endforeach; ?>
     </div>
 
     <!-- -- Form Actions -- -->
-    <div class="panel">
-        <div class="actions-bar">
-            <button type="submit" name="save_draft" class="btn btn-outline">
-                <i class="fas fa-save"></i> Save Draft
+    <div class="card">
+        <div class="card-body ca-actions">
+            <button type="submit" name="save_draft" class="btn btn-secondary">
+                <i class="fas fa-save" aria-hidden="true"></i> Save Draft
             </button>
-            <button type="submit" name="submit_plan" class="btn btn-success">
-                <i class="fas fa-paper-plane"></i> Submit for Review
+            <button type="submit" name="submit_plan" class="btn btn-primary">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i> Submit for Review
             </button>
             <a href="my-kpis" class="btn btn-danger">
-                <i class="fas fa-times"></i> Cancel
+                <i class="fas fa-times" aria-hidden="true"></i> Cancel
             </a>
         </div>
     </div>
 
 </form>
+
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 
@@ -665,12 +321,12 @@ function addActivityRow() {
     tr.dataset.id = id;
     tr.innerHTML = `
         <td class="td-num">${id}</td>
-        <td><input type="text" name="activities[${id}][description]" placeholder="e.g., Complete monthly report" required></td>
-        <td><input type="text" name="activities[${id}][key_result]" placeholder="e.g., 12 reports submitted on time" required></td>
-        <td class="td-weight"><input type="number" name="activities[${id}][weight]" min="0" max="100" step="0.1" placeholder="20" oninput="updateWeightBar()" required></td>
-        <td><input type="text" name="activities[${id}][unit]" placeholder="%, count, hrs..."></td>
-        <td><input type="number" name="activities[${id}][annual_target]" step="0.01" placeholder="100"></td>
-        <td class="td-del"><button type="button" class="btn-del-row" onclick="removeActivityRow(this, ${id})"><i class="fas fa-trash-alt"></i></button></td>
+        <td><input type="text" class="form-control" name="activities[${id}][description]" placeholder="e.g., Complete monthly report" required></td>
+        <td><input type="text" class="form-control" name="activities[${id}][key_result]" placeholder="e.g., 12 reports submitted on time" required></td>
+        <td class="td-weight"><input type="number" class="form-control" name="activities[${id}][weight]" min="0" max="100" step="0.1" placeholder="20" oninput="updateWeightBar()" required></td>
+        <td><input type="text" class="form-control" name="activities[${id}][unit]" placeholder="%, count, hrs..."></td>
+        <td><input type="number" class="form-control" name="activities[${id}][annual_target]" step="0.01" placeholder="100"></td>
+        <td class="td-del"><button type="button" class="btn btn-sm btn-danger btn-del-row" onclick="removeActivityRow(this, ${id})" aria-label="Remove activity"><i class="fas fa-trash-alt" aria-hidden="true"></i></button></td>
     `;
     tbody.appendChild(tr);
     activities.push({ id, description: '', key_result: '' });
@@ -797,12 +453,12 @@ function buildWeekTable(q) {
     });
 
     // Sub-header row
-    let subRow = `<tr style="background:#f7f6f2;">
-        <td style="border-bottom:1px solid var(--border);padding:4px 16px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);"></td>`;
+    let subRow = `<tr class="ca-week-subhead">
+        <td></td>`;
     weeks.forEach(() => {
         subRow += `
-            <td style="border-bottom:1px solid var(--border);padding:4px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);text-align:center;">Actual (Target)</td>
-            <td style="border-bottom:1px solid var(--border);padding:4px 8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);text-align:center;">Comments</td>
+            <td>Actual (Target)</td>
+            <td>Comments</td>
         `;
     });
     subRow += '</tr>';
@@ -828,10 +484,10 @@ function buildWeekTable(q) {
 
             bodyHtml += `
                 <td class="td-actual">
-                    <input type="number" step="0.01" name="${nameActual}" placeholder="-" value="${escHtml(valActual)}">
+                    <input type="number" class="form-control" step="0.01" name="${nameActual}" placeholder="-" value="${escHtml(valActual)}">
                 </td>
                 <td class="td-comment">
-                    <input type="text" name="${nameComment}" placeholder="Add comment..." value="${escHtml(valComment)}" maxlength="200">
+                    <input type="text" class="form-control" name="${nameComment}" placeholder="Add comment..." value="${escHtml(valComment)}" maxlength="200">
                 </td>
             `;
         });

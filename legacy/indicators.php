@@ -130,9 +130,9 @@ function ach_icon(float $pct): string {
 }
 function type_badge(string $type): string {
     return match($type) {
-        'Output'  => 'badge badge-output',
-        'Outcome' => 'badge badge-outcome',
-        'Impact'  => 'badge badge-impact',
+        'Output'  => 'badge badge-info',
+        'Outcome' => 'badge badge-warning',
+        'Impact'  => 'badge badge-purple',
         default   => 'badge badge-returned',
     };
 }
@@ -141,27 +141,26 @@ function type_badge(string $type): string {
 <link rel="stylesheet" href="css/reports.css">
 <link rel="stylesheet" href="css/indicators.css">
 
-<div class="indicators-wrap">
+<div class="page-stack">
 
     <!-- ── Hero ───────────────────────────────────────────────────────── -->
-    <div class="indicators-hero">
-        <div class="indicators-hero-text">
-            <h1><i class="fas fa-chart-line" style="margin-right:10px;opacity:.85;"></i>Indicators</h1>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-chart-line" aria-hidden="true"></i> Indicators</h1>
             <p>Track output, outcome and impact indicators across all projects and programmes.</p>
         </div>
         <div class="hero-actions">
-            <button class="btn btn-primary" onclick="openModal('addIndicatorModal')">
+            <button type="button" class="btn btn-primary" onclick="openModal('addIndicatorModal')">
                 <i class="fas fa-plus"></i> Add Indicator
             </button>
-            <a href="export?type=indicators" class="btn btn-primary"
-               style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);">
+            <a href="export?type=indicators" class="btn">
                 <i class="fas fa-download"></i> Export CSV
             </a>
         </div>
     </div>
 
     <!-- ── Performance Stats ──────────────────────────────────────────── -->
-    <div class="indicators-stats-top">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fas fa-chart-line"></i></div>
             <div class="stat-info">
@@ -184,45 +183,55 @@ function type_badge(string $type): string {
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background:var(--red-bg);color:var(--red-fg);"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-icon bg-red"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Below Target (&lt; 50%)</div>
-                <div class="stat-value" style="color:var(--red-fg);"><?= $stats['below_target'] ?></div>
+                <div class="stat-value"><?= $stats['below_target'] ?></div>
             </div>
         </div>
     </div>
 
     <!-- ── Type & Context Stats ───────────────────────────────────────── -->
-    <div class="indicators-stats-bottom">
-        <div class="mini-stat">
-            <div class="mini-stat-icon bg-output"><i class="fas fa-layer-group"></i></div>
-            <div class="mini-stat-value" style="color:var(--blue-fg);"><?= $stats['outputs'] ?></div>
-            <div class="mini-stat-label">Output Indicators</div>
+    <div class="stats-grid reports-stats ind-stats-5">
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Output Indicators</div>
+                <div class="stat-value"><?= $stats['outputs'] ?></div>
+            </div>
         </div>
-        <div class="mini-stat">
-            <div class="mini-stat-icon bg-outcome"><i class="fas fa-bullseye"></i></div>
-            <div class="mini-stat-value" style="color:var(--amber-fg);"><?= $stats['outcomes'] ?></div>
-            <div class="mini-stat-label">Outcome Indicators</div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-bullseye"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Outcome Indicators</div>
+                <div class="stat-value"><?= $stats['outcomes'] ?></div>
+            </div>
         </div>
-        <div class="mini-stat">
-            <div class="mini-stat-icon bg-impact"><i class="fas fa-star"></i></div>
-            <div class="mini-stat-value" style="color:var(--purple-fg);"><?= $stats['impacts'] ?></div>
-            <div class="mini-stat-label">Impact Indicators</div>
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="fas fa-star"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Impact Indicators</div>
+                <div class="stat-value"><?= $stats['impacts'] ?></div>
+            </div>
         </div>
-        <div class="mini-stat">
-            <div class="mini-stat-icon bg-green"><i class="fas fa-project-diagram"></i></div>
-            <div class="mini-stat-value" style="color:var(--green-fg);"><?= $stats['project_based'] ?></div>
-            <div class="mini-stat-label">Project Indicators</div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-project-diagram"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Project Indicators</div>
+                <div class="stat-value"><?= $stats['project_based'] ?></div>
+            </div>
         </div>
-        <div class="mini-stat">
-            <div class="mini-stat-icon bg-amber"><i class="fas fa-sitemap"></i></div>
-            <div class="mini-stat-value" style="color:var(--amber-fg);"><?= $stats['program_based'] ?></div>
-            <div class="mini-stat-label">Program Indicators</div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Program Indicators</div>
+                <div class="stat-value"><?= $stats['program_based'] ?></div>
+            </div>
         </div>
     </div>
 
     <!-- ── Filter Bar ─────────────────────────────────────────────────── -->
-    <form method="GET" action="" class="filter-bar filters-bar">
+    <form method="GET" action="" class="controls-bar filters-bar">
 
         <div class="form-group search-group filters-grow">
             <label class="form-label">Search</label>
@@ -291,8 +300,8 @@ function type_badge(string $type): string {
         </div>
 
         <div class="filter-actions">
-            <button type="submit" class="btn btn-dark"><i class="fas fa-filter"></i> Filter</button>
-            <a href="indicators" class="btn btn-gray"><i class="fas fa-times"></i> Clear</a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
+            <a href="indicators" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
         </div>
 
     </form>
@@ -300,16 +309,13 @@ function type_badge(string $type): string {
     <!-- ── Indicators Table ───────────────────────────────────────────── -->
     <div class="panel">
         <div class="panel-head">
-            <h3 style="display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-chart-line" style="color:var(--blue-fg);"></i>
-                Indicators
-            </h3>
+            <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Indicators</h3>
             <span class="badge <?= $stats['total']>0?'badge-available':'badge-pending' ?>">
                 <?= $stats['total'] ?> record<?= $stats['total']!==1?'s':'' ?>
             </span>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-responsive">
             <table class="table">
                 <thead>
                     <tr>
@@ -317,9 +323,9 @@ function type_badge(string $type): string {
                         <th>Programme / Project</th>
                         <th>Indicator</th>
                         <th>Type</th>
-                        <th style="text-align:right;">Baseline</th>
-                        <th style="text-align:right;">Target</th>
-                        <th style="text-align:right;">Current</th>
+                        <th class="text-right">Baseline</th>
+                        <th class="text-right">Target</th>
+                        <th class="text-right">Current</th>
                         <th>Achievement</th>
                         <th>Progress</th>
                         <th>Actions</th>
@@ -328,11 +334,10 @@ function type_badge(string $type): string {
                 <tbody>
                     <?php if (empty($indicators)): ?>
                         <tr>
-                            <td colspan="10" style="text-align:center;padding:48px 16px;">
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--ink-200);">
-                                    <i class="fas fa-chart-line" style="font-size:32px;"></i>
-                                    <span style="font-size:14px;font-weight:600;color:var(--ink-300);">No indicators found</span>
-                                    <span class="note">Adjust your filters or add a new indicator</span>
+                            <td colspan="10">
+                                <div class="empty-state">
+                                    <i class="fas fa-chart-line" aria-hidden="true"></i>
+                                    <p>No indicators found. Adjust your filters or add a new indicator.</p>
                                 </div>
                             </td>
                         </tr>
@@ -364,7 +369,7 @@ function type_badge(string $type): string {
                                 </td>
 
                                 <!-- Indicator name + unit -->
-                                <td style="max-width:220px;">
+                                <td class="ind-name-td">
                                     <div class="ind-name-cell">
                                         <span class="ind-name"><?= h($ind['indicator_name']) ?></span>
                                         <?php if ($ind['unit_of_measure']): ?>
@@ -411,15 +416,15 @@ function type_badge(string $type): string {
                                             <i class="fas fa-plus-circle"></i>
                                         </a>
                                         <a href="indicator-details?id=<?= (int)$ind['indicator_id'] ?>"
-                                           class="btn btn-sm btn-gray" title="View Details">
+                                           class="btn btn-sm btn-secondary" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="?edit=<?= (int)$ind['indicator_id'] ?>"
-                                           class="btn btn-sm btn-gray" title="Edit">
+                                           class="btn btn-sm btn-secondary" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <?php if (ims_allowed('indicators.delete', ['Administrator', 'MEAL Lead'], 'Delete indicators')): ?>
-                                            <button class="btn btn-sm btn-red" title="Delete"
+                                            <button class="btn btn-sm btn-danger" title="Delete"
                                                     onclick="openDeleteModal(<?= (int)$ind['indicator_id'] ?>, <?= json_encode((string)$ind['indicator_name']) ?>)">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -431,10 +436,10 @@ function type_badge(string $type): string {
                     <?php endif; ?>
                 </tbody>
             </table>
-        </div><!-- /.table-wrap -->
+        </div><!-- /.table-responsive -->
     </div><!-- /.panel -->
 
-</div><!-- /.indicators-wrap -->
+</div><!-- /.page-stack -->
 
 
 <!-- ══════════════════════════════════════════════════════════════════
@@ -443,14 +448,14 @@ function type_badge(string $type): string {
 <div class="modal" id="addIndicatorModal">
     <div class="modal-card">
         <div class="modal-head">
-            <h3><i class="fas fa-plus-circle" style="color:var(--blue-fg);margin-right:8px;"></i>Add New Indicator</h3>
+            <h3><i class="fas fa-plus-circle ind-modal-icon" aria-hidden="true"></i> Add New Indicator</h3>
             <button class="modal-close" onclick="closeModal('addIndicatorModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="includes/indicator-process.php">
 
                 <div class="modal-section-label">Context</div>
-                <div class="form-group" style="margin-bottom:12px;">
+                <div class="form-group ind-field-gap">
                     <label class="form-label" for="context_type">
                         Indicator Context <span class="required-mark">*</span>
                     </label>
@@ -462,7 +467,7 @@ function type_badge(string $type): string {
                     </select>
                 </div>
 
-                <div class="form-group" id="project_select" style="display:none;margin-bottom:12px;">
+                <div class="form-group ind-field-gap" id="project_select" style="display:none;">
                     <label class="form-label" for="project_id">
                         Project <span class="required-mark">*</span>
                     </label>
@@ -474,7 +479,7 @@ function type_badge(string $type): string {
                     </select>
                 </div>
 
-                <div class="form-group" id="program_select" style="display:none;margin-bottom:12px;">
+                <div class="form-group ind-field-gap" id="program_select" style="display:none;">
                     <label class="form-label" for="program_id">
                         Program <span class="required-mark">*</span>
                     </label>
@@ -487,7 +492,7 @@ function type_badge(string $type): string {
                 </div>
 
                 <div class="modal-section-label">Indicator Details</div>
-                <div class="form-group full" style="margin-bottom:12px;">
+                <div class="form-group full ind-field-gap">
                     <label class="form-label" for="indicator_name">
                         Indicator Name <span class="required-mark">*</span>
                     </label>
@@ -552,7 +557,7 @@ function type_badge(string $type): string {
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-gray" onclick="closeModal('addIndicatorModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addIndicatorModal')">Cancel</button>
                     <button type="submit" name="add_indicator" class="btn btn-primary">
                         <i class="fas fa-save"></i> Add Indicator
                     </button>
@@ -569,7 +574,7 @@ function type_badge(string $type): string {
 <div class="modal" id="editIndicatorModal">
     <div class="modal-card">
         <div class="modal-head">
-            <h3><i class="fas fa-edit" style="color:var(--blue-fg);margin-right:8px;"></i>Edit Indicator</h3>
+            <h3><i class="fas fa-edit ind-modal-icon" aria-hidden="true"></i> Edit Indicator</h3>
             <button class="modal-close" onclick="closeModal('editIndicatorModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
@@ -578,7 +583,7 @@ function type_badge(string $type): string {
                     <input type="hidden" name="indicator_id" value="<?= (int)$edit_indicator['indicator_id'] ?>">
 
                     <div class="modal-section-label">Context</div>
-                    <div class="form-group" style="margin-bottom:12px;">
+                    <div class="form-group ind-field-gap">
                         <label class="form-label" for="e_context_type">
                             Indicator Context <span class="required-mark">*</span>
                         </label>
@@ -590,8 +595,8 @@ function type_badge(string $type): string {
                         </select>
                     </div>
 
-                    <div class="form-group" id="e_project_select"
-                         style="display:<?= $edit_indicator['project_id']?'flex':'none' ?>;margin-bottom:12px;">
+                    <div class="form-group ind-field-gap" id="e_project_select"
+                         style="display:<?= $edit_indicator['project_id']?'flex':'none' ?>;">
                         <label class="form-label" for="e_project_id">Project <span class="required-mark">*</span></label>
                         <select id="e_project_id" name="project_id" class="form-control">
                             <option value="">- Select Project -</option>
@@ -604,8 +609,8 @@ function type_badge(string $type): string {
                         </select>
                     </div>
 
-                    <div class="form-group" id="e_program_select"
-                         style="display:<?= $edit_indicator['program_id']?'flex':'none' ?>;margin-bottom:12px;">
+                    <div class="form-group ind-field-gap" id="e_program_select"
+                         style="display:<?= $edit_indicator['program_id']?'flex':'none' ?>;">
                         <label class="form-label" for="e_program_id">Program <span class="required-mark">*</span></label>
                         <select id="e_program_id" name="program_id" class="form-control">
                             <option value="">- Select Program -</option>
@@ -619,7 +624,7 @@ function type_badge(string $type): string {
                     </div>
 
                     <div class="modal-section-label">Indicator Details</div>
-                    <div class="form-group full" style="margin-bottom:12px;">
+                    <div class="form-group full ind-field-gap">
                         <label class="form-label" for="e_indicator_name">
                             Indicator Name <span class="required-mark">*</span>
                         </label>
@@ -684,14 +689,14 @@ function type_badge(string $type): string {
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-gray" onclick="closeModal('editIndicatorModal')">Cancel</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('editIndicatorModal')">Cancel</button>
                         <button type="submit" name="edit_indicator" class="btn btn-primary">
                             <i class="fas fa-save"></i> Update Indicator
                         </button>
                     </div>
                 </form>
             <?php else: ?>
-                <p class="note" style="padding:16px 0;">No indicator selected for editing.</p>
+                <p class="note ind-note">No indicator selected for editing.</p>
             <?php endif; ?>
         </div>
     </div>
@@ -704,7 +709,7 @@ function type_badge(string $type): string {
 <div class="modal" id="progressModal">
     <div class="modal-card modal-sm">
         <div class="modal-head">
-            <h3><i class="fas fa-plus-circle" style="color:var(--green-fg);margin-right:8px;"></i>Update Progress</h3>
+            <h3><i class="fas fa-plus-circle ind-modal-icon" aria-hidden="true"></i> Update Progress</h3>
             <button class="modal-close" onclick="closeModal('progressModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
@@ -714,10 +719,10 @@ function type_badge(string $type): string {
                     <div class="progress-info-title"><?= h($progress_indicator['indicator_name']) ?></div>
                     <div class="progress-info-context">
                         <?php if ($progress_indicator['project_id']): ?>
-                            <i class="fas fa-project-diagram" style="color:var(--green-fg);margin-right:4px;"></i>
+                            <i class="fas fa-project-diagram ind-ctx-icon project" aria-hidden="true"></i>
                             <?= h($progress_indicator['project_code'].' - '.$progress_indicator['project_name']) ?>
                         <?php else: ?>
-                            <i class="fas fa-sitemap" style="color:var(--amber-fg);margin-right:4px;"></i>
+                            <i class="fas fa-sitemap ind-ctx-icon program" aria-hidden="true"></i>
                             <?= h($progress_indicator['program_code'].' - '.$progress_indicator['program_name']) ?>
                         <?php endif; ?>
                     </div>
@@ -728,11 +733,11 @@ function type_badge(string $type): string {
                         </div>
                         <div class="progress-val-cell">
                             <div class="pv-label">Target</div>
-                            <div class="pv-value" style="color:var(--blue-fg);"><?= number_format((float)$progress_indicator['target_value'], 2) ?></div>
+                            <div class="pv-value target"><?= number_format((float)$progress_indicator['target_value'], 2) ?></div>
                         </div>
                         <div class="progress-val-cell">
                             <div class="pv-label">Current</div>
-                            <div class="pv-value" style="color:var(--green-fg);"><?= number_format((float)$progress_indicator['current_value'], 2) ?></div>
+                            <div class="pv-value current"><?= number_format((float)$progress_indicator['current_value'], 2) ?></div>
                         </div>
                     </div>
                 </div>
@@ -768,7 +773,7 @@ function type_badge(string $type): string {
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-gray" onclick="closeModal('progressModal')">Cancel</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('progressModal')">Cancel</button>
                         <button type="submit" name="update_progress" class="btn btn-primary">
                             <i class="fas fa-save"></i> Save Progress
                         </button>
@@ -786,26 +791,26 @@ function type_badge(string $type): string {
 <div class="modal" id="deleteModal">
     <div class="modal-card modal-sm">
         <div class="modal-head">
-            <h3><i class="fas fa-trash" style="color:var(--red-fg);margin-right:8px;"></i>Delete Indicator</h3>
+            <h3><i class="fas fa-trash ind-modal-icon danger" aria-hidden="true"></i> Delete Indicator</h3>
             <button class="modal-close" onclick="closeModal('deleteModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="includes/indicator-process.php">
                 <input type="hidden" name="indicator_id" id="deleteIndicatorId">
 
-                <div class="danger-zone">
-                    <div class="danger-zone-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
                     <p>You are about to permanently delete <strong id="deleteIndicatorName"></strong>. This action cannot be undone.</p>
                 </div>
 
-                <div class="info-box">
-                    <i class="fas fa-info-circle" style="flex-shrink:0;margin-top:1px;"></i>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
                     <span>All progress records for this indicator must be removed first.</span>
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-gray" onclick="closeModal('deleteModal')">Cancel</button>
-                    <button type="submit" name="delete_indicator" class="btn btn-red">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" name="delete_indicator" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Yes, Delete
                     </button>
                 </div>

@@ -4,10 +4,6 @@
    in the page's inline <style> block.
    ========================================================================== */
 
-.doc-hero {
-    margin-bottom: var(--space-5, 20px);
-}
-
 .doc-stats {
     margin-bottom: var(--space-5, 20px);
 }
@@ -457,12 +453,12 @@
 /* -- File-type colours ------------------------------------------------------ */
 
 .doc-ft             { background: var(--slate-bg);  color: var(--slate-fg); }
-.doc-ft-pdf         { background: var(--red-bg);    color: #dc2626; }
-.doc-ft-word        { background: var(--blue-bg);   color: #2563eb; }
+.doc-ft-pdf         { background: var(--red-bg);    color: var(--red-fg); }
+.doc-ft-word        { background: var(--blue-bg);   color: var(--blue-fg); }
 .doc-ft-excel,
-.doc-ft-csv         { background: var(--green-bg);  color: #16a34a; }
+.doc-ft-csv         { background: var(--green-bg);  color: var(--green-fg); }
 .doc-ft-ppt         { background: var(--brand-50);  color: var(--brand-600); }
-.doc-ft-image       { background: var(--purple-bg); color: #9333ea; }
+.doc-ft-image       { background: var(--purple-bg); color: var(--purple-fg); }
 .doc-ft-video       { background: #fdf2f8;          color: #db2777; }
 .doc-ft-audio       { background: var(--teal-bg, #f0fdfa); color: var(--teal-fg, #0f766e); }
 .doc-ft-archive     { background: var(--amber-bg);  color: var(--amber-fg); }
@@ -902,7 +898,7 @@
     padding: 12px 18px;
     border-radius: var(--radius-md, 12px);
     background: var(--ink-700);
-    color: #fff;
+    color: var(--ink-0);
     font-size: var(--fs-sm, 13px);
     font-weight: 700;
     box-shadow: var(--shadow-xl);
@@ -972,21 +968,6 @@
 
 /* Phones */
 @media (max-width: 600px) {
-    .doc-hero {
-        padding: 22px 20px;
-        border-radius: var(--radius-xl, 20px);
-    }
-
-    .doc-hero .opp-hero-left {
-        min-width: 0;
-    }
-
-    .doc-hero .opp-hero-actions,
-    .doc-hero .opp-hero-actions .btn {
-        width: 100%;
-        justify-content: center;
-    }
-
     .doc-stats.reports-stats {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;

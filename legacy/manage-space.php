@@ -57,259 +57,236 @@ if (isset($_GET['edit'])) {
 
 <link rel="stylesheet" href="css/assets.css">
 <style>
-.ms-page { display: flex; flex-direction: column; gap: 20px; }
-.ms-page > .stats-grid { margin-bottom: 0; }
-.ms-hero-btn { background: rgba(255, 255, 255, .14); color: var(--ink-0); border: 1px solid rgba(255, 255, 255, .35); box-shadow: none; }
-.ms-hero-btn:hover { background: rgba(255, 255, 255, .24); color: var(--ink-0); }
-.ms-hero-btn.solid { background: var(--ink-0); color: var(--brand-700); border-color: var(--ink-0); }
-.ms-hero-btn.solid:hover { background: var(--brand-50); color: var(--brand-700); }
+/* Manage spaces: space card grid, pricing block, amenities and availability switch. */
+.ms-filters { margin-bottom: 0; }
 
-.filter-bar {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-.filter-bar > .filters-bar {
-    margin-bottom: 0;
-}
-
-.space-grid {
+.ms-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
+    gap: var(--space-6);
 }
 
-.space-card {
-    background: white;
-    border-radius: 12px;
+.ms-card {
+    background: var(--surface-card);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-xl);
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: var(--shadow-sm);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.space-card:hover {
+.ms-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-md);
 }
 
-.space-card.unavailable {
+.ms-card.unavailable {
     opacity: 0.7;
 }
 
-.space-image {
+.ms-image {
+    display: block;
     width: 100%;
     height: 200px;
     object-fit: cover;
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
+    background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-400) 100%);
 }
 
-.space-content {
-    padding: 25px;
+.ms-content {
+    padding: var(--space-6);
 }
 
-.space-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 15px;
+.ms-title h3 {
+    font-size: var(--fs-xl);
+    color: var(--ink-900);
+    margin: 0 0 var(--space-1);
 }
 
-.space-title {
-    flex: 1;
-}
-
-.space-title h3 {
-    font-size: 22px;
-    color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.space-info {
+.ms-info {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-    margin: 20px 0;
+    gap: var(--space-3);
+    margin: var(--space-5) 0;
 }
 
-.info-item {
+.ms-info-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
+    gap: var(--space-2);
+    font-size: var(--fs-sm);
 }
 
-.info-item i {
-    color: #ff6b35;
+.ms-info-item i {
+    color: var(--brand-500);
     width: 20px;
 }
 
-.pricing-grid {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin: 15px 0;
+.ms-info-item .is-available   { color: var(--green-fg); }
+.ms-info-item .is-unavailable { color: var(--red-fg); }
+
+.ms-pricing {
+    background: var(--ink-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin: var(--space-4) 0;
 }
 
-.pricing-row {
+.ms-pricing-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 14px;
+    margin-bottom: var(--space-2);
+    font-size: var(--fs-sm);
 }
 
-.pricing-row:last-child {
+.ms-pricing-row:last-child {
     margin-bottom: 0;
 }
 
-.pricing-row .label {
-    color: #7f8c8d;
+.ms-pricing-row .label {
+    color: var(--ink-300);
 }
 
-.pricing-row .value {
+.ms-pricing-row .label.is-missing {
+    color: var(--red-fg);
+}
+
+.ms-pricing-row .value {
     font-weight: 600;
-    color: #2ECC71;
+    color: var(--green-fg);
 }
 
 /* Monthly-only pricing display */
-.monthly-pricing {
-    background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 8px;
-    margin: 15px 0;
+.ms-monthly {
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    color: var(--green-fg);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    margin: var(--space-4) 0;
     text-align: center;
 }
 
-.monthly-pricing .label {
-    font-size: 12px;
-    opacity: 0.9;
+.ms-monthly .label {
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 5px;
+    margin-bottom: var(--space-1);
 }
 
-.monthly-pricing .value {
-    font-size: 28px;
+.ms-monthly .value {
+    font-size: var(--fs-2xl);
     font-weight: 700;
 }
 
-.monthly-pricing .period {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-top: 5px;
+.ms-monthly .period {
+    font-size: var(--fs-sm);
+    margin-top: var(--space-1);
 }
 
-.amenities {
-    margin: 15px 0;
+.ms-amenities {
+    margin: var(--space-4) 0;
 }
 
-.amenities-list {
+.ms-amenities-label {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-size: var(--fs-xs);
+    color: var(--ink-300);
+    text-transform: uppercase;
+}
+
+.ms-amenities-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
 }
 
-.amenity-tag {
-    background: #ecf0f1;
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-size: 12px;
-    color: #2c3e50;
-}
-
-.space-actions {
+.ms-actions {
     display: flex;
-    gap: 10px;
-    margin-top: 20px;
+    gap: var(--space-2);
+    margin-top: var(--space-5);
     flex-wrap: wrap;
 }
 
-.availability-toggle {
+.ms-availability {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-top: 15px;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--ink-50);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-4);
 }
 
-.toggle-switch {
+/* Availability switch (no global switch component yet). */
+.ms-switch {
     position: relative;
     width: 50px;
     height: 24px;
+    flex-shrink: 0;
 }
 
-.toggle-switch input {
+.ms-switch input {
     opacity: 0;
     width: 0;
     height: 0;
 }
 
-.toggle-slider {
+.ms-switch-slider {
     position: absolute;
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
+    inset: 0;
+    background-color: var(--ink-100);
     transition: .4s;
-    border-radius: 24px;
+    border-radius: var(--radius-pill);
 }
 
-.toggle-slider:before {
+.ms-switch-slider:before {
     position: absolute;
     content: "";
     height: 18px;
     width: 18px;
     left: 3px;
     bottom: 3px;
-    background-color: white;
+    background-color: var(--ink-0);
     transition: .4s;
     border-radius: 50%;
 }
 
-.toggle-switch input:checked + .toggle-slider {
-    background-color: #2ECC71;
+.ms-switch input:checked + .ms-switch-slider {
+    background-color: var(--green-fg);
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
+.ms-switch input:checked + .ms-switch-slider:before {
     transform: translateX(26px);
 }
 
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
+.ms-modal { max-width: 900px; }
+
+.ms-form-section {
+    margin: var(--space-6) 0 var(--space-4);
+    padding-bottom: var(--space-2);
+    color: var(--ink-900);
+    border-bottom: 2px solid var(--ink-100);
 }
 
-.empty-state i {
-    font-size: 64px;
-    color: #bdc3c7;
-    margin-bottom: 20px;
-}
-
-.pricing-help-text {
-    font-size: 12px;
-    color: #7f8c8d;
-    margin-top: 5px;
+.ms-help {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--fs-xs);
+    color: var(--ink-300);
 }
 
 @media (max-width: 768px) {
-    .space-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .space-info {
+    .ms-grid,
+    .ms-info {
         grid-template-columns: 1fr;
     }
 }
 </style>
 
-<div class="ms-page">
+<div class="page-stack">
 
 <!-- Header (global .page-hero) -->
 <div class="page-hero">
@@ -318,8 +295,8 @@ if (isset($_GET['edit'])) {
         <p>Manage bookable spaces, their rates and availability.</p>
     </div>
     <div class="hero-actions">
-        <a href="manage-bookings" class="btn ms-hero-btn"><i class="fas fa-calendar-check" aria-hidden="true"></i> Bookings</a>
-        <button type="button" onclick="openModal('addSpaceModal')" class="btn ms-hero-btn solid">
+        <a href="manage-bookings" class="btn"><i class="fas fa-calendar-check" aria-hidden="true"></i> Bookings</a>
+        <button type="button" onclick="openModal('addSpaceModal')" class="btn btn-primary">
             <i class="fas fa-plus" aria-hidden="true"></i> Add New Space
         </button>
     </div>
@@ -361,8 +338,10 @@ if (isset($_GET['edit'])) {
 </div>
 
 <!-- Filter Bar -->
-<form method="GET" action="" class="filter-bar">
-    <div class="filters-bar" role="search" aria-label="Filter spaces">
+<div class="card">
+<div class="card-body">
+<form method="GET" action="">
+    <div class="filters-bar ms-filters" role="search" aria-label="Filter spaces">
         <div class="form-group">
             <label for="type">Space Type</label>
             <select name="type" id="type" class="form-control">
@@ -396,15 +375,16 @@ if (isset($_GET['edit'])) {
         </div>
     </div>
 </form>
+</div>
+</div>
 
 <!-- Spaces Grid -->
 <?php if (empty($spaces)): ?>
     <div class="card">
         <div class="card-body">
             <div class="empty-state">
-                <i class="fas fa-door-open"></i>
-                <h3>No spaces found</h3>
-                <p style="color: #7f8c8d; margin-bottom: 20px;">
+                <i class="fas fa-door-open" aria-hidden="true"></i>
+                <p>
                     <?php if ($filter_type || $filter_status !== ''): ?>
                         No spaces match your filter criteria.
                     <?php else: ?>
@@ -418,38 +398,36 @@ if (isset($_GET['edit'])) {
         </div>
     </div>
 <?php else: ?>
-    <div class="space-grid">
+    <div class="ms-grid">
         <?php foreach ($spaces as $space): 
             // Determine if this space type should show only monthly rate
             $monthly_only_types = ['Private Office', 'Hot Desk', 'Dedicated Desk'];
             $show_monthly_only = in_array($space['space_type'], $monthly_only_types);
         ?>
-        <div class="space-card <?php echo !$space['is_available'] ? 'unavailable' : ''; ?>">
+        <div class="ms-card <?php echo !$space['is_available'] ? 'unavailable' : ''; ?>">
             <?php if ($space['space_image']): ?>
-                <img src="<?php echo htmlspecialchars(ims_upload_url($space['space_image'])); ?>" alt="Space Image" class="space-image">
+                <img src="<?php echo htmlspecialchars(ims_upload_url($space['space_image'])); ?>" alt="Space Image" class="ms-image">
             <?php else: ?>
-                <div class="space-image"></div>
+                <div class="ms-image"></div>
             <?php endif; ?>
             
-            <div class="space-content">
-                <div class="space-header">
-                    <div class="space-title">
-                        <h3><?php echo htmlspecialchars($space['space_name']); ?></h3>
-                        <span class="badge badge-primary">
-                            <?php echo htmlspecialchars($space['space_type']); ?>
-                        </span>
-                    </div>
+            <div class="ms-content">
+                <div class="ms-title">
+                    <h3><?php echo htmlspecialchars($space['space_name']); ?></h3>
+                    <span class="badge badge-info">
+                        <?php echo htmlspecialchars($space['space_type']); ?>
+                    </span>
                 </div>
                 
-                <div class="space-info">
-                    <div class="info-item">
+                <div class="ms-info">
+                    <div class="ms-info-item">
                         <i class="fas fa-users"></i>
                         <span><strong><?php echo $space['capacity']; ?></strong> people</span>
                     </div>
                     
-                    <div class="info-item">
+                    <div class="ms-info-item">
                         <i class="fas fa-<?php echo $space['is_available'] ? 'check-circle' : 'times-circle'; ?>"></i>
-                        <span style="color: <?php echo $space['is_available'] ? '#2ECC71' : '#E74C3C'; ?>;">
+                        <span class="<?php echo $space['is_available'] ? 'is-available' : 'is-unavailable'; ?>">
                             <strong><?php echo $space['is_available'] ? 'Available' : 'Unavailable'; ?></strong>
                         </span>
                     </div>
@@ -458,15 +436,15 @@ if (isset($_GET['edit'])) {
                 <?php if ($show_monthly_only): ?>
                     <!-- Monthly-only pricing for Private Office, Hot Desk, Dedicated Desk -->
                     <?php if (isset($space['monthly_rate']) && $space['monthly_rate'] > 0): ?>
-                        <div class="monthly-pricing">
+                        <div class="ms-monthly">
                             <div class="label">Monthly Rate</div>
                             <div class="value"><?php echo format_currency($space['monthly_rate']); ?></div>
                             <div class="period">per month</div>
                         </div>
                     <?php else: ?>
-                        <div class="pricing-grid">
-                            <div class="pricing-row">
-                                <span class="label" style="color: #E74C3C;">
+                        <div class="ms-pricing">
+                            <div class="ms-pricing-row">
+                                <span class="label is-missing">
                                     <i class="fas fa-exclamation-triangle"></i> No monthly rate set
                                 </span>
                             </div>
@@ -474,16 +452,16 @@ if (isset($_GET['edit'])) {
                     <?php endif; ?>
                 <?php else: ?>
                     <!-- Standard hourly/daily pricing for other space types -->
-                    <div class="pricing-grid">
-                        <div class="pricing-row">
+                    <div class="ms-pricing">
+                        <div class="ms-pricing-row">
                             <span class="label">Hourly Rate:</span>
                             <span class="value"><?php echo format_currency($space['hourly_rate']); ?></span>
                         </div>
-                        <div class="pricing-row">
+                        <div class="ms-pricing-row">
                             <span class="label">Half Day:</span>
                             <span class="value"><?php echo format_currency($space['half_day_rate']); ?></span>
                         </div>
-                        <div class="pricing-row">
+                        <div class="ms-pricing-row">
                             <span class="label">Full Day:</span>
                             <span class="value"><?php echo format_currency($space['full_day_rate']); ?></span>
                         </div>
@@ -491,16 +469,16 @@ if (isset($_GET['edit'])) {
                 <?php endif; ?>
                 
                 <?php if ($space['amenities']): ?>
-                <div class="amenities">
-                    <label style="font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 5px; display: block;">Amenities</label>
-                    <div class="amenities-list">
+                <div class="ms-amenities">
+                    <span class="ms-amenities-label">Amenities</span>
+                    <div class="ms-amenities-list">
                         <?php
                         $amenities = explode("\n", $space['amenities']);
                         foreach ($amenities as $amenity):
                             $amenity = trim($amenity);
                             if (!empty($amenity)):
                         ?>
-                            <span class="amenity-tag"><?php echo htmlspecialchars($amenity); ?></span>
+                            <span class="badge badge-secondary"><?php echo htmlspecialchars($amenity); ?></span>
                         <?php 
                             endif;
                         endforeach; 
@@ -510,17 +488,17 @@ if (isset($_GET['edit'])) {
                 <?php endif; ?>
                 
                 <!-- Quick Availability Toggle -->
-                <div class="availability-toggle">
-                    <label class="toggle-switch">
+                <div class="ms-availability">
+                    <label class="ms-switch">
                         <input type="checkbox" 
                                <?php echo $space['is_available'] ? 'checked' : ''; ?>
                                onchange="toggleAvailability(<?php echo $space['availability_id']; ?>, this.checked)">
-                        <span class="toggle-slider"></span>
+                        <span class="ms-switch-slider"></span>
                     </label>
-                    <span style="font-size: 14px; color: #7f8c8d;">Quick toggle availability</span>
+                    <span class="cell-muted">Quick toggle availability</span>
                 </div>
                 
-                <div class="space-actions">
+                <div class="ms-actions">
                     <a href="?edit=<?php echo $space['availability_id']; ?>" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit
                     </a>
@@ -542,9 +520,11 @@ if (isset($_GET['edit'])) {
     </div>
 <?php endif; ?>
 
+</div><!-- /.page-stack -->
+
 <!-- Add/Edit Space Modal -->
 <div id="addSpaceModal" class="modal">
-    <div class="modal-content" style="max-width: 900px;">
+    <div class="modal-content ms-modal">
         <div class="modal-header">
             <h3><?php echo $edit_space ? 'Edit Space' : 'Add New Space'; ?></h3>
             <span class="close" onclick="closeModal('addSpaceModal')">&times;</span>
@@ -597,7 +577,7 @@ if (isset($_GET['edit'])) {
                 </div>
                 
                 <!-- Pricing Section -->
-                <h4 style="margin: 25px 0 15px 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;">
+                <h4 class="ms-form-section">
                     <i class="fas fa-tag"></i> Pricing Information
                 </h4>
                 
@@ -607,7 +587,7 @@ if (isset($_GET['edit'])) {
                     <input type="number" id="monthly_rate" name="monthly_rate" class="form-control" 
                            min="0" step="1000" placeholder="e.g., 500000" 
                            value="<?php echo $edit_space ? ($edit_space['monthly_rate'] ?? '') : ''; ?>">
-                    <small class="pricing-help-text">
+                    <small class="ms-help">
                         <i class="fas fa-info-circle"></i> Monthly rental rate (required for desks and private offices)
                     </small>
                 </div>
@@ -627,7 +607,7 @@ if (isset($_GET['edit'])) {
                             <input type="number" id="half_day_rate" name="half_day_rate" class="form-control" 
                                    min="0" step="1000" placeholder="e.g., 150000" 
                                    value="<?php echo $edit_space ? $edit_space['half_day_rate'] : ''; ?>">
-                            <small class="pricing-help-text">Half day = 4 hours</small>
+                            <small class="ms-help">Half day = 4 hours</small>
                         </div>
                         
                         <div class="form-group">
@@ -635,13 +615,13 @@ if (isset($_GET['edit'])) {
                             <input type="number" id="full_day_rate" name="full_day_rate" class="form-control" 
                                    min="0" step="1000" placeholder="e.g., 250000" 
                                    value="<?php echo $edit_space ? $edit_space['full_day_rate'] : ''; ?>">
-                            <small class="pricing-help-text">Full day = 8 hours</small>
+                            <small class="ms-help">Full day = 8 hours</small>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Amenities and Image -->
-                <h4 style="margin: 25px 0 15px 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px;">
+                <h4 class="ms-form-section">
                     <i class="fas fa-star"></i> Additional Details
                 </h4>
                 
@@ -649,18 +629,18 @@ if (isset($_GET['edit'])) {
                     <label for="amenities">Amenities (one per line)</label>
                     <textarea id="amenities" name="amenities" class="form-control" rows="6" 
                               placeholder="WiFi&#10;Projector&#10;Whiteboard&#10;Air Conditioning&#10;Coffee Machine&#10;Printing Services"><?php echo $edit_space ? htmlspecialchars($edit_space['amenities']) : ''; ?></textarea>
-                    <small style="color: #7f8c8d;">Enter each amenity on a new line</small>
+                    <small class="ms-help">Enter each amenity on a new line</small>
                 </div>
                 
                 <div class="form-group">
                     <label for="space_image">Space Image</label>
                     <input type="file" id="space_image" name="space_image" class="form-control" accept="image/*">
                     <?php if ($edit_space && $edit_space['space_image']): ?>
-                        <small style="color: #7f8c8d;">
+                        <small class="ms-help">
                             Current image: <a href="<?php echo htmlspecialchars(ims_upload_url($edit_space['space_image'])); ?>" target="_blank"><?php echo basename($edit_space['space_image']); ?></a>
                         </small>
                     <?php endif; ?>
-                    <small style="display: block; color: #7f8c8d; margin-top: 5px;">
+                    <small class="ms-help">
                         <i class="fas fa-info-circle"></i> Recommended size: 800x600px. Max file size: 5MB
                     </small>
                 </div>
@@ -675,8 +655,6 @@ if (isset($_GET['edit'])) {
         </div>
     </div>
 </div>
-
-</div><!-- /.ms-page -->
 
 <?php include 'includes/footer.php'; ?>
 

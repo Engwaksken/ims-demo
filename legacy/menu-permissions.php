@@ -191,163 +191,101 @@ $success_msg = $_SESSION['success'] ?? '';
 $error_msg   = $_SESSION['error'] ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
 
-$cat_palette = ['#ff5722','#7c3aed','#db2777','#d97706','#16a34a','#0891b2','#dc2626','#9333ea','#059669'];
+$cat_palette = ['var(--brand-600)','var(--purple-fg)','var(--blue-fg)','var(--amber-fg)','var(--green-fg)','var(--teal-fg)','var(--red-fg)','var(--slate-fg)','var(--brand-700)'];
 $cat_keys = array_keys($grouped);
 
 function catColor(string $cat, array $keys, array $pal): string
 {
     $idx = array_search($cat, $keys, true);
-    return $pal[($idx !== false ? $idx : 0) % count($pal)] ?? '#64748b';
+    return $pal[($idx !== false ? $idx : 0) % count($pal)] ?? 'var(--slate-fg)';
 }
 ?>
 
 <style>
-:root {
-    --primary:#ff5722; --primary-d:#ff9800;
-    --success:#16a34a; --danger:#dc2626;
-    --text:#1e293b; --muted:#64748b;
-    --border:#e2e8f0; --bg:#f1f5f9;
-    --surface:#fff;
-    --radius:10px;
-    --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 14px rgba(0,0,0,.06);
-}
+/* Menu permissions: page-specific layout only (globals come from style.css / reports.css) */
+.mp-note { color: var(--ink-300); font-size: 12px; }
 
-/* Layout*/
-.mp { max-width:1500px; margin:0 auto; }
-
-.mp-hdr {
-    background:linear-gradient(125deg,#ff5722 0%,#ff9800 100%);
-    color:#fff; padding:28px 32px; border-radius:14px;
-    margin-bottom:22px;
-    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
-}
-.mp-hdr h1 { margin:0 0 4px; font-size:22px; display:flex; align-items:center; gap:10px; }
-.mp-hdr p  { margin:0; font-size:13px; opacity:.75; }
-
-/*  Cards  */
-.card {
-    background:var(--surface); border-radius:var(--radius);
-    box-shadow:var(--shadow); border:1px solid var(--border);
-    margin-bottom:22px; overflow:hidden;
-}
-.ch {
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
-    padding:14px 22px; border-bottom:1px solid var(--border);
-    background:#fafbfd;
-}
-.ch h2 { margin:0; font-size:15px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
-.ch h2 i { color:var(--primary); }
-.cb { padding:20px 22px; }
-
-/* Alerts  */
-.alert {
-    display:flex; align-items:center; gap:10px;
-    padding:12px 16px; border-radius:8px; margin-bottom:18px; font-size:13.5px;
-}
-.a-ok  { background:#dcfce7; color:#166534; border-left:4px solid #16a34a; }
-.a-err { background:#fee2e2; color:#991b1b; border-left:4px solid #dc2626; }
-
-/*  Stats */
-.stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
-.sp {
-    background:#fff; border:1px solid var(--border); border-radius:40px;
-    padding:7px 16px; font-size:12.5px; font-weight:600; color:var(--muted);
-    display:flex; align-items:center; gap:7px;
-}
-.sp i { color:var(--primary); } .sp b { color:var(--text); }
-
-/* Add form  */
-.ag {
+/* Add form */
+.mp .ag {
     display:grid;
     grid-template-columns:2fr 2fr 1.4fr 1.8fr 70px auto;
     gap:10px; align-items:end;
 }
-@media(max-width:960px){ .ag { grid-template-columns:1fr 1fr 1fr; } }
-@media(max-width:600px){ .ag { grid-template-columns:1fr; } }
-.fg label {
-    display:block; font-size:11px; font-weight:700; color:var(--muted);
+@media(max-width:960px){ .mp .ag { grid-template-columns:1fr 1fr 1fr; } }
+@media(max-width:600px){ .mp .ag { grid-template-columns:1fr; } }
+.mp .fg label {
+    display:block; font-size:11px; font-weight:700; color:var(--ink-300);
     text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px;
 }
-.fc {
-    width:100%; padding:8px 11px; border:1.5px solid var(--border);
-    border-radius:7px; font-size:13px; box-sizing:border-box;
-    color:var(--text); background:#fff; transition:border-color .18s; font-family:inherit;
-}
-.fc:focus { border-color:var(--primary); outline:none; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.mp .fg label small { font-weight:400; text-transform:none; }
 
-/* Quick bar  */
+/* Quick bar */
 .qbar {
     display:flex; flex-wrap:wrap; gap:7px; align-items:center;
-    padding:11px 14px; background:#f8fafc;
-    border-radius:8px; border:1px solid var(--border); margin-bottom:14px;
+    padding:11px 14px; background:var(--surface-hover);
+    border-radius:var(--radius-sm); border:1px solid var(--border); margin-bottom:14px;
 }
-.qbar-label { font-size:11px; font-weight:700; color:var(--muted);
+.qbar-label { font-size:11px; font-weight:700; color:var(--ink-300);
     text-transform:uppercase; letter-spacing:.5px; margin-right:4px; }
+.qbar-hint { margin-left:auto; font-size:11px; color:var(--ink-300); }
 
-/*  Table */
-.pt-wrap { overflow-x:auto; border-radius:8px; border:1px solid var(--border); }
+/* Permission matrix */
+.pt-wrap { overflow-x:auto; border-radius:var(--radius-sm); border:1px solid var(--border); }
 .pt { width:100%; border-collapse:collapse; font-size:12.5px; min-width:1100px; }
-
-/* Sticky header */
 .pt thead th {
     position:sticky; top:0; z-index:10;
-    background:#1e293b; color:#fff;
+    background:var(--ink-900); color:var(--ink-0);
     padding:10px 7px; font-size:11px; font-weight:600;
     text-align:center; white-space:nowrap;
     border-right:1px solid rgba(255,255,255,.07);
 }
 .pt thead th.th-item {
     text-align:left; min-width:280px;
-    position:sticky; left:0; z-index:20; background:#ff5722;
+    position:sticky; left:0; z-index:20; background:var(--brand-600);
     padding-left:14px;
 }
 .pt thead th.th-act { min-width:56px; }
-
-/* Freeze first col */
+.pt thead th.th-role-added { background:var(--purple-fg); }
 .pt tbody td.td-item {
     position:sticky; left:0; z-index:5;
     background:inherit; border-right:2px solid var(--border) !important;
 }
-
-/* Body rows */
-.pt tbody tr:nth-child(odd)  td { background:#fff; }
-.pt tbody tr:nth-child(even) td { background:#f8fafc; }
-.pt tbody tr:hover td { background:#eff6ff !important; transition:background .12s; }
+.pt tbody tr:nth-child(odd)  td { background:var(--surface-card); }
+.pt tbody tr:nth-child(even) td { background:var(--surface-hover); }
+.pt tbody tr:hover td { background:var(--brand-50) !important; transition:background .12s; }
 .pt tbody td {
     padding:0; border-bottom:1px solid var(--border);
-    border-right:1px solid #f0f4f8;
+    border-right:1px solid var(--ink-50);
     vertical-align:middle; text-align:center;
 }
-
-/* Category row */
 .cat-row td {
-    background:linear-gradient(90deg,#f0f7ff,#f8fbff) !important;
+    background:var(--slate-bg) !important;
     padding:8px 14px !important;
     font-size:11px; font-weight:700; text-transform:uppercase;
-    letter-spacing:.7px; border-bottom:1px solid #dbeafe !important;
+    letter-spacing:.7px; border-bottom:1px solid var(--slate-border) !important;
 }
+.cat-count { margin-left:8px; opacity:.55; font-weight:400; }
 
 /* Inline-edit fields in item cell */
 .item-cell { padding:8px 10px 8px 14px !important; }
-.ie-grid { display:grid; grid-template-columns:auto 1fr; gap:3px 8px; align-items:center; }
-.ie-grid .ie-lbl {
-    font-size:10px; font-weight:700; color:var(--muted);
-    text-transform:uppercase; letter-spacing:.4px; white-space:nowrap;
-}
+.item-cell-inner { display:flex; align-items:flex-start; gap:8px; }
+.item-cell-fields { flex:1; min-width:0; }
+.ie-row { display:flex; gap:5px; align-items:center; }
+.ie-row + .ie-row { margin-top:3px; }
 .ie-inp {
-    border:1.5px solid transparent; border-radius:5px;
+    border:1.5px solid transparent; border-radius:var(--radius-sm);
     font-size:12.5px; padding:3px 7px; background:transparent;
-    transition:all .15s; color:var(--text); font-family:inherit; width:100%;
+    transition:all .15s; color:var(--ink-700); font-family:inherit; width:100%;
     box-sizing:border-box;
 }
-.ie-inp:hover  { border-color:var(--border); background:#fff; }
-.ie-inp:focus  { border-color:var(--primary); background:#fff; outline:none; }
-.ie-row { display:flex; gap:5px; align-items:center; }
+.ie-inp:hover  { border-color:var(--border); background:var(--surface-card); }
+.ie-inp:focus  { border-color:var(--brand-500); background:var(--surface-card); outline:none; box-shadow:var(--focus-ring); }
 .ie-sort { width:52px !important; text-align:center; }
-.ie-icon-prev { font-size:13px; color:var(--muted); flex-shrink:0; width:16px; text-align:center; }
+.ie-icon-prev { font-size:13px; color:var(--ink-300); flex-shrink:0; width:16px; text-align:center; }
+.ie-icon-prev.muted { color:var(--ink-200); }
 .cat-badge {
-    display:inline-block; padding:2px 8px; border-radius:12px;
-    font-size:10px; font-weight:700; color:#fff; white-space:nowrap;
+    display:inline-block; padding:2px 8px; border-radius:var(--radius-pill);
+    font-size:10px; font-weight:700; color:var(--ink-0); white-space:nowrap;
     flex-shrink:0; margin-left:6px;
 }
 
@@ -357,125 +295,129 @@ function catColor(string $cat, array $keys, array $pal): string
 .tog input { opacity:0; width:0; height:0; }
 .ts {
     position:absolute; cursor:pointer; inset:0;
-    background:#cbd5e1; border-radius:20px; transition:.2s;
+    background:var(--ink-100); border-radius:20px; transition:.2s;
 }
 .ts:before {
     content:''; position:absolute;
     width:14px; height:14px; left:3px; bottom:3px;
-    background:#fff; border-radius:50%; transition:.2s;
+    background:var(--ink-0); border-radius:50%; transition:.2s;
     box-shadow:0 1px 3px rgba(0,0,0,.2);
 }
-.tog input:checked + .ts { background:#16a34a; }
+.tog input:checked + .ts { background:var(--green-fg); }
 .tog input:checked + .ts:before { transform:translateX(16px); }
 
-/* Role cb */
+/* Role checkbox */
 .rc-cell { padding:5px 3px !important; }
-.rcb { width:15px; height:15px; cursor:pointer; accent-color:var(--primary); }
+.rcb { width:15px; height:15px; cursor:pointer; accent-color:var(--brand-600); }
 
-/* Del btn */
+/* Delete */
 .del-wrap { padding:4px !important; }
 .del-btn {
     display:inline-flex; align-items:center; justify-content:center;
-    width:28px; height:28px; border-radius:6px;
-    background:#fee2e2; color:var(--danger); border:none; cursor:pointer;
+    width:28px; height:28px; border-radius:var(--radius-sm);
+    background:var(--red-bg); color:var(--red-fg); border:none; cursor:pointer;
     font-size:12px; opacity:.35; transition:all .15s; text-decoration:none;
 }
 .pt tbody tr:hover .del-btn { opacity:1; }
-.del-btn:hover { background:var(--danger); color:#fff; }
+.del-btn:hover { background:var(--red-fg); color:var(--ink-0); }
 
-/* Buttons  */
-.btn {
-    display:inline-flex; align-items:center; gap:6px;
-    padding:8px 16px; border:none; border-radius:7px;
-    font-size:13px; font-weight:600; cursor:pointer;
-    text-decoration:none; transition:all .18s; white-space:nowrap; font-family:inherit;
+/* Role quick-grant chips */
+.mp .btn-role {
+    background:var(--brand-50); color:var(--brand-700); border:1.5px solid var(--brand-200);
+    font-size:11.5px; padding:4px 10px; border-radius:var(--radius-pill);
 }
-.btn-primary { background:var(--primary); color:#fff; }
-.btn-primary:hover { background:var(--primary-d); }
-.btn-success { background:var(--success); color:#fff; }
-.btn-success:hover { background:#15803d; }
-.btn-ghost { background:#f1f5f9; color:var(--text); border:1.5px solid var(--border); }
-.btn-ghost:hover { background:#e2e8f0; }
-.btn-role {
-    background:#eff6ff; color:#ff5722; border:1.5px solid #bfdbfe;
-    font-size:11.5px; padding:4px 10px; border-radius:20px;
-}
-.btn-role:hover { background:#dbeafe; }
-.btn-role-added { border-style:dashed; }
-.th-role-added { background:#faf5ff; color:#7c3aed; }
-.btn-xs { padding:4px 9px; font-size:11.5px; }
+.mp .btn-role:hover { background:var(--brand-100); }
+.mp .btn-role i { font-size:10px; }
+.mp .btn-role-added { border-style:dashed; }
 
 /* Floating save */
-.save-float {
+.mp .save-float {
     position:fixed; bottom:26px; right:26px; z-index:999;
-    padding:12px 26px; font-size:14px; border-radius:40px;
-    box-shadow:0 4px 20px rgba(22,163,74,.45);
+    padding:12px 26px; font-size:14px; border-radius:var(--radius-pill);
+    box-shadow:var(--shadow-lg);
     transition:background .2s, box-shadow .2s;
 }
-.save-float.dirty {
-    background:#dc2626 !important;
-    box-shadow:0 4px 20px rgba(220,38,38,.5);
-    animation:pulse 1.5s infinite;
+.mp .save-float.dirty {
+    background:var(--red-fg) !important;
+    border-color:var(--red-fg) !important;
+    animation:mp-pulse 1.5s infinite;
 }
-@keyframes pulse {
-    0%,100% { box-shadow:0 4px 20px rgba(220,38,38,.5); }
-    50%      { box-shadow:0 4px 30px rgba(220,38,38,.8); }
+@keyframes mp-pulse {
+    0%,100% { box-shadow:0 4px 20px rgba(185,28,28,.45); }
+    50%      { box-shadow:0 4px 30px rgba(185,28,28,.75); }
 }
 </style>
 
-<div class="mp">
+<div class="page-stack mp">
 
 <!-- Header -->
-<div class="mp-hdr">
+<div class="page-hero">
     <div>
-        <h1><i class="fas fa-shield-alt"></i> Menu Permissions</h1>
+        <h1><i class="fas fa-shield-alt" aria-hidden="true"></i> Menu Permissions</h1>
         <p>Edit page info inline and assign which roles see each item in the sidebar. Press <strong>Save All</strong> when done.</p>
     </div>
-    <a href="dashboard" class="btn btn-ghost" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25);">
-        <i class="fas fa-arrow-left"></i> Back
-    </a>
+    <div class="hero-actions">
+        <a href="dashboard" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+        </a>
+    </div>
 </div>
 
 <?php if ($success_msg): ?>
-<div class="alert a-ok"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($success_msg) ?></div>
+<div class="alert alert-success"><i class="fas fa-check-circle"></i> <?= htmlspecialchars($success_msg) ?></div>
 <?php endif; ?>
 <?php if ($error_msg): ?>
-<div class="alert a-err"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error_msg) ?></div>
+<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error_msg) ?></div>
 <?php endif; ?>
 
 <!-- Stats -->
-<div class="stats">
-    <div class="sp"><i class="fas fa-list"></i> <b><?= count($items) ?></b> menu items</div>
-    <div class="sp"><i class="fas fa-users"></i> <b><?= count($all_roles) ?></b> roles</div>
-    <div class="sp"><i class="fas fa-folder"></i> <b><?= count($grouped) ?></b> categories</div>
-    <div class="sp"><i class="fas fa-eye"></i> <b><?= count(array_filter($items, fn($i)=>$i['is_active'])) ?></b> active</div>
-    <div class="sp"><i class="fas fa-eye-slash"></i> <b><?= count(array_filter($items, fn($i)=>!$i['is_active'])) ?></b> hidden</div>
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-list"></i></div>
+        <div class="stat-info"><span class="stat-label">Menu Items</span><span class="stat-value"><?= count($items) ?></span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fas fa-users"></i></div>
+        <div class="stat-info"><span class="stat-label">Roles</span><span class="stat-value"><?= count($all_roles) ?></span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-purple"><i class="fas fa-folder"></i></div>
+        <div class="stat-info"><span class="stat-label">Categories</span><span class="stat-value"><?= count($grouped) ?></span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-eye"></i></div>
+        <div class="stat-info"><span class="stat-label">Active</span><span class="stat-value"><?= count(array_filter($items, fn($i)=>$i['is_active'])) ?></span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-slate"><i class="fas fa-eye-slash"></i></div>
+        <div class="stat-info"><span class="stat-label">Hidden</span><span class="stat-value"><?= count(array_filter($items, fn($i)=>!$i['is_active'])) ?></span></div>
+    </div>
 </div>
 
 <!-- Add new item-->
 <div class="card">
-    <div class="ch">
-        <h2><i class="fas fa-plus-circle"></i> Add New Menu Item</h2>
-        <small style="color:var(--muted);">Duplicate filenames will update metadata only; permissions are preserved.</small>
+    <div class="card-header">
+        <h3><i class="fas fa-plus-circle"></i> Add New Menu Item</h3>
+        <small class="mp-note">Duplicate filenames will update metadata only; permissions are preserved.</small>
     </div>
-    <div class="cb">
+    <div class="card-body">
         <form method="POST">
             <div class="ag">
                 <div class="fg">
                     <label>Page Filename *</label>
-                    <input type="text" name="page" class="fc" placeholder="reports" required>
+                    <input type="text" name="page" class="form-control" placeholder="reports" required>
                 </div>
                 <div class="fg">
                     <label>Sidebar Label *</label>
-                    <input type="text" name="label" class="fc" placeholder="Reports" required>
+                    <input type="text" name="label" class="form-control" placeholder="Reports" required>
                 </div>
                 <div class="fg">
-                    <label>Icon <small style="font-weight:400;text-transform:none;">(FA5 class)</small></label>
-                    <input type="text" name="icon" class="fc" value="fa-circle" placeholder="fa-chart-bar">
+                    <label>Icon <small>(FA5 class)</small></label>
+                    <input type="text" name="icon" class="form-control" value="fa-circle" placeholder="fa-chart-bar">
                 </div>
                 <div class="fg">
                     <label>Category</label>
-                    <input type="text" name="category" class="fc" value="General" list="cat-list" placeholder="General">
+                    <input type="text" name="category" class="form-control" value="General" list="cat-list" placeholder="General">
                     <datalist id="cat-list">
                         <?php foreach (array_keys($grouped) as $c): ?>
                         <option value="<?= htmlspecialchars($c) ?>">
@@ -484,19 +426,19 @@ function catColor(string $cat, array $keys, array $pal): string
                 </div>
                 <div class="fg">
                     <label>Sort #</label>
-                    <input type="number" name="sort_order" class="fc" value="0" min="0">
+                    <input type="number" name="sort_order" class="form-control" value="0" min="0">
                 </div>
                 <div class="fg">
                     <label>&nbsp;</label>
-                    <button type="submit" name="add_item" class="btn btn-primary" style="width:100%;">
+                    <button type="submit" name="add_item" class="btn btn-primary btn-block">
                         <i class="fas fa-plus"></i> Add
                     </button>
                 </div>
             </div>
-            <p style="margin:10px 0 0;font-size:12px;color:var(--muted);">
-                <i class="fas fa-info-circle" style="color:var(--primary);"></i>
+            <p class="mp-note" style="margin:10px 0 0;">
+                <i class="fas fa-info-circle" style="color:var(--brand-600);"></i>
                 After adding, tick the roles below and press <strong>Save All Changes</strong>.
-                Browse icons at <a href="https://fontawesome.com/icons" target="_blank" style="color:var(--primary);">fontawesome.com/icons</a>.
+                Browse icons at <a href="https://fontawesome.com/icons" target="_blank" rel="noopener">fontawesome.com/icons</a>.
             </p>
         </form>
     </div>
@@ -504,18 +446,18 @@ function catColor(string $cat, array $keys, array $pal): string
 
 <!--  Permission matrix -->
 <div class="card">
-    <div class="ch">
-        <h2><i class="fas fa-table"></i> Page &amp; Role Assignment</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button type="button" class="btn btn-ghost btn-xs" onclick="checkAll(true)">
+    <div class="card-header">
+        <h3><i class="fas fa-table"></i> Page &amp; Role Assignment</h3>
+        <div class="hero-actions">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="checkAll(true)">
                 <i class="fas fa-check-square"></i> Check All
             </button>
-            <button type="button" class="btn btn-ghost btn-xs" onclick="checkAll(false)">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="checkAll(false)">
                 <i class="fas fa-square"></i> Clear All
             </button>
         </div>
     </div>
-    <div class="cb" style="padding-top:14px;">
+    <div class="card-body">
 
         <!-- Quick grant by role -->
         <div class="qbar">
@@ -524,11 +466,11 @@ function catColor(string $cat, array $keys, array $pal): string
             <button type="button" class="btn btn-role<?= isset($custom_roles[$r]) ? ' btn-role-added' : '' ?>"
                     data-role="<?= htmlspecialchars($r, ENT_QUOTES) ?>" onclick="grantRole(this.dataset.role)"
                     <?= isset($custom_roles[$r]) ? 'title="Added role (works like ' . htmlspecialchars($custom_roles[$r]['base_role'], ENT_QUOTES) . ')"' : '' ?>>
-                <i class="fas fa-user-check" style="font-size:10px;"></i>
+                <i class="fas fa-user-check"></i>
                 <?= htmlspecialchars($r) ?>
             </button>
             <?php endforeach; ?>
-            <span style="margin-left:auto;font-size:11px;color:var(--muted);">
+            <span class="qbar-hint">
                 <i class="fas fa-info-circle"></i> Click a role to check all its boxes
             </span>
         </div>
@@ -560,7 +502,7 @@ function catColor(string $cat, array $keys, array $pal): string
                     <td colspan="<?= 3 + count($all_roles) ?>" style="color:<?= $cc ?>;">
                         <i class="fas fa-layer-group"></i>
                         <?= htmlspecialchars($category) ?>
-                        <span style="margin-left:8px;opacity:.55;font-weight:400;">
+                        <span class="cat-count">
                             (<?= count($cat_items) ?> item<?= count($cat_items)!==1?'s':'' ?>)
                         </span>
                     </td>
@@ -575,12 +517,12 @@ function catColor(string $cat, array $keys, array $pal): string
 
                     <!-- -- Inline-edit cell -- -->
                     <td class="td-item item-cell">
-                        <div style="display:flex;align-items:flex-start;gap:8px;">
-                            <div style="flex:1;min-width:0;">
+                        <div class="item-cell-inner">
+                            <div class="item-cell-fields">
 
                                 <!-- Row 1: page filename -->
-                                <div class="ie-row" style="margin-bottom:3px;">
-                                    <i class="fas fa-file-code ie-icon-prev" style="color:#94a3b8;"></i>
+                                <div class="ie-row">
+                                    <i class="fas fa-file-code ie-icon-prev muted"></i>
                                     <input type="text"
                                            class="ie-inp"
                                            name="items[<?= $mid ?>][page]"
@@ -590,8 +532,8 @@ function catColor(string $cat, array $keys, array $pal): string
                                 </div>
 
                                 <!-- Row 2: label -->
-                                <div class="ie-row" style="margin-bottom:3px;">
-                                    <i class="fas fa-tag ie-icon-prev" style="color:#94a3b8;"></i>
+                                <div class="ie-row">
+                                    <i class="fas fa-tag ie-icon-prev muted"></i>
                                     <input type="text"
                                            class="ie-inp"
                                            name="items[<?= $mid ?>][label]"
@@ -685,7 +627,7 @@ function catColor(string $cat, array $keys, array $pal): string
         </button>
 
         </form>
-    </div><!-- /cb -->
+    </div><!-- /card-body -->
 </div><!-- /card -->
 
 </div><!-- /mp -->

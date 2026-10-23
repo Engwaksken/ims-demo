@@ -201,11 +201,11 @@ $stmt->close();
         </div>
 
         <div class="hero-actions">
-            <a href="manage_procurement" class="btn btn-primary">
+            <a href="manage_procurement" class="btn">
                 <i class="fas fa-arrow-left"></i> Procurement
             </a>
 
-            <button type="button" class="btn btn-dark" onclick="openModal('deliveryModal')">
+            <button type="button" class="btn btn-primary" onclick="openModal('deliveryModal')">
                 <i class="fas fa-plus-circle"></i> Record Delivery
             </button>
         </div>

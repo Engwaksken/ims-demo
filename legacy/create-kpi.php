@@ -63,20 +63,22 @@ $current_year = date('Y');
 
 <style>
 .form-section {
-    background: white;
-    padding: 25px;
-    border-radius: 8px;
+    background: var(--surface-card);
+    padding: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+.section-title i { color: var(--brand-600); }
 
 .section-title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--ink-900);
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #ecf0f1;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -90,31 +92,40 @@ $current_year = date('Y');
 
 .quarter-input {
     padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px solid #ecf0f1;
+    background: var(--surface-hover);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
 }
 
 .quarter-label {
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--brand-700);
     margin-bottom: 10px;
     display: block;
 }
 
 .hint-text {
     font-size: 13px;
-    color: #7f8c8d;
-    font-style: italic;
+    color: var(--ink-300);
     margin-top: 5px;
 }
 
-.info-box {
-    background: #e8f4f8;
-    border-left: 4px solid #3498DB;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
+.quarter-total {
+    margin-top: 15px;
+    padding: 12px;
+    background: var(--amber-bg);
+    border: 1px solid var(--amber-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}
+
+#targetWarning { color: var(--red-fg); margin-left: 10px; }
+
+.form-section.form-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
 }
 
 @media (max-width: 768px) {
@@ -126,18 +137,26 @@ $current_year = date('Y');
 }
 </style>
 
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-bullseye" aria-hidden="true"></i> <?php echo $editing_kpi ? 'Edit KPI' : 'Create New KPI'; ?></h1>
+        <p>Define a SMART KPI with annual and quarterly targets for performance tracking.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="my-kpis" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to My KPIs
+        </a>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-plus-circle"></i> Create New KPI</h3>
-        <div>
-            <a href="my-kpis" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to My KPIs
-            </a>
-        </div>
+        <h3><i class="fas fa-plus-circle"></i> KPI Details</h3>
     </div>
     
     <div class="card-body">
-        <div class="info-box">
+        <div class="alert alert-info">
             <i class="fas fa-info-circle"></i>
             <strong>Department:</strong> <?php echo h($user_dept['department_name'] ?? ''); ?><br>
             <strong>Note:</strong> Create SMART KPIs (Specific, Measurable, Achievable, Relevant, Time-bound) for effective performance tracking.
@@ -265,28 +284,29 @@ $current_year = date('Y');
                     </div>
                 </div>
                 
-                <div style="margin-top: 15px; padding: 12px; background: #fff3cd; border-radius: 5px; text-align: center;">
+                <div class="quarter-total">
                     <strong>Quarterly Total:</strong> <span id="quarterlyTotal">0</span> / <span id="annualTarget">0</span>
-                    <span id="targetWarning" style="color: #E74C3C; margin-left: 10px; display: none;">
+                    <span id="targetWarning" style="display: none;">
                         ?? Quarterly targets don't match annual target!
                     </span>
                 </div>
             </div>
             
             <!-- Form Actions -->
-            <div class="form-section" style="text-align: center;">
-                <button type="submit" name="save_draft" class="btn btn-secondary" style="padding: 12px 30px;">
+            <div class="form-section form-actions-row">
+                <button type="submit" name="save_draft" class="btn btn-secondary">
                     <i class="fas fa-save"></i> Save as Draft
                 </button>
-                <button type="submit" name="submit_kpi" class="btn btn-success" style="padding: 12px 30px; margin-left: 10px;">
+                <button type="submit" name="submit_kpi" class="btn btn-primary">
                     <i class="fas fa-paper-plane"></i> Submit for Review
                 </button>
-                <a href="my-kpis" class="btn btn-danger" style="padding: 12px 30px; margin-left: 10px;">
+                <a href="my-kpis" class="btn btn-danger">
                     <i class="fas fa-times"></i> Cancel
                 </a>
             </div>
         </form>
     </div>
+</div>
 </div>
 
 <?php include 'includes/footer.php'; ?>

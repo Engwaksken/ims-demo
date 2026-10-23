@@ -236,309 +236,55 @@ foreach ($submitted as $application) {
 ?>
 
 <style>
-:root {
-    --ma-ink: #0f172a;
-    --ma-ink-2: #334155;
-    --ma-muted: #64748b;
-    --ma-light: #94a3b8;
-    --ma-rule: #e2e8f0;
-    --ma-bg: #f8fafc;
-    --ma-white: #ffffff;
-    --ma-orange: #f97316;
-    --ma-orange-soft: #fff7ed;
-    --ma-green: #16a34a;
-    --ma-green-soft: #f0fdf4;
-    --ma-blue: #2563eb;
-    --ma-blue-soft: #eff6ff;
-    --ma-red: #dc2626;
-    --ma-red-soft: #fef2f2;
-    --ma-purple: #7c3aed;
-    --ma-purple-soft: #f5f3ff;
-    --ma-radius: 14px;
-    --ma-shadow: 0 3px 12px rgba(15, 23, 42, .07);
-    --ma-shadow-hover: 0 14px 30px rgba(15, 23, 42, .12);
-}
+/* my-applications.php: page-only layout (filter stat buttons, card grid). */
 
-.ma-page,
-.ma-page * {
-    box-sizing: border-box;
-}
-
-.ma-page {
-    width: 100%;
-    padding: 0 0 60px;
-    color: var(--ma-ink);
-}
-
-/* Full-width page like the other IMS pages */
-.ma-shell {
-    width: 100%;
-    max-width: none;
-    margin: 0;
-    padding: 0 22px;
-}
-
-.ma-hero {
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-    padding: 30px 32px;
-    margin-bottom: 22px;
-    color: #fff;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 65%, #431407 100%);
-    border-radius: 16px;
-}
-
-.ma-hero::after {
-    content: '';
-    position: absolute;
-    width: 260px;
-    height: 260px;
-    right: -80px;
-    top: -110px;
-    border-radius: 50%;
-    border: 45px solid rgba(249, 115, 22, .12);
-}
-
-.ma-hero-copy,
-.ma-hero-actions {
-    position: relative;
-    z-index: 1;
-}
-
-.ma-eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    margin-bottom: 7px;
-    color: #fdba74;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: .11em;
-    text-transform: uppercase;
-}
-
-.ma-hero h1 {
-    margin: 0 0 6px;
-    color: #fff;
-    font-size: clamp(26px, 3vw, 36px);
-    line-height: 1.2;
-}
-
-.ma-hero p {
-    max-width: 640px;
-    margin: 0;
-    color: rgba(255,255,255,.68);
-    font-size: 14px;
-    line-height: 1.6;
-}
-
-.ma-hero-actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-.ma-btn {
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 9px 15px;
-    border: 1px solid transparent;
-    border-radius: 9px;
-    font-size: 12.5px;
-    font-weight: 700;
-    text-decoration: none;
-    cursor: pointer;
-    transition: .2s ease;
-}
-
-.ma-btn:hover {
-    transform: translateY(-1px);
-}
-
-.ma-btn-primary {
-    background: var(--ma-orange);
-    color: #fff;
-}
-
-.ma-btn-dark {
-    background: var(--ma-ink);
-    color: #fff;
-}
-
-.ma-btn-light {
-    background: #fff;
-    color: var(--ma-ink-2);
-    border-color: var(--ma-rule);
-}
-
-.ma-btn-soft {
-    background: var(--ma-orange-soft);
-    color: var(--ma-orange);
-    border-color: #fed7aa;
-}
-
-.ma-btn-danger {
-    background: var(--ma-red-soft);
-    color: var(--ma-red);
-    border-color: #fecaca;
-}
-
-/* Statistics */
-.ma-stats {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 22px;
-}
-
+/* Stat cards double as filter buttons. */
 .ma-stat {
     width: 100%;
-    min-height: 94px;
-    appearance: none;
-    border: 1px solid var(--ma-rule);
-    border-left: 4px solid var(--ma-orange);
-    border-radius: 12px;
-    background: var(--ma-white);
-    padding: 15px 16px;
+    font: inherit;
     text-align: left;
-    box-shadow: var(--ma-shadow);
     cursor: pointer;
-    transition: .2s ease;
 }
 
-.ma-stat:hover,
 .ma-stat:focus-visible {
-    transform: translateY(-2px);
-    box-shadow: var(--ma-shadow-hover);
-    outline: none;
+    outline: var(--focus-outline);
+    outline-offset: 2px;
 }
 
 .ma-stat.active {
-    border-color: var(--ma-orange);
-    background: var(--ma-orange-soft);
-    box-shadow: 0 0 0 2px rgba(249,115,22,.1);
+    border-color: var(--brand-400);
+    box-shadow: var(--focus-ring);
 }
 
-.ma-stat.pending { border-left-color: var(--ma-blue); }
-.ma-stat.shortlisted { border-left-color: var(--ma-orange); }
-.ma-stat.accepted { border-left-color: var(--ma-green); }
-.ma-stat.drafts { border-left-color: var(--ma-purple); }
-
-.ma-stat-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-}
-
-.ma-stat-icon {
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    flex: 0 0 34px;
-    border-radius: 9px;
-    background: var(--ma-orange-soft);
-    color: var(--ma-orange);
-}
-
-.ma-stat.pending .ma-stat-icon {
-    background: var(--ma-blue-soft);
-    color: var(--ma-blue);
-}
-
-.ma-stat.shortlisted .ma-stat-icon {
-    background: var(--ma-orange-soft);
-    color: var(--ma-orange);
-}
-
-.ma-stat.accepted .ma-stat-icon {
-    background: var(--ma-green-soft);
-    color: var(--ma-green);
-}
-
-.ma-stat.drafts .ma-stat-icon {
-    background: var(--ma-purple-soft);
-    color: var(--ma-purple);
-}
-
-.ma-stat-value {
-    margin-top: 6px;
-    font-size: 25px;
-    font-weight: 800;
-    line-height: 1;
-}
-
-.ma-stat-label {
-    margin-top: 5px;
-    color: var(--ma-muted);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-}
-
-/* Filter toolbar */
-.ma-toolbar {
+.ma-filter-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: var(--space-2);
     flex-wrap: wrap;
-    margin-bottom: 18px;
-    padding: 13px 15px;
-    background: var(--ma-white);
-    border: 1px solid var(--ma-rule);
-    border-radius: 12px;
 }
 
-.ma-toolbar-left {
+.ma-section + .ma-section {
+    margin-top: var(--space-6);
+}
+
+.ma-section-head {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-width: 0;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-3);
 }
 
-.ma-toolbar-title {
-    font-size: 14px;
-    font-weight: 800;
+.ma-section-head h4 {
+    margin: 0;
+    color: var(--ink-700);
+    font-size: var(--fs-md);
 }
 
-.ma-filter-result {
-    padding: 4px 9px;
-    border-radius: 999px;
-    color: var(--ma-orange);
-    background: var(--ma-orange-soft);
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.ma-clear-filter {
-    border: 0;
-    background: transparent;
-    color: var(--ma-muted);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.ma-clear-filter:hover {
-    color: var(--ma-orange);
-}
-
-/* 3 cards per row desktop */
+/* 3 cards per row on desktop */
 .ma-app-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: var(--space-4);
     align-items: stretch;
 }
 
@@ -547,33 +293,21 @@ foreach ($submitted as $application) {
     height: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    background: var(--ma-white);
-    border: 1px solid var(--ma-rule);
-    border-top: 4px solid #cbd5e1;
-    border-radius: var(--ma-radius);
-    box-shadow: var(--ma-shadow);
-    transition: transform .2s ease, box-shadow .2s ease;
+    border-top: 4px solid var(--ink-100);
 }
 
-.ma-app-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--ma-shadow-hover);
-}
-
-.ma-app-card.status-accepted { border-top-color: var(--ma-green); }
-.ma-app-card.status-rejected { border-top-color: var(--ma-red); }
-.ma-app-card.status-shortlisted { border-top-color: var(--ma-orange); }
+.ma-app-card.status-accepted { border-top-color: var(--green-fg); }
+.ma-app-card.status-rejected { border-top-color: var(--red-fg); }
+.ma-app-card.status-shortlisted { border-top-color: var(--brand-500); }
 .ma-app-card.status-review,
-.ma-app-card.status-pending { border-top-color: var(--ma-blue); }
-.ma-app-card.status-waitlisted { border-top-color: var(--ma-purple); }
-.ma-app-card.status-draft { border-top-color: var(--ma-purple); }
+.ma-app-card.status-pending { border-top-color: var(--blue-fg); }
+.ma-app-card.status-waitlisted,
+.ma-app-card.status-draft { border-top-color: var(--purple-fg); }
 
-.ma-card-body {
+.ma-app-card > .card-body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 18px;
 }
 
 .ma-card-head {
@@ -591,8 +325,8 @@ foreach ($submitted as $application) {
 
 .ma-card-title {
     margin: 0;
-    color: var(--ma-ink);
-    font-size: 16px;
+    color: var(--ink-700);
+    font-size: var(--fs-md);
     font-weight: 800;
     line-height: 1.35;
     overflow-wrap: anywhere;
@@ -600,38 +334,14 @@ foreach ($submitted as $application) {
 
 .ma-card-ref {
     margin-top: 4px;
-    color: var(--ma-light);
-    font-size: 10.5px;
+    font-size: 11px;
     font-weight: 800;
     letter-spacing: .06em;
 }
 
-.ma-status {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 9px;
-    border-radius: 999px;
-    font-size: 10.5px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.ma-status.accepted { color: var(--ma-green); background: var(--ma-green-soft); }
-.ma-status.rejected { color: var(--ma-red); background: var(--ma-red-soft); }
-.ma-status.shortlisted { color: var(--ma-orange); background: var(--ma-orange-soft); }
-.ma-status.review,
-.ma-status.pending,
-.ma-status.submitted { color: var(--ma-blue); background: var(--ma-blue-soft); }
-.ma-status.waitlisted { color: var(--ma-purple); background: var(--ma-purple-soft); }
-.ma-status.withdrawn,
-.ma-status.draft { color: var(--ma-muted); background: var(--ma-bg); }
-
 .ma-card-meta {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
+    gap: var(--space-2);
     margin-bottom: 15px;
 }
 
@@ -639,22 +349,21 @@ foreach ($submitted as $application) {
     min-width: 0;
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    color: var(--ma-muted);
-    font-size: 12.5px;
+    gap: var(--space-2);
+    color: var(--ink-300);
+    font-size: var(--fs-sm);
     line-height: 1.45;
 }
 
 .ma-meta i {
     width: 14px;
     margin-top: 2px;
-    color: var(--ma-orange);
+    color: var(--brand-500);
     text-align: center;
 }
 
 .ma-meta strong {
-    color: var(--ma-ink-2);
-    font-weight: 700;
+    color: var(--ink-500);
     overflow-wrap: anywhere;
 }
 
@@ -665,8 +374,8 @@ foreach ($submitted as $application) {
     margin-top: auto;
     margin-bottom: 15px;
     padding: 11px 12px;
-    border-radius: 9px;
-    background: var(--ma-bg);
+    border-radius: var(--radius-sm);
+    background: var(--surface-hover);
 }
 
 .ma-score-icon {
@@ -676,18 +385,19 @@ foreach ($submitted as $application) {
     place-items: center;
     flex: 0 0 34px;
     border-radius: 50%;
-    color: var(--ma-orange);
-    background: var(--ma-orange-soft);
+    color: var(--brand-600);
+    background: var(--brand-50);
 }
 
 .ma-score strong {
     display: block;
-    font-size: 12.5px;
+    color: var(--ink-700);
+    font-size: var(--fs-sm);
 }
 
 .ma-score span {
-    color: var(--ma-muted);
-    font-size: 11px;
+    color: var(--ink-300);
+    font-size: var(--fs-xs);
 }
 
 .ma-card-actions {
@@ -695,83 +405,24 @@ foreach ($submitted as $application) {
     gap: 7px;
     flex-wrap: wrap;
     padding-top: 14px;
-    border-top: 1px solid var(--ma-rule);
+    border-top: 1px solid var(--ink-50);
 }
 
-.ma-card-actions .ma-btn {
+.ma-card-actions .btn {
     flex: 1 1 auto;
-    padding-left: 11px;
-    padding-right: 11px;
 }
 
-.ma-section {
-    margin-top: 26px;
-}
-
-.ma-section-head {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin-bottom: 14px;
-}
-
-.ma-section-head h2 {
-    margin: 0;
-    font-size: 19px;
-}
-
-.ma-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 26px;
-    height: 24px;
-    padding: 0 8px;
-    border-radius: 999px;
-    background: var(--ma-orange-soft);
-    color: var(--ma-orange);
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.ma-empty {
-    grid-column: 1 / -1;
-    padding: 52px 20px;
-    border: 1px dashed #cbd5e1;
-    border-radius: 14px;
-    background: var(--ma-white);
-    text-align: center;
-}
-
-.ma-empty i {
-    margin-bottom: 13px;
-    color: var(--ma-orange);
-    font-size: 36px;
-}
-
-.ma-empty h3 {
-    margin: 0 0 5px;
-    font-size: 18px;
-}
-
-.ma-empty p {
-    margin: 0 0 16px;
-    color: var(--ma-muted);
-    font-size: 13px;
+.ma-btn-disabled {
+    cursor: not-allowed;
+    opacity: .7;
 }
 
 .ma-no-filter-results {
     display: none;
-    padding: 42px 20px;
-    margin-top: 16px;
-    border: 1px dashed #cbd5e1;
-    border-radius: 14px;
-    background: #fff;
-    text-align: center;
 }
 
 .ma-no-filter-results.show {
-    display: block;
+    display: flex;
 }
 
 .ma-hidden {
@@ -782,171 +433,129 @@ foreach ($submitted as $application) {
     .ma-app-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
-    .ma-stats {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
 }
 
 @media (max-width: 720px) {
-    .ma-shell {
-        padding: 0 12px;
-    }
-
-    .ma-hero {
-        padding: 24px 20px;
-    }
-
-    .ma-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .ma-app-grid {
         grid-template-columns: 1fr;
-    }
-
-    .ma-toolbar {
-        align-items: flex-start;
     }
 }
 
 @media (max-width: 420px) {
-    .ma-stats {
-        grid-template-columns: 1fr;
-    }
-
-    .ma-hero-actions,
-    .ma-hero-actions .ma-btn {
-        width: 100%;
-    }
-
     .ma-card-head {
         flex-direction: column;
     }
 }
 </style>
 
-<div class="ma-page">
-    <div class="ma-shell">
+<?php
+// Status class (from ma_status_meta) -> global badge modifier.
+$ma_badge_class = [
+    'accepted'    => 'badge-success',
+    'rejected'    => 'badge-danger',
+    'shortlisted' => 'badge-warning',
+    'review'      => 'badge-info',
+    'pending'     => 'badge-info',
+    'submitted'   => 'badge-info',
+    'waitlisted'  => 'badge-purple',
+    'withdrawn'   => 'badge-secondary',
+    'draft'       => 'badge-secondary',
+];
+?>
 
-        <section class="ma-hero">
-            <div class="ma-hero-copy">
-                <div class="ma-eyebrow">
-                    <i class="fas fa-briefcase"></i>
-                    Application Portal
-                </div>
+<div class="page-stack">
 
-                <h1>My Applications</h1>
-
-                <p>
-                    Track submitted applications, continue saved drafts and quickly filter applications by status.
-                </p>
-            </div>
-
-            <div class="ma-hero-actions">
-                <a href="opportunities" class="ma-btn ma-btn-primary">
-                    <i class="fas fa-search"></i>
-                    Browse Opportunities
-                </a>
-            </div>
-        </section>
-
-        <?php if (!empty($_SESSION['success'])): ?>
-            <div class="alert alert-success" id="flashMessage">
-                <?= ma_h($_SESSION['success']) ?>
-            </div>
-            <?php unset($_SESSION['success']); ?>
-        <?php endif; ?>
-
-        <?php if (!empty($_SESSION['error'])): ?>
-            <div class="alert alert-danger" id="flashMessage">
-                <?= ma_h($_SESSION['error']) ?>
-            </div>
-            <?php unset($_SESSION['error']); ?>
-        <?php endif; ?>
-
-        <div class="ma-stats" aria-label="Application filters">
-            <button type="button" class="ma-stat active" data-filter="all">
-                <div class="ma-stat-top">
-                    <div>
-                        <div class="ma-stat-value"><?= (int)$stats['total'] ?></div>
-                        <div class="ma-stat-label">Total Submitted</div>
-                    </div>
-                    <span class="ma-stat-icon">
-                        <i class="fas fa-clipboard-list"></i>
-                    </span>
-                </div>
-            </button>
-
-            <button type="button" class="ma-stat pending" data-filter="pending">
-                <div class="ma-stat-top">
-                    <div>
-                        <div class="ma-stat-value"><?= (int)$stats['pending'] ?></div>
-                        <div class="ma-stat-label">Pending Review</div>
-                    </div>
-                    <span class="ma-stat-icon">
-                        <i class="fas fa-clock"></i>
-                    </span>
-                </div>
-            </button>
-
-            <button type="button" class="ma-stat shortlisted" data-filter="shortlisted">
-                <div class="ma-stat-top">
-                    <div>
-                        <div class="ma-stat-value"><?= (int)$stats['shortlisted'] ?></div>
-                        <div class="ma-stat-label">Shortlisted</div>
-                    </div>
-                    <span class="ma-stat-icon">
-                        <i class="fas fa-star"></i>
-                    </span>
-                </div>
-            </button>
-
-            <button type="button" class="ma-stat accepted" data-filter="accepted">
-                <div class="ma-stat-top">
-                    <div>
-                        <div class="ma-stat-value"><?= (int)$stats['accepted'] ?></div>
-                        <div class="ma-stat-label">Accepted</div>
-                    </div>
-                    <span class="ma-stat-icon">
-                        <i class="fas fa-check-circle"></i>
-                    </span>
-                </div>
-            </button>
-
-            <button type="button" class="ma-stat drafts" data-filter="draft">
-                <div class="ma-stat-top">
-                    <div>
-                        <div class="ma-stat-value"><?= (int)$stats['draft'] ?></div>
-                        <div class="ma-stat-label">Saved Drafts</div>
-                    </div>
-                    <span class="ma-stat-icon">
-                        <i class="fas fa-edit"></i>
-                    </span>
-                </div>
-            </button>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-briefcase" aria-hidden="true"></i> My Applications</h1>
+            <p>Track submitted applications, continue saved drafts and filter applications by status.</p>
         </div>
+        <div class="hero-actions">
+            <a href="opportunities" class="btn btn-primary">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                Browse Opportunities
+            </a>
+        </div>
+    </div>
 
-        <div class="ma-toolbar">
-            <div class="ma-toolbar-left">
-                <span class="ma-toolbar-title">Applications</span>
-                <span class="ma-filter-result" id="applicationFilterLabel">Showing all submitted applications</span>
+    <?php if (!empty($_SESSION['success'])): ?>
+        <div class="alert alert-success" id="flashMessage">
+            <?= ma_h($_SESSION['success']) ?>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+
+    <?php if (!empty($_SESSION['error'])): ?>
+        <div class="alert alert-danger" id="flashMessage">
+            <?= ma_h($_SESSION['error']) ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
+    <div class="stats-grid reports-stats" aria-label="Application filters">
+        <button type="button" class="stat-card ma-stat active" data-filter="all">
+            <span class="stat-icon bg-primary"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
+            <span class="stat-info">
+                <span class="stat-label">Total Submitted</span>
+                <span class="stat-value"><?= (int)$stats['total'] ?></span>
+            </span>
+        </button>
+
+        <button type="button" class="stat-card ma-stat pending" data-filter="pending">
+            <span class="stat-icon bg-blue"><i class="fas fa-clock" aria-hidden="true"></i></span>
+            <span class="stat-info">
+                <span class="stat-label">Pending Review</span>
+                <span class="stat-value"><?= (int)$stats['pending'] ?></span>
+            </span>
+        </button>
+
+        <button type="button" class="stat-card ma-stat shortlisted" data-filter="shortlisted">
+            <span class="stat-icon bg-amber"><i class="fas fa-star" aria-hidden="true"></i></span>
+            <span class="stat-info">
+                <span class="stat-label">Shortlisted</span>
+                <span class="stat-value"><?= (int)$stats['shortlisted'] ?></span>
+            </span>
+        </button>
+
+        <button type="button" class="stat-card ma-stat accepted" data-filter="accepted">
+            <span class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></span>
+            <span class="stat-info">
+                <span class="stat-label">Accepted</span>
+                <span class="stat-value"><?= (int)$stats['accepted'] ?></span>
+            </span>
+        </button>
+
+        <button type="button" class="stat-card ma-stat drafts" data-filter="draft">
+            <span class="stat-icon bg-purple"><i class="fas fa-edit" aria-hidden="true"></i></span>
+            <span class="stat-info">
+                <span class="stat-label">Saved Drafts</span>
+                <span class="stat-value"><?= (int)$stats['draft'] ?></span>
+            </span>
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="ma-filter-head">
+                <h3><i class="fas fa-list" aria-hidden="true"></i> Applications</h3>
+                <span class="badge badge-warning" id="applicationFilterLabel">Showing all submitted applications</span>
             </div>
 
-            <button type="button" class="ma-clear-filter" id="clearApplicationFilter">
-                <i class="fas fa-undo"></i>
+            <button type="button" class="btn btn-secondary btn-sm" id="clearApplicationFilter">
+                <i class="fas fa-undo" aria-hidden="true"></i>
                 Clear Filter
             </button>
         </div>
 
+        <div class="card-body">
         <?php if (empty($applications)): ?>
-            <div class="ma-empty">
-                <i class="fas fa-folder-open"></i>
-                <h3>No Applications Yet</h3>
+            <div class="empty-state">
+                <i class="fas fa-folder-open" aria-hidden="true"></i>
+                <h4>No Applications Yet</h4>
                 <p>Browse available opportunities and submit your first application.</p>
 
-                <a href="opportunities" class="ma-btn ma-btn-dark">
-                    <i class="fas fa-search"></i>
+                <a href="opportunities" class="btn btn-primary">
+                    <i class="fas fa-search" aria-hidden="true"></i>
                     Browse Opportunities
                 </a>
             </div>
@@ -955,8 +564,8 @@ foreach ($submitted as $application) {
             <?php if (!empty($drafts)): ?>
                 <section class="ma-section ma-application-section" data-section="draft">
                     <div class="ma-section-head">
-                        <h2>Saved Drafts</h2>
-                        <span class="ma-count"><?= count($drafts) ?></span>
+                        <h4>Saved Drafts</h4>
+                        <span class="badge badge-purple"><?= count($drafts) ?></span>
                     </div>
 
                     <div class="ma-app-grid">
@@ -971,41 +580,41 @@ foreach ($submitted as $application) {
                                 ?? null;
                         ?>
                             <article
-                                class="ma-app-card status-draft ma-filter-card"
+                                class="card ma-app-card status-draft ma-filter-card"
                                 data-filter-status="draft"
                             >
-                                <div class="ma-card-body">
+                                <div class="card-body">
                                     <div class="ma-card-head">
                                         <div class="ma-card-title-wrap">
                                             <h3 class="ma-card-title">
                                                 <?= ma_h($draft['opportunity_title'] ?? 'Opportunity') ?>
                                             </h3>
-                                            <div class="ma-card-ref"><?= ma_h($ref) ?></div>
+                                            <div class="ma-card-ref cell-muted"><?= ma_h($ref) ?></div>
                                         </div>
 
-                                        <span class="ma-status draft">
-                                            <i class="fas fa-edit"></i>
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-edit" aria-hidden="true"></i>
                                             Draft
                                         </span>
                                     </div>
 
                                     <div class="ma-card-meta">
                                         <div class="ma-meta">
-                                            <i class="fas fa-building"></i>
+                                            <i class="fas fa-building" aria-hidden="true"></i>
                                             <strong>
                                                 <?= ma_h(($draft['startup_name'] ?? '') !== '' ? $draft['startup_name'] : 'Unnamed venture') ?>
                                             </strong>
                                         </div>
 
                                         <div class="ma-meta">
-                                            <i class="fas fa-save"></i>
+                                            <i class="fas fa-save" aria-hidden="true"></i>
                                             <span>
                                                 Last saved <?= ma_h(ma_date($savedAt, 'd M Y, h:i A')) ?>
                                             </span>
                                         </div>
 
                                         <div class="ma-meta">
-                                            <i class="fas fa-calendar-alt"></i>
+                                            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
                                             <span>
                                                 Deadline:
                                                 <?= ma_h(ma_date($draft['deadline'] ?? null, 'd M Y', 'No deadline')) ?>
@@ -1015,7 +624,7 @@ foreach ($submitted as $application) {
 
                                     <div class="ma-score">
                                         <span class="ma-score-icon">
-                                            <i class="fas fa-file-alt"></i>
+                                            <i class="fas fa-file-alt" aria-hidden="true"></i>
                                         </span>
                                         <div>
                                             <strong>Application not yet submitted</strong>
@@ -1029,24 +638,24 @@ foreach ($submitted as $application) {
                                         <?php if ($open): ?>
                                             <a
                                                 href="submit-application?opportunity_id=<?= (int)($draft['opportunity_id'] ?? 0) ?>&draft_id=<?= $draftId ?>"
-                                                class="ma-btn ma-btn-soft"
+                                                class="btn btn-soft btn-sm"
                                             >
-                                                <i class="fas fa-pen"></i>
+                                                <i class="fas fa-pen" aria-hidden="true"></i>
                                                 Continue
                                             </a>
                                         <?php else: ?>
-                                            <span class="ma-btn ma-btn-light" style="cursor:not-allowed;">
-                                                <i class="fas fa-lock"></i>
+                                            <span class="btn btn-secondary btn-sm ma-btn-disabled" aria-disabled="true">
+                                                <i class="fas fa-lock" aria-hidden="true"></i>
                                                 Closed
                                             </span>
                                         <?php endif; ?>
 
                                         <button
                                             type="button"
-                                            class="ma-btn ma-btn-danger js-delete-draft"
+                                            class="btn btn-danger btn-sm js-delete-draft"
                                             data-id="<?= $draftId ?>"
                                         >
-                                            <i class="fas fa-trash-alt"></i>
+                                            <i class="fas fa-trash-alt" aria-hidden="true"></i>
                                             Discard
                                         </button>
                                     </div>
@@ -1060,8 +669,8 @@ foreach ($submitted as $application) {
             <?php if (!empty($submitted)): ?>
                 <section class="ma-section ma-application-section" data-section="submitted">
                     <div class="ma-section-head">
-                        <h2>Submitted Applications</h2>
-                        <span class="ma-count"><?= count($submitted) ?></span>
+                        <h4>Submitted Applications</h4>
+                        <span class="badge badge-warning"><?= count($submitted) ?></span>
                     </div>
 
                     <div class="ma-app-grid">
@@ -1081,34 +690,34 @@ foreach ($submitted as $application) {
                             $avgScore = (float)($app['avg_score'] ?? 0);
                         ?>
                             <article
-                                class="ma-app-card status-<?= ma_h($meta['class']) ?> ma-filter-card"
+                                class="card ma-app-card status-<?= ma_h($meta['class']) ?> ma-filter-card"
                                 data-filter-status="<?= ma_h($filterStatus) ?>"
                             >
-                                <div class="ma-card-body">
+                                <div class="card-body">
                                     <div class="ma-card-head">
                                         <div class="ma-card-title-wrap">
                                             <h3 class="ma-card-title">
                                                 <?= ma_h($app['opportunity_title'] ?? 'Opportunity') ?>
                                             </h3>
-                                            <div class="ma-card-ref"><?= ma_h($ref) ?></div>
+                                            <div class="ma-card-ref cell-muted"><?= ma_h($ref) ?></div>
                                         </div>
 
-                                        <span class="ma-status <?= ma_h($meta['class']) ?>">
-                                            <i class="fas <?= ma_h($meta['icon']) ?>"></i>
+                                        <span class="badge <?= ma_h($ma_badge_class[$meta['class']] ?? 'badge-secondary') ?>">
+                                            <i class="fas <?= ma_h($meta['icon']) ?>" aria-hidden="true"></i>
                                             <?= ma_h($meta['label']) ?>
                                         </span>
                                     </div>
 
                                     <div class="ma-card-meta">
                                         <div class="ma-meta">
-                                            <i class="fas fa-building"></i>
+                                            <i class="fas fa-building" aria-hidden="true"></i>
                                             <strong>
                                                 <?= ma_h(($app['startup_name'] ?? '') !== '' ? $app['startup_name'] : 'Unnamed venture') ?>
                                             </strong>
                                         </div>
 
                                         <div class="ma-meta">
-                                            <i class="fas fa-paper-plane"></i>
+                                            <i class="fas fa-paper-plane" aria-hidden="true"></i>
                                             <span>
                                                 Submitted <?= ma_h(ma_date($submittedAt)) ?>
                                             </span>
@@ -1116,7 +725,7 @@ foreach ($submitted as $application) {
 
                                         <?php if (!empty($app['opportunity_type'])): ?>
                                             <div class="ma-meta">
-                                                <i class="fas fa-tag"></i>
+                                                <i class="fas fa-tag" aria-hidden="true"></i>
                                                 <span><?= ma_h($app['opportunity_type']) ?></span>
                                             </div>
                                         <?php endif; ?>
@@ -1124,7 +733,7 @@ foreach ($submitted as $application) {
 
                                     <div class="ma-score">
                                         <span class="ma-score-icon">
-                                            <i class="fas <?= $reviewCount > 0 ? 'fa-star-half-alt' : 'fa-hourglass-half' ?>"></i>
+                                            <i class="fas <?= $reviewCount > 0 ? 'fa-star-half-alt' : 'fa-hourglass-half' ?>" aria-hidden="true"></i>
                                         </span>
 
                                         <div>
@@ -1143,28 +752,28 @@ foreach ($submitted as $application) {
                                     <div class="ma-card-actions">
                                         <a
                                             href="view-my-application?id=<?= $applicationId ?>"
-                                            class="ma-btn ma-btn-dark"
+                                            class="btn btn-primary btn-sm"
                                         >
-                                            <i class="fas fa-eye"></i>
+                                            <i class="fas fa-eye" aria-hidden="true"></i>
                                             View
                                         </a>
 
                                         <?php if ($status === 'Submitted'): ?>
                                             <button
                                                 type="button"
-                                                class="ma-btn ma-btn-danger js-withdraw-application"
+                                                class="btn btn-danger btn-sm js-withdraw-application"
                                                 data-id="<?= $applicationId ?>"
                                             >
-                                                <i class="fas fa-times-circle"></i>
+                                                <i class="fas fa-times-circle" aria-hidden="true"></i>
                                                 Withdraw
                                             </button>
                                         <?php endif; ?>
 
                                         <a
                                             href="mailto:info@hivecolab.com?subject=<?= rawurlencode("Application {$ref} Inquiry") ?>"
-                                            class="ma-btn ma-btn-light"
+                                            class="btn btn-secondary btn-sm"
                                         >
-                                            <i class="fas fa-envelope"></i>
+                                            <i class="fas fa-envelope" aria-hidden="true"></i>
                                             Support
                                         </a>
                                     </div>
@@ -1175,16 +784,15 @@ foreach ($submitted as $application) {
                 </section>
             <?php endif; ?>
 
-            <div class="ma-no-filter-results" id="noApplicationResults">
-                <i class="fas fa-filter" style="font-size:28px;color:var(--ma-orange);margin-bottom:10px;"></i>
-                <h3 style="margin:0 0 5px;">No applications match this filter</h3>
-                <p style="margin:0;color:var(--ma-muted);font-size:13px;">
-                    Select another statistics card or clear the current filter.
-                </p>
+            <div class="empty-state ma-no-filter-results" id="noApplicationResults">
+                <i class="fas fa-filter" aria-hidden="true"></i>
+                <h4>No applications match this filter</h4>
+                <p>Select another statistics card or clear the current filter.</p>
             </div>
         <?php endif; ?>
+        </div>
     </div>
-</div>
+</div><!-- /.page-stack -->
 
 <?php
 include 'includes/footer.php';

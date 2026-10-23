@@ -7,6 +7,11 @@
    reports.css (:root, body), reset in style.css (*). Do not add page-wide
    rules here; scope new rules to a component class. */
 
+/* Page header, buttons, alerts, stat cards, panels, tables and the badge
+   base are global (reports.css / style.css). This file keeps only the
+   asset/procurement-specific pieces and the modal/form/tab styles these
+   pages are built on. */
+
 /* -- Layout Wrapper ----------------------------------------- */
 .assets-wrap {
   display: flex;
@@ -17,230 +22,7 @@
   margin: 0 auto;
 }
 
-/* -- Page Hero ---------------------------------------------- */
-.page-hero {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 55%, var(--brand-400) 100%);
-  color: var(--ink-0);
-  border-radius: var(--radius-2xl);
-  padding: 32px 36px;
-  box-shadow: 0 16px 40px rgba(234, 88, 12, .30);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-/* Decorative background geometry */
-.page-hero::before,
-.page-hero::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  opacity: .12;
-  pointer-events: none;
-}
-.page-hero::before {
-  width: 280px;
-  height: 280px;
-  background: var(--ink-0);
-  top: -100px;
-  right: 60px;
-}
-.page-hero::after {
-  width: 160px;
-  height: 160px;
-  background: var(--ink-0);
-  bottom: -70px;
-  right: 220px;
-}
-
-.page-hero h1 {
-  font-size: clamp(22px, 3vw, 30px);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 6px;
-  position: relative;
-}
-
-.page-hero p {
-  font-size: 14px;
-  opacity: .85;
-  max-width: 480px;
-  position: relative;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  position: relative;
-  flex-shrink: 0;
-}
-
-/* -- Buttons ------------------------------------------------ */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 10px 18px;
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: opacity .15s var(--ease-out),
-              transform .15s var(--ease-out),
-              box-shadow .15s var(--ease-out),
-              background .15s var(--ease-out);
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.btn:hover  { opacity: .88; transform: translateY(-1px); }
-.btn:active { opacity: 1;   transform: translateY(0);    }
-
-.btn-primary { background: var(--ink-0);     color: var(--brand-600); box-shadow: var(--shadow-sm); }
-.btn-dark    { background: var(--ink-900);   color: var(--ink-0);     box-shadow: var(--shadow-sm); }
-.btn-green   { background: #16a34a;          color: var(--ink-0); }
-.btn-red     { background: #dc2626;          color: var(--ink-0); }
-.btn-gray    { background: var(--ink-50);    color: var(--ink-500); border: 1px solid var(--ink-100); }
-.btn-soft    { background: var(--brand-50);  color: var(--brand-600); }
-
-.btn-sm { padding: 7px 13px; font-size: 12px; border-radius: var(--radius-sm); }
-
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* -- Alerts ------------------------------------------------- */
-.alert {
-  border-radius: var(--radius-md);
-  padding: 13px 16px;
-  font-weight: 600;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border-left: 4px solid transparent;
-}
-
-.alert-success {
-  background: var(--green-bg);
-  color: var(--green-fg);
-  border-left-color: var(--green-fg);
-}
-.alert-error {
-  background: var(--red-bg);
-  color: var(--red-fg);
-  border-left-color: var(--red-fg);
-}
-.alert-info {
-  background: var(--slate-bg);
-  color: var(--slate-fg);
-  border-left-color: var(--slate-border);
-}
-
-/* -- Stats Grid --------------------------------------------- */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-/* .stat-card, .stat-icon, .stat-info, .stat-label, .stat-value: the global
-   standard in reports.css (loaded on every page) styles these. */
-
-/* -- Panels ------------------------------------------------- */
-.panel {
-  background: var(--surface-card);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(0,0,0,.04);
-  overflow: hidden;
-}
-
-.panel-head {
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--ink-50);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  background: var(--surface-card);
-}
-
-.panel-head h3 {
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -0.2px;
-  color: var(--ink-700);
-}
-
-.panel-body { padding: 20px 22px; }
-
-/* -- Table -------------------------------------------------- */
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 860px;
-  font-size: 13px;
-}
-
-.table th {
-  background: var(--ink-50);
-  color: var(--ink-300);
-  text-align: left;
-  padding: 11px 16px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--ink-100);
-  white-space: nowrap;
-}
-
-.table td {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--ink-50);
-  color: var(--ink-500);
-  vertical-align: middle;
-}
-
-.table tbody tr {
-  transition: background .12s var(--ease-out);
-}
-.table tbody tr:hover {
-  background: var(--surface-hover);
-}
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
 /* -- Badges ------------------------------------------------- */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
 .badge-available,
 .badge-issued   { background: var(--green-bg);  color: var(--green-fg);  border-color: var(--green-border);  }
 .badge-assigned,
@@ -258,6 +40,9 @@
   line-height: 1.6;
   font-style: italic;
 }
+
+.assets-wrap > .page-hero,
+.assets-wrap > .stats-grid { margin-bottom: 0; }
 
 /* -- Modal -------------------------------------------------- */
 .modal {
@@ -589,29 +374,17 @@ tr.best-quotation:hover {
 
 /* Large tablets / small laptops */
 @media (max-width: 1200px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .split-grid  { grid-template-columns: 1fr; }
 }
 
 /* Tablets */
 @media (max-width: 900px) {
   .assets-wrap { padding: 16px; gap: 16px; }
-  .page-hero   { padding: 24px; }
 }
 
 /* Mobile */
 @media (max-width: 640px) {
   .assets-wrap { padding: 12px; gap: 14px; }
-
-  .page-hero {
-    padding: 20px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .stats-grid  { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .stat-value  { font-size: 24px; }
 
   .form-grid   { grid-template-columns: 1fr; }
 
@@ -621,12 +394,6 @@ tr.best-quotation:hover {
   .modal-body  { padding: 16px 18px; }
   .modal-actions { justify-content: stretch; }
   .modal-actions .btn { flex: 1; justify-content: center; }
-
-  .panel-head  { padding: 14px 16px; }
-  .panel-body  { padding: 14px 16px; }
-
-  .hero-actions { width: 100%; }
-  .hero-actions .btn { flex: 1; justify-content: center; }
 
   .tab-btn { padding: 9px 10px; font-size: 12px; }
 
@@ -639,9 +406,5 @@ tr.best-quotation:hover {
   }
 }
 
-/* Very small screens */
-@media (max-width: 400px) {
-  .stats-grid { grid-template-columns: 1fr; }
-}
 /* -- Filter bars (layout from .filters-bar in style.css) -- */
 .panel-body > .filters-bar:last-child { margin-bottom: 0; }

@@ -259,251 +259,88 @@ $baseLink = '?' . http_build_query($queryString);
 $baseLink .= $baseLink === '?' ? '' : '&';
 ?>
 <style>
-        .page-conn-logs {
-            margin: 0;
-            background: #f1f5f9;
-            border-radius: 14px;
-            color: #080808;
-        }
-
-        .page-conn-logs.page {
-            padding: 24px;
-        }
-
-        .page-conn-logs .header {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .page-conn-logs h1 {
-            margin: 0;
-            font-size: 25px;
-        }
-
-        .page-conn-logs .header p {
-            margin: 6px 0 0;
-            color: #64748b;
-        }
-
-        .page-conn-logs .btn {
-            display: inline-block;
-            background: #ff6b35;
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 8px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        .page-conn-logs .btn.secondary {
-            background: #475569;
-        }
-
-        .page-conn-logs .btn.green {
-            background: #16a34a;
-        }
-
-        .page-conn-logs .cards {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-            margin-bottom: 18px;
-        }
-
-        .page-conn-logs .card {
-            background: #fff;
-            border-radius: 14px;
-            padding: 18px;
-            box-shadow: 0 8px 20px rgba(15,23,42,.08);
-        }
-
-        .page-conn-logs .card span {
-            color: #64748b;
-            font-size: 14px;
-        }
-
-        .page-conn-logs .card strong {
-            display: block;
-            font-size: 28px;
-            margin-top: 8px;
-        }
-
-        .page-conn-logs .filters {
-            background: #fff;
-            padding: 16px;
-            border-radius: 14px;
-            margin-bottom: 18px;
-            box-shadow: 0 8px 20px rgba(15,23,42,.08);
-        }
-
-        .page-conn-logs .filter-grid {
-            /* Layout from .filters-bar (style.css): one row, scrolls if needed. */
-            gap: 10px;
-            margin-bottom: 0;
-        }
-
-        .page-conn-logs label {
-            display: block;
-            font-size: 13px;
-            color: #475569;
-            margin-bottom: 6px;
-            font-weight: 700;
-        }
-
-        .page-conn-logs input {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-        }
-
-        .page-conn-logs .table-wrap {
-            background: #fff;
-            border-radius: 14px;
-            overflow-x: auto;
-            box-shadow: 0 8px 20px rgba(15,23,42,.08);
-        }
-
-        .page-conn-logs table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 1000px;
-        }
-
-        .page-conn-logs th,
-        .page-conn-logs td {
-            padding: 13px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 14px;
-            text-align: left;
-        }
-
-        .page-conn-logs th {
-            background: #f8fafc;
-            color: #334155;
-        }
-
-        .page-conn-logs tr:hover td {
-            background: #f8fafc;
-        }
-
-        .page-conn-logs .badge {
-            padding: 5px 9px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-            display: inline-block;
-        }
-
-        .page-conn-logs .active {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .page-conn-logs .expired {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .page-conn-logs .muted {
-            color: #64748b;
-        }
-
-        .page-conn-logs .pagination {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 18px;
-        }
-
-        .page-conn-logs .pagination a,
-        .page-conn-logs .pagination span {
-            padding: 8px 12px;
-            background: #fff;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #334155;
-            border: 1px solid #cbd5e1;
-        }
-
+        .page-conn-logs .table { min-width: 1000px; }
+        .page-conn-logs .pagination { justify-content: flex-end; align-items: center; gap: 8px; margin-top: 0; }
         .page-conn-logs .pagination .current {
-            background: #ff6b35;
-            color: #fff;
-            border-color: #ff6b35;
-        }
-
-        @media (max-width: 900px) {
-            .page-conn-logs .cards {
-                grid-template-columns: 1fr;
-            }
-
-            .page-conn-logs .header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            background: var(--brand-500);
+            color: var(--ink-0);
+            border: 1px solid var(--brand-500);
         }
     </style>
 
-<div class="page page-conn-logs">
+<div class="page-stack page-conn-logs">
 
-    <div class="header">
+    <div class="page-hero">
         <div>
-            <h1>Internet Connection Logs</h1>
+            <h1><i class="fas fa-network-wired" aria-hidden="true"></i> Internet Connection Logs</h1>
             <p>Monitor connected devices, active sessions, and connection history.</p>
         </div>
 
-        <a class="btn green" href="?<?= h(http_build_query(array_merge($_GET, ['export' => 'csv']))) ?>">
-            Export CSV
-        </a>
-    </div>
-
-    <div class="cards">
-        <div class="card">
-            <span>Total Connections</span>
-            <strong><?= number_format($totalConnections) ?></strong>
-        </div>
-
-        <div class="card">
-            <span>Today Connections</span>
-            <strong><?= number_format($todayConnections) ?></strong>
-        </div>
-
-        <div class="card">
-            <span>Unique Devices</span>
-            <strong><?= number_format($uniqueDevices) ?></strong>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="?<?= h(http_build_query(array_merge($_GET, ['export' => 'csv']))) ?>">
+                <i class="fas fa-file-csv" aria-hidden="true"></i> Export CSV
+            </a>
         </div>
     </div>
 
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-plug" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Total Connections</span>
+                <span class="stat-value"><?= number_format($totalConnections) ?></span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Today Connections</span>
+                <span class="stat-value"><?= number_format($todayConnections) ?></span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-laptop" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Unique Devices</span>
+                <span class="stat-value"><?= number_format($uniqueDevices) ?></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list" aria-hidden="true"></i> Connection History</h3>
+        </div>
+        <div class="card-body">
     <form method="get" class="filters">
         <div class="filter-grid filters-bar" role="search">
-            <div class="filters-grow">
+            <div class="form-group filters-grow">
                 <label>Search</label>
-                <input type="text" name="q" value="<?= h($q) ?>" placeholder="Search MAC, IP, member, plan...">
+                <input type="text" name="q" class="form-control" value="<?= h($q) ?>" placeholder="Search MAC, IP, member, plan...">
             </div>
 
-            <div>
+            <div class="form-group">
                 <label>Date From</label>
-                <input type="date" name="date_from" value="<?= h($dateFrom) ?>">
+                <input type="date" name="date_from" class="form-control" value="<?= h($dateFrom) ?>">
             </div>
 
-            <div>
+            <div class="form-group">
                 <label>Date To</label>
-                <input type="date" name="date_to" value="<?= h($dateTo) ?>">
+                <input type="date" name="date_to" class="form-control" value="<?= h($dateTo) ?>">
             </div>
 
-            <button class="btn" type="submit">Apply</button>
+            <button class="btn btn-primary" type="submit">Apply</button>
 
-            <a href="internet_connection_logs" class="btn secondary">Clear</a>
+            <a href="internet_connection_logs" class="btn btn-secondary">Clear</a>
         </div>
     </form>
 
-    <div class="table-wrap">
-        <table>
+    <div class="table-responsive">
+        <table class="table">
             <thead>
                 <tr>
                     <th>#</th>
@@ -522,7 +359,7 @@ $baseLink .= $baseLink === '?' ? '' : '&';
             <tbody>
                 <?php if (!$logs): ?>
                     <tr>
-                        <td colspan="10" class="muted">No connection logs found.</td>
+                        <td colspan="10"><div class="empty-state"><i class="fas fa-inbox" aria-hidden="true"></i><span>No connection logs found.</span></div></td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($logs as $index => $log): ?>
@@ -540,17 +377,19 @@ $baseLink .= $baseLink === '?' ? '' : '&';
                             <td><?= h($log['ip_address'] ?? '-') ?></td>
                             <td><?= h($log['plan_name'] ?? '-') ?></td>
                             <td>
-                                <span class="badge <?= $isActive ? 'active' : 'expired' ?>">
+                                <span class="badge <?= $isActive ? 'badge-success' : 'badge-danger' ?>">
                                     <?= $isActive ? 'Active' : 'Expired' ?>
                                 </span>
                             </td>
                             <td><?= h($remaining) ?></td>
-                            <td class="muted"><?= h(substr((string)($log['user_agent'] ?? '-'), 0, 80)) ?></td>
+                            <td class="cell-muted"><?= h(substr((string)($log['user_agent'] ?? '-'), 0, 80)) ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
         </table>
+    </div>
+        </div>
     </div>
 
     <div class="pagination">

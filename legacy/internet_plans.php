@@ -10,92 +10,63 @@ require_once 'includes/internet-plans.php';
 ?>
 
 <style>
-.internet-wrap{padding:25px}
-.manage-header{background:linear-gradient(135deg,#ff9800,#ff5722);color:#fff;border-radius:18px;padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;gap:15px}
-.manage-header h1{margin:0;font-size:26px}
-.manage-header p{margin:6px 0 0;color:#fff;font-size:14px;opacity:.9}
-.internet-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(15,23,42,.08);border:1px solid #e2e8f0}
-.internet-btn{border:0;border-radius:10px;padding:10px 13px;font-weight:bold;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-size:13px}
-.internet-btn-primary{background:#ff9800;color:#fff}
-.internet-btn-warning{background:#f59e0b;color:#fff}
-.internet-btn-danger{background:#dc2626;color:#fff}
-.internet-btn-success{background:#16a34a;color:#fff}
-.internet-btn-light{background:#fff;color:#ff5722}
-.internet-table-wrap{overflow:auto}
-.internet-table{width:100%;border-collapse:collapse}
-.internet-table th,.internet-table td{padding:12px;border-bottom:1px solid #e2e8f0;text-align:left;font-size:14px;vertical-align:top}
-.internet-table th{background:#f8fafc;font-size:13px;text-transform:uppercase;color:#475569}
-.internet-badge{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:bold;display:inline-block}
-.internet-active{background:#dcfce7;color:#166534}
-.internet-inactive{background:#fee2e2;color:#991b1b}
-.internet-type{background:#dbeafe;color:#ff5722}
+.internet-price-old{text-decoration:line-through;color:var(--ink-200);font-size:12px}
+.internet-price-final{font-weight:700;color:var(--green-fg)}
 .internet-actions{display:flex;gap:6px;flex-wrap:wrap}
-.internet-msg{padding:12px 14px;border-radius:12px;margin-bottom:15px}
-.internet-success{background:#dcfce7;color:#166534}
-.internet-error{background:#fee2e2;color:#991b1b}
-.internet-price-old{text-decoration:line-through;color:#94a3b8;font-size:12px}
-.internet-price-final{font-weight:bold;color:#16a34a}
-.internet-small{font-size:12px;color:#64748b}
+.internet-actions form{margin:0}
 .internet-modal{display:none;position:fixed;z-index:9999;inset:0;background:rgba(15,23,42,.55);padding:20px;overflow:auto}
 .internet-modal.show{display:block}
-.internet-modal-card{background:#fff;max-width:680px;margin:40px auto;border-radius:18px;box-shadow:0 25px 80px rgba(0,0,0,.25);overflow:hidden}
-.internet-modal-header{padding:18px 22px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.internet-modal-card{background:var(--surface-card);max-width:680px;margin:40px auto;border-radius:var(--radius-xl);box-shadow:var(--shadow-xl);overflow:hidden}
+.internet-modal-header{padding:18px 22px;background:var(--surface-hover);border-bottom:1px solid var(--ink-100);display:flex;justify-content:space-between;align-items:center}
 .internet-modal-header h2{margin:0;font-size:20px}
 .internet-modal-body{padding:22px}
 .internet-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.internet-form-group{margin-bottom:14px}
-.internet-form-group label{display:block;font-weight:bold;margin-bottom:6px;font-size:14px}
-.internet-form-group input,.internet-form-group select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px}
-.internet-form-group input:focus,.internet-form-group select:focus{outline:none;border-color:#ff9800}
 .internet-full{grid-column:1/-1}
-.internet-close{background:transparent;border:0;font-size:22px;cursor:pointer;color:#64748b}
+.internet-close{background:transparent;border:0;font-size:22px;cursor:pointer;color:var(--ink-300)}
 @media(max-width:800px){
-    .manage-header{display:block}
-    .manage-header button,.manage-header a{margin-top:12px}
     .internet-form-grid{grid-template-columns:1fr}
 }
 </style>
 
-<div class="internet-wrap">
+<div class="page-stack internet-wrap">
 
-    <div class="manage-header">
+    <div class="page-hero">
         <div>
-            <h1><i class="fas fa-wifi"></i> Manage Internet Plans</h1>
+            <h1><i class="fas fa-wifi" aria-hidden="true"></i> Manage Internet Plans</h1>
             <p>Create plans, set discounts, bandwidth, and maximum devices per subscription.</p>
         </div>
 
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <a href="internet_subscriptions" class="internet-btn internet-btn-light">
-                <i class="fas fa-list"></i> Subscriptions
+        <div class="hero-actions">
+            <a href="internet_subscriptions" class="btn">
+                <i class="fas fa-list" aria-hidden="true"></i> Subscriptions
             </a>
 
-            <button type="button" class="internet-btn internet-btn-light" onclick="openPlanModal()">
-                <i class="fas fa-plus"></i> Add Internet Plan
+            <button type="button" class="btn btn-primary" onclick="openPlanModal()">
+                <i class="fas fa-plus" aria-hidden="true"></i> Add Internet Plan
             </button>
         </div>
     </div>
 
     <?php if ($success): ?>
-        <div class="internet-msg internet-success">
+        <div class="alert alert-success">
             <i class="fas fa-circle-check"></i> <?= h($success) ?>
         </div>
     <?php endif; ?>
 
     <?php if ($error): ?>
-        <div class="internet-msg internet-error">
+        <div class="alert alert-danger">
             <i class="fas fa-triangle-exclamation"></i> <?= h($error) ?>
         </div>
     <?php endif; ?>
 
-    <div class="internet-card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;gap:10px;flex-wrap:wrap;">
-            <h2 style="margin:0;">Internet Plans</h2>
-            <input type="text" id="planSearch" placeholder="Search plans..."
-                   style="padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;min-width:240px;">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-wifi" aria-hidden="true"></i> Internet Plans</h3>
+            <input type="search" id="planSearch" class="form-control" placeholder="Search plans..." style="max-width:260px;">
         </div>
 
-        <div class="internet-table-wrap">
-            <table class="internet-table" id="plansTable">
+        <div class="table-responsive">
+            <table class="table" id="plansTable">
                 <thead>
                 <tr>
                     <th>#</th>
@@ -119,14 +90,14 @@ require_once 'includes/internet-plans.php';
 
                             <td>
                                 <strong><?= h($row['plan_name']) ?></strong><br>
-                                <span class="internet-badge internet-type">
+                                <span class="badge badge-info">
                                     <?= h(strtoupper($row['duration_type'])) ?>
                                 </span>
                             </td>
 
                             <td>
                                 <?= number_format((int)$row['duration_minutes']) ?> mins<br>
-                                <span class="internet-small">
+                                <span class="cell-muted">
                                     <?= round(((int)$row['duration_minutes']) / 1440, 2) ?> day(s)
                                 </span>
                             </td>
@@ -146,13 +117,13 @@ require_once 'includes/internet-plans.php';
                             <td><?= h($row['bandwidth_limit'] ?: '-') ?></td>
 
                             <td>
-                                <span class="internet-badge internet-type">
+                                <span class="badge badge-info">
                                     <?= number_format((int)($row['device_limit'] ?? 1)) ?> device(s)
                                 </span>
                             </td>
 
                             <td>
-                                <span class="internet-badge <?= $row['status'] === 'active' ? 'internet-active' : 'internet-inactive' ?>">
+                                <span class="badge <?= $row['status'] === 'active' ? 'badge-success' : 'badge-danger' ?>">
                                     <?= h(strtoupper($row['status'])) ?>
                                 </span>
                             </td>
@@ -160,7 +131,7 @@ require_once 'includes/internet-plans.php';
                             <td>
                                 <div class="internet-actions">
                                     <button type="button"
-                                            class="internet-btn internet-btn-warning"
+                                            class="btn btn-sm btn-warning" title="Edit"
                                             onclick='openPlanModal(<?= json_encode($row, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>)'>
                                         <i class="fas fa-edit"></i>
                                     </button>
@@ -168,7 +139,7 @@ require_once 'includes/internet-plans.php';
                                     <form method="post">
                                         <input type="hidden" name="action" value="toggle">
                                         <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                                        <button class="internet-btn internet-btn-success" type="submit">
+                                        <button class="btn btn-sm btn-success" type="submit" title="Toggle status">
                                             <i class="fas fa-toggle-on"></i>
                                         </button>
                                     </form>
@@ -176,7 +147,7 @@ require_once 'includes/internet-plans.php';
                                     <form method="post" onsubmit="return confirm('Delete this plan?');">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
-                                        <button class="internet-btn internet-btn-danger" type="submit">
+                                        <button class="btn btn-sm btn-danger" type="submit" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -186,7 +157,7 @@ require_once 'includes/internet-plans.php';
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="10">No internet plans found.</td>
+                        <td colspan="10"><div class="empty-state"><i class="fas fa-wifi" aria-hidden="true"></i><span>No internet plans found.</span></div></td>
                     </tr>
                 <?php endif; ?>
                 </tbody>
@@ -208,14 +179,14 @@ require_once 'includes/internet-plans.php';
                 <input type="hidden" name="id" id="plan_id" value="0">
 
                 <div class="internet-form-grid">
-                    <div class="internet-form-group internet-full">
+                    <div class="form-group internet-full">
                         <label>Plan Name</label>
-                        <input type="text" name="plan_name" id="plan_name" required placeholder="Daily Internet">
+                        <input class="form-control" type="text" name="plan_name" id="plan_name" required placeholder="Daily Internet">
                     </div>
 
-                    <div class="internet-form-group">
+                    <div class="form-group">
                         <label>Duration Type</label>
-                        <select name="duration_type" id="duration_type" required>
+                        <select class="form-control" name="duration_type" id="duration_type" required>
                             <option value="">Select Type</option>
                             <option value="daily">Daily</option>
                             <option value="monthly">Monthly</option>
@@ -223,47 +194,47 @@ require_once 'includes/internet-plans.php';
                         </select>
                     </div>
 
-                    <div class="internet-form-group">
+                    <div class="form-group">
                         <label>Duration Minutes</label>
-                        <input type="number" name="duration_minutes" id="duration_minutes" required min="1">
-                        <div class="internet-small">Daily = 1440, Monthly = 43200, Annual = 525600</div>
+                        <input class="form-control" type="number" name="duration_minutes" id="duration_minutes" required min="1">
+                        <div class="cell-muted">Daily = 1440, Monthly = 43200, Annual = 525600</div>
                     </div>
 
-                    <div class="internet-form-group">
+                    <div class="form-group">
                         <label>Price</label>
-                        <input type="number" step="0.01" name="price" id="price" required min="0">
+                        <input class="form-control" type="number" step="0.01" name="price" id="price" required min="0">
                     </div>
 
-                    <div class="internet-form-group">
+                    <div class="form-group">
                         <label>Discount Percent</label>
-                        <input type="number" step="0.01" name="discount_percent" id="discount_percent" min="0" max="100" value="0">
+                        <input class="form-control" type="number" step="0.01" name="discount_percent" id="discount_percent" min="0" max="100" value="0">
                     </div>
 
-                    <div class="internet-form-group">
+                    <div class="form-group">
                         <label>Final Price Preview</label>
-                        <input type="text" id="final_price_preview" readonly>
+                        <input class="form-control" type="text" id="final_price_preview" readonly>
                     </div>
 
-                    <div class="internet-form-group">
+                    <div class="form-group">
                         <label>Device Limit Per Subscription</label>
-                        <input type="number" name="device_limit" id="device_limit" min="1" value="1" required>
+                        <input class="form-control" type="number" name="device_limit" id="device_limit" min="1" value="1" required>
                     </div>
 
-                    <div class="internet-form-group">
+                    <div class="form-group">
                         <label>Status</label>
-                        <select name="status" id="status">
+                        <select class="form-control" name="status" id="status">
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
                         </select>
                     </div>
 
-                    <div class="internet-form-group internet-full">
+                    <div class="form-group internet-full">
                         <label>Bandwidth Limit</label>
-                        <input type="text" name="bandwidth_limit" id="bandwidth_limit" placeholder="Example: 5Mbps / Unlimited">
+                        <input class="form-control" type="text" name="bandwidth_limit" id="bandwidth_limit" placeholder="Example: 5Mbps / Unlimited">
                     </div>
                 </div>
 
-                <button class="internet-btn internet-btn-primary" type="submit" style="width:100%;justify-content:center;margin-top:8px;">
+                <button class="btn btn-primary" type="submit" style="width:100%;justify-content:center;margin-top:8px;">
                     <i class="fas fa-save"></i> Save Plan
                 </button>
             </form>

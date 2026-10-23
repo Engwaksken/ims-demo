@@ -103,31 +103,55 @@ $status_badges = [
 $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&day=' . urlencode($selected_day);
 ?>
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap;">
-    <a href="events" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Events</a>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <a href="<?= e($process_url) ?>&export=csv" class="btn btn-success"><i class="fas fa-file-csv"></i> Export CSV</a>
-        <a href="<?= e($process_url) ?>&export=pdf" class="btn btn-danger" target="_blank"><i class="fas fa-file-pdf"></i> Export PDF</a>
+<style>
+/* Event attendance: event facts grid, action rows and modal pick-list. */
+.ea-info-title { margin: 0; }
+.ea-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-5); margin-top: var(--space-5); }
+.ea-day-bar { margin-bottom: 0; }
+.ea-day-field { min-width: 260px; }
+.ea-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.ea-bulk-actions { margin-bottom: var(--space-4); }
+.ea-tag-sm { font-size: 10px; }
+.ea-modal-md { max-width: 600px; }
+.ea-modal-lg { max-width: 700px; }
+.ea-pick-list { max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: var(--space-4); }
+.ea-pick-all { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); }
+.ea-pick-item { padding: var(--space-2) var(--space-3); margin-bottom: var(--space-2); background: var(--surface-hover); border-radius: var(--radius-sm); }
+.ea-pick-item label { display: flex; gap: var(--space-2); cursor: pointer; }
+.ea-modal-footer-gap { margin-top: var(--space-5); }
+.ea-attendee-box { margin-bottom: var(--space-5); padding: var(--space-4); background: var(--surface-hover); border-radius: var(--radius-sm); }
+</style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-calendar-check" aria-hidden="true"></i> Event Attendance</h1>
+        <p>Register attendees, mark attendance day by day and record feedback for this event.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="events" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Events</a>
+        <a href="<?= e($process_url) ?>&export=csv" class="btn"><i class="fas fa-file-csv" aria-hidden="true"></i> Export CSV</a>
+        <a href="<?= e($process_url) ?>&export=pdf" class="btn" target="_blank"><i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF</a>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-calendar-check"></i> Event Information</h3>
+        <h3><i class="fas fa-circle-info" aria-hidden="true"></i> Event Information</h3>
         <span class="badge badge-<?= $event['event_status'] === 'Completed' ? 'success' : ($event['event_status'] === 'Ongoing' ? 'info' : 'warning') ?>"><?= e($event['event_status']) ?></span>
     </div>
     <div class="card-body">
-        <h2><?= e($event['event_title']) ?></h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-top:20px;">
-            <div><div class="text-muted">Event Type</div><strong><?= e($event['event_type']) ?></strong></div>
-            <div><div class="text-muted">Selected Day</div><strong><?= e(date('d M Y', strtotime($selected_day))) ?></strong></div>
-            <div><div class="text-muted">Time</div><strong><?= !empty($event['start_time']) ? e(date('h:i A', strtotime($event['start_time']))) : 'TBA' ?><?= !empty($event['end_time']) ? ' - ' . e(date('h:i A', strtotime($event['end_time']))) : '' ?></strong></div>
-            <div><div class="text-muted">Venue</div><strong><?= e($event['venue'] ?? 'TBA') ?></strong></div>
-            <div><div class="text-muted">Organizer</div><strong><?= e($event['organizer'] ?? 'N/A') ?></strong></div>
+        <h2 class="ea-info-title"><?= e($event['event_title']) ?></h2>
+        <div class="ea-info-grid">
+            <div><div class="cell-muted">Event Type</div><strong><?= e($event['event_type']) ?></strong></div>
+            <div><div class="cell-muted">Selected Day</div><strong><?= e(date('d M Y', strtotime($selected_day))) ?></strong></div>
+            <div><div class="cell-muted">Time</div><strong><?= !empty($event['start_time']) ? e(date('h:i A', strtotime($event['start_time']))) : 'TBA' ?><?= !empty($event['end_time']) ? ' - ' . e(date('h:i A', strtotime($event['end_time']))) : '' ?></strong></div>
+            <div><div class="cell-muted">Venue</div><strong><?= e($event['venue'] ?? 'TBA') ?></strong></div>
+            <div><div class="cell-muted">Organizer</div><strong><?= e($event['organizer'] ?? 'N/A') ?></strong></div>
             <?php if (!empty($event['project_name'])): ?>
-                <div><div class="text-muted">Project</div><strong><?= e(($event['project_code'] ?? '') . ' - ' . $event['project_name']) ?></strong></div>
+                <div><div class="cell-muted">Project</div><strong><?= e(($event['project_code'] ?? '') . ' - ' . $event['project_name']) ?></strong></div>
             <?php elseif (!empty($event['program_name'])): ?>
-                <div><div class="text-muted">Program</div><strong><?= e($event['program_name']) ?></strong></div>
+                <div><div class="cell-muted">Program</div><strong><?= e($event['program_name']) ?></strong></div>
             <?php endif; ?>
         </div>
     </div>
@@ -135,9 +159,9 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
 
 <div class="card">
     <div class="card-body">
-        <form method="GET" class="filters-bar" style="margin-bottom:0;" aria-label="Attendance day">
+        <form method="GET" class="filters-bar ea-day-bar" aria-label="Attendance day">
             <input type="hidden" name="id" value="<?= (int)$event_id ?>">
-            <div class="form-group" style="min-width:260px;">
+            <div class="form-group ea-day-field">
                 <label class="form-label">Attendance Day</label>
                 <select name="day" class="form-control" onchange="this.form.submit()">
                     <?php foreach ($eventDays as $day): ?>
@@ -191,10 +215,10 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
 <div class="card">
     <div class="card-header">
         <h3><i class="fas fa-list-check"></i> Attendance List - <?= e(date('d M Y', strtotime($selected_day))) ?></h3>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <div class="ea-actions">
             <button onclick="openModal('addAttendeeModal')" class="btn btn-primary" type="button"><i class="fas fa-user-plus"></i> Add Attendee</button>
             <?php if (!empty($project_beneficiaries)): ?>
-                <button onclick="openModal('bulkRegisterModal')" class="btn btn-success" type="button"><i class="fas fa-users"></i> Bulk Register</button>
+                <button onclick="openModal('bulkRegisterModal')" class="btn btn-secondary" type="button"><i class="fas fa-users"></i> Bulk Register</button>
             <?php endif; ?>
             <button onclick="window.location.href='download-attendance-template?event_id=<?= (int)$event_id ?>&day=<?= e($selected_day) ?>'" class="btn btn-info" type="button"><i class="fas fa-download"></i> Template</button>
             <button onclick="openModal('uploadCsvModal')" class="btn btn-info" type="button"><i class="fas fa-upload"></i> Upload CSV</button>
@@ -204,8 +228,8 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
 
     <div class="card-body">
         <?php if (empty($attendance_records)): ?>
-            <div style="text-align:center;padding:40px;color:#7f8c8d;">
-                <i class="fas fa-users" style="font-size:48px;margin-bottom:20px;opacity:.3;"></i>
+            <div class="empty-state">
+                <i class="fas fa-users" aria-hidden="true"></i>
                 <h4>No Attendees Registered for This Day</h4>
                 <p>Add attendees to start tracking attendance for <?= e(date('d M Y', strtotime($selected_day))) ?>.</p>
             </div>
@@ -213,12 +237,12 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
             <form method="POST" action="<?= e($process_url) ?>" id="attendanceBulkForm">
                 <input type="hidden" name="event_id" value="<?= (int)$event_id ?>">
                 <input type="hidden" name="attendance_date" value="<?= e($selected_day) ?>">
-                <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
-                    <button type="submit" name="bulk_mark_selected_attended" class="btn btn-success" onclick="return ensureSelectedAttendees();"><i class="fas fa-user-check"></i> Mark Selected Attended</button>
+                <div class="ea-actions ea-bulk-actions">
+                    <button type="submit" name="bulk_mark_selected_attended" class="btn btn-primary" onclick="return ensureSelectedAttendees();"><i class="fas fa-user-check"></i> Mark Selected Attended</button>
                     <button type="submit" name="bulk_mark_all_attended" class="btn btn-warning" onclick="return confirm('Mark all attendees for this day as Attended?');"><i class="fas fa-check-double"></i> Mark All Attended</button>
                 </div>
                 <div class="table-responsive">
-                    <table class="data-table">
+                    <table class="table">
                         <thead>
                         <tr>
                             <th><input type="checkbox" id="selectAllAttendance" onclick="toggleAttendanceSelectAll()"></th>
@@ -230,19 +254,19 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                             <tr>
                                 <td><input type="checkbox" name="registration_ids[]" value="<?= (int)$record['registration_id'] ?>" class="attendance-checkbox"></td>
                                 <td><?= $count++ ?></td>
-                                <td><strong><?= e($record['attendee_name']) ?></strong><?php if (!empty($record['is_beneficiary'])): ?><br><span class="badge badge-info" style="font-size:10px;">Participant</span><?php endif; ?></td>
+                                <td><strong><?= e($record['attendee_name']) ?></strong><?php if (!empty($record['is_beneficiary'])): ?><br><span class="badge badge-info ea-tag-sm">Participant</span><?php endif; ?></td>
                                 <td><?= e(date('d M Y', strtotime($record['attendance_date'] ?: $selected_day))) ?></td>
                                 <td>
                                     <?php if (!empty($record['phone'])): ?><i class="fas fa-phone"></i> <?= e($record['phone']) ?><br><?php endif; ?>
                                     <?php if (!empty($record['email'])): ?><i class="fas fa-envelope"></i> <?= e($record['email']) ?><?php endif; ?>
-                                    <?php if (empty($record['phone']) && empty($record['email'])): ?><span style="color:#95a5a6;">-</span><?php endif; ?>
+                                    <?php if (empty($record['phone']) && empty($record['email'])): ?><span class="cell-muted">-</span><?php endif; ?>
                                 </td>
                                 <td><?= e($record['organization'] ?? '-') ?></td>
                                 <td><span class="badge badge-<?= e($badge) ?>"><?= e($record['registration_status']) ?></span></td>
                                 <td>
                                     <?php if (!empty($record['feedback_score'])): ?>
                                         <?= (int)$record['feedback_score'] ?>/5<?php if (!empty($record['feedback_comments'])): ?><br><small><i class="fas fa-comment"></i> Has feedback</small><?php endif; ?>
-                                    <?php else: ?><span style="color:#7f8c8d;">-</span><?php endif; ?>
+                                    <?php else: ?><span class="cell-muted">-</span><?php endif; ?>
                                 </td>
                                 <td>
                                     <div class="table-actions">
@@ -261,6 +285,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
         <?php endif; ?>
     </div>
 </div>
+</div><!-- /.page-stack -->
 
 <div id="addAttendeeModal" class="modal">
     <div class="modal-content">
@@ -275,7 +300,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                 <div class="form-group"><label>Organization</label><input type="text" name="organization" class="form-control"></div>
                 <div class="form-group"><label class="required">Status</label><select name="registration_status" class="form-control" required><option value="Registered">Registered</option><option value="Attended">Attended</option><option value="No Show">No Show</option></select></div>
                 <input type="hidden" name="beneficiary_id" value="">
-                <div class="modal-footer"><button type="button" onclick="closeModal('addAttendeeModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="add_attendee" class="btn btn-success"><i class="fas fa-save"></i> Add Attendee</button></div>
+                <div class="modal-footer"><button type="button" onclick="closeModal('addAttendeeModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="add_attendee" class="btn btn-primary"><i class="fas fa-save"></i> Add Attendee</button></div>
             </form>
         </div>
     </div>
@@ -283,25 +308,25 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
 
 <?php if (!empty($project_beneficiaries)): ?>
 <div id="bulkRegisterModal" class="modal">
-    <div class="modal-content" style="max-width:700px;">
+    <div class="modal-content ea-modal-lg">
         <div class="modal-header"><h3>Bulk Register Project Participants</h3><span class="close" onclick="closeModal('bulkRegisterModal')">&times;</span></div>
         <div class="modal-body">
             <form method="POST" action="<?= e($process_url) ?>">
                 <input type="hidden" name="event_id" value="<?= (int)$event_id ?>">
                 <input type="hidden" name="attendance_date" value="<?= e($selected_day) ?>">
                 <div class="alert alert-info"><i class="fas fa-info-circle"></i> Register selected participants for <?= e(date('d M Y', strtotime($selected_day))) ?>.</div>
-                <div style="max-height:400px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:15px;">
-                    <label style="display:flex;align-items:center;gap:10px;margin-bottom:15px;"><input type="checkbox" id="selectAllBeneficiaries" onclick="toggleBeneficiarySelectAll()"><strong>Select All (<?= count($project_beneficiaries) ?> participants)</strong></label>
+                <div class="ea-pick-list">
+                    <label class="ea-pick-all"><input type="checkbox" id="selectAllBeneficiaries" onclick="toggleBeneficiarySelectAll()"><strong>Select All (<?= count($project_beneficiaries) ?> participants)</strong></label>
                     <?php foreach ($project_beneficiaries as $beneficiary): ?>
-                        <div style="padding:10px;margin-bottom:10px;background:#f8f9fa;border-radius:5px;">
-                            <label style="display:flex;gap:10px;cursor:pointer;">
+                        <div class="ea-pick-item">
+                            <label>
                                 <input type="checkbox" name="beneficiaries[]" value="<?= (int)$beneficiary['beneficiary_id'] ?>" class="beneficiary-checkbox">
                                 <div><strong><?= e(($beneficiary['first_name'] ?? '') . ' ' . ($beneficiary['last_name'] ?? '')) ?></strong><br><small><?= !empty($beneficiary['phone']) ? '<i class="fas fa-phone"></i> ' . e($beneficiary['phone']) : '' ?><?= !empty($beneficiary['email']) ? ' <i class="fas fa-envelope"></i> ' . e($beneficiary['email']) : '' ?></small></div>
                             </label>
                         </div>
                     <?php endforeach; ?>
                 </div>
-                <div class="modal-footer" style="margin-top:20px;"><button type="button" onclick="closeModal('bulkRegisterModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="bulk_register" class="btn btn-success"><i class="fas fa-users"></i> Register Selected</button></div>
+                <div class="modal-footer ea-modal-footer-gap"><button type="button" onclick="closeModal('bulkRegisterModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="bulk_register" class="btn btn-primary"><i class="fas fa-users"></i> Register Selected</button></div>
             </form>
         </div>
     </div>
@@ -309,7 +334,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
 <?php endif; ?>
 
 <div id="uploadCsvModal" class="modal">
-    <div class="modal-content" style="max-width:600px;">
+    <div class="modal-content ea-modal-md">
         <div class="modal-header"><h3><i class="fas fa-upload"></i> Upload CSV File</h3><span class="close" onclick="closeModal('uploadCsvModal')">&times;</span></div>
         <div class="modal-body">
             <form method="POST" action="<?= e($process_url) ?>" enctype="multipart/form-data">
@@ -317,7 +342,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                 <input type="hidden" name="attendance_date" value="<?= e($selected_day) ?>">
                 <div class="form-group"><label class="required">Attendance Day</label><input type="date" class="form-control" value="<?= e($selected_day) ?>" disabled></div>
                 <div class="form-group"><label class="required">Select CSV File</label><input type="file" name="csv_file" class="form-control" accept=".csv,text/csv" required></div>
-                <div class="modal-footer"><button type="button" onclick="closeModal('uploadCsvModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="upload_csv" class="btn btn-success"><i class="fas fa-upload"></i> Upload CSV</button></div>
+                <div class="modal-footer"><button type="button" onclick="closeModal('uploadCsvModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="upload_csv" class="btn btn-primary"><i class="fas fa-upload"></i> Upload CSV</button></div>
             </form>
         </div>
     </div>
@@ -332,11 +357,11 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                     <input type="hidden" name="event_id" value="<?= (int)$event_id ?>">
                     <input type="hidden" name="registration_id" value="<?= (int)$update_attendee['registration_id'] ?>">
                     <input type="hidden" name="attendance_date" value="<?= e($selected_day) ?>">
-                    <div class="info-box" style="margin-bottom:20px;padding:15px;background:#f8f9fa;border-radius:8px;"><h4><?= e($update_attendee['attendee_name']) ?></h4><p><i class="fas fa-calendar-day"></i> <?= e(date('d M Y', strtotime($selected_day))) ?></p></div>
+                    <div class="ea-attendee-box"><h4><?= e($update_attendee['attendee_name']) ?></h4><p><i class="fas fa-calendar-day"></i> <?= e(date('d M Y', strtotime($selected_day))) ?></p></div>
                     <div class="form-group"><label class="required">Attendance Status</label><select name="registration_status" class="form-control" required><?php foreach (['Registered','Attended','No Show'] as $status): ?><option value="<?= e($status) ?>" <?= ($update_attendee['registration_status'] ?? '') === $status ? 'selected' : '' ?>><?= e($status) ?></option><?php endforeach; ?></select></div>
                     <div class="form-group"><label>Feedback Score</label><select name="feedback_score" class="form-control"><option value="">Not rated</option><?php for ($i = 5; $i >= 1; $i--): ?><option value="<?= $i ?>" <?= (int)($update_attendee['feedback_score'] ?? 0) === $i ? 'selected' : '' ?>><?= $i ?>/5</option><?php endfor; ?></select></div>
                     <div class="form-group"><label>Feedback Comments</label><textarea name="feedback_comments" class="form-control" rows="3"><?= e($update_attendee['feedback_comments'] ?? '') ?></textarea></div>
-                    <div class="modal-footer"><button type="button" onclick="closeModal('updateStatusModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="update_status" class="btn btn-success"><i class="fas fa-save"></i> Update Status</button></div>
+                    <div class="modal-footer"><button type="button" onclick="closeModal('updateStatusModal')" class="btn btn-secondary">Cancel</button><button type="submit" name="update_status" class="btn btn-primary"><i class="fas fa-save"></i> Update Status</button></div>
                 </form>
             <?php endif; ?>
         </div>

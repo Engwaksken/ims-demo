@@ -52,7 +52,7 @@ $stats = [
 
 /* -- Status ? badge class map ----------------------------------------- */
 $status_badge = [
-    'Ongoing'   => 'badge badge-ongoing',
+    'Ongoing'   => 'badge badge-in-progress',
     'Completed' => 'badge badge-completed',
     'Pending'   => 'badge badge-pending',
     'Cancelled' => 'badge badge-cancelled',
@@ -70,23 +70,23 @@ $currencies = [
 <link rel="stylesheet" href="css/projects.css">
 
 
-<div class="projects-wrap">
+<div class="page-stack">
 
     <!-- -- Hero --------------------------------------------------------- -->
-    <div class="projects-hero">
-        <div class="projects-hero-text">
-            <h1><i class="fas fa-sitemap" style="margin-right:10px;opacity:.85;"></i>Programs</h1>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-sitemap" aria-hidden="true"></i> Programs</h1>
             <p>Manage your organisation's programmes, budgets, donors, and timelines.</p>
         </div>
         <div class="hero-actions">
-            <button class="btn btn-primary" onclick="openModal('addProgramModal')">
+            <button type="button" class="btn btn-primary" onclick="openModal('addProgramModal')">
                 <i class="fas fa-plus"></i> Add Program
             </button>
         </div>
     </div>
 
     <!-- -- Stats -------------------------------------------------------- -->
-    <div class="projects-stats">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fas fa-sitemap"></i></div>
             <div class="stat-info">
@@ -118,7 +118,7 @@ $currencies = [
     </div>
 
     <!-- -- Filter Bar --------------------------------------------------- -->
-    <form method="GET" action="" class="filter-bar filters-bar">
+    <form method="GET" action="" class="controls-bar filters-bar">
 
         <div class="form-group search-group filters-grow">
             <label class="form-label">Search</label>
@@ -156,10 +156,10 @@ $currencies = [
         </div>
 
         <div class="filter-actions">
-            <button type="submit" class="btn btn-dark">
+            <button type="submit" class="btn btn-primary">
                 <i class="fas fa-filter"></i> Filter
             </button>
-            <a href="programs" class="btn btn-gray">
+            <a href="programs" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Clear
             </a>
         </div>
@@ -175,7 +175,7 @@ $currencies = [
             </span>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-responsive">
             <table class="table">
                 <thead>
                     <tr>
@@ -183,8 +183,8 @@ $currencies = [
                         <th>Donor</th>
                         <th>Duration</th>
                         <th>Budget</th>
-                        <th style="text-align:center;">Participants</th>
-                        <th style="text-align:center;">Indicators</th>
+                        <th class="text-center">Participants</th>
+                        <th class="text-center">Indicators</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -192,10 +192,10 @@ $currencies = [
                 <tbody>
                     <?php if (empty($programs)): ?>
                         <tr>
-                            <td colspan="8" style="text-align:center;padding:40px 16px;">
-                                <div style="display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-200);">
-                                    <i class="fas fa-folder-open" style="font-size:28px;"></i>
-                                    <span style="font-size:13px;">No programs found. Try adjusting your filters.</span>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-folder-open" aria-hidden="true"></i>
+                                    <p>No programs found. Try adjusting your filters.</p>
                                 </div>
                             </td>
                         </tr>
@@ -238,12 +238,12 @@ $currencies = [
                                 </td>
 
                                 <!-- Participants -->
-                                <td style="text-align:center;">
+                                <td class="text-center">
                                     <span class="count-badge participants"><?= (int)$p['beneficiary_count'] ?></span>
                                 </td>
 
                                 <!-- Indicators -->
-                                <td style="text-align:center;">
+                                <td class="text-center">
                                     <span class="count-badge indicators"><?= (int)$p['indicator_count'] ?></span>
                                 </td>
 
@@ -262,12 +262,12 @@ $currencies = [
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="?edit=<?= (int)$p['id'] ?>"
-                                           class="btn btn-sm btn-gray" title="Edit">
+                                           class="btn btn-sm btn-secondary" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         <?php if (ims_allowed('programs.delete', ['Administrator'], 'Delete programs')): ?>
                                             <button
-                                                class="btn btn-sm btn-red"
+                                                class="btn btn-sm btn-danger"
                                                 title="Delete"
                                                 onclick="openDeleteModal(<?= (int)$p['id'] ?>, <?= h(json_encode((string)$p['program_name'])) ?>)">
                                                 <i class="fas fa-trash"></i>
@@ -280,10 +280,10 @@ $currencies = [
                     <?php endif; ?>
                 </tbody>
             </table>
-        </div><!-- /.table-wrap -->
+        </div><!-- /.table-responsive -->
     </div><!-- /.panel -->
 
-</div><!-- /.projects-wrap -->
+</div><!-- /.page-stack -->
 
 
 <!-- ------------------------------------------------------------------
@@ -379,7 +379,7 @@ $currencies = [
                 </div>
 
                 <div class="modal-section-label">Details</div>
-                <div class="form-group full" style="margin-bottom:14px;">
+                <div class="form-group full pj-field-gap">
                     <label class="form-label" for="a_objectives">Objectives</label>
                     <textarea id="a_objectives" name="objectives" class="form-control" placeholder="Key objectives of this program..."></textarea>
                 </div>
@@ -389,7 +389,7 @@ $currencies = [
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-gray" onclick="closeModal('addProgramModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addProgramModal')">Cancel</button>
                     <button type="submit" name="add_program" class="btn btn-primary">
                         <i class="fas fa-save"></i> Add Program
                     </button>
@@ -487,7 +487,7 @@ $currencies = [
                     </div>
 
                     <div class="modal-section-label">Details</div>
-                    <div class="form-group full" style="margin-bottom:14px;">
+                    <div class="form-group full pj-field-gap">
                         <label class="form-label" for="e_obj">Objectives</label>
                         <textarea id="e_obj" name="objectives" class="form-control"><?= h($edit_program['objectives'] ?? '') ?></textarea>
                     </div>
@@ -497,14 +497,14 @@ $currencies = [
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-gray" onclick="closeModal('editProgramModal')">Cancel</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('editProgramModal')">Cancel</button>
                         <button type="submit" name="edit_program" class="btn btn-primary">
                             <i class="fas fa-save"></i> Update Program
                         </button>
                     </div>
                 </form>
             <?php else: ?>
-                <p class="note" style="padding:16px 0;">No program selected for editing.</p>
+                <p class="note pj-note">No program selected for editing.</p>
             <?php endif; ?>
         </div>
     </div>
@@ -524,8 +524,8 @@ $currencies = [
             <form method="POST" action="includes/programs-process.php">
                 <input type="hidden" name="id" id="deleteProgramId">
 
-                <div class="danger-zone" style="margin-bottom:16px;">
-                    <div class="danger-zone-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
                     <p>
                         You are about to permanently delete
                         <strong id="deleteProgramName"></strong>.
@@ -533,14 +533,14 @@ $currencies = [
                     </p>
                 </div>
 
-                <div class="info-box">
-                    <i class="fas fa-info-circle"></i>
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
                     <span>The program must have no linked participants or indicators before it can be deleted.</span>
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-gray" onclick="closeModal('deleteModal')">Cancel</button>
-                    <button type="submit" name="delete_program" class="btn btn-red">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+                    <button type="submit" name="delete_program" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Yes, Delete
                     </button>
                 </div>

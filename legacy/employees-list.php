@@ -110,19 +110,20 @@ $stats = [
 
 <style>
 .employee-card {
-    background: white;
-    border-radius: 8px;
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .2s var(--ease-out), transform .2s var(--ease-out);
     display: flex;
     align-items: center;
     gap: 20px;
 }
 
 .employee-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
 
@@ -130,8 +131,8 @@ $stats = [
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    color: white;
+    background: linear-gradient(135deg, var(--brand-700), var(--brand-500));
+    color: var(--ink-0);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -147,12 +148,12 @@ $stats = [
 .employee-name {
     font-size: 20px;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--ink-700);
     margin-bottom: 5px;
 }
 
 .employee-title {
-    color: #7f8c8d;
+    color: var(--ink-300);
     margin-bottom: 10px;
 }
 
@@ -161,7 +162,6 @@ $stats = [
     gap: 20px;
     flex-wrap: wrap;
     font-size: 14px;
-    color: #95a5a6;
 }
 
 .employee-meta-item {
@@ -184,17 +184,19 @@ $stats = [
 
 .view-mode-btn {
     padding: 8px 16px;
-    border: 2px solid #ddd;
-    background: white;
-    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface-card);
+    color: var(--ink-500);
+    font-weight: 600;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
 }
 
 .view-mode-btn.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: var(--brand-600);
+    color: var(--ink-0);
+    border-color: var(--brand-600);
 }
 
 .grid-view {
@@ -220,7 +222,7 @@ $stats = [
 }
 
 /* Display fixes: long emails/names no longer push the card wider than the
-   screen; meta text uses a readable grey (#95a5a6 was ~2.5:1 contrast). */
+   screen; meta text uses a readable grey. */
 .employee-info {
     min-width: 0;
 }
@@ -231,13 +233,13 @@ $stats = [
 }
 
 .employee-meta {
-    color: #5f6b76;
+    color: var(--ink-400);
 }
 
 .employee-meta-item i {
     width: 14px;
     text-align: center;
-    color: #95a5a6;
+    color: var(--ink-200);
 }
 
 .employee-badges {
@@ -301,6 +303,22 @@ $stats = [
 }
 </style>
 
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-address-book" aria-hidden="true"></i> Employee Directory</h1>
+        <p>Browse staff and consultant profiles, contacts and approval status.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="employee-reports" class="btn">
+            <i class="fas fa-chart-bar" aria-hidden="true"></i> Reports
+        </a>
+        <a href="kpi-management" class="btn btn-primary">
+            <i class="fas fa-bullseye" aria-hidden="true"></i> Employee KPIs
+        </a>
+    </div>
+</div>
+
 <!-- Statistics -->
 <div class="stats-grid reports-stats">
     <div class="stat-card">
@@ -354,15 +372,8 @@ $stats = [
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-address-book" aria-hidden="true"></i> Employee Directory</h3>
-        <div class="card-header-actions">
-            <a href="kpi-management" class="btn btn-primary">
-                <i class="fas fa-bullseye"></i> Employee KPIs
-            </a>
-            <a href="employee-reports" class="btn btn-info">
-                <i class="fas fa-chart-bar"></i> Reports
-            </a>
-        </div>
+        <h3><i class="fas fa-list" aria-hidden="true"></i> Employees</h3>
+        <span class="cell-muted"><?php echo number_format($stats['total']); ?> shown</span>
     </div>
     
     <div class="card-body">
@@ -449,7 +460,7 @@ $stats = [
                             <div class="employee-name">
                                 <?php echo htmlspecialchars($emp['full_name']); ?>
                                 <?php if ((int) $emp['user_id'] === (int) ($_SESSION['user_id'] ?? 0)): ?>
-                                    <span class="badge badge-info" style="font-size: 12px;">You</span>
+                                    <span class="badge badge-info">You</span>
                                 <?php endif; ?>
                             </div>
                             <div class="employee-title">
@@ -548,6 +559,7 @@ $stats = [
             <?php endif; ?>
         </div>
     </div>
+</div>
 </div>
 
 <?php 

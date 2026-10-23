@@ -167,28 +167,8 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
     : 'U';
 ?>
 
-<link rel="stylesheet" href="css/opportunities.css">
-
-<?php if (!empty($_SESSION['success'])): ?>
-    <div class="alert alert-success profile-flash" id="profileFlash">
-        <i class="fas fa-check-circle"></i>
-        <?= h($_SESSION['success']) ?>
-    </div>
-    <?php unset($_SESSION['success']); ?>
-<?php endif; ?>
-
-<?php if (!empty($_SESSION['error'])): ?>
-    <div class="alert alert-danger profile-flash" id="profileFlash">
-        <i class="fas fa-exclamation-circle"></i>
-        <?= h($_SESSION['error']) ?>
-    </div>
-    <?php unset($_SESSION['error']); ?>
-<?php endif; ?>
-
-
-
 <style>
-
+/* Profile modals: self-contained dialog with its own open/close + focus JS. */
 .profile-modal {
     display: none;
     position: fixed;
@@ -209,9 +189,9 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
 .profile-modal-dialog {
     width: min(100%, 680px);
     margin: 40px auto;
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 24px 60px rgba(15, 23, 42, .24);
+    background: var(--surface-card);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
     overflow: hidden;
     position: relative;
     animation: profileModalIn .18s ease-out;
@@ -231,20 +211,22 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
 }
 
 .profile-modal-header {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--ink-50);
 }
 
 .profile-modal-footer {
     justify-content: flex-end;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--ink-50);
     flex-wrap: wrap;
 }
 
 .profile-modal-header h3 {
     margin: 0;
     font-size: 18px;
-    color: #0f172a;
+    color: var(--ink-900);
 }
+
+.profile-modal-header h3 i { color: var(--brand-500); }
 
 .profile-modal-body {
     padding: 20px;
@@ -255,35 +237,21 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
 .profile-modal-close {
     appearance: none;
     border: 0;
-    background: #f8fafc;
-    color: #64748b;
+    background: var(--surface-hover);
+    color: var(--ink-300);
     width: 36px;
     height: 36px;
     display: grid;
     place-items: center;
-    border-radius: 9px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 24px;
     line-height: 1;
 }
 
 .profile-modal-close:hover {
-    background: #eef2f7;
-    color: #0f172a;
-}
-
-.profile-modal .form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-}
-
-.profile-modal .form-group {
-    min-width: 0;
-}
-
-.profile-modal .form-control {
-    width: 100%;
+    background: var(--ink-50);
+    color: var(--ink-900);
 }
 
 .profile-modal-open {
@@ -309,33 +277,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
     }
 }
 
-@media (max-width: 640px) {
-    .profile-modal {
-        padding: 12px;
-    }
-
-    .profile-modal-dialog,
-    .profile-modal-dialog.profile-modal-sm {
-        width: 100%;
-        margin: 18px auto;
-    }
-
-    .profile-modal .form-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .profile-modal-body {
-        max-height: calc(100vh - 145px);
-    }
-
-    .profile-modal-footer .btn {
-        flex: 1 1 auto;
-    }
-}
-</style>
-
-
-<style>
+/* Password fields with a show/hide toggle inside the input. */
 .profile-password-wrap {
     position: relative;
 }
@@ -355,57 +297,127 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
     place-items: center;
     border: 0;
     background: transparent;
-    color: #64748b;
+    color: var(--ink-300);
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 0;
 }
 
 .profile-password-toggle:hover,
 .profile-password-toggle:focus-visible {
-    background: #f8fafc;
-    color: #0f172a;
+    background: var(--surface-hover);
+    color: var(--ink-900);
     outline: none;
 }
 
 .profile-password-toggle i {
     pointer-events: none;
 }
+
+.up-hint { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 12px; }
+
+/* Label/value rows in the Profile Info and Account Status tabs. */
+.up-field {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--ink-50);
+}
+.up-field:first-child { padding-top: 0; }
+.up-field:last-child { border-bottom: none; padding-bottom: 0; }
+.up-field-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding-top: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-300);
+}
+.up-field-label i { color: var(--brand-400); font-size: 12px; width: 14px; text-align: center; }
+.up-field-value { font-size: 15px; font-weight: 600; color: var(--ink-700); line-height: 1.5; }
+.up-field-value small { display: block; margin-top: 3px; font-size: 12px; font-weight: 400; color: var(--ink-300); }
+.up-field-value .none { color: var(--ink-200); font-weight: 400; font-style: italic; }
+
+.up-stat-text { font-size: 16px; font-weight: 700; letter-spacing: 0; line-height: 1.3; }
+
+.up-role-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-md);
+    font-size: 12px;
+    color: var(--ink-400);
+}
+.up-role-note i { color: var(--brand-500); margin-top: 1px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+    .profile-modal {
+        padding: 12px;
+    }
+
+    .profile-modal-dialog,
+    .profile-modal-dialog.profile-modal-sm {
+        width: 100%;
+        margin: 18px auto;
+    }
+
+    .profile-modal-body {
+        max-height: calc(100vh - 145px);
+    }
+
+    .profile-modal-footer .btn {
+        flex: 1 1 auto;
+    }
+
+    .up-field { grid-template-columns: 1fr; gap: 4px; }
+    .up-field-label { padding-top: 0; }
+}
 </style>
 
-<div class="prof-page">
-
-    <!-- -- Profile Hero ------------------------------------------------------- -->
-    <div class="prof-hero">
-        <div class="prof-avatar">
-            <?= h($profileInitial) ?>
-        </div>
-
-        <div class="prof-hero-info">
-            <div class="prof-hero-name"><?= h($user['full_name'] ?? '') ?></div>
-            <div class="prof-hero-meta">
-                <span><i class="fas fa-user-tag"></i><?= h($user['role'] ?? '') ?></span>
-                <span><i class="fas fa-at"></i><?= h($user['username'] ?? '') ?></span>
-                <?php if (!empty($user['email'])): ?>
-                    <span><i class="fas fa-envelope"></i><?= h($user['email'] ?? '') ?></span>
-                <?php endif; ?>
-            </div>
-        </div>
-
-        <div class="prof-hero-actions">
-            <button type="button" class="btn btn-white btn-sm js-profile-modal-open" data-modal-target="editProfileModal">
-                <i class="fas fa-pencil"></i> Edit Profile
-            </button>
-            <button type="button" class="btn btn-ghost btn-sm js-profile-modal-open" data-modal-target="changePasswordModal">
-                <i class="fas fa-key"></i> Change Password
-            </button>
-        </div>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-user-circle" aria-hidden="true"></i> My Profile</h1>
+        <p>Signed in as <?= h($user['full_name'] ?? '') ?> (@<?= h($user['username'] ?? '') ?>), <?= h($user['role'] ?? '') ?>.</p>
     </div>
+    <div class="hero-actions">
+        <button type="button" class="btn js-profile-modal-open" data-modal-target="changePasswordModal">
+            <i class="fas fa-key" aria-hidden="true"></i> Change Password
+        </button>
+        <button type="button" class="btn btn-primary js-profile-modal-open" data-modal-target="editProfileModal">
+            <i class="fas fa-pencil" aria-hidden="true"></i> Edit Profile
+        </button>
+    </div>
+</div>
 
-    <!-- -- Stats -------------------------------------------------------------- -->
+<?php if (!empty($_SESSION['success'])): ?>
+    <div class="alert alert-success profile-flash" id="profileFlash">
+        <i class="fas fa-check-circle" aria-hidden="true"></i>
+        <?= h($_SESSION['success']) ?>
+    </div>
+    <?php unset($_SESSION['success']); ?>
+<?php endif; ?>
+
+<?php if (!empty($_SESSION['error'])): ?>
+    <div class="alert alert-danger profile-flash" id="profileFlash">
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+        <?= h($_SESSION['error']) ?>
+    </div>
+    <?php unset($_SESSION['error']); ?>
+<?php endif; ?>
+
+    <!-- Stats -->
     <div class="stats-grid reports-stats">
         <div class="stat-card">
-            <div class="stat-icon bg-primary"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-icon bg-primary"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Account Age</span>
                 <span class="stat-value"><?= $stats['account_age'] ?><span class="stat-sub">d</span></span>
@@ -413,7 +425,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-green"><i class="fas fa-tasks"></i></div>
+            <div class="stat-icon bg-green"><i class="fas fa-tasks" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Total Actions</span>
                 <span class="stat-value"><?= $stats['total_actions'] ?></span>
@@ -421,7 +433,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-amber"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-icon bg-amber"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">This Month</span>
                 <span class="stat-value"><?= $stats['actions_this_month'] ?></span>
@@ -429,123 +441,122 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
         </div>
 
         <div class="stat-card">
-            <div class="stat-icon bg-purple"><i class="fas fa-clock"></i></div>
+            <div class="stat-icon bg-purple"><i class="fas fa-clock" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Last Login</span>
-                <span class="stat-value" style="font-size:16px;font-weight:700;letter-spacing:0;line-height:1.3">
+                <span class="stat-value up-stat-text">
                     <?= h(profile_time_ago($user['last_login'] ?? null)) ?>
                 </span>
             </div>
         </div>
     </div>
 
-    <!-- -- Tabbed panel ------------------------------------------------------- -->
-    <div class="prof-tabs-wrap">
+    <!-- Tabbed panel (prof-* classes are JS hooks for switchTab) -->
+    <div class="tab-shell prof-tabs-wrap">
 
         <!-- Tab navigation -->
-        <div class="prof-tab-nav" role="tablist">
-            <button class="prof-tab-btn active" role="tab" aria-selected="true"
+        <div class="tab-nav" role="tablist">
+            <button class="tab-btn prof-tab-btn active" role="tab" aria-selected="true"
                     aria-controls="tab-profile" onclick="switchTab(event,'tab-profile')">
-                <i class="fas fa-user-circle"></i> Profile Info
+                <i class="fas fa-user-circle" aria-hidden="true"></i> Profile Info
             </button>
-            <button class="prof-tab-btn" role="tab" aria-selected="false"
+            <button class="tab-btn prof-tab-btn" role="tab" aria-selected="false"
                     aria-controls="tab-account" onclick="switchTab(event,'tab-account')">
-                <i class="fas fa-shield-alt"></i> Account Status
+                <i class="fas fa-shield-alt" aria-hidden="true"></i> Account Status
             </button>
-            <button class="prof-tab-btn" role="tab" aria-selected="false"
+            <button class="tab-btn prof-tab-btn" role="tab" aria-selected="false"
                     aria-controls="tab-activity" onclick="switchTab(event,'tab-activity')">
-                <i class="fas fa-history"></i> Recent Activity
+                <i class="fas fa-history" aria-hidden="true"></i> Recent Activity
                 <?php if (!empty($recent_activity)): ?>
-                    <span class="badge badge-secondary badge-xs">
+                    <span class="badge badge-secondary">
                         <?= count($recent_activity) ?>
                     </span>
                 <?php endif; ?>
             </button>
         </div>
 
-        <!-- -- Tab 1: Profile Info -------------------------------------------- -->
-        <div id="tab-profile" class="prof-tab-panel active" role="tabpanel">
-            <div class="prof-fields">
+        <div class="tab-panels">
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-user"></i> Full Name
+        <!-- Tab 1: Profile Info -->
+        <div id="tab-profile" class="tab-panel prof-tab-panel active" role="tabpanel">
+
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-user" aria-hidden="true"></i> Full Name
                     </div>
-                    <div class="prof-field-value"><?= h($user['full_name'] ?? '') ?></div>
+                    <div class="up-field-value"><?= h($user['full_name'] ?? '') ?></div>
                 </div>
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-at"></i> Username
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-at" aria-hidden="true"></i> Username
                     </div>
-                    <div class="prof-field-value"><?= h($user['username'] ?? '') ?></div>
+                    <div class="up-field-value"><?= h($user['username'] ?? '') ?></div>
                 </div>
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-envelope"></i> Email Address
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-envelope" aria-hidden="true"></i> Email Address
                     </div>
-                    <div class="prof-field-value"><?= h($user['email'] ?? '') ?></div>
+                    <div class="up-field-value"><?= h($user['email'] ?? '') ?></div>
                 </div>
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-phone"></i> Phone Number
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-phone" aria-hidden="true"></i> Phone Number
                     </div>
-                    <div class="prof-field-value">
+                    <div class="up-field-value">
                         <?= !empty($user['phone'])
                             ? h($user['phone'])
                             : '<span class="none">Not provided</span>' ?>
                     </div>
                 </div>
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-user-tag"></i> Role
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-user-tag" aria-hidden="true"></i> Role
                     </div>
-                    <div class="prof-field-value">
+                    <div class="up-field-value">
                         <span class="badge badge-info"><?= h($user['role'] ?? '') ?></span>
                     </div>
                 </div>
 
-            </div>
         </div>
 
-        <div id="tab-account" class="prof-tab-panel" role="tabpanel">
-            <div class="prof-fields">
+        <div id="tab-account" class="tab-panel prof-tab-panel" role="tabpanel">
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-circle"></i> Account Status
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-circle" aria-hidden="true"></i> Account Status
                     </div>
-                    <div class="prof-field-value">
+                    <div class="up-field-value">
                         <?php if ($user['is_active']): ?>
-                            <span class="badge badge-published">
-                                <i class="fas fa-check-circle"></i> Active
+                            <span class="badge badge-success">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i> Active
                             </span>
                         <?php else: ?>
-                            <span class="badge badge-closed">
-                                <i class="fas fa-times-circle"></i> Inactive
+                            <span class="badge badge-danger">
+                                <i class="fas fa-times-circle" aria-hidden="true"></i> Inactive
                             </span>
                         <?php endif; ?>
                     </div>
                 </div>
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-calendar-plus"></i> Member Since
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-calendar-plus" aria-hidden="true"></i> Member Since
                     </div>
-                    <div class="prof-field-value">
+                    <div class="up-field-value">
                         <?= h(profile_date($user['created_at'] ?? null)) ?>
                         <small><?= $stats['account_age'] ?> days ago</small>
                     </div>
                 </div>
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-sign-in-alt"></i> Last Login
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Last Login
                     </div>
-                    <div class="prof-field-value">
+                    <div class="up-field-value">
                         <?php if (!empty($user['last_login'])): ?>
                             <?= h(profile_date($user['last_login'] ?? null, 'd M Y H:i')) ?>
                             <small><?= h(profile_time_ago($user['last_login'] ?? null)) ?></small>
@@ -555,28 +566,27 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
                     </div>
                 </div>
 
-                <div class="prof-field">
-                    <div class="prof-field-label">
-                        <i class="fas fa-tasks"></i> Total Actions
+                <div class="up-field">
+                    <div class="up-field-label">
+                        <i class="fas fa-tasks" aria-hidden="true"></i> Total Actions
                     </div>
-                    <div class="prof-field-value">
+                    <div class="up-field-value">
                         <?= number_format($stats['total_actions']) ?>
                         <small><?= number_format($stats['actions_this_month']) ?> in the last 30 days</small>
                     </div>
                 </div>
 
-            </div>
         </div>
 
-        <div id="tab-activity" class="prof-tab-panel" role="tabpanel">
+        <div id="tab-activity" class="tab-panel prof-tab-panel" role="tabpanel">
             <?php if (empty($recent_activity)): ?>
-                <div class="prof-activity-empty">
-                    <i class="fas fa-history"></i>
+                <div class="empty-state">
+                    <i class="fas fa-history" aria-hidden="true"></i>
                     <p>No activity recorded yet.</p>
                 </div>
             <?php else: ?>
-                <div class="table-overflow">
-                    <table class="prof-act-table">
+                <div class="table-responsive">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -587,7 +597,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
                         <tbody>
                             <?php foreach ($recent_activity as $i => $act): ?>
                                 <tr>
-                                    <td class="text-muted-sm"><?= $i + 1 ?></td>
+                                    <td class="cell-muted"><?= $i + 1 ?></td>
                                     <td>
                                         <span class="badge badge-info">
                                             <?= h($act['action']) ?>
@@ -595,7 +605,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
                                     </td>
                                     <td>
                                         <?= h(profile_date($act['created_at'] ?? null, 'd M Y H:i')) ?>
-                                        <small class="text-muted-sm d-block">
+                                        <br><small class="cell-muted">
                                             <?= h(profile_time_ago($act['created_at'] ?? null)) ?>
                                         </small>
                                     </td>
@@ -607,9 +617,10 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
             <?php endif; ?>
         </div>
 
+        </div><!-- /.tab-panels -->
     </div>
 
-</div>
+</div><!-- /.page-stack -->
 
 
 
@@ -617,7 +628,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
     <div class="profile-modal-dialog" role="document">
         <div class="profile-modal-header">
             <h3 id="editModalTitle">
-                <i class="fas fa-user-edit icon-brand"></i> Edit Profile
+                <i class="fas fa-user-edit" aria-hidden="true"></i> Edit Profile
             </h3>
             <button type="button" class="profile-modal-close js-profile-modal-close" aria-label="Close">&times;</button>
         </div>
@@ -625,18 +636,18 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
         <form method="POST" action="/includes/user-profile-process.php" id="editProfileForm">
             <input type="hidden" name="csrf_token" value="<?= h($_SESSION['csrf_token']) ?>">
             <div class="profile-modal-body">
-                <div class="modal-info-banner">
+                <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i>
                     You can update your own name, email address, phone number and username. Your role is protected and cannot be changed from this page.
                 </div>
 
-                <div class="form-group form-group-mb">
+                <div class="form-group">
                     <label class="form-label required" for="m_full_name">Full Name</label>
                     <input class="form-control" type="text" id="m_full_name" name="full_name"
                            value="<?= h($user['full_name'] ?? '') ?>" required>
                 </div>
 
-                <div class="form-grid form-group-mb">
+                <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label required" for="m_email">Email Address</label>
                         <input class="form-control" type="email" id="m_email" name="email"
@@ -649,18 +660,18 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
                     </div>
                 </div>
 
-                <div class="form-group form-group-mb">
+                <div class="form-group">
                     <label class="form-label required" for="m_username">Username</label>
                     <input class="form-control" type="text" id="m_username" name="username"
                            value="<?= h($user['username'] ?? '') ?>" required>
-                    <div class="pwd-hint"><i class="fas fa-info-circle"></i> Used for login</div>
+                    <div class="cell-muted up-hint"><i class="fas fa-info-circle" aria-hidden="true"></i> Used for login</div>
                 </div>
 
-                <div class="prof-role-note">
-                    <i class="fas fa-user-tag icon-brand"></i>
+                <div class="up-role-note">
+                    <i class="fas fa-user-tag" aria-hidden="true"></i>
                     <div>
                         <strong>Current role:</strong>
-                        <span class="badge badge-info ml-xs"><?= h($user['role'] ?? '') ?></span>
+                        <span class="badge badge-info"><?= h($user['role'] ?? '') ?></span>
                        
                     </div>
                 </div>
@@ -684,7 +695,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
     <div class="profile-modal-dialog profile-modal-sm" role="document">
         <div class="profile-modal-header">
             <h3 id="pwdModalTitle">
-                <i class="fas fa-key icon-brand"></i> Change Password
+                <i class="fas fa-key" aria-hidden="true"></i> Change Password
             </h3>
             <button type="button" class="profile-modal-close js-profile-modal-close" aria-label="Close">&times;</button>
         </div>
@@ -692,12 +703,12 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
         <form method="POST" action="/includes/user-profile-process.php" id="changePasswordForm">
             <input type="hidden" name="csrf_token" value="<?= h($_SESSION['csrf_token']) ?>">
             <div class="profile-modal-body">
-                <div class="modal-warn-banner">
+                <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i>
                     You must enter your current password before setting a new one.
                 </div>
 
-                <div class="form-group form-group-mb">
+                <div class="form-group">
                     <label class="form-label required" for="m_current_pwd">Current Password</label>
                     <div class="profile-password-wrap">
                         <input class="form-control" type="password" id="m_current_pwd" name="current_password" required autocomplete="current-password">
@@ -707,7 +718,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
                     </div>
                 </div>
 
-                <div class="form-group form-group-mb">
+                <div class="form-group">
                     <label class="form-label required" for="m_new_pwd">New Password</label>
                     <div class="profile-password-wrap">
                         <input class="form-control" type="password" id="m_new_pwd" name="new_password" required minlength="8" autocomplete="new-password">
@@ -715,7 +726,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
-                    <div class="pwd-hint"><i class="fas fa-shield-alt"></i> Minimum 8 characters</div>
+                    <div class="cell-muted up-hint"><i class="fas fa-shield-alt" aria-hidden="true"></i> Minimum 8 characters</div>
                 </div>
 
                 <div class="form-group">
@@ -845,7 +856,7 @@ $profileInitial = trim((string)($user['full_name'] ?? '')) !== ''
                 if (!err) {
                     err = document.createElement('div');
                     err.id = 'pwdMismatchErr';
-                    err.className = 'modal-warn-banner';
+                    err.className = 'alert alert-warning';
                     err.innerHTML = '<i class="fas fa-times-circle"></i> Passwords do not match. Please try again.';
                     document.getElementById('m_confirm_pwd').insertAdjacentElement('afterend', err);
                 }

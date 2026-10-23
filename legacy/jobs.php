@@ -22,215 +22,233 @@ include 'includes/header.php';
 
 <link rel="stylesheet" href="css/opportunities.css">
 
-<div class="jm-wrap">
+<style>
+/* jobs.php: page-only layout. Modal overlay, switches and toast come from
+   css/opportunities.css (.jm-overlay / .jm-toggle / .jm-ltoggle / .jm-toast). */
+.jb-title { font-weight: 700; color: var(--ink-700); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.jb-sub { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; font-size: var(--fs-xs); }
+.jb-sub i { margin-right: 3px; }
+.jb-deadline { font-weight: 600; color: var(--ink-700); white-space: nowrap; }
+.jb-deadline-sub { font-size: var(--fs-xs); }
+.jb-deadline-sub.soon { color: var(--red-fg); font-weight: 700; }
+.jb-status-sel { min-width: 120px; padding-top: 6px; padding-bottom: 6px; }
+.jb-acts { display: flex; gap: 6px; flex-wrap: nowrap; }
+.jb-req { color: var(--red-fg); }
+.jm-form-grid > .form-group { margin-bottom: 0; }
+.jb-tall { min-height: 110px; }
+</style>
 
-    <!-- -- Page header -------------------------------------------------------- -->
-    <div class="jm-page-hdr">
+<div class="page-stack">
+
+    <div class="page-hero">
         <div>
-            <h2><i class="fas fa-briefcase"></i> Manage Jobs</h2>
-            <p>Create, edit, and manage job postings. Toggle featured / urgent or copy the embed code.</p>
+            <h1><i class="fas fa-briefcase" aria-hidden="true"></i> Manage Jobs</h1>
+            <p>Create, edit and manage job postings, toggle featured / urgent, or open the public listings.</p>
         </div>
-        <div class="jm-hdr-actions">
-            <a href="jobs-listings" target="_blank" class="jm-btn jm-btn-ghost">
-                <i class="fas fa-external-link-alt"></i> View Listings
+        <div class="hero-actions">
+            <a href="jobs-listings" target="_blank" class="btn">
+                <i class="fas fa-external-link-alt" aria-hidden="true"></i> View Listings
             </a>
-            <button class="jm-btn jm-btn-primary" onclick="openCreateModal()">
-                <i class="fas fa-plus"></i> Post New Job
+            <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus" aria-hidden="true"></i> Post New Job
             </button>
         </div>
     </div>
 
-    <!-- -- Stats -------------------------------------------------------------- -->
-    <div class="jm-stats">
-        <div class="jm-stat">
-            <div class="jm-stat-icon orange"><i class="fas fa-briefcase"></i></div>
-            <div>
-                <div class="jm-stat-val"><?= $stats['total'] ?></div>
-                <div class="jm-stat-lbl">Total Jobs</div>
+    <!-- Stats -->
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-briefcase" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Total Jobs</div>
+                <div class="stat-value"><?= $stats['total'] ?></div>
             </div>
         </div>
-        <div class="jm-stat">
-            <div class="jm-stat-icon green"><i class="fas fa-check-circle"></i></div>
-            <div>
-                <div class="jm-stat-val"><?= $stats['published'] ?></div>
-                <div class="jm-stat-lbl">Published</div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Published</div>
+                <div class="stat-value"><?= $stats['published'] ?></div>
             </div>
         </div>
-        <div class="jm-stat">
-            <div class="jm-stat-icon amber"><i class="fas fa-edit"></i></div>
-            <div>
-                <div class="jm-stat-val"><?= $stats['draft'] ?></div>
-                <div class="jm-stat-lbl">Drafts</div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-edit" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Drafts</div>
+                <div class="stat-value"><?= $stats['draft'] ?></div>
             </div>
         </div>
-        <div class="jm-stat">
-            <div class="jm-stat-icon blue"><i class="fas fa-users"></i></div>
-            <div>
-                <div class="jm-stat-val"><?= $stats['total_applications'] ?></div>
-                <div class="jm-stat-lbl">Applications</div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Applications</div>
+                <div class="stat-value"><?= $stats['total_applications'] ?></div>
             </div>
         </div>
     </div>
 
-    <!-- -- Toolbar ------------------------------------------------------------ -->
-    <div class="jm-toolbar filters-bar" role="search" aria-label="Filter jobs">
-        <div class="jm-search-wrap filters-grow">
-            <i class="fas fa-search"></i>
-            <input type="text" class="jm-search" id="jmSearch"
-                   placeholder="Search jobs..." oninput="jmFilter()">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list" aria-hidden="true"></i> Job Postings</h3>
         </div>
-        <select class="jm-filter" id="jmStatus" onchange="jmFilter()">
-            <option value="">All Statuses</option>
-            <option>Published</option>
-            <option>Draft</option>
-            <option>Closed</option>
-            <option>Archived</option>
-        </select>
-        <select class="jm-filter" id="jmType" onchange="jmFilter()">
-            <option value="">All Types</option>
-            <option>Full-Time</option>
-            <option>Part-Time</option>
-            <option>Contract</option>
-            <option>Internship</option>
-            <option>Remote</option>
-            <option>Volunteer</option>
-        </select>
-    </div>
+        <div class="card-body">
+            <!-- Toolbar -->
+            <div class="filters-bar" role="search" aria-label="Filter jobs">
+                <div class="search-input-wrap filters-grow">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="text" class="form-control" id="jmSearch"
+                           placeholder="Search jobs..." oninput="jmFilter()" aria-label="Search jobs">
+                </div>
+                <select class="form-control" id="jmStatus" onchange="jmFilter()" aria-label="Filter by status">
+                    <option value="">All Statuses</option>
+                    <option>Published</option>
+                    <option>Draft</option>
+                    <option>Closed</option>
+                    <option>Archived</option>
+                </select>
+                <select class="form-control" id="jmType" onchange="jmFilter()" aria-label="Filter by type">
+                    <option value="">All Types</option>
+                    <option>Full-Time</option>
+                    <option>Part-Time</option>
+                    <option>Contract</option>
+                    <option>Internship</option>
+                    <option>Remote</option>
+                    <option>Volunteer</option>
+                </select>
+            </div>
 
-    <!-- -- Table -------------------------------------------------------------- -->
-    <div class="jm-table-card">
-        <table class="jm-table" id="jmTable">
-            <thead>
-                <tr>
-                    <th class="col-title">Job Title</th>
-                    <th>Type</th>
-                    <th>Deadline</th>
-                    <th>Status</th>
-                    <th>Featured</th>
-                    <th>Urgent</th>
-                    <th>Apps</th>
-                    <th class="col-actions">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-            <?php if (empty($jobs)): ?>
-                <tr class="jm-empty">
-                    <td colspan="8">
-                        <i class="fas fa-briefcase"></i>
-                        <p>No jobs yet. Click <strong>Post New Job</strong> to get started.</p>
-                    </td>
-                </tr>
-            <?php else: ?>
-                <?php foreach ($jobs as $j):
-                    $dl = jobs_deadline_info($j);
-                    $status_pill = match($j['status']) {
-                        'Published' => 'jm-pill-green',
-                        'Draft'     => 'jm-pill-amber',
-                        'Closed'    => 'jm-pill-red',
-                        default     => 'jm-pill-gray',
-                    };
-                ?>
-                <tr data-title="<?= htmlspecialchars(strtolower($j['job_title'])) ?>"
-                    data-status="<?= htmlspecialchars($j['status']) ?>"
-                    data-type="<?= htmlspecialchars($j['job_type']) ?>">
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table table-stack" id="jmTable">
+                    <thead>
+                        <tr>
+                            <th>Job Title</th>
+                            <th>Type</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>Featured</th>
+                            <th>Urgent</th>
+                            <th>Apps</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($jobs)): ?>
+                        <tr class="jm-empty">
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-briefcase" aria-hidden="true"></i>
+                                    <p>No jobs yet. Click <strong>Post New Job</strong> to get started.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($jobs as $j):
+                            $dl = jobs_deadline_info($j);
+                        ?>
+                        <tr data-title="<?= htmlspecialchars(strtolower($j['job_title'])) ?>"
+                            data-status="<?= htmlspecialchars($j['status']) ?>"
+                            data-type="<?= htmlspecialchars($j['job_type']) ?>">
 
-                    <!-- Title -->
-                    <td>
-                        <div class="jm-job-title">
-                            <?= htmlspecialchars($j['job_title']) ?>
-                            <?php if ($j['is_featured']): ?>
-                                <span class="jm-badge-feat">
-                                    <i class="fas fa-star"></i> Featured
+                            <!-- Title -->
+                            <td data-label="Job Title">
+                                <div class="jb-title">
+                                    <?= htmlspecialchars($j['job_title']) ?>
+                                    <?php if ($j['is_featured']): ?>
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-star" aria-hidden="true"></i> Featured
+                                        </span>
+                                    <?php endif; ?>
+                                    <?php if ($j['is_urgent']): ?>
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-fire" aria-hidden="true"></i> Urgent
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="jb-sub cell-muted">
+                                    <?php if ($j['department']): ?>
+                                        <span><i class="fas fa-building" aria-hidden="true"></i><?= htmlspecialchars($j['department']) ?></span>
+                                        <span aria-hidden="true">&middot;</span>
+                                    <?php endif; ?>
+                                    <span><i class="fas fa-map-marker-alt" aria-hidden="true"></i><?= htmlspecialchars($j['location'] ?? '-') ?></span>
+                                </div>
+                            </td>
+
+                            <!-- Type -->
+                            <td data-label="Type">
+                                <span class="badge badge-info"><?= htmlspecialchars($j['job_type']) ?></span>
+                            </td>
+
+                            <!-- Deadline -->
+                            <td data-label="Deadline">
+                                <?php if ($dl): ?>
+                                    <div class="jb-deadline"><?= $dl['formatted'] ?></div>
+                                    <div class="jb-deadline-sub cell-muted <?= $dl['is_soon'] ? 'soon' : '' ?>">
+                                        <?= $dl['days_left'] ?>d left
+                                    </div>
+                                <?php else: ?>
+                                    <span class="cell-muted">-</span>
+                                <?php endif; ?>
+                            </td>
+
+                            <!-- Status select -->
+                            <td data-label="Status">
+                                <select class="form-control jb-status-sel" aria-label="Job status"
+                                        onchange="jmChangeStatus(<?= $j['job_id'] ?>, this.value)">
+                                    <?php foreach (['Draft', 'Published', 'Closed', 'Archived'] as $s): ?>
+                                        <option <?= $j['status'] === $s ? 'selected' : '' ?>><?= $s ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+
+                            <!-- Featured toggle -->
+                            <td data-label="Featured">
+                                <button type="button" class="jm-toggle <?= $j['is_featured'] ? 'on' : '' ?>"
+                                        onclick="jmToggle(<?= $j['job_id'] ?>, 'is_featured', this)"
+                                        title="Toggle featured" aria-label="Toggle featured"></button>
+                            </td>
+
+                            <!-- Urgent toggle -->
+                            <td data-label="Urgent">
+                                <button type="button" class="jm-toggle <?= $j['is_urgent'] ? 'on' : '' ?>"
+                                        onclick="jmToggle(<?= $j['job_id'] ?>, 'is_urgent', this)"
+                                        title="Toggle urgent" aria-label="Toggle urgent"></button>
+                            </td>
+
+                            <!-- App count -->
+                            <td data-label="Apps">
+                                <span class="badge badge-secondary">
+                                    <i class="fas fa-users" aria-hidden="true"></i>
+                                    <?= intval($j['app_count']) ?>
                                 </span>
-                            <?php endif; ?>
-                            <?php if ($j['is_urgent']): ?>
-                                <span class="jm-badge-urgent">
-                                    <i class="fas fa-fire"></i> Urgent
-                                </span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="jm-job-sub">
-                            <?php if ($j['department']): ?>
-                                <span><i class="fas fa-building"></i> <?= htmlspecialchars($j['department']) ?></span>
-                                <span class="jm-job-sub-sep">�</span>
-                            <?php endif; ?>
-                            <span><i class="fas fa-map-marker-alt"></i> <?= htmlspecialchars($j['location'] ?? '-') ?></span>
-                        </div>
-                    </td>
+                            </td>
 
-                    <!-- Type -->
-                    <td>
-                        <span class="jm-pill jm-pill-blue"><?= htmlspecialchars($j['job_type']) ?></span>
-                    </td>
-
-                    <!-- Deadline -->
-                    <td>
-                        <?php if ($dl): ?>
-                            <div class="jm-deadline"><?= $dl['formatted'] ?></div>
-                            <div class="jm-deadline-sub <?= $dl['is_soon'] ? 'soon' : '' ?>">
-                                <?= $dl['days_left'] ?>d left
-                            </div>
-                        <?php else: ?>
-                            <span class="jm-no-value">-</span>
-                        <?php endif; ?>
-                    </td>
-
-                    <!-- Status select -->
-                    <td>
-                        <select class="jm-status-sel"
-                                onchange="jmChangeStatus(<?= $j['job_id'] ?>, this.value)">
-                            <?php foreach (['Draft', 'Published', 'Closed', 'Archived'] as $s): ?>
-                                <option <?= $j['status'] === $s ? 'selected' : '' ?>><?= $s ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </td>
-
-                    <!-- Featured toggle -->
-                    <td>
-                        <button class="jm-toggle <?= $j['is_featured'] ? 'on' : '' ?>"
-                                onclick="jmToggle(<?= $j['job_id'] ?>, 'is_featured', this)"
-                                title="Toggle featured"></button>
-                    </td>
-
-                    <!-- Urgent toggle -->
-                    <td>
-                        <button class="jm-toggle <?= $j['is_urgent'] ? 'on' : '' ?>"
-                                onclick="jmToggle(<?= $j['job_id'] ?>, 'is_urgent', this)"
-                                title="Toggle urgent"></button>
-                    </td>
-
-                    <!-- App count -->
-                    <td>
-                        <span class="jm-app-count">
-                            <i class="fas fa-users"></i>
-                            <?= intval($j['app_count']) ?>
-                        </span>
-                    </td>
-
-                    <!-- Actions -->
-                    <td>
-                        <div class="jm-acts">
-                            <button class="jm-act jm-act-view" title="View listing"
-                                    onclick="window.open('jobs-listings#job-<?= $j['job_id'] ?>','_blank')">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="jm-act jm-act-edit" title="Edit"
-                                    onclick="jmOpenEdit(<?= $j['job_id'] ?>)">
-                                <i class="fas fa-pen"></i>
-                            </button>
-                            <button class="jm-act jm-act-del" title="Delete"
-                                    onclick="jmOpenDelete(<?= $j['job_id'] ?>, <?= htmlspecialchars(json_encode((string)($j['job_title'])), ENT_QUOTES, 'UTF-8') ?>)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-            </tbody>
-        </table>
+                            <!-- Actions -->
+                            <td data-label="Actions">
+                                <div class="jb-acts">
+                                    <button type="button" class="btn btn-sm btn-info" title="View listing" aria-label="View listing"
+                                            onclick="window.open('jobs-listings#job-<?= $j['job_id'] ?>','_blank')">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-soft" title="Edit" aria-label="Edit"
+                                            onclick="jmOpenEdit(<?= $j['job_id'] ?>)">
+                                        <i class="fas fa-pen" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" title="Delete" aria-label="Delete"
+                                            onclick="jmOpenDelete(<?= $j['job_id'] ?>, <?= htmlspecialchars(json_encode((string)($j['job_title'])), ENT_QUOTES, 'UTF-8') ?>)">
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div><!-- /.jm-wrap -->
+</div><!-- /.page-stack -->
 
 
 <!-- --------------------------------------------------------------------------
@@ -240,7 +258,7 @@ include 'includes/header.php';
     <div class="jm-modal">
         <div class="jm-modal-hdr">
             <h3><i class="fas fa-briefcase"></i> <span id="jmModalTitle">Post New Job</span></h3>
-            <button class="jm-modal-close" onclick="jmClose('jmJobModal')">
+            <button type="button" class="jm-modal-close" onclick="jmClose('jmJobModal')">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -249,30 +267,30 @@ include 'includes/header.php';
             <input type="hidden" id="f_job_id">
 
             <!-- Basic information -->
-            <div class="jm-section-ttl"><i class="fas fa-info-circle"></i> Basic Information</div>
+            <div class="modal-section-label"><i class="fas fa-info-circle" aria-hidden="true"></i> Basic Information</div>
             <div class="jm-form-grid">
-                <div class="jm-fg jm-form-full">
-                    <label>Job Title <span>*</span></label>
-                    <input type="text" class="jm-fi" id="f_job_title" placeholder="e.g. Software Engineer">
+                <div class="form-group jm-form-full">
+                    <label>Job Title <span class="jb-req">*</span></label>
+                    <input type="text" class="form-control" id="f_job_title" placeholder="e.g. Software Engineer">
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Department</label>
-                    <input type="text" class="jm-fi" id="f_department" placeholder="e.g. Technology">
+                    <input type="text" class="form-control" id="f_department" placeholder="e.g. Technology">
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Location</label>
-                    <input type="text" class="jm-fi" id="f_location" placeholder="e.g. Kampala, Uganda">
+                    <input type="text" class="form-control" id="f_location" placeholder="e.g. Kampala, Uganda">
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Job Type</label>
-                    <select class="jm-fs" id="f_job_type">
+                    <select class="form-control" id="f_job_type">
                         <option>Full-Time</option><option>Part-Time</option><option>Contract</option>
                         <option>Internship</option><option>Volunteer</option><option>Remote</option>
                     </select>
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Experience Level</label>
-                    <select class="jm-fs" id="f_experience_level">
+                    <select class="form-control" id="f_experience_level">
                         <option>Entry Level</option><option>Mid Level</option><option>Senior Level</option>
                         <option>Lead / Manager</option><option>Executive</option>
                     </select>
@@ -280,110 +298,110 @@ include 'includes/header.php';
             </div>
 
             <!-- Compensation -->
-            <div class="jm-section-ttl"><i class="fas fa-money-bill-wave"></i> Compensation</div>
+            <div class="modal-section-label"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> Compensation</div>
             <div class="jm-form-grid cols3">
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Min Salary</label>
-                    <input type="number" class="jm-fi" id="f_salary_min" placeholder="e.g. 1 500 000">
+                    <input type="number" class="form-control" id="f_salary_min" placeholder="e.g. 1 500 000">
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Max Salary</label>
-                    <input type="number" class="jm-fi" id="f_salary_max" placeholder="e.g. 3 000 000">
+                    <input type="number" class="form-control" id="f_salary_max" placeholder="e.g. 3 000 000">
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Currency</label>
-                    <select class="jm-fs" id="f_salary_currency">
+                    <select class="form-control" id="f_salary_currency">
                         <option value="UGX">UGX</option><option value="USD">USD</option>
                         <option value="KES">KES</option><option value="EUR">EUR</option>
                     </select>
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Pay Period</label>
-                    <select class="jm-fs" id="f_salary_period">
+                    <select class="form-control" id="f_salary_period">
                         <option>Month</option><option>Year</option><option>Hour</option>
                     </select>
                 </div>
-                <div class="jm-fg jm-form-col-span2">
+                <div class="form-group jm-form-col-span2">
                     <div class="jm-toggle-row jm-toggle-row-fill">
                         <div class="jm-toggle-row-lbl">
                             Show Salary
                             <small>Display compensation on the listing</small>
                         </div>
-                        <button class="jm-ltoggle on" id="t_show_salary"
+                        <button type="button" class="jm-ltoggle on" id="t_show_salary"
                                 onclick="this.classList.toggle('on')"></button>
                     </div>
                 </div>
             </div>
 
             <!-- Job content -->
-            <div class="jm-section-ttl"><i class="fas fa-align-left"></i> Job Content</div>
+            <div class="modal-section-label"><i class="fas fa-align-left" aria-hidden="true"></i> Job Content</div>
             <div class="jm-form-grid">
-                <div class="jm-fg jm-form-full">
-                    <label>Description <span>*</span></label>
-                    <textarea class="jm-fta jm-fta-tall" id="f_description"
+                <div class="form-group jm-form-full">
+                    <label>Description <span class="jb-req">*</span></label>
+                    <textarea class="form-control jb-tall" id="f_description"
                               placeholder="Describe the role and its purpose..."></textarea>
                 </div>
-                <div class="jm-fg jm-form-full">
+                <div class="form-group jm-form-full">
                     <label>Responsibilities</label>
-                    <textarea class="jm-fta" id="f_responsibilities"
+                    <textarea class="form-control" id="f_responsibilities"
                               placeholder="Key duties (one per line)..."></textarea>
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Requirements</label>
-                    <textarea class="jm-fta" id="f_requirements"
+                    <textarea class="form-control" id="f_requirements"
                               placeholder="Required skills and qualifications..."></textarea>
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Benefits</label>
-                    <textarea class="jm-fta" id="f_benefits"
+                    <textarea class="form-control" id="f_benefits"
                               placeholder="Perks, benefits, culture..."></textarea>
                 </div>
             </div>
 
             <!-- Application settings -->
-            <div class="jm-section-ttl"><i class="fas fa-paper-plane"></i> Application Settings</div>
+            <div class="modal-section-label"><i class="fas fa-paper-plane" aria-hidden="true"></i> Application Settings</div>
             <div class="jm-form-grid">
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Application Deadline</label>
-                    <input type="date" class="jm-fi" id="f_deadline">
+                    <input type="date" class="form-control" id="f_deadline">
                 </div>
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Max Applicants</label>
-                    <input type="number" class="jm-fi" id="f_max_applicants"
+                    <input type="number" class="form-control" id="f_max_applicants"
                            placeholder="Leave empty for unlimited">
                 </div>
-                <div class="jm-fg jm-form-full">
+                <div class="form-group jm-form-full">
                     <label>External Apply URL</label>
-                    <input type="url" class="jm-fi" id="f_apply_url"
+                    <input type="url" class="form-control" id="f_apply_url"
                            placeholder="https://... (leave empty to use internal form)">
                 </div>
             </div>
 
             <!-- Visibility & status -->
-            <div class="jm-section-ttl"><i class="fas fa-eye"></i> Visibility &amp; Status</div>
+            <div class="modal-section-label"><i class="fas fa-eye" aria-hidden="true"></i> Visibility &amp; Status</div>
             <div class="jm-form-grid">
-                <div class="jm-fg">
+                <div class="form-group">
                     <label>Status</label>
-                    <select class="jm-fs" id="f_status">
+                    <select class="form-control" id="f_status">
                         <option value="Draft">Draft</option>
                         <option value="Published">Published</option>
                         <option value="Closed">Closed</option>
                         <option value="Archived">Archived</option>
                     </select>
                 </div>
-                <div class="jm-fg jm-toggle-stack">
+                <div class="form-group jm-toggle-stack">
                     <div class="jm-toggle-row">
                         <div class="jm-toggle-row-lbl">
                             Featured <small>Highlighted on listings</small>
                         </div>
-                        <button class="jm-ltoggle" id="t_is_featured"
+                        <button type="button" class="jm-ltoggle" id="t_is_featured"
                                 onclick="this.classList.toggle('on')"></button>
                     </div>
                     <div class="jm-toggle-row">
                         <div class="jm-toggle-row-lbl">
                             Urgent <small>Shows urgency badge</small>
                         </div>
-                        <button class="jm-ltoggle" id="t_is_urgent"
+                        <button type="button" class="jm-ltoggle" id="t_is_urgent"
                                 onclick="this.classList.toggle('on')"></button>
                     </div>
                 </div>
@@ -391,10 +409,10 @@ include 'includes/header.php';
         </div><!-- /.jm-modal-body -->
 
         <div class="jm-modal-foot">
-            <button class="jm-btn jm-btn-ghost" onclick="jmClose('jmJobModal')">
+            <button type="button" class="btn btn-secondary" onclick="jmClose('jmJobModal')">
                 <i class="fas fa-times"></i> Cancel
             </button>
-            <button class="jm-btn jm-btn-primary" id="jmSaveBtn" onclick="jmSave()">
+            <button type="button" class="btn btn-primary" id="jmSaveBtn" onclick="jmSave()">
                 <i class="fas fa-save"></i> <span id="jmSaveTxt">Post Job</span>
             </button>
         </div>
@@ -417,8 +435,8 @@ include 'includes/header.php';
             </p>
         </div>
         <div class="jm-modal-foot jm-modal-foot-center">
-            <button class="jm-btn jm-btn-ghost"  onclick="jmClose('jmDelModal')">Cancel</button>
-            <button class="jm-btn jm-btn-danger" onclick="jmConfirmDelete()">
+            <button type="button" class="btn btn-secondary"  onclick="jmClose('jmDelModal')">Cancel</button>
+            <button type="button" class="btn btn-danger" onclick="jmConfirmDelete()">
                 <i class="fas fa-trash"></i> Delete
             </button>
         </div>

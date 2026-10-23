@@ -843,83 +843,96 @@ if (empty($_SESSION['csrf_token'])) {
 ?>
 
 <style>
-.import-header{background:linear-gradient(135deg,#ff5722 0%,#ff9800 100%);color:#fff;padding:25px;border-radius:12px;margin-bottom:25px;}
-.import-header h1{font-size:26px;margin-bottom:6px;}
-.import-header p{margin:0;opacity:.9;font-size:14px;}
-.card-section{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:28px;margin-bottom:22px;}
-.card-section h2{font-size:18px;font-weight:700;margin:0 0 16px 0;display:flex;align-items:center;gap:10px;}
-.card-section h2 i{color:#ff5722;}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:6px;}
-.step{background:#fff8f5;border:1px solid #ffd5c0;border-radius:10px;padding:18px;}
-.step-num{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ff5722,#ff9800);color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
-.step h4{margin:0 0 6px 0;font-size:14px;font-weight:700;}
-.step p{margin:0;font-size:13px;color:#555;}
-.columns-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px;margin-top:10px;}
-.col-item{background:#f8f9fa;border-radius:6px;padding:7px 10px;font-size:12px;display:flex;align-items:center;gap:8px;}
-.col-item .req{color:#ff5722;font-weight:700;}
-.col-item .opt{color:#95a5a6;}
-.upload-zone{border:2px dashed #ff9800;border-radius:10px;padding:30px;text-align:center;cursor:pointer;transition:.2s;background:#fffbf7;}
-.upload-zone:hover,.upload-zone.drag-over{background:#fff3e0;border-color:#ff5722;}
-.upload-zone i{font-size:40px;color:#ff9800;display:block;margin-bottom:10px;}
-.upload-zone label{cursor:pointer;font-weight:600;color:#ff5722;font-size:15px;}
-.upload-zone input[type=file]{display:none;}
-.upload-zone small{display:block;color:#7f8c8d;margin-top:6px;font-size:12px;}
-#file-chosen{margin-top:10px;font-size:13px;font-weight:600;color:#27ae60;}
-.result-box{border-radius:10px;padding:20px;margin-bottom:20px;}
-.result-box.success{background:#eafaf1;border:1px solid #27ae60;}
-.result-box.warning{background:#fef9e7;border:1px solid #f39c12;}
-.result-box.danger{background:#fdf2f2;border:1px solid #e74c3c;}
-.result-box h3{margin:0 0 10px 0;font-size:16px;}
-.error-list{max-height:260px;overflow-y:auto;font-size:12px;margin:8px 0 0 0;padding:0;list-style:none;}
-.error-list li{background:#fff;border:1px solid rgba(231,76,60,.2);border-radius:4px;padding:5px 8px;margin-bottom:4px;color:#c0392b;}
-.form-inline{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:16px;}
-.form-inline .form-group{margin:0;}
-.form-inline label{display:block;font-size:13px;font-weight:600;margin-bottom:4px;}
-.excel-note{background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;padding:12px 16px;font-size:13px;color:#555;margin-bottom:20px;}
-.excel-note strong{color:#e65100;}
-.diag-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;}
-.diag-table td{padding:6px 10px;border:1px solid #e0e0e0;}
-.diag-table tr:nth-child(odd) td{background:#fafafa;}
+/* CSV import: numbered steps, column legend, drag-and-drop zone, result details. */
+.ci-alert { align-items: flex-start; }
+.ci-alert > i { margin-top: 3px; }
+.ci-alert h3 { margin: 0 0 8px; font-size: 16px; }
+.ci-alert p { margin: 0 0 10px; }
+.ci-error-list { max-height: 260px; overflow-y: auto; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; }
+.ci-error-list li { background: var(--surface-card); border: 1px solid var(--red-border); border-radius: var(--radius-sm); padding: 5px 8px; margin-bottom: 4px; color: var(--red-fg); }
+.ci-diag-wrap .table { min-width: 0; background: var(--surface-card); }
+.ci-hint { margin: 12px 0 0; font-size: 13px; }
+
+.ci-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ci-step { background: var(--brand-50); border: 1px solid var(--brand-100); border-radius: var(--radius-md); padding: 18px; }
+.ci-step-num { width: 34px; height: 34px; border-radius: 50%; background: var(--brand-500); color: var(--ink-0); font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+.ci-step h4 { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--ink-700); }
+.ci-step p { margin: 0; font-size: 13px; color: var(--ink-400); }
+
+.ci-intro { margin: 0 0 16px; color: var(--ink-400); font-size: 14px; }
+.ci-details { margin-top: 20px; }
+.ci-details summary { cursor: pointer; font-weight: 600; color: var(--brand-600); font-size: 14px; }
+.ci-legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 6px; margin-top: 10px; }
+.ci-col-item { background: var(--ink-50); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+.ci-col-item .ci-req { color: var(--brand-600); font-weight: 700; }
+.ci-col-item .ci-opt { color: var(--ink-200); }
+.ci-col-item .ci-col-label { color: var(--ink-300); }
+
+.ci-upload-zone { border: 2px dashed var(--brand-400); border-radius: var(--radius-md); padding: 30px; text-align: center; cursor: pointer; transition: .2s; background: var(--brand-50); }
+.ci-upload-zone:hover, .ci-upload-zone.drag-over { background: var(--brand-100); border-color: var(--brand-600); }
+.ci-upload-zone > i { font-size: 40px; color: var(--brand-500); display: block; margin-bottom: 10px; }
+.ci-upload-zone label { cursor: pointer; font-weight: 600; color: var(--brand-600); font-size: 15px; }
+.ci-upload-zone input[type=file] { display: none; }
+.ci-upload-zone small { display: block; color: var(--ink-300); margin-top: 6px; font-size: 12px; }
+#file-chosen { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--green-fg); }
+.ci-form-inline { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 16px; }
+.ci-form-inline .form-group { margin: 0; }
+.ci-note { margin: 12px 0 0; font-size: 12px; color: var(--ink-300); }
 </style>
 
-<div class="import-header">
-    <h1><i class="fas fa-file-csv"></i> CSV Import - Applications</h1>
-    <p><?php echo htmlspecialchars($opportunity['opportunity_title']); ?></p>
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-file-csv" aria-hidden="true"></i> CSV Import - Applications</h1>
+        <p><?php echo htmlspecialchars($opportunity['opportunity_title']); ?></p>
+    </div>
+    <div class="hero-actions">
+        <a href="manage-applications?opportunity_id=<?php echo $opportunity_id; ?>" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Manage Applications
+        </a>
+    </div>
 </div>
 
 <?php if ($import_results !== null): ?>
     <?php if ($import_results['inserted'] > 0): ?>
-    <div class="result-box success">
-        <h3><i class="fas fa-check-circle"></i> Import Complete</h3>
-        <p>
-            <strong><?php echo $import_results['inserted']; ?></strong> application(s) imported.
-            <?php if ($import_results['skipped'] > 0): ?>
-                &nbsp;|&nbsp; <strong><?php echo $import_results['skipped']; ?></strong> skipped.
-            <?php endif; ?>
-        </p>
-        <a href="manage-applications?opportunity_id=<?php echo $opportunity_id; ?>"
-           class="btn btn-success btn-sm">
-            <i class="fas fa-eye"></i> View Applications
-        </a>
+    <div class="alert alert-success ci-alert">
+        <i class="fas fa-check-circle" aria-hidden="true"></i>
+        <div>
+            <h3>Import Complete</h3>
+            <p>
+                <strong><?php echo $import_results['inserted']; ?></strong> application(s) imported.
+                <?php if ($import_results['skipped'] > 0): ?>
+                    &nbsp;|&nbsp; <strong><?php echo $import_results['skipped']; ?></strong> skipped.
+                <?php endif; ?>
+            </p>
+            <a href="manage-applications?opportunity_id=<?php echo $opportunity_id; ?>"
+               class="btn btn-primary btn-sm">
+                <i class="fas fa-eye" aria-hidden="true"></i> View Applications
+            </a>
+        </div>
     </div>
     <?php endif; ?>
 
     <?php if (!empty($import_results['errors'])): ?>
-    <div class="result-box <?php echo $import_results['inserted'] > 0 ? 'warning' : 'danger'; ?>">
-        <h3><i class="fas fa-exclamation-triangle"></i>
-            <?php echo count($import_results['errors']); ?> row(s) had errors
-        </h3>
-        <ul class="error-list">
-            <?php foreach ($import_results['errors'] as $err): ?>
-                <li><?php echo htmlspecialchars($err); ?></li>
-            <?php endforeach; ?>
-        </ul>
+    <div class="alert <?php echo $import_results['inserted'] > 0 ? 'alert-warning' : 'alert-danger'; ?> ci-alert">
+        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+        <div>
+            <h3><?php echo count($import_results['errors']); ?> row(s) had errors</h3>
+            <ul class="ci-error-list">
+                <?php foreach ($import_results['errors'] as $err): ?>
+                    <li><?php echo htmlspecialchars($err); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
     </div>
     <?php endif; ?>
 
     <?php if ($import_results['inserted'] === 0 && empty($import_results['errors'])): ?>
-    <div class="result-box danger">
-        <h3><i class="fas fa-exclamation-circle"></i> Nothing Was Imported</h3>
+    <div class="alert alert-danger ci-alert">
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+        <div>
+        <h3>Nothing Was Imported</h3>
 
         <?php
         $r             = $import_results;
@@ -946,140 +959,146 @@ if (empty($_SESSION['csrf_token'])) {
         This usually means they were blank or matched a built-in sample email address.</p>
         <?php endif; ?>
 
-        <table class="diag-table">
-            <tr><td>Delimiter detected</td><td><strong><?php echo htmlspecialchars($r['delim_used']); ?></strong></td></tr>
-            <tr><td>Header row found</td><td><strong><?php echo $r['header_found'] ? 'Yes ('.$r['key_matches'].' column keys matched)' : 'No'; ?></strong></td></tr>
-            <tr><td>Total data rows seen</td><td><strong><?php echo $r['total_rows']; ?></strong></td></tr>
-            <tr><td>Sample rows skipped</td><td><strong><?php echo $r['sample_skipped']; ?></strong></td></tr>
-            <tr><td>Other rows skipped</td><td><strong><?php echo $r['skipped'] - $r['sample_skipped']; ?></strong></td></tr>
-        </table>
+        <div class="table-responsive ci-diag-wrap">
+            <table class="table">
+                <tbody>
+                    <tr><td>Delimiter detected</td><td><strong><?php echo htmlspecialchars($r['delim_used']); ?></strong></td></tr>
+                    <tr><td>Header row found</td><td><strong><?php echo $r['header_found'] ? 'Yes ('.$r['key_matches'].' column keys matched)' : 'No'; ?></strong></td></tr>
+                    <tr><td>Total data rows seen</td><td><strong><?php echo $r['total_rows']; ?></strong></td></tr>
+                    <tr><td>Sample rows skipped</td><td><strong><?php echo $r['sample_skipped']; ?></strong></td></tr>
+                    <tr><td>Other rows skipped</td><td><strong><?php echo $r['skipped'] - $r['sample_skipped']; ?></strong></td></tr>
+                </tbody>
+            </table>
+        </div>
 
         <?php if (!$only_samples && !$no_rows && !$header_bad): ?>
-        <p style="margin-top:12px;font-size:13px;color:#666;">
+        <p class="ci-hint">
             If you believe your file is correct, check that:<br>
             &bull; You are not uploading the template with only sample rows filled in<br>
             &bull; Your email addresses are not the same as the built-in sample emails<br>
             &bull; Your file is saved as <strong>.csv</strong> (not .xlsx or .xls)
         </p>
         <?php endif; ?>
+        </div>
     </div>
     <?php endif; ?>
 <?php endif; ?>
 
-<div class="card-section">
-    <h2><i class="fas fa-list-ol"></i> How It Works</h2>
-    <div class="steps">
-        <div class="step">
-            <div class="step-num">1</div>
-            <h4>Download Template</h4>
-            <p>Get the pre-formatted CSV with all column headers and one example row.</p>
-        </div>
-        <div class="step">
-            <div class="step-num">2</div>
-            <h4>Fill In Data</h4>
-            <p>Add your applications below the two header rows. The 5 sample rows are skipped automatically - you can leave them in as a reference. Fields marked * are required.</p>
-        </div>
-        <div class="step">
-            <div class="step-num">3</div>
-            <h4>Upload &amp; Import</h4>
-            <p>Select your saved CSV and choose a status. Duplicate emails are automatically skipped.</p>
-        </div>
-        <div class="step">
-            <div class="step-num">4</div>
-            <h4>Review Results</h4>
-            <p>A summary shows how many rows were imported and details of any errors.</p>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-list-ol" aria-hidden="true"></i> How It Works</h3></div>
+    <div class="card-body">
+        <div class="ci-steps">
+            <div class="ci-step">
+                <div class="ci-step-num">1</div>
+                <h4>Download Template</h4>
+                <p>Get the pre-formatted CSV with all column headers and one example row.</p>
+            </div>
+            <div class="ci-step">
+                <div class="ci-step-num">2</div>
+                <h4>Fill In Data</h4>
+                <p>Add your applications below the two header rows. The 5 sample rows are skipped automatically - you can leave them in as a reference. Fields marked * are required.</p>
+            </div>
+            <div class="ci-step">
+                <div class="ci-step-num">3</div>
+                <h4>Upload &amp; Import</h4>
+                <p>Select your saved CSV and choose a status. Duplicate emails are automatically skipped.</p>
+            </div>
+            <div class="ci-step">
+                <div class="ci-step-num">4</div>
+                <h4>Review Results</h4>
+                <p>A summary shows how many rows were imported and details of any errors.</p>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="card-section">
-    <h2><i class="fas fa-download"></i> Download Template</h2>
-
-    <div class="excel-note">
-        <strong>Excel users:</strong> The template is optimised to prevent Excel from corrupting your data.
-        Phone numbers and dates are pre-formatted as text. If you still see dates change to
-        <em>dd/mm/yyyy</em> or phone numbers change to scientific notation after editing,
-        the importer will correct them automatically on upload.
-    </div>
-
-    <p style="margin-bottom:16px;color:#555;font-size:14px;">
-        Contains <strong><?php echo count($CSV_COLUMNS); ?> columns</strong> covering all
-        application fields, with a human-readable label row, a machine-key row, and
-        <strong>5 realistic sample rows</strong> showing how to fill every field correctly.
-        Sample rows are skipped automatically on import - no need to delete them.
-        The importer auto-detects the key row and handles files re-saved from Excel or LibreOffice.
-    </p>
-    <a href="application-csv-import?opportunity_id=<?php echo $opportunity_id; ?>&action=download_template"
-       class="btn btn-primary">
-        <i class="fas fa-file-csv"></i> Download CSV Template
-    </a>
-
-    <details style="margin-top:20px;">
-        <summary style="cursor:pointer;font-weight:600;color:#ff5722;font-size:14px;">
-            <i class="fas fa-table"></i> View all column definitions
-        </summary>
-        <div class="columns-legend">
-            <?php foreach ($CSV_COLUMNS as $key => $col): ?>
-            <div class="col-item">
-                <?php if ($col['required']): ?>
-                    <span class="req" title="Required">*</span>
-                <?php else: ?>
-                    <span class="opt" title="Optional">o</span>
-                <?php endif; ?>
-                <div>
-                    <strong><?php echo htmlspecialchars($key); ?></strong><br>
-                    <span style="color:#7f8c8d;"><?php echo htmlspecialchars($col['label']); ?></span>
-                </div>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-download" aria-hidden="true"></i> Download Template</h3></div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <div>
+                <strong>Excel users:</strong> The template is optimised to prevent Excel from corrupting your data.
+                Phone numbers and dates are pre-formatted as text. If you still see dates change to
+                <em>dd/mm/yyyy</em> or phone numbers change to scientific notation after editing,
+                the importer will correct them automatically on upload.
             </div>
-            <?php endforeach; ?>
-        </div>
-    </details>
-</div>
-
-<div class="card-section">
-    <h2><i class="fas fa-upload"></i> Upload &amp; Import</h2>
-
-    <form method="POST" action="" enctype="multipart/form-data" id="importForm">
-        <input type="hidden" name="csrf_token"
-               value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-
-        <div class="upload-zone" id="dropZone">
-            <i class="fas fa-cloud-upload-alt"></i>
-            <label for="csv_file">Click to browse or drag &amp; drop your CSV</label>
-            <input type="file" name="csv_file" id="csv_file" accept=".csv" required
-                   onchange="showFileName(this)">
-            <small>Accepted: .csv only</small>
-            <div id="file-chosen"></div>
         </div>
 
-        <div class="form-inline">
-            <div class="form-group">
-                <label for="import_status">Import as status</label>
-                <select name="import_status" id="import_status" class="form-control">
-                    <option value="Submitted">Submitted</option>
-                    <option value="Under Review">Under Review</option>
-                    <option value="Draft">Draft</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary" id="importBtn">
-                <i class="fas fa-file-import"></i> Import Applications
-            </button>
-        </div>
-
-        <p style="font-size:12px;color:#7f8c8d;margin-top:12px;">
-            <i class="fas fa-info-circle"></i>
-            Rows where the email already has a non-draft application for this opportunity
-            are skipped. New email addresses get an Applicant account created automatically.
+        <p class="ci-intro">
+            Contains <strong><?php echo count($CSV_COLUMNS); ?> columns</strong> covering all
+            application fields, with a human-readable label row, a machine-key row, and
+            <strong>5 realistic sample rows</strong> showing how to fill every field correctly.
+            Sample rows are skipped automatically on import - no need to delete them.
+            The importer auto-detects the key row and handles files re-saved from Excel or LibreOffice.
         </p>
-    </form>
+        <a href="application-csv-import?opportunity_id=<?php echo $opportunity_id; ?>&action=download_template"
+           class="btn btn-primary">
+            <i class="fas fa-file-csv" aria-hidden="true"></i> Download CSV Template
+        </a>
+
+        <details class="ci-details">
+            <summary>
+                <i class="fas fa-table" aria-hidden="true"></i> View all column definitions
+            </summary>
+            <div class="ci-legend">
+                <?php foreach ($CSV_COLUMNS as $key => $col): ?>
+                <div class="ci-col-item">
+                    <?php if ($col['required']): ?>
+                        <span class="ci-req" title="Required">*</span>
+                    <?php else: ?>
+                        <span class="ci-opt" title="Optional">o</span>
+                    <?php endif; ?>
+                    <div>
+                        <strong><?php echo htmlspecialchars($key); ?></strong><br>
+                        <span class="ci-col-label"><?php echo htmlspecialchars($col['label']); ?></span>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </details>
+    </div>
 </div>
 
-<div style="margin-bottom:30px;">
-    <a href="manage-applications?opportunity_id=<?php echo $opportunity_id; ?>"
-       class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Manage Applications
-    </a>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-upload" aria-hidden="true"></i> Upload &amp; Import</h3></div>
+    <div class="card-body">
+        <form method="POST" action="" enctype="multipart/form-data" id="importForm">
+            <input type="hidden" name="csrf_token"
+                   value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+
+            <div class="ci-upload-zone" id="dropZone">
+                <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                <label for="csv_file">Click to browse or drag &amp; drop your CSV</label>
+                <input type="file" name="csv_file" id="csv_file" accept=".csv" required
+                       onchange="showFileName(this)">
+                <small>Accepted: .csv only</small>
+                <div id="file-chosen"></div>
+            </div>
+
+            <div class="ci-form-inline">
+                <div class="form-group">
+                    <label for="import_status">Import as status</label>
+                    <select name="import_status" id="import_status" class="form-control">
+                        <option value="Submitted">Submitted</option>
+                        <option value="Under Review">Under Review</option>
+                        <option value="Draft">Draft</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" id="importBtn">
+                    <i class="fas fa-file-import" aria-hidden="true"></i> Import Applications
+                </button>
+            </div>
+
+            <p class="ci-note">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                Rows where the email already has a non-draft application for this opportunity
+                are skipped. New email addresses get an Applicant account created automatically.
+            </p>
+        </form>
+    </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 

@@ -82,7 +82,7 @@ elseif ($curType<=0 || !in_array($curType,$validIds,true)) $curType = $validIds[
 $selLabel = $selId !== null ? ($rtMap[$selId] ?? 'Selected') : 'All Review Types';
 $curLabel = $rtMap[$curType] ?? 'N/A';
 
-/* Score / type filter SQL fragments — returns [sql, types_string, params_array] */
+/* Score / type filter SQL fragments â€” returns [sql, types_string, params_array] */
 function scoreFilter(?int $id, string $alias = 'rs'): array {
     if ($id !== null && $id > 0) {
         return [" AND {$alias}.review_type_id = ? ", 'i', [$id]];
@@ -393,7 +393,7 @@ if ($export === 'pdf') {
     </style></head><body>';
 
     if ($logoUri) echo '<img src="'.$logoUri.'" style="width:48px;float:left;margin-right:10px">';
-    echo '<h1>Progress Report — '.h($selLabel).'</h1>';
+    echo '<h1>Progress Report â€” '.h($selLabel).'</h1>';
     echo '<div class="meta">Generated '.date('d M Y, H:i').' | Top '.$topN.' | Filter: '.h($selLabel).'</div>';
 
     if ($pdfTab === 'rankings') {
@@ -531,36 +531,63 @@ if (!array_key_exists($activeTab, $tabs)) {
 <link rel="stylesheet" href="css/assets.css">
 <link rel="stylesheet" href="css/progress_board.css">
 
-<div class="assets-wrap pb-wrap">
+<style>
+/* Progress Board: page-only layout (pb- prefix; shared rules live in css/progress_board.css) */
+.pb-hero-filters { position: relative; z-index: 1; }
+.pb-hero-filters .form-control,
+.pb-hero-filters .btn { height: 38px; font-size: var(--fs-sm); }
+.pb-hero-filters .form-control { padding: 0 10px; }
+.pb-hero-filters select.form-control { padding: 0 36px 0 12px; }
+.pb-ctl { height: 38px; padding: 0 10px; font-size: var(--fs-sm); }
+select.pb-ctl { padding: 0 36px 0 10px; }
+.pb-in-topn { width: 90px; }
+.pb-in-score { width: 110px; }
+.pb-sel-type { min-width: 180px; }
+.pb-sel-current { min-width: 200px; }
+.pb-sel-rec { min-width: 160px; }
+.pb-ring-stat { padding: 16px 20px; }
+.pb-comp-note { padding: 0 20px 16px; }
+.pb-rank-panel { margin-bottom: 16px; }
+.pb-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pb-empty-row { text-align: center; padding: 32px; color: var(--ink-200); }
+.pb-strong { font-weight: 700; }
+.pb-reviewer-link { color: var(--brand-600); text-decoration: none; }
+.pb-reviewer-link:hover { text-decoration: underline; }
+.pb-brand { color: var(--brand-600); }
+.pb-num { font-variant-numeric: tabular-nums; }
+.pb-ts { font-size: 11px; }
+</style>
+
+<div class="page-stack pb-wrap">
 
 <!-- -- Page Hero ------------------------------------------------ -->
 <div class="page-hero">
     <div>
-        <h1><i class="fas fa-chart-line"></i> Progress Report</h1>
+        <h1><i class="fas fa-chart-line" aria-hidden="true"></i> Progress Report</h1>
         <p>Startup Evaluation Dashboard &mdash; <?= h($selLabel) ?></p>
     </div>
     <div class="hero-actions">
         <!-- Global filter form -->
-        <form method="GET" class="filters-bar" style="position:relative;z-index:1;" aria-label="Report filters">
+        <form method="GET" class="filters-bar pb-hero-filters" aria-label="Report filters">
             <input type="hidden" name="tab" value="<?= h($activeTab) ?>">
-            <input type="number" name="top_n" value="<?= $topN ?>" min="1" max="100" class="form-control" style="width:90px;height:38px;padding:0 10px;font-size:13px;" title="Top N per type">
-            <select name="review_type" class="form-control" style="height:38px;padding:0 36px 0 12px;font-size:13px;min-width:180px;" onchange="this.form.submit()">
+            <input type="number" name="top_n" value="<?= $topN ?>" min="1" max="100" class="form-control pb-in-topn" title="Top N per type">
+            <select name="review_type" class="form-control pb-sel-type" onchange="this.form.submit()">
                 <option value="all" <?= $selType==='all'?'selected':'' ?>>All Review Types</option>
                 <?php foreach ($reviewTypes as $rt): ?>
                     <option value="<?= (int)$rt['review_type_id'] ?>" <?= ((string)(int)$rt['review_type_id']===$selType)?'selected':'' ?>><?= h($rt['name']) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php if ($selType==='all'): ?>
-            <select name="current_review_type" class="form-control" style="height:38px;padding:0 36px 0 12px;font-size:13px;min-width:200px;" title="Show this type's startups first in charts">
+            <select name="current_review_type" class="form-control pb-sel-current" title="Show this type's startups first in charts">
                 <?php foreach ($reviewTypes as $rt): ?>
                     <option value="<?= (int)$rt['review_type_id'] ?>" <?= ((int)$rt['review_type_id']===$curType)?'selected':'' ?>>Current first: <?= h($rt['name']) ?></option>
                 <?php endforeach; ?>
             </select>
             <?php endif; ?>
-            <button type="submit" class="btn btn-primary" style="height:38px;">Apply</button>
-            <a href="<?= h($basePath) ?>" class="btn btn-gray" style="height:38px;">Clear</a>
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a href="<?= h($basePath) ?>" class="btn">Clear</a>
             
-             <a href="manage_application_scores" class="btn btn-dark" style="height:38px;">Scores</a>
+             <a href="manage_application_scores" class="btn">Scores</a>
             
         </form>
     </div>
@@ -585,7 +612,7 @@ if (!array_key_exists($activeTab, $tabs)) {
         <div class="stat-info"><span class="stat-label">Review Types</span><span class="stat-value"><?= $selId!==null?1:count($reviewTypes) ?></span></div>
     </div>
     <!-- Completion ring -->
-    <div class="stat-card" style="padding:16px 20px;">
+    <div class="stat-card pb-ring-stat">
         <?php
         $pct  = round($compRate);
         $r    = 28;
@@ -648,7 +675,7 @@ if (!array_key_exists($activeTab, $tabs)) {
             </div>
             <?php endforeach; ?>
         </div>
-        <div style="padding:0 20px 16px;"><span class="subtle-note">Completion is based on actual scored criteria vs active required criteria per review type.</span></div>
+        <div class="pb-comp-note"><span class="subtle-note">Completion is based on actual scored criteria vs active required criteria per review type.</span></div>
     </div>
 
     <!-- Charts -->
@@ -672,10 +699,10 @@ if (!array_key_exists($activeTab, $tabs)) {
 <div class="tab-panel active">
     <?php foreach ($rankGroups as $rid=>$group):
         if (empty($group['rows'])) continue; ?>
-    <div class="panel" style="margin-bottom:16px;">
+    <div class="panel pb-rank-panel">
         <div class="panel-head">
             <h3><i class="fas fa-trophy"></i> <?= h($group['rt_name']) ?></h3>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div class="pb-head-actions">
                 <span class="note">Showing <?= count($group['rows']) ?> of top <?= $topN ?></span>
                 <a href="<?= h(exportUrl('csv','rankings')) ?>&rt_id=<?= $rid ?>" class="btn-export csv"><i class="fas fa-file-csv"></i> CSV</a>
                 <a href="<?= h(exportUrl('pdf','rankings')) ?>&rt_id=<?= $rid ?>" class="btn-export pdf"><i class="fas fa-file-pdf"></i> PDF</a>
@@ -704,7 +731,7 @@ if (!array_key_exists($activeTab, $tabs)) {
                 <thead><tr><th>Rank</th><th>Startup</th><th>Avg %</th><th>Reviews</th><th>Score Range</th></tr></thead>
                 <tbody>
                 <?php if (empty($group['rows'])): ?>
-                    <tr><td colspan="5" style="text-align:center;padding:32px;color:var(--ink-200);">No results.</td></tr>
+                    <tr><td colspan="5" class="pb-empty-row">No results.</td></tr>
                 <?php else: ?>
                     <?php foreach ($group['rows'] as $row):
                         $score = (float)$row['avg_score'];
@@ -713,7 +740,7 @@ if (!array_key_exists($activeTab, $tabs)) {
                     ?>
                     <tr>
                         <td><span class="rank-badge <?= $rc ?>"><?= (int)$row['rank'] ?></span></td>
-                        <td style="font-weight:700"><?= h($row['startup_name']) ?></td>
+                        <td class="pb-strong"><?= h($row['startup_name']) ?></td>
                         <td>
                             <div class="score-bar-wrap">
                                 <div class="score-bar-track"><div class="score-bar-fill <?= $fc ?>" style="width:<?= min(100,$score) ?>%"></div></div>
@@ -740,7 +767,7 @@ if (!array_key_exists($activeTab, $tabs)) {
 <div class="panel">
     <div class="panel-head">
         <h3><i class="fas fa-users"></i> Reviewer Activity</h3>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div class="pb-head-actions">
             <span class="note"><?= $revTotal ?> reviewer<?= $revTotal!==1?'s':'' ?></span>
             <a href="<?= h(exportUrl('csv','reviewers')) ?>" class="btn-export csv"><i class="fas fa-file-csv"></i> CSV</a>
             <a href="<?= h(exportUrl('pdf','reviewers')) ?>" class="btn-export pdf"><i class="fas fa-file-pdf"></i> PDF</a>
@@ -773,7 +800,7 @@ if (!array_key_exists($activeTab, $tabs)) {
             <thead><tr><th>Reviewer</th><th>Reviews Done</th><th>Avg % Given</th><th>Range</th><th>vs Global Avg</th><th>Calibration</th></tr></thead>
             <tbody>
             <?php if (empty($reviewerRows)): ?>
-                <tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink-200);">No reviewer activity found.</td></tr>
+                <tr><td colspan="6" class="pb-empty-row">No reviewer activity found.</td></tr>
             <?php else: ?>
                 <?php
                 $maxDone = max(array_map(fn($r)=>(int)$r['reviews_done'],$reviewerRows)?:[1]);
@@ -784,16 +811,16 @@ if (!array_key_exists($activeTab, $tabs)) {
                     $doneW = $maxDone>0?((int)$r['reviews_done']/$maxDone)*100:0;
                 ?>
                 <tr>
-                    <td style="font-weight:700">
-                        <a href="manage_reviewer_scores?reviewer_id=<?= (int)$r['reviewer_id'] ?>" style="color:var(--brand-500);text-decoration:none;"><?= h($r['reviewer_name']) ?></a>
+                    <td class="pb-strong">
+                        <a href="manage_reviewer_scores?reviewer_id=<?= (int)$r['reviewer_id'] ?>" class="pb-reviewer-link"><?= h($r['reviewer_name']) ?></a>
                     </td>
                     <td>
                         <div class="score-bar-wrap">
                             <div class="score-bar-track"><div class="score-bar-fill" style="width:<?= $doneW ?>%"></div></div>
-                            <span class="score-val" style="color:var(--brand-500)"><?= (int)$r['reviews_done'] ?></span>
+                            <span class="score-val pb-brand"><?= (int)$r['reviews_done'] ?></span>
                         </div>
                     </td>
-                    <td><span class="note" style="font-family:var(--font-mono)"><?= number_format($avg,2) ?>%</span></td>
+                    <td><span class="note pb-num"><?= number_format($avg,2) ?>%</span></td>
                     <td class="note"><?= number_format((float)$r['min_given'],1) ?>% - <?= number_format((float)$r['max_given'],1) ?>%</td>
                     <td><span class="<?= $diff>0?'diff-pos':($diff<0?'diff-neg':'diff-neu') ?>"><?= $diff>=0?'+':'' ?><?= number_format($diff,2) ?>%</span></td>
                     <td><span class="pill <?= $biasCls ?>"><?= $biasLbl ?></span></td>
@@ -830,7 +857,7 @@ if (!array_key_exists($activeTab, $tabs)) {
 <div class="panel">
     <div class="panel-head">
         <h3><i class="fas fa-comments"></i> Detailed Comments</h3>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div class="pb-head-actions">
             <span class="note"><?= $cmtTotal ?> comment<?= $cmtTotal!==1?'s':'' ?></span>
             <a href="<?= h(exportUrl('csv','comments')) ?>" class="btn-export csv"><i class="fas fa-file-csv"></i> CSV</a>
             <a href="<?= h(exportUrl('pdf','comments')) ?>" class="btn-export pdf"><i class="fas fa-file-pdf"></i> PDF</a>
@@ -847,9 +874,9 @@ if (!array_key_exists($activeTab, $tabs)) {
                 <i class="fas fa-search search-icon"></i>
                 <input type="search" name="cmt_q" value="<?= h($cmtSearch) ?>" placeholder="Search startup, reviewer, comment..." autocomplete="off">
             </div>
-            <input type="number" name="cmt_min" value="<?= $cmtScoreMin!==null?h((string)$cmtScoreMin):'' ?>" placeholder="Score min" step="0.01" class="form-control" style="width:110px;height:38px;padding:0 10px;font-size:13px;">
-            <input type="number" name="cmt_max" value="<?= $cmtScoreMax!==null?h((string)$cmtScoreMax):'' ?>" placeholder="Score max" step="0.01" class="form-control" style="width:110px;height:38px;padding:0 10px;font-size:13px;">
-            <select name="cmt_rec" class="form-control" style="height:38px;padding:0 36px 0 10px;font-size:13px;min-width:160px;">
+            <input type="number" name="cmt_min" value="<?= $cmtScoreMin!==null?h((string)$cmtScoreMin):'' ?>" placeholder="Score min" step="0.01" class="form-control pb-ctl pb-in-score">
+            <input type="number" name="cmt_max" value="<?= $cmtScoreMax!==null?h((string)$cmtScoreMax):'' ?>" placeholder="Score max" step="0.01" class="form-control pb-ctl pb-in-score">
+            <select name="cmt_rec" class="form-control pb-ctl pb-sel-rec">
                 <option value="">All recommendations</option>
                 <?php foreach ($recOptions as $rec): ?>
                     <option value="<?= h($rec) ?>" <?= $cmtRec===$rec?'selected':'' ?>><?= h($rec) ?></option>
@@ -885,19 +912,19 @@ if (!array_key_exists($activeTab, $tabs)) {
             </tr></thead>
             <tbody>
             <?php if (empty($cmtRows)): ?>
-                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-200);">No comments match your filters.</td></tr>
+                <tr><td colspan="7" class="pb-empty-row">No comments match your filters.</td></tr>
             <?php else: ?>
                 <?php foreach ($cmtRows as $row): ?>
                 <tr>
-                    <td style="font-weight:700"><?= h($row['startup_name']) ?></td>
+                    <td class="pb-strong"><?= h($row['startup_name']) ?></td>
                     <td><?= h($row['reviewer_name']) ?></td>
-                    <td><span class="pill green"><?= h($row['rt_name']??'—') ?></span></td>
-                    <td class="note"><?= $row['overall_score']!==null&&$row['overall_score']!==''?number_format((float)$row['overall_score'],2):'—' ?></td>
-                    <td><?= h((string)($row['recommendation']??'—')) ?></td>
+                    <td><span class="pill green"><?= h($row['rt_name']??'â€”') ?></span></td>
+                    <td class="note"><?= $row['overall_score']!==null&&$row['overall_score']!==''?number_format((float)$row['overall_score'],2):'â€”' ?></td>
+                    <td><?= h((string)($row['recommendation']??'â€”')) ?></td>
                     <td class="comment-cell" title="<?= h((string)($row['comments']??'')) ?>">
                         <?= h(limit_words((string)($row['comments']??''))) ?>
                     </td>
-                    <td class="note" style="font-family:var(--font-mono);font-size:11px;"><?= h((string)$row['ts']) ?></td>
+                    <td class="note pb-num pb-ts"><?= h((string)$row['ts']) ?></td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -924,7 +951,7 @@ if (!array_key_exists($activeTab, $tabs)) {
 </div>
 <?php endif; ?>
 
-</div><!-- /.pb-wrap -->
+</div><!-- /.page-stack -->
 
 <script>
 <?php if ($activeTab==='overview'): ?>

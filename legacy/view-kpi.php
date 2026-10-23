@@ -82,391 +82,418 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
 ?>
 
 <style>
-.kpi-view-card {
-    background: white;
-    border-radius: 8px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.kpi-header-section {
-    border-bottom: 3px solid var(--primary-color);
-    padding-bottom: 20px;
-    margin-bottom: 25px;
-}
-
-.kpi-main-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 10px;
-}
-
-.kpi-meta-grid {
+.vk-meta-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
-    margin-top: 15px;
 }
 
-.meta-item {
+.vk-meta-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #7f8c8d;
+    color: var(--ink-400);
     font-size: 14px;
 }
 
-.section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #ecf0f1;
+.vk-info-row {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--ink-50);
 }
 
-.info-row {
-    display: flex;
-    padding: 12px;
-    border-bottom: 1px solid #ecf0f1;
-}
+.vk-info-row:last-child { border-bottom: none; }
 
-.info-label {
+.vk-info-label {
     width: 200px;
     font-weight: 600;
-    color: #7f8c8d;
+    color: var(--ink-400);
     flex-shrink: 0;
 }
 
-.info-value {
+.vk-info-value {
     flex: 1;
-    color: #2c3e50;
+    min-width: 0;
+    color: var(--ink-900);
+    overflow-wrap: anywhere;
 }
 
-.quarterly-grid {
+.alert .vk-info-row {
+    border: none;
+    padding: 5px 0;
+}
+
+.alert .vk-info-label,
+.alert .vk-info-value { color: inherit; }
+
+.vk-alert-body { flex: 1; min-width: 0; }
+
+.vk-alert-body h4 { margin: 0 0 8px; }
+
+.vk-alert-body p { margin: 0 0 5px; }
+
+.vk-alert-body hr {
+    border: none;
+    border-top: 1px solid currentColor;
+    opacity: 0.2;
+    margin: 10px 0;
+}
+
+.vk-quarter-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 20px;
-    margin-top: 20px;
 }
 
-.quarter-card {
-    background: #f8f9fa;
-    border-radius: 8px;
+.vk-quarter {
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     padding: 20px;
-    border: 2px solid #ecf0f1;
-    position: relative;
-    transition: all 0.3s;
+    transition: box-shadow 0.2s, transform 0.2s;
 }
 
-.quarter-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.vk-quarter:hover {
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
 
-.quarter-header {
+.vk-quarter-head {
     font-size: 16px;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--brand-600);
     margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.quarter-metric {
-    margin-bottom: 12px;
+.vk-quarter-period {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--ink-300);
 }
 
-.metric-label {
+.vk-metric { margin-bottom: 12px; }
+
+.vk-metric-label {
     font-size: 12px;
-    color: #7f8c8d;
+    color: var(--ink-300);
     text-transform: uppercase;
     margin-bottom: 3px;
 }
 
-.metric-value {
+.vk-metric-value {
     font-size: 20px;
-    font-weight: bold;
-    color: #2c3e50;
+    font-weight: 700;
+    color: var(--ink-900);
 }
 
-.achievement-circle {
+.vk-metric-value.is-recorded { color: var(--green-fg); }
+.vk-metric-value.is-missing { color: var(--ink-200); }
+
+.vk-ring {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: conic-gradient(#27AE60 0% var(--progress), #ecf0f1 var(--progress) 100%);
+    background: conic-gradient(var(--green-fg) 0% var(--progress), var(--ink-50) var(--progress) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 15px auto;
-    position: relative;
 }
 
-.achievement-inner {
+.vk-ring-inner {
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: white;
+    background: var(--surface-card);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 16px;
-    font-weight: bold;
-    color: #27AE60;
+    font-weight: 700;
+    color: var(--green-fg);
 }
 
-.progress-bar-horizontal {
-    height: 30px;
-    background: #ecf0f1;
-    border-radius: 15px;
-    overflow: hidden;
-    margin: 10px 0;
-    position: relative;
+.vk-verdict {
+    text-align: center;
+    font-size: 12px;
 }
 
-.progress-fill-horizontal {
-    height: 100%;
-    background: linear-gradient(90deg, #27AE60, #2ECC71);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    transition: width 0.5s ease;
-}
+.vk-verdict.is-exceeded { color: var(--green-fg); }
+.vk-verdict.is-on-track { color: var(--amber-fg); }
+.vk-verdict.is-below { color: var(--red-fg); }
 
-.comment-card {
-    background: #f8f9fa;
-    border-radius: 8px;
+.vk-comment {
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand-500);
+    border-radius: var(--radius-sm);
     padding: 15px;
-    margin-bottom: 15px;
-    border-left: 4px solid var(--primary-color);
 }
 
-.comment-header {
+.vk-comment + .vk-comment { margin-top: 15px; }
+
+.vk-comment-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
     margin-bottom: 10px;
 }
 
-.comment-author {
+.vk-comment-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--ink-900);
 }
 
-.comment-meta {
+.vk-comment-meta {
     font-size: 12px;
-    color: #7f8c8d;
+    color: var(--ink-300);
 }
 
-.comment-text {
-    color: #2c3e50;
+.vk-comment-text {
+    color: var(--ink-700);
     line-height: 1.6;
 }
 
-.timeline {
+.vk-timeline {
     position: relative;
     padding-left: 30px;
 }
 
-.timeline::before {
+.vk-timeline::before {
     content: '';
     position: absolute;
     left: 10px;
     top: 0;
     bottom: 0;
     width: 2px;
-    background: #ecf0f1;
+    background: var(--ink-50);
 }
 
-.timeline-item {
+.vk-timeline-item {
     position: relative;
     padding-bottom: 20px;
 }
 
-.timeline-dot {
+.vk-timeline-item:last-child { padding-bottom: 0; }
+
+.vk-timeline-dot {
     position: absolute;
     left: -24px;
     top: 5px;
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    background: var(--primary-color);
-    border: 3px solid white;
-    box-shadow: 0 0 0 2px var(--primary-color);
+    background: var(--brand-500);
+    border: 3px solid var(--surface-card);
+    box-shadow: 0 0 0 2px var(--brand-500);
 }
 
-.timeline-content {
-    background: #f8f9fa;
+.vk-timeline-content {
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
 }
 
-.action-buttons {
+.vk-timeline-head {
     display: flex;
+    justify-content: space-between;
     gap: 10px;
     flex-wrap: wrap;
+    margin-bottom: 5px;
 }
 
-@media print {
-    .no-print {
-        display: none !important;
-    }
+.vk-timeline-date {
+    font-size: 12px;
+    color: var(--ink-300);
+}
+
+.vk-timeline-by {
+    font-size: 14px;
+    color: var(--ink-400);
+    margin-bottom: 5px;
+}
+
+.vk-timeline-notes {
+    color: var(--ink-700);
+    margin-top: 8px;
+}
+
+.vk-modal-sm { max-width: 500px; }
+.vk-modal-md { max-width: 600px; }
+
+.vk-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-900);
+}
+
+.vk-approve-head h3 i { color: var(--green-fg); }
+.vk-reject-head h3 i { color: var(--red-fg); }
+
+@media (max-width: 640px) {
+    .vk-info-row { flex-direction: column; gap: 4px; }
+    .vk-info-label { width: auto; }
 }
 </style>
 
-<!-- Action Bar -->
-<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;" class="no-print">
+<div class="page-stack">
+<div class="page-hero">
     <div>
-        <a href="<?php echo $is_owner ? 'my-kpis' : 'kpi-management'; ?>" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
+        <h1><i class="fas fa-bullseye" aria-hidden="true"></i> <?php echo htmlspecialchars($kpi['kpi_title']); ?></h1>
+        <p><?php echo $kpi['kpi_description'] !== null && $kpi['kpi_description'] !== '' ? htmlspecialchars($kpi['kpi_description']) : 'KPI details, quarterly progress and review history.'; ?></p>
     </div>
-    <div class="action-buttons">
+    <div class="hero-actions">
+        <a href="<?php echo $is_owner ? 'my-kpis' : 'kpi-management'; ?>" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+        </a>
         <?php if ($is_owner && in_array($kpi['status'], ['Draft', 'Rejected'])): ?>
-            <a href="edit-kpi?id=<?php echo $kpi_id; ?>" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Edit KPI
+            <a href="edit-kpi?id=<?php echo $kpi_id; ?>" class="btn btn-primary">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit KPI
             </a>
         <?php endif; ?>
-        
+
         <?php if ($is_owner && $kpi['status'] == 'Approved'): ?>
-            <button onclick="openUpdateProgressModal()" class="btn btn-primary">
-                <i class="fas fa-chart-line"></i> Update Progress
+            <button type="button" onclick="openUpdateProgressModal()" class="btn btn-primary">
+                <i class="fas fa-chart-line" aria-hidden="true"></i> Update Progress
             </button>
         <?php endif; ?>
-        
+
         <?php if ($can_review_kpi && $kpi['status'] == 'Submitted'): ?>
-            <button onclick="openModal('approveModal')" class="btn btn-success">
-                <i class="fas fa-check"></i> Approve
+            <button type="button" onclick="openModal('approveModal')" class="btn btn-primary">
+                <i class="fas fa-check" aria-hidden="true"></i> Approve
             </button>
-            <button onclick="openModal('rejectModal')" class="btn btn-danger">
-                <i class="fas fa-times"></i> Reject
+            <button type="button" onclick="openModal('rejectModal')" class="btn">
+                <i class="fas fa-times" aria-hidden="true"></i> Reject
             </button>
         <?php endif; ?>
-        
-        <button onclick="window.print()" class="btn btn-info">
-            <i class="fas fa-print"></i> Print
+
+        <button type="button" onclick="window.print()" class="btn">
+            <i class="fas fa-print" aria-hidden="true"></i> Print
         </button>
-        <button onclick="exportPDF()" class="btn btn-danger">
-            <i class="fas fa-file-pdf"></i> Export PDF
+        <button type="button" onclick="exportPDF()" class="btn">
+            <i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF
         </button>
     </div>
 </div>
 
-<!-- KPI Header -->
-<div class="kpi-view-card">
-    <div class="kpi-header-section">
-        <div style="display: flex; justify-content: space-between; align-items: start;">
-            <div style="flex: 1;">
-                <div class="kpi-main-title"><?php echo htmlspecialchars($kpi['kpi_title']); ?></div>
-                <div style="color: #7f8c8d; margin-bottom: 10px;"><?php echo htmlspecialchars($kpi['kpi_description']); ?></div>
-            </div>
-            <div>
-                <span class="badge badge-<?php 
-                    echo $kpi['status'] == 'Approved' ? 'success' : 
-                        ($kpi['status'] == 'Submitted' ? 'info' : 
-                        ($kpi['status'] == 'Under Review' ? 'warning' :
-                        ($kpi['status'] == 'Rejected' ? 'danger' : 
-                        ($kpi['status'] == 'Completed' ? 'success' : 'secondary')))); 
-                ?>" style="font-size: 14px; padding: 8px 16px;">
-                    <?php echo $kpi['status']; ?>
-                </span>
-            </div>
+<!-- Overall Progress -->
+<?php if ($kpi['overall_achievement'] !== null): ?>
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Overall Achievement</span>
+            <span class="stat-value"><?php echo $kpi['overall_achievement']; ?>%</span>
         </div>
-        
-        <div class="kpi-meta-grid">
-            <div class="meta-item">
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Quarters Completed</span>
+            <span class="stat-value"><?php echo $quarters_completed; ?> of 4</span>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- KPI Overview -->
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-id-card" aria-hidden="true"></i> KPI Overview</h3>
+        <span class="badge badge-<?php
+            echo $kpi['status'] == 'Approved' ? 'success' :
+                ($kpi['status'] == 'Submitted' ? 'info' :
+                ($kpi['status'] == 'Under Review' ? 'warning' :
+                ($kpi['status'] == 'Rejected' ? 'danger' :
+                ($kpi['status'] == 'Completed' ? 'success' : 'secondary'))));
+        ?>">
+            <?php echo $kpi['status']; ?>
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="vk-meta-grid">
+            <div class="vk-meta-item">
                 <i class="fas fa-user"></i>
                 <span><strong>Owner:</strong> <?php echo htmlspecialchars($kpi['owner_name']); ?></span>
             </div>
-            <div class="meta-item">
+            <div class="vk-meta-item">
                 <i class="fas fa-building"></i>
                 <span><strong>Department:</strong> <?php echo htmlspecialchars($kpi['department_name']); ?></span>
             </div>
-            <div class="meta-item">
+            <div class="vk-meta-item">
                 <i class="fas fa-calendar"></i>
                 <span><strong>Fiscal Year:</strong> <?php echo $kpi['fiscal_year']; ?></span>
             </div>
-            <div class="meta-item">
+            <div class="vk-meta-item">
                 <i class="fas fa-tag"></i>
                 <span><strong>Category:</strong> <?php echo htmlspecialchars($kpi['category_name']); ?></span>
             </div>
-            <div class="meta-item">
+            <div class="vk-meta-item">
                 <i class="fas fa-weight"></i>
                 <span><strong>Weight:</strong> <?php echo $kpi['weight_percentage']; ?>%</span>
             </div>
-            <div class="meta-item">
+            <div class="vk-meta-item">
                 <i class="fas fa-bullseye"></i>
                 <span><strong>Target:</strong> <?php echo $kpi['target_value']; ?> <?php echo htmlspecialchars($kpi['unit_of_measure']); ?></span>
             </div>
         </div>
     </div>
-    
-    <!-- Overall Progress -->
-    <?php if ($kpi['overall_achievement'] !== null): ?>
-    <div style="background: linear-gradient(135deg, #ff6b35 0%, #ff6b35 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 5px;">Overall Achievement</div>
-        <div style="font-size: 48px; font-weight: bold;"><?php echo $kpi['overall_achievement']; ?>%</div>
-        <div style="font-size: 14px; opacity: 0.9; margin-top: 5px;">
-            <?php echo $quarters_completed; ?> of 4 Quarters Completed
-        </div>
-    </div>
-    <?php endif; ?>
 </div>
 
 <!-- KPI Details -->
-<div class="kpi-view-card">
-    <div class="section-title">
-        <i class="fas fa-info-circle"></i> KPI Details
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-info-circle" aria-hidden="true"></i> KPI Details</h3></div>
+    <div class="card-body">
+        <div class="vk-info-row">
+            <div class="vk-info-label">Measurement Criteria</div>
+            <div class="vk-info-value"><?php echo nl2br(htmlspecialchars($kpi['measurement_criteria'])); ?></div>
+        </div>
+
+        <div class="vk-info-row">
+            <div class="vk-info-label">Annual Target</div>
+            <div class="vk-info-value"><strong><?php echo $kpi['target_value']; ?></strong> <?php echo htmlspecialchars($kpi['unit_of_measure']); ?></div>
+        </div>
+
+        <div class="vk-info-row">
+            <div class="vk-info-label">Weight Percentage</div>
+            <div class="vk-info-value"><strong><?php echo $kpi['weight_percentage']; ?>%</strong></div>
+        </div>
+
+        <div class="vk-info-row">
+            <div class="vk-info-label">Created</div>
+            <div class="vk-info-value"><?php echo date('d M Y H:i', strtotime($kpi['created_at'])); ?></div>
+        </div>
+
+        <div class="vk-info-row">
+            <div class="vk-info-label">Last Updated</div>
+            <div class="vk-info-value"><?php echo date('d M Y H:i', strtotime($kpi['updated_at'])); ?></div>
+        </div>
+
+        <?php if ($kpi['submitted_at']): ?>
+        <div class="vk-info-row">
+            <div class="vk-info-label">Submitted</div>
+            <div class="vk-info-value"><?php echo date('d M Y H:i', strtotime($kpi['submitted_at'])); ?></div>
+        </div>
+        <?php endif; ?>
     </div>
-    
-    <div class="info-row">
-        <div class="info-label">Measurement Criteria</div>
-        <div class="info-value"><?php echo nl2br(htmlspecialchars($kpi['measurement_criteria'])); ?></div>
-    </div>
-    
-    <div class="info-row">
-        <div class="info-label">Annual Target</div>
-        <div class="info-value"><strong><?php echo $kpi['target_value']; ?></strong> <?php echo htmlspecialchars($kpi['unit_of_measure']); ?></div>
-    </div>
-    
-    <div class="info-row">
-        <div class="info-label">Weight Percentage</div>
-        <div class="info-value"><strong><?php echo $kpi['weight_percentage']; ?>%</strong></div>
-    </div>
-    
-    <div class="info-row">
-        <div class="info-label">Created</div>
-        <div class="info-value"><?php echo date('d M Y H:i', strtotime($kpi['created_at'])); ?></div>
-    </div>
-    
-    <div class="info-row">
-        <div class="info-label">Last Updated</div>
-        <div class="info-value"><?php echo date('d M Y H:i', strtotime($kpi['updated_at'])); ?></div>
-    </div>
-    
-    <?php if ($kpi['submitted_at']): ?>
-    <div class="info-row">
-        <div class="info-label">Submitted</div>
-        <div class="info-value"><?php echo date('d M Y H:i', strtotime($kpi['submitted_at'])); ?></div>
-    </div>
-    <?php endif; ?>
 </div>
 
 <!-- Quarterly Progress -->
-<div class="kpi-view-card">
-    <div class="section-title">
-        <i class="fas fa-calendar-alt"></i> Quarterly Progress
-    </div>
-    
-    <div class="quarterly-grid">
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-calendar-alt" aria-hidden="true"></i> Quarterly Progress</h3></div>
+    <div class="card-body">
+    <div class="vk-quarter-grid">
         <?php
         $quarters = [
             'q1' => ['name' => 'Q1', 'period' => 'Jan - Mar'],
@@ -474,52 +501,52 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
             'q3' => ['name' => 'Q3', 'period' => 'Jul - Sep'],
             'q4' => ['name' => 'Q4', 'period' => 'Oct - Dec']
         ];
-        
+
         foreach ($quarters as $q_key => $q_info):
             $target = $kpi["{$q_key}_target"];
             $actual = $kpi["{$q_key}_actual"];
             $status = $kpi["{$q_key}_status"];
             $achievement = $kpi["{$q_key}_achievement"];
         ?>
-            <div class="quarter-card">
-                <div class="quarter-header">
+            <div class="vk-quarter">
+                <div class="vk-quarter-head">
                     <span><?php echo $q_info['name']; ?></span>
-                    <span style="font-size: 12px; font-weight: normal;"><?php echo $q_info['period']; ?></span>
+                    <span class="vk-quarter-period"><?php echo $q_info['period']; ?></span>
                 </div>
-                
-                <div class="quarter-metric">
-                    <div class="metric-label">Target</div>
-                    <div class="metric-value"><?php echo $target ?: '-'; ?> <?php echo $target ? htmlspecialchars($kpi['unit_of_measure']) : ''; ?></div>
+
+                <div class="vk-metric">
+                    <div class="vk-metric-label">Target</div>
+                    <div class="vk-metric-value"><?php echo $target ?: '-'; ?> <?php echo $target ? htmlspecialchars($kpi['unit_of_measure']) : ''; ?></div>
                 </div>
-                
-                <div class="quarter-metric">
-                    <div class="metric-label">Actual</div>
-                    <div class="metric-value" style="color: <?php echo $actual !== null ? '#27AE60' : '#95A5A6'; ?>;">
+
+                <div class="vk-metric">
+                    <div class="vk-metric-label">Actual</div>
+                    <div class="vk-metric-value <?php echo $actual !== null ? 'is-recorded' : 'is-missing'; ?>">
                         <?php echo $actual !== null ? $actual . ' ' . htmlspecialchars($kpi['unit_of_measure']) : 'Not recorded'; ?>
                     </div>
                 </div>
-                
-                <div class="quarter-metric">
-                    <div class="metric-label">Status</div>
-                    <span class="badge badge-<?php 
-                        echo $status == 'Completed' ? 'success' : 
-                            ($status == 'In Progress' ? 'info' : 
-                            ($status == 'Delayed' ? 'danger' : 'secondary')); 
+
+                <div class="vk-metric">
+                    <div class="vk-metric-label">Status</div>
+                    <span class="badge badge-<?php
+                        echo $status == 'Completed' ? 'success' :
+                            ($status == 'In Progress' ? 'info' :
+                            ($status == 'Delayed' ? 'danger' : 'secondary'));
                     ?>">
                         <?php echo $status; ?>
                     </span>
                 </div>
-                
+
                 <?php if ($achievement !== null): ?>
-                    <div class="achievement-circle" style="--progress: <?php echo min($achievement, 100); ?>%;">
-                        <div class="achievement-inner">
+                    <div class="vk-ring" style="--progress: <?php echo min($achievement, 100); ?>%;">
+                        <div class="vk-ring-inner">
                             <?php echo round($achievement); ?>%
                         </div>
                     </div>
-                    
-                    <div style="text-align: center; font-size: 12px; color: <?php echo $achievement >= 100 ? '#27AE60' : ($achievement >= 80 ? '#F39C12' : '#E74C3C'); ?>;">
+
+                    <div class="vk-verdict <?php echo $achievement >= 100 ? 'is-exceeded' : ($achievement >= 80 ? 'is-on-track' : 'is-below'); ?>">
                         <strong>
-                            <?php 
+                            <?php
                             if ($achievement >= 100) echo 'Target Exceeded!';
                             elseif ($achievement >= 80) echo 'On Track';
                             else echo 'Below Target';
@@ -530,16 +557,17 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
             </div>
         <?php endforeach; ?>
     </div>
+    </div>
 </div>
 
 <!-- Rejection Reason -->
 <?php if ($kpi['status'] == 'Rejected' && $kpi['rejection_reason']): ?>
-<div class="kpi-view-card">
-    <div class="alert alert-danger">
-        <h4 style="margin-top: 0;"><i class="fas fa-exclamation-triangle"></i> Rejection Feedback</h4>
-        <p style="margin: 0;"><strong>Reviewed by:</strong> <?php echo htmlspecialchars($kpi['reviewer_name']); ?></p>
-        <p style="margin: 5px 0 0 0;"><strong>Date:</strong> <?php echo date('d M Y H:i', strtotime($kpi['reviewed_at'])); ?></p>
-        <hr style="border-color: rgba(0,0,0,0.1);">
+<div class="alert alert-danger">
+    <div class="vk-alert-body">
+        <h4><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Rejection Feedback</h4>
+        <p><strong>Reviewed by:</strong> <?php echo htmlspecialchars($kpi['reviewer_name']); ?></p>
+        <p><strong>Date:</strong> <?php echo date('d M Y H:i', strtotime($kpi['reviewed_at'])); ?></p>
+        <hr>
         <div><?php echo nl2br(htmlspecialchars($kpi['rejection_reason'])); ?></div>
     </div>
 </div>
@@ -547,80 +575,82 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
 
 <!-- Approval Information -->
 <?php if ($kpi['status'] == 'Approved' || $kpi['status'] == 'Completed'): ?>
-<div class="kpi-view-card">
-    <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border-left: 4px solid #27AE60;">
-        <h4 style="margin-top: 0; color: #27AE60;"><i class="fas fa-check-circle"></i> Approval Information</h4>
-        <div class="info-row" style="border: none; padding: 5px 0;">
-            <div class="info-label">Approved By</div>
-            <div class="info-value"><?php echo htmlspecialchars($kpi['approver_name']); ?></div>
+<div class="alert alert-success">
+    <div class="vk-alert-body">
+        <h4><i class="fas fa-check-circle" aria-hidden="true"></i> Approval Information</h4>
+        <div class="vk-info-row">
+            <div class="vk-info-label">Approved By</div>
+            <div class="vk-info-value"><?php echo htmlspecialchars($kpi['approver_name']); ?></div>
         </div>
-        <div class="info-row" style="border: none; padding: 5px 0;">
-            <div class="info-label">Approval Date</div>
-            <div class="info-value"><?php echo date('d M Y H:i', strtotime($kpi['approved_at'])); ?></div>
+        <div class="vk-info-row">
+            <div class="vk-info-label">Approval Date</div>
+            <div class="vk-info-value"><?php echo date('d M Y H:i', strtotime($kpi['approved_at'])); ?></div>
         </div>
     </div>
 </div>
 <?php endif; ?>
 
 <!-- Comments & Updates -->
-<div class="kpi-view-card">
-    <div class="section-title">
-        <i class="fas fa-comments"></i> Comments & Updates
-        <button onclick="openModal('addCommentModal')" class="btn btn-primary btn-sm" style="margin-left: auto;" <?php echo !$is_owner ? 'disabled' : ''; ?>>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-comments" aria-hidden="true"></i> Comments &amp; Updates</h3>
+        <button type="button" onclick="openModal('addCommentModal')" class="btn btn-primary btn-sm" <?php echo !$is_owner ? 'disabled' : ''; ?>>
             <i class="fas fa-plus"></i> Add Comment
         </button>
     </div>
-    
+    <div class="card-body">
     <?php if (empty($comments)): ?>
-        <p style="text-align: center; color: #7f8c8d; padding: 30px;">No comments yet. Be the first to add an update!</p>
+        <div class="empty-state">
+            <i class="fas fa-comments" aria-hidden="true"></i>
+            <p>No comments yet. Be the first to add an update!</p>
+        </div>
     <?php else: ?>
         <?php foreach ($comments as $comment): ?>
-            <div class="comment-card">
-                <div class="comment-header">
-                    <div>
-                        <span class="comment-author"><?php echo htmlspecialchars($comment['full_name']); ?></span>
-                        <span class="badge badge-info" style="margin-left: 10px; font-size: 10px;">
+            <div class="vk-comment">
+                <div class="vk-comment-head">
+                    <div class="vk-comment-author">
+                        <span><?php echo htmlspecialchars($comment['full_name']); ?></span>
+                        <span class="badge badge-info">
                             <?php echo $comment['quarter']; ?>
                         </span>
-                        <span class="badge badge-secondary" style="font-size: 10px;">
+                        <span class="badge badge-secondary">
                             <?php echo $comment['comment_type']; ?>
                         </span>
                     </div>
-                    <div class="comment-meta">
+                    <div class="vk-comment-meta">
                         <?php echo date('d M Y H:i', strtotime($comment['created_at'])); ?>
                     </div>
                 </div>
-                <div class="comment-text">
+                <div class="vk-comment-text">
                     <?php echo nl2br(htmlspecialchars($comment['comment_text'])); ?>
                 </div>
             </div>
         <?php endforeach; ?>
     <?php endif; ?>
+    </div>
 </div>
 
 <!-- Review History -->
 <?php if (!empty($history)): ?>
-<div class="kpi-view-card">
-    <div class="section-title">
-        <i class="fas fa-history"></i> Review History
-    </div>
-    
-    <div class="timeline">
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-history" aria-hidden="true"></i> Review History</h3></div>
+    <div class="card-body">
+    <div class="vk-timeline">
         <?php foreach ($history as $item): ?>
-            <div class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+            <div class="vk-timeline-item">
+                <div class="vk-timeline-dot"></div>
+                <div class="vk-timeline-content">
+                    <div class="vk-timeline-head">
                         <strong><?php echo $item['review_type']; ?></strong>
-                        <span style="font-size: 12px; color: #7f8c8d;">
+                        <span class="vk-timeline-date">
                             <?php echo date('d M Y H:i', strtotime($item['reviewed_at'])); ?>
                         </span>
                     </div>
-                    <div style="font-size: 14px; color: #7f8c8d; margin-bottom: 5px;">
+                    <div class="vk-timeline-by">
                         by <?php echo htmlspecialchars($item['full_name']); ?>
                     </div>
                     <?php if ($item['review_comments']): ?>
-                        <div style="color: #2c3e50; margin-top: 8px;">
+                        <div class="vk-timeline-notes">
                             <?php echo nl2br(htmlspecialchars($item['review_comments'])); ?>
                         </div>
                     <?php endif; ?>
@@ -628,17 +658,19 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
             </div>
         <?php endforeach; ?>
     </div>
+    </div>
 </div>
 <?php endif; ?>
+</div><!-- /.page-stack -->
 
 <!-- Modals -->
 <?php if ($is_owner): ?>
 <!-- Add Comment Modal -->
 <div id="addCommentModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-comment"></i> Add Comment</h3>
-            <span class="close" onclick="closeModal('addCommentModal')">&times;</span>
+    <div class="modal-card vk-modal-md">
+        <div class="modal-head">
+            <h3><i class="fas fa-comment" aria-hidden="true"></i> Add Comment</h3>
+            <button type="button" class="modal-close" onclick="closeModal('addCommentModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="kpi-process">
@@ -672,7 +704,7 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
                               placeholder="Share your update, challenge, or achievement..." required></textarea>
                 </div>
                 
-                <div class="modal-footer">
+                <div class="modal-actions">
                     <button type="button" onclick="closeModal('addCommentModal')" class="btn btn-secondary">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Add Comment
@@ -685,10 +717,10 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
 
 <!-- Update Progress Modal -->
 <div id="updateProgressModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-chart-line"></i> Update Progress</h3>
-            <span class="close" onclick="closeModal('updateProgressModal')">&times;</span>
+    <div class="modal-card vk-modal-md">
+        <div class="modal-head">
+            <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Update Progress</h3>
+            <button type="button" class="modal-close" onclick="closeModal('updateProgressModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="kpi-process">
@@ -709,7 +741,7 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
                     <label for="actual" class="required">Actual Value Achieved</label>
                     <input type="number" id="actual" name="actual" class="form-control" 
                            step="0.01" placeholder="Enter actual value" required>
-                    <div class="hint-text">Unit: <?php echo htmlspecialchars($kpi['unit_of_measure']); ?></div>
+                    <div class="form-hint">Unit: <?php echo htmlspecialchars($kpi['unit_of_measure']); ?></div>
                 </div>
                 
                 <div class="form-group">
@@ -727,7 +759,7 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
                               placeholder="Add any notes or challenges..."></textarea>
                 </div>
                 
-                <div class="modal-footer">
+                <div class="modal-actions">
                     <button type="button" onclick="closeModal('updateProgressModal')" class="btn btn-secondary">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Update Progress
@@ -742,10 +774,10 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
 <?php if ($can_review_kpi && $kpi['status'] == 'Submitted'): ?>
 <!-- Approve Modal -->
 <div id="approveModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3 style="color: #27AE60;"><i class="fas fa-check-circle"></i> Approve KPI</h3>
-            <span class="close" onclick="closeModal('approveModal')">&times;</span>
+    <div class="modal-card vk-modal-sm">
+        <div class="modal-head vk-approve-head">
+            <h3><i class="fas fa-check-circle" aria-hidden="true"></i> Approve KPI</h3>
+            <button type="button" class="modal-close" onclick="closeModal('approveModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="kpi-process">
@@ -753,7 +785,7 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
                 <input type="hidden" name="kpi_id" value="<?php echo $kpi_id; ?>">
                 
                 <p>Are you sure you want to approve this KPI?</p>
-                <p style="font-size: 16px; font-weight: 600; color: #2c3e50;">
+                <p class="vk-modal-title">
                     <?php echo htmlspecialchars($kpi['kpi_title']); ?>
                 </p>
                 
@@ -763,9 +795,9 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
                               placeholder="Add feedback or encouragement..."></textarea>
                 </div>
                 
-                <div class="modal-footer">
+                <div class="modal-actions">
                     <button type="button" onclick="closeModal('approveModal')" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Approve KPI
                     </button>
                 </div>
@@ -776,10 +808,10 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
 
 <!-- Reject Modal -->
 <div id="rejectModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3 style="color: #E74C3C;"><i class="fas fa-times-circle"></i> Reject KPI</h3>
-            <span class="close" onclick="closeModal('rejectModal')">&times;</span>
+    <div class="modal-card vk-modal-md">
+        <div class="modal-head vk-reject-head">
+            <h3><i class="fas fa-times-circle" aria-hidden="true"></i> Reject KPI</h3>
+            <button type="button" class="modal-close" onclick="closeModal('rejectModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="kpi-process">
@@ -787,7 +819,7 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
                 <input type="hidden" name="kpi_id" value="<?php echo $kpi_id; ?>">
                 
                 <p>Reject this KPI:</p>
-                <p style="font-size: 16px; font-weight: 600; color: #2c3e50;">
+                <p class="vk-modal-title">
                     <?php echo htmlspecialchars($kpi['kpi_title']); ?>
                 </p>
                 
@@ -795,10 +827,10 @@ $avg_achievement = $quarters_completed > 0 ? round($total_achievement / $quarter
                     <label for="rejection_reason" class="required">Reason for Rejection</label>
                     <textarea id="rejection_reason" name="rejection_reason" class="form-control" rows="4" 
                               placeholder="Provide clear feedback on what needs to be improved..." required></textarea>
-                    <div class="hint-text">Be specific so the employee can make necessary corrections</div>
+                    <div class="form-hint">Be specific so the employee can make necessary corrections</div>
                 </div>
                 
-                <div class="modal-footer">
+                <div class="modal-actions">
                     <button type="button" onclick="closeModal('rejectModal')" class="btn btn-secondary">Cancel</button>
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-times"></i> Reject KPI

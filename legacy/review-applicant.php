@@ -128,18 +128,19 @@ function list_text(array $items): string
 
 function status_color(string $status): string
 {
+    // Returns a global .badge-* modifier class for the application status.
     return match ($status) {
-        'Draft'        => '#64748b',
-        'Submitted'    => '#f59e0b',
-        'Under Review' => '#0ea5e9',
-        'Shortlisted'  => '#f97316',
+        'Draft'        => 'badge-secondary',
+        'Submitted'    => 'badge-warning',
+        'Under Review' => 'badge-info',
+        'Shortlisted'  => 'badge-warning',
         'Selected',
         'Approved',
-        'Accepted'     => '#16a34a',
-        'Rejected'     => '#dc2626',
-        'Waitlisted'   => '#7c3aed',
-        'Withdrawn'    => '#64748b',
-        default        => '#64748b',
+        'Accepted'     => 'badge-success',
+        'Rejected'     => 'badge-danger',
+        'Waitlisted'   => 'badge-purple',
+        'Withdrawn'    => 'badge-secondary',
+        default        => 'badge-secondary',
     };
 }
 
@@ -477,47 +478,8 @@ require_once 'includes/header.php';
 ?>
 
 <style>
-.review-page {
-    width: 100%;
-}
-
-.review-header {
-    background: linear-gradient(135deg,#ff5722,#ff9800);
-    color: #fff;
-    padding: 25px 28px;
-    border-radius: 12px;
-    margin-bottom: 18px;
-}
-
-.review-header h1 {
-    margin: 0 0 5px;
-    font-size: 24px;
-}
-
-.review-header p {
-    margin: 0;
-    opacity: .9;
-    font-size: 13px;
-}
-
-.review-header-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 14px;
-    flex-wrap: wrap;
-}
-
-.review-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-}
+/* -- review-applicant page-specific layout -- */
+.ra-tab-nav .tab-btn.assigned i { color: var(--brand-500); opacity: 1; }
 
 .review-layout {
     display: grid;
@@ -526,42 +488,23 @@ require_once 'includes/header.php';
     align-items: start;
 }
 
-/*
-|--------------------------------------------------------------------------
-| LEFT: COMPACT APPLICATION READER
-|--------------------------------------------------------------------------
-*/
-.app-reader {
-    min-width: 0;
-}
-
-.reader-hint {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 11px 13px;
-    margin-bottom: 12px;
-    border-radius: 9px;
-    background: #fff7ed;
-    color: #9a3412;
-    font-size: 12.5px;
-    border: 1px solid #fed7aa;
-}
+/* LEFT: compact application reader (accordion) */
+.app-reader { min-width: 0; }
+.app-reader > .alert { margin-bottom: 12px; }
 
 .reader-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 11px;
-    box-shadow: 0 2px 7px rgba(15,23,42,.05);
+    background: var(--surface-card);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     margin-bottom: 10px;
     overflow: hidden;
 }
-
 .reader-card-header {
     width: 100%;
     appearance: none;
     border: 0;
-    background: #fff;
+    background: var(--surface-card);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -569,144 +512,59 @@ require_once 'includes/header.php';
     padding: 14px 16px;
     cursor: pointer;
     text-align: left;
+    font: inherit;
 }
+.reader-card-header:hover { background: var(--brand-50); }
+.reader-card-title { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.reader-card-title i { width: 20px; color: var(--brand-500); text-align: center; }
+.reader-card-title strong { color: var(--ink-900); font-size: 14px; }
+.reader-card-summary { color: var(--ink-300); font-size: 11px; margin-left: 6px; font-weight: 600; }
+.reader-chevron { color: var(--ink-300); transition: transform .2s ease; }
+.reader-card.open .reader-chevron { transform: rotate(180deg); }
+.reader-card-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--ink-50); }
+.reader-card.open .reader-card-body { display: block; }
+.reader-card-body-inner { padding-top: 14px; }
 
-.reader-card-header:hover {
-    background: #fffaf5;
-}
-
-.reader-card-title {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    min-width: 0;
-}
-
-.reader-card-title i {
-    width: 20px;
-    color: #f97316;
-    text-align: center;
-}
-
-.reader-card-title strong {
-    color: #1f2937;
-    font-size: 14px;
-}
-
-.reader-card-summary {
-    color: #94a3b8;
-    font-size: 11px;
-    margin-left: 6px;
-    font-weight: 600;
-}
-
-.reader-chevron {
-    color: #94a3b8;
-    transition: transform .2s ease;
-}
-
-.reader-card.open .reader-chevron {
-    transform: rotate(180deg);
-}
-
-.reader-card-body {
-    display: none;
-    padding: 0 16px 16px;
-    border-top: 1px solid #f1f5f9;
-}
-
-.reader-card.open .reader-card-body {
-    display: block;
-}
-
-.reader-card-body-inner {
-    padding-top: 14px;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(2,minmax(0,1fr));
-    gap: 10px;
-}
-
-.info-item {
-    background: #f8fafc;
-    border-radius: 8px;
-    padding: 11px 12px;
-    min-width: 0;
-}
-
-.info-item.full {
-    grid-column: 1 / -1;
-}
-
+.info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.info-grid.ra-mb { margin-bottom: 14px; }
+.info-item { background: var(--ink-50); border-radius: var(--radius-md); padding: 11px 12px; min-width: 0; }
+.info-item.full { grid-column: 1 / -1; }
 .info-item label {
     display: block;
     margin-bottom: 4px;
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: .05em;
-    color: #94a3b8;
+    color: var(--ink-300);
     font-weight: 700;
 }
-
-.info-item .val {
-    color: #334155;
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-}
+.info-item .val { color: var(--ink-700); font-size: 13px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
 
 .reader-text {
-    background: #f8fafc;
-    border-radius: 8px;
+    background: var(--ink-50);
+    border-radius: var(--radius-md);
     padding: 12px 14px;
-    color: #475569;
+    color: var(--ink-600);
     font-size: 13px;
     line-height: 1.72;
     white-space: pre-wrap;
     margin-bottom: 10px;
 }
-
-.reader-text:last-child {
-    margin-bottom: 0;
-}
-
+.reader-text:last-child { margin-bottom: 0; }
 .reader-label {
     display: block;
     margin: 0 0 5px;
-    color: #c2410c;
+    color: var(--brand-600);
     font-size: 10.5px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: .05em;
 }
-
-.reader-table-wrap {
-    overflow-x: auto;
-}
-
-.reader-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-}
-
-.reader-table th,
-.reader-table td {
-    padding: 8px 9px;
-    border-bottom: 1px solid #e5e7eb;
-    text-align: left;
-    vertical-align: top;
-}
-
-.reader-table th {
-    background: #f8fafc;
-    color: #64748b;
-    font-size: 10px;
-    text-transform: uppercase;
-}
+.ra-section { margin-top: 14px; }
+.reader-table-wrap.ra-mb { margin-bottom: 14px; }
+.app-reader .table { min-width: 560px; font-size: 12px; }
+.app-reader .table th,
+.app-reader .table td { padding: 8px 9px; vertical-align: top; }
 
 .doc-item {
     display: flex;
@@ -714,350 +572,50 @@ require_once 'includes/header.php';
     justify-content: space-between;
     gap: 10px;
     padding: 10px 12px;
-    background: #f8fafc;
-    border-radius: 8px;
+    background: var(--ink-50);
+    border-radius: var(--radius-md);
     margin-bottom: 8px;
 }
+.doc-item:last-child { margin-bottom: 0; }
+.doc-info { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.doc-info i { color: var(--brand-500); font-size: 18px; }
+.doc-info strong { display: block; color: var(--ink-700); font-size: 12.5px; }
+.doc-info small { color: var(--ink-300); overflow-wrap: anywhere; }
 
-.doc-item:last-child {
-    margin-bottom: 0;
-}
+/* RIGHT: scoring form */
+.score-form { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.score-form form { display: flex; flex-direction: column; gap: 10px; }
+.score-form .card-header h3 i { color: var(--brand-500); }
 
-.doc-info {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    min-width: 0;
-}
-
-.doc-info i {
-    color: #f97316;
-    font-size: 18px;
-}
-
-.doc-info strong {
-    display: block;
-    color: #334155;
-    font-size: 12.5px;
-}
-
-.doc-info small {
-    color: #94a3b8;
-    overflow-wrap: anywhere;
-}
-
-/*
-|--------------------------------------------------------------------------
-| REVIEW TYPE TABS
-|--------------------------------------------------------------------------
-*/
-.type-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-bottom: 14px;
-}
-
-.type-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    color: #475569;
-    text-decoration: none;
-    font-size: 11.5px;
-    font-weight: 700;
-}
-
-.type-tab.active {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-color: #93c5fd;
-}
-
-.type-tab.assigned {
-    box-shadow: inset 0 0 0 1px #fed7aa;
-}
-
-/*
-|--------------------------------------------------------------------------
-| RIGHT: SCORING FORM
-|--------------------------------------------------------------------------
-*/
-.score-form {
-    position: sticky;
-    top: 16px;
-}
-
-.score-card {
-    background: #fff;
-    border-radius: 11px;
-    box-shadow: 0 2px 8px rgba(15,23,42,.07);
-    margin-bottom: 12px;
-    overflow: hidden;
-}
-
-.score-card-head {
-    padding: 13px 15px;
-    border-bottom: 1px solid #eef2f7;
-    font-size: 14px;
-    font-weight: 800;
-    color: #f97316;
-}
-
-.score-card-body {
-    padding: 15px;
-}
-
-.overall-display {
-    text-align: center;
-}
-
+.overall-display { text-align: center; }
 .overall-circle {
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    background: conic-gradient(#f97316 0% var(--pct,0%),#e5e7eb var(--pct,0%) 100%);
+    background: conic-gradient(var(--brand-500) 0% var(--pct, 0%), var(--ink-100) var(--pct, 0%) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 8px;
     position: relative;
 }
+.overall-circle::before { content: ''; position: absolute; width: 72px; height: 72px; border-radius: 50%; background: var(--surface-card); }
+.oc-text { position: relative; z-index: 1; font-size: 20px; font-weight: 800; color: var(--brand-600); }
+.overall-label { color: var(--ink-400); font-size: 11.5px; }
 
-.overall-circle::before {
-    content: '';
-    position: absolute;
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: #fff;
-}
-
-.oc-text {
-    position: relative;
-    z-index: 1;
-    font-size: 20px;
-    font-weight: 800;
-    color: #f97316;
-}
-
-.overall-label {
-    color: #64748b;
-    font-size: 11.5px;
-}
-
-.criteria-group {
-    background: #fff;
-    border-radius: 11px;
-    box-shadow: 0 2px 8px rgba(15,23,42,.06);
-    margin-bottom: 10px;
-    overflow: hidden;
-}
-
-.criteria-group-head {
-    padding: 10px 13px;
-    background: #f8fafc;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-}
-
-.criteria-group-head strong {
-    color: #334155;
-    font-size: 12.5px;
-}
-
-.criteria-score {
-    font-size: 11px;
-    font-weight: 800;
-    color: #f97316;
-}
-
-.criterion-row {
-    padding: 11px 13px;
-    border-top: 1px solid #f1f5f9;
-}
-
-.criterion-q {
-    font-size: 12px;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 4px;
-    line-height: 1.4;
-}
-
-.criterion-guide {
-    color: #94a3b8;
-    font-size: 10.5px;
-    line-height: 1.45;
-    margin-bottom: 7px;
-}
-
-.score-slider-wrap {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.score-slider {
-    flex: 1;
-    accent-color: #f97316;
-}
-
-.score-badge {
-    min-width: 54px;
-    text-align: center;
-    padding: 3px 6px;
-    border-radius: 7px;
-    background: #f97316;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.form-group {
-    margin-bottom: 12px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: #475569;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.form-control {
-    width: 100%;
-    padding: 9px 11px;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 12.5px;
-    font-family: inherit;
-}
-
-.form-control:focus {
-    border-color: #fb923c;
-    outline: none;
-}
-
-.rec-options {
-    display: grid;
-    grid-template-columns: repeat(2,minmax(0,1fr));
-    gap: 7px;
-}
-
-.rec-option {
-    display: none;
-}
-
-.rec-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    min-height: 38px;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 8px;
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.rec-option:checked + .rec-label {
-    border-color: #f97316;
-    background: #fff7ed;
-    color: #c2410c;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 9px 14px;
-    border-radius: 8px;
-    border: 0;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-}
-
-.btn-primary,
-.btn-success {
-    background: #f97316;
-    color: #fff;
-}
-
-.btn-secondary {
-    background: #f1f5f9;
-    color: #475569;
-}
-
-.btn-block {
-    width: 100%;
-}
-
-.alert {
-    padding: 11px 13px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    font-size: 12.5px;
-}
-
-.alert-success {
-    background: #ecfdf5;
-    color: #166534;
-    border-left: 4px solid #22c55e;
-}
-
-.alert-danger {
-    background: #fef2f2;
-    color: #991b1b;
-    border-left: 4px solid #ef4444;
-}
-
-.alert-info {
-    background: #eff6ff;
-    color: #1e40af;
-    border-left: 4px solid #3b82f6;
-}
-
-.reviewed-banner {
-    background: #ecfdf5;
-    color: #166534;
-    padding: 11px 13px;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    font-size: 12px;
-    border: 1px solid #bbf7d0;
-}
-
-
-/* --------------------------------------------------------------------------
-   RIGHT-SIDE REVIEW LIST CARDS
---------------------------------------------------------------------------- */
+/* Criteria accordion */
 .review-list-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    box-shadow: 0 2px 7px rgba(15,23,42,.05);
-    margin-bottom: 9px;
+    background: var(--surface-card);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
 }
-
 .review-list-head {
     width: 100%;
     appearance: none;
     border: 0;
-    background: #fff;
+    background: var(--surface-card);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1065,111 +623,83 @@ require_once 'includes/header.php';
     padding: 12px 13px;
     cursor: pointer;
     text-align: left;
+    font: inherit;
+}
+.review-list-head:hover { background: var(--brand-50); }
+.review-list-title { min-width: 0; display: flex; align-items: center; gap: 8px; }
+.review-list-title i { width: 18px; color: var(--brand-500); text-align: center; }
+.review-list-title strong { color: var(--ink-700); font-size: 12.5px; }
+.review-list-meta { display: flex; align-items: center; gap: 8px; }
+.review-list-score { color: var(--brand-600); font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+.review-list-chevron { color: var(--ink-300); font-size: 11px; transition: transform .2s ease; }
+.review-list-card.open .review-list-chevron { transform: rotate(180deg); }
+.review-list-body { display: none; border-top: 1px solid var(--ink-50); }
+.review-list-card.open .review-list-body { display: block; }
+.review-list-body-inner { padding: 4px 0; }
+
+.criterion-row { padding: 11px 13px; border-top: 1px solid var(--ink-50); }
+.criterion-row:first-child { border-top: 0; }
+.criterion-q { font-size: 12px; font-weight: 700; color: var(--ink-700); margin-bottom: 4px; line-height: 1.4; }
+.criterion-guide { color: var(--ink-300); font-size: 10.5px; line-height: 1.45; margin-bottom: 7px; }
+.score-slider-wrap { display: flex; align-items: center; gap: 9px; }
+.score-slider { flex: 1; accent-color: var(--brand-500); }
+.score-badge {
+    min-width: 54px;
+    text-align: center;
+    padding: 3px 6px;
+    border-radius: var(--radius-sm);
+    background: var(--brand-500);
+    color: var(--ink-0);
+    font-size: 11px;
+    font-weight: 800;
 }
 
-.review-list-head:hover {
-    background: #fffaf5;
-}
-
-.review-list-title {
-    min-width: 0;
+/* Recommendation picker */
+.rec-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.rec-option { display: none; }
+.rec-label {
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-
-.review-list-title i {
-    width: 18px;
-    color: #f97316;
-    text-align: center;
-}
-
-.review-list-title strong {
-    color: #334155;
-    font-size: 12.5px;
-}
-
-.review-list-score {
-    color: #f97316;
-    font-size: 10.5px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.review-list-chevron {
-    color: #94a3b8;
+    justify-content: center;
+    gap: 5px;
+    min-height: 38px;
+    border: 1.5px solid var(--ink-100);
+    border-radius: var(--radius-md);
+    color: var(--ink-400);
     font-size: 11px;
-    transition: transform .2s ease;
+    font-weight: 700;
+    cursor: pointer;
 }
-
-.review-list-card.open .review-list-chevron {
-    transform: rotate(180deg);
-}
-
-.review-list-body {
-    display: none;
-    border-top: 1px solid #f1f5f9;
-}
-
-.review-list-card.open .review-list-body {
-    display: block;
-}
-
-.review-list-body-inner {
-    padding: 4px 0;
-}
-
-.review-details-fixed {
-    display: block;
-}
+.rec-option:checked + .rec-label { border-color: var(--brand-500); background: var(--brand-50); color: var(--brand-700); }
 
 @media (max-width: 980px) {
-    .review-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .score-form {
-        position: static;
-    }
+    .review-layout { grid-template-columns: 1fr; }
+    .score-form { position: static; }
 }
-
 @media (max-width: 640px) {
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .reader-card-summary {
-        display: none;
-    }
+    .info-grid { grid-template-columns: 1fr; }
+    .reader-card-summary { display: none; }
 }
 </style>
 
-<div class="review-page">
+<div class="page-stack">
 
-    <div class="review-header">
-        <div class="review-header-row">
-            <div>
-                <h1><i class="fas fa-star-half-alt"></i> Review Application</h1>
-                <p>
-                    <strong><?= h($app['startup_name'] ?? 'Unnamed Venture') ?></strong>
-                    &mdash;
-                    <?= h($app['opportunity_title'] ?? '') ?>
-                </p>
-            </div>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-star-half-alt" aria-hidden="true"></i> Review Application</h1>
+            <p>
+                <strong><?= h($app['startup_name'] ?? 'Unnamed Venture') ?></strong>
+                &mdash;
+                <?= h($app['opportunity_title'] ?? '') ?>
+                <span class="badge <?= h(status_color((string)($app['status'] ?? ''))) ?>"><?= h($app['status'] ?? 'Draft') ?></span>
+            </p>
+        </div>
 
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                <span
-                    class="review-status"
-                    style="background:<?= h(status_color((string)($app['status'] ?? ''))) ?>"
-                >
-                    <?= h($app['status'] ?? 'Draft') ?>
-                </span>
-
-                <a href="startups-shortlisting" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i>
-                    Back
-                </a>
-            </div>
+        <div class="hero-actions">
+            <a href="startups-shortlisting" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i>
+                Back
+            </a>
         </div>
     </div>
 
@@ -1188,7 +718,8 @@ require_once 'includes/header.php';
     <?php endif; ?>
 
     <?php if ($review_types): ?>
-        <div class="type-tabs">
+        <div class="tab-shell">
+        <nav class="tab-nav ra-tab-nav" role="tablist">
             <?php foreach ($review_types as $review_type):
                 $reviewTypeId = (int)$review_type['review_type_id'];
                 $active = $reviewTypeId === $active_review_type_id;
@@ -1200,17 +731,18 @@ require_once 'includes/header.php';
             ?>
                 <a
                     href="review-applicant?id=<?= $application_id ?>&rt=<?= $reviewTypeId ?>"
-                    class="type-tab <?= $active ? 'active' : '' ?> <?= $assigned ? 'assigned' : '' ?>"
+                    class="tab-btn <?= $active ? 'active' : '' ?> <?= $assigned ? 'assigned' : '' ?>"
                 >
                     <i class="fas fa-layer-group"></i>
                     <?= h($review_type['name']) ?>
                 </a>
             <?php endforeach; ?>
+        </nav>
         </div>
     <?php endif; ?>
 
     <?php if ($existing): ?>
-        <div class="reviewed-banner">
+        <div class="alert alert-success">
             <i class="fas fa-check-double"></i>
             Existing review loaded from
             <?= h(review_datetime($existing['updated_at'] ?? null)) ?>.
@@ -1223,7 +755,7 @@ require_once 'includes/header.php';
         <!-- LEFT: compact clickable reader cards -->
         <div class="app-reader">
 
-            <div class="reader-hint">
+            <div class="alert alert-info">
                 <i class="fas fa-hand-pointer"></i>
                 Click a section to expand and read it. Only one section opens at a time to reduce scrolling.
             </div>
@@ -1327,10 +859,10 @@ require_once 'includes/header.php';
                         </div>
 
                         <?php if ($incubation_programmes): ?>
-                            <div style="margin-top:14px;">
+                            <div class="ra-section">
                                 <span class="reader-label">Incubation / Accelerator Programmes</span>
-                                <div class="reader-table-wrap">
-                                    <table class="reader-table">
+                                <div class="reader-table-wrap table-responsive">
+                                    <table class="table">
                                         <thead>
                                             <tr>
                                                 <th>Programme</th>
@@ -1342,10 +874,10 @@ require_once 'includes/header.php';
                                         <tbody>
                                         <?php foreach ($incubation_programmes as $row): ?>
                                             <tr>
-                                                <td><?= h($row['programme'] ?? '—') ?></td>
-                                                <td><?= h($row['organisation'] ?? '—') ?></td>
-                                                <td><?= h($row['year'] ?? '—') ?></td>
-                                                <td><?= h($row['outcomes'] ?? '—') ?></td>
+                                                <td><?= h($row['programme'] ?? 'â€”') ?></td>
+                                                <td><?= h($row['organisation'] ?? 'â€”') ?></td>
+                                                <td><?= h($row['year'] ?? 'â€”') ?></td>
+                                                <td><?= h($row['outcomes'] ?? 'â€”') ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                         </tbody>
@@ -1370,7 +902,7 @@ require_once 'includes/header.php';
 
                 <div class="reader-card-body">
                     <div class="reader-card-body-inner">
-                        <div class="info-grid" style="margin-bottom:14px;">
+                        <div class="info-grid ra-mb">
                             <?php foreach ([
                                 'full_time_staff' => 'Full-Time Staff',
                                 'part_time_staff' => 'Part-Time Staff',
@@ -1388,8 +920,8 @@ require_once 'includes/header.php';
 
                         <?php if ($founders): ?>
                             <span class="reader-label">Founders</span>
-                            <div class="reader-table-wrap" style="margin-bottom:14px;">
-                                <table class="reader-table">
+                            <div class="reader-table-wrap table-responsive ra-mb">
+                                <table class="table">
                                     <thead>
                                         <tr>
                                             <th>Name</th>
@@ -1403,12 +935,12 @@ require_once 'includes/header.php';
                                     <tbody>
                                     <?php foreach ($founders as $row): ?>
                                         <tr>
-                                            <td><?= h($row['name'] ?? '—') ?></td>
-                                            <td><?= h($row['role'] ?? '—') ?></td>
-                                            <td><?= h($row['gender'] ?? '—') ?></td>
-                                            <td><?= h($row['shareholding'] ?? '—') ?></td>
-                                            <td><?= h($row['full_time'] ?? '—') ?></td>
-                                            <td><?= h($row['pwd_status'] ?? '—') ?></td>
+                                            <td><?= h($row['name'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['role'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['gender'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['shareholding'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['full_time'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['pwd_status'] ?? 'â€”') ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                     </tbody>
@@ -1418,8 +950,8 @@ require_once 'includes/header.php';
 
                         <?php if ($other_team_members): ?>
                             <span class="reader-label">Other Team Members</span>
-                            <div class="reader-table-wrap" style="margin-bottom:14px;">
-                                <table class="reader-table">
+                            <div class="reader-table-wrap table-responsive ra-mb">
+                                <table class="table">
                                     <thead>
                                         <tr>
                                             <th>Name</th>
@@ -1431,10 +963,10 @@ require_once 'includes/header.php';
                                     <tbody>
                                     <?php foreach ($other_team_members as $row): ?>
                                         <tr>
-                                            <td><?= h($row['name'] ?? '—') ?></td>
-                                            <td><?= h($row['role'] ?? '—') ?></td>
-                                            <td><?= h($row['gender'] ?? '—') ?></td>
-                                            <td><?= h($row['pwd_status'] ?? '—') ?></td>
+                                            <td><?= h($row['name'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['role'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['gender'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['pwd_status'] ?? 'â€”') ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                     </tbody>
@@ -1539,12 +1071,12 @@ require_once 'includes/header.php';
                         </div>
 
                         <?php if (!empty($app['other_traction_metrics'])): ?>
-                            <div style="margin-top:14px;">
+                            <div class="ra-section">
                                 <span class="reader-label">Other Traction Metrics</span>
                                 <div class="reader-text"><?= h($app['other_traction_metrics']) ?></div>
                             </div>
                         <?php elseif (!empty($app['traction'])): ?>
-                            <div style="margin-top:14px;">
+                            <div class="ra-section">
                                 <span class="reader-label">Traction</span>
                                 <div class="reader-text"><?= h($app['traction']) ?></div>
                             </div>
@@ -1588,8 +1120,8 @@ require_once 'includes/header.php';
 
                         <?php if ($external_funding_details): ?>
                             <span class="reader-label">External Funding Details</span>
-                            <div class="reader-table-wrap">
-                                <table class="reader-table">
+                            <div class="reader-table-wrap table-responsive">
+                                <table class="table">
                                     <thead>
                                         <tr>
                                             <th>Funder</th>
@@ -1603,12 +1135,12 @@ require_once 'includes/header.php';
                                     <tbody>
                                     <?php foreach ($external_funding_details as $row): ?>
                                         <tr>
-                                            <td><?= h($row['funder'] ?? '—') ?></td>
-                                            <td><?= h($row['type'] ?? '—') ?></td>
-                                            <td><?= h($row['amount'] ?? '—') ?></td>
-                                            <td><?= h($row['currency'] ?? '—') ?></td>
-                                            <td><?= h($row['year'] ?? '—') ?></td>
-                                            <td><?= h($row['status'] ?? '—') ?></td>
+                                            <td><?= h($row['funder'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['type'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['amount'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['currency'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['year'] ?? 'â€”') ?></td>
+                                            <td><?= h($row['status'] ?? 'â€”') ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                     </tbody>
@@ -1730,7 +1262,7 @@ require_once 'includes/header.php';
                                         href="<?= h(ims_upload_url($path)) ?>"
                                         target="_blank"
                                         rel="noopener"
-                                        class="btn btn-secondary"
+                                        class="btn btn-sm btn-secondary"
                                     >
                                         <i class="fas fa-eye"></i>
                                         View
@@ -1761,13 +1293,12 @@ require_once 'includes/header.php';
 
             <?php else: ?>
 
-                <div class="score-card">
-                    <div class="score-card-head">
-                        <i class="fas fa-star"></i>
-                        Overall Score
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-star"></i> Overall Score</h3>
                     </div>
 
-                    <div class="score-card-body">
+                    <div class="card-body">
                         <div class="overall-display">
                             <div
                                 class="overall-circle"
@@ -1841,7 +1372,7 @@ require_once 'includes/header.php';
                                     <strong><?= h($category) ?></strong>
                                 </span>
 
-                                <span style="display:flex;align-items:center;gap:8px;">
+                                <span class="review-list-meta">
                                     <span
                                         class="review-list-score"
                                         id="cat-display-<?= h($categorySlug) ?>"
@@ -1909,16 +1440,15 @@ require_once 'includes/header.php';
                         </div>
                     <?php endforeach; ?>
 
-                    <div class="score-card review-details-fixed">
-                        <div class="score-card-head">
-                            <i class="fas fa-clipboard-check"></i>
-                            Review Details
+                    <div class="card review-details-fixed">
+                        <div class="card-header">
+                            <h3><i class="fas fa-clipboard-check"></i> Review Details</h3>
                         </div>
 
-                        <div class="score-card-body">
+                        <div class="card-body">
 
                             <div class="form-group">
-                                <label>Recommendation</label>
+                                <label class="form-label">Recommendation</label>
 
                                 <div class="rec-options">
                                     <?php
@@ -1961,9 +1491,9 @@ require_once 'includes/header.php';
                             </div>
 
                             <div class="form-group">
-                                <label>
+                                <label class="form-label">
                                     Reviewer Comments
-                                    <span style="color:#dc2626;">*</span>
+                                    <span class="required-mark"></span>
                                 </label>
 
                                 <textarea
@@ -1977,7 +1507,7 @@ require_once 'includes/header.php';
 
                             <button
                                 type="submit"
-                                class="btn btn-success btn-block"
+                                class="btn btn-primary btn-block"
                             >
                                 <i class="fas fa-save"></i>
                                 <?= $existing ? 'Update Review' : 'Submit Review' ?>
@@ -1992,7 +1522,7 @@ require_once 'includes/header.php';
         </aside>
 
     </div>
-</div>
+</div><!-- /.page-stack -->
 
 <script>
 const totalPossibleWeighted = <?= number_format($total_possible_weighted, 4, '.', '') ?>;

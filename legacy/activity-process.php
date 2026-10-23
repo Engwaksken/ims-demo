@@ -112,7 +112,7 @@ foreach ($activities_post as $raw_id => $act) {
 
 // Soft weight check on submit
 if ($is_submit && abs($total_weight - 100) > 1.0) {
-    // Hard-block — remove the comment below if you want to enforce strictly
+    // Hard-block â€” remove the comment below if you want to enforce strictly
     // redirect_error("Activity weights must sum to 100%. Current total: {$total_weight}%");
 }
 

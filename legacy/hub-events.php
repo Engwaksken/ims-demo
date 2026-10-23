@@ -228,56 +228,20 @@ if (
 ?>
 
 <style>
-.hb-hero{
-    background:#fff;
-    border:1px solid #e2e8f0;
-    border-left:5px solid #ff6b35;
-    border-radius:12px;
-    padding:22px;
-    margin-bottom:16px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:15px;
-    flex-wrap:wrap;
-}
-.hb-hero h1{margin:0;color:#0f172a;font-size:22px;}
-.hb-hero p{margin:5px 0 0;color:#64748b;font-size:11px;}
-.hb-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;background:#fff7ed;color:#9a3412;font-size:10px;font-weight:800;}
-.hb-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px;}
-.hb-stat{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #ff6b35;border-radius:9px;padding:13px;}
-.hb-stat:nth-child(2){border-left-color:#f59e0b}.hb-stat:nth-child(3){border-left-color:#16a34a}
-.hb-stat small{display:block;color:#64748b;font-size:9px;font-weight:800;text-transform:uppercase}
-.hb-stat strong{display:block;margin-top:3px;color:#0f172a;font-size:19px}
-.hb-tabs{display:flex;border-bottom:2px solid #e2e8f0;margin-bottom:16px}
-.hb-tab{padding:11px 15px;margin-bottom:-2px;border-bottom:2px solid transparent;text-decoration:none;color:#64748b;font-size:11px;font-weight:800}
-.hb-tab.active{color:#ea580c;border-bottom-color:#ea580c}
-.hb-card{background:#fff;border:1px solid #e2e8f0;border-radius:11px;overflow:hidden;margin-bottom:16px}
-.hb-card-head{padding:14px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
-.hb-card-head h3{margin:0;color:#0f172a;font-size:14px}
-.hb-card-body{padding:16px}
-.hb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+/* Hub space booking: two-column request form and occupied-slot pills. */
+.hb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3)}
 .hb-grid .full{grid-column:1/-1}
-.hb-note{padding:10px 12px;border-left:4px solid #2563eb;border-radius:7px;background:#eff6ff;color:#1e40af;font-size:10.5px;margin-bottom:13px}
-.hb-warning{padding:12px;border-left:4px solid #dc2626;border-radius:7px;background:#fef2f2;color:#991b1b;font-size:11px}
-.hb-slots{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
-.hb-slot{padding:5px 8px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:9px;font-weight:700}
-.hb-free{color:#166534;background:#dcfce7}
-.hb-table-wrap{overflow-x:auto}
-.hb-table{width:100%;border-collapse:collapse}
-.hb-table th{background:#f8fafc;color:#64748b;padding:9px;text-align:left;font-size:8.5px;text-transform:uppercase;border-bottom:1px solid #e2e8f0}
-.hb-table td{padding:10px 9px;border-bottom:1px solid #f1f5f9;font-size:10px;color:#334155}
-.hb-status{display:inline-flex;padding:4px 7px;border-radius:999px;font-size:8.5px;font-weight:800}
-.hb-status.Pending{background:#fff7ed;color:#9a3412}
-.hb-status.Confirmed{background:#ecfdf5;color:#166534}
-.hb-status.Rejected,.hb-status.Cancelled{background:#fef2f2;color:#991b1b}
-@media(max-width:800px){.hb-grid,.hb-stats{grid-template-columns:1fr}.hb-grid .full{grid-column:auto}}
+.hb-slots{margin-top:var(--space-2);display:flex;gap:6px;flex-wrap:wrap}
+.hb-slot{padding:5px 10px;border-radius:var(--radius-pill);background:var(--red-bg);color:var(--red-fg);border:1px solid var(--red-border);font-size:var(--fs-xs);font-weight:700}
+.hb-slot.hb-free{color:var(--green-fg);background:var(--green-bg);border-color:var(--green-border)}
+@media(max-width:800px){.hb-grid{grid-template-columns:1fr}.hb-grid .full{grid-column:auto}}
 </style>
 
-<div class="hb-hero">
+<div class="page-stack">
+<div class="page-hero">
     <div>
         <h1>
-            <i class="fas fa-calendar-check"></i>
+            <i class="fas fa-calendar-check" aria-hidden="true"></i>
             Hub Space Booking
         </h1>
         <p>
@@ -286,72 +250,85 @@ if (
         </p>
     </div>
 
-    <span class="hb-badge">
-        <i class="fas fa-id-card"></i>
-        <?= hub_book_e($member['membership_number'] ?? 'Member') ?>
-        ·
-        <?= hub_book_e($member['membership_status'] ?? '') ?>
-    </span>
-</div>
-
-<div class="hb-stats">
-    <div class="hb-stat">
-        <small>My Requests</small>
-        <strong><?= count($myBookings) ?></strong>
-    </div>
-
-    <div class="hb-stat">
-        <small>Pending Approval</small>
-        <strong><?= $pendingCount ?></strong>
-    </div>
-
-    <div class="hb-stat">
-        <small>Confirmed</small>
-        <strong><?= $confirmedCount ?></strong>
+    <div class="hero-actions">
+        <span class="badge badge-warning">
+            <i class="fas fa-id-card" aria-hidden="true"></i>
+            <?= hub_book_e($member['membership_number'] ?? 'Member') ?>
+            Â·
+            <?= hub_book_e($member['membership_status'] ?? '') ?>
+        </span>
     </div>
 </div>
 
-<div class="hb-tabs">
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-calendar-alt" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">My Requests</span>
+            <span class="stat-value"><?= count($myBookings) ?></span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-amber"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Pending Approval</span>
+            <span class="stat-value"><?= $pendingCount ?></span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Confirmed</span>
+            <span class="stat-value"><?= $confirmedCount ?></span>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+<nav class="tab-nav" aria-label="Space booking sections">
     <a
         href="hub-events?tab=book"
-        class="hb-tab <?= $activeTab === 'book' ? 'active' : '' ?>"
+        class="tab-btn <?= $activeTab === 'book' ? 'active' : '' ?>"
     >
-        <i class="fas fa-plus-circle"></i>
+        <i class="fas fa-plus-circle" aria-hidden="true"></i>
         Request Booking
     </a>
 
     <a
         href="hub-events?tab=my-bookings"
-        class="hb-tab <?= $activeTab === 'my-bookings' ? 'active' : '' ?>"
+        class="tab-btn <?= $activeTab === 'my-bookings' ? 'active' : '' ?>"
     >
-        <i class="fas fa-list"></i>
+        <i class="fas fa-list" aria-hidden="true"></i>
         My Booking Requests
     </a>
-</div>
+</nav>
 
 <?php if (!$isActive): ?>
-    <div class="hb-warning">
-        <i class="fas fa-triangle-exclamation"></i>
-        Your membership is not Active. Please contact Hub Operations before requesting a space.
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            Your membership is not Active. Please contact Hub Operations before requesting a space.
+        </div>
     </div>
 <?php elseif ($activeTab === 'book'): ?>
 
-<div class="hb-card">
-    <div class="hb-card-head">
+    <div class="card-header">
         <h3>
-            <i class="fas fa-calendar-plus"></i>
+            <i class="fas fa-calendar-plus" aria-hidden="true"></i>
             Request a Free Slot
         </h3>
 
-        <span style="font-size:9.5px;color:#64748b;">
+        <span class="cell-muted">
             Pending requests reserve the slot until Operations decides.
         </span>
     </div>
 
-    <div class="hb-card-body">
+    <div class="card-body">
 
-        <div class="hb-note">
-            <i class="fas fa-circle-info"></i>
+        <div class="alert alert-info">
+            <i class="fas fa-circle-info" aria-hidden="true"></i>
             Select a space, date and time. Existing Pending/Confirmed bookings are blocked.
             Hive Google Calendar events that use the same space/location are also blocked.
         </div>
@@ -520,20 +497,18 @@ if (
             </div>
         </form>
     </div>
-</div>
 
 <?php else: ?>
 
-<div class="hb-card">
-    <div class="hb-card-head">
+    <div class="card-header">
         <h3>
-            <i class="fas fa-clock-rotate-left"></i>
+            <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
             My Booking Requests
         </h3>
     </div>
 
-    <div class="hb-table-wrap">
-        <table class="hb-table">
+    <div class="table-responsive">
+        <table class="table table-stack">
             <thead>
                 <tr>
                     <th>Space</th>
@@ -548,8 +523,11 @@ if (
 
             <?php if (!$myBookings): ?>
                 <tr>
-                    <td colspan="6" style="text-align:center;padding:28px;">
-                        You have not submitted a booking request yet.
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-xmark" aria-hidden="true"></i>
+                            <p>You have not submitted a booking request yet.</p>
+                        </div>
                     </td>
                 </tr>
             <?php endif; ?>
@@ -561,9 +539,16 @@ if (
                         $booking['booking_status']
                         ?? 'Pending'
                     );
+
+                $bookingBadge = match ($bookingStatus) {
+                    'Confirmed' => 'badge-success',
+                    'Rejected', 'Cancelled' => 'badge-danger',
+                    'Pending' => 'badge-warning',
+                    default => 'badge-secondary',
+                };
                 ?>
                 <tr>
-                    <td>
+                    <td data-label="Space">
                         <strong>
                             <?= hub_book_e($booking['space_name'] ?? '') ?>
                         </strong>
@@ -573,45 +558,45 @@ if (
                         </small>
                     </td>
 
-                    <td>
+                    <td data-label="Date">
                         <?= !empty($booking['booking_date'])
                             ? date(
                                 'd M Y',
                                 strtotime((string)$booking['booking_date'])
                             )
-                            : '—' ?>
+                            : 'â€”' ?>
                     </td>
 
-                    <td>
+                    <td data-label="Time">
                         <?= !empty($booking['start_time'])
                             ? date(
                                 'h:i A',
                                 strtotime((string)$booking['start_time'])
                             )
-                            : '—' ?>
+                            : 'â€”' ?>
                         -
                         <?= !empty($booking['end_time'])
                             ? date(
                                 'h:i A',
                                 strtotime((string)$booking['end_time'])
                             )
-                            : '—' ?>
+                            : 'â€”' ?>
                     </td>
 
-                    <td>
+                    <td data-label="Purpose">
                         <?= hub_book_e(
                             $booking['purpose']
-                            ?? '—'
+                            ?? 'â€”'
                         ) ?>
                     </td>
 
-                    <td>
-                        <span class="hb-status <?= hub_book_e($bookingStatus) ?>">
+                    <td data-label="Status">
+                        <span class="badge <?= $bookingBadge ?>">
                             <?= hub_book_e($bookingStatus) ?>
                         </span>
                     </td>
 
-                    <td>
+                    <td data-label="Decision">
                         <?php if (
                             $bookingStatus === 'Rejected'
                             &&
@@ -627,7 +612,7 @@ if (
                         ): ?>
                             Awaiting review
                         <?php else: ?>
-                            —
+                            â€”
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -636,9 +621,10 @@ if (
             </tbody>
         </table>
     </div>
-</div>
 
 <?php endif; ?>
+</div>
+</div><!-- /.page-stack -->
 
 <script>
 const spaceSelect =
@@ -743,7 +729,7 @@ async function loadAvailability() {
             0
         ) {
             target.innerHTML =
-                '<span class="hb-slot hb-free">No IMS bookings on this date — choose your preferred time.</span>';
+                '<span class="hb-slot hb-free">No IMS bookings on this date â€” choose your preferred time.</span>';
 
             return;
         }
@@ -762,7 +748,7 @@ async function loadAvailability() {
                         slot.end_time
                         || ''
                     ).substring(0, 5)
-                    + ' · '
+                    + ' Â· '
                     + (
                         slot.booking_status
                         || ''

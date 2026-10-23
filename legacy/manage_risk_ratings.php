@@ -409,8 +409,8 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
 
     if (!$canSign) {
         return '
-        <div class="sig-role-lock">
-            <div class="sig-role-lock-icon"><i class="fas fa-lock"></i></div>
+        <div class="alert alert-warning sig-role-lock" data-persist>
+            <div class="sig-role-lock-icon"><i class="fas fa-lock" aria-hidden="true"></i></div>
             <div class="sig-role-lock-text">
                 <div class="sig-role-lock-title">You cannot sign this section</div>
                 <div class="sig-role-lock-sub">
@@ -424,10 +424,10 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
     <div class="sig-area">
         <div class="sig-tabs">
             <button type="button" class="sig-tab active" onclick="switchSigTab(\'' . $prefix . '\', \'draw\', this)">
-                <i class="fas fa-pen me-1"></i>Draw
+                <i class="fas fa-pen" aria-hidden="true"></i> Draw
             </button>
             <button type="button" class="sig-tab" onclick="switchSigTab(\'' . $prefix . '\', \'upload\', this)">
-                <i class="fas fa-upload me-1"></i>Upload
+                <i class="fas fa-upload" aria-hidden="true"></i> Upload
             </button>
         </div>
         <div class="sig-tab-body">
@@ -437,14 +437,14 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
                     <div class="sig-hint" id="' . $prefix . 'Hint">Sign here...</div>
                 </div>
                 <div class="sig-actions-row">
-                    <button type="button" class="btn btn-sm btn-light border" onclick="clearCanvas(\'' . $prefix . '\')">
-                        <i class="fas fa-eraser me-1"></i>Clear
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="clearCanvas(\'' . $prefix . '\')">
+                        <i class="fas fa-eraser" aria-hidden="true"></i> Clear
                     </button>
                 </div>
             </div>
             <div class="sig-pane" id="' . $prefix . 'UploadPane">
                 <div class="sig-dropzone no-border" id="' . $prefix . 'Zone" onclick="document.getElementById(\'' . $prefix . 'File\').click()">
-                    <i class="fas fa-cloud-upload-alt"></i>
+                    <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
                     <span>Click or drag to upload (PNG / JPG)</span>
                 </div>
                 <input type="file" id="' . $prefix . 'File" accept="image/*" style="display:none" onchange="handleUpload(\'' . $prefix . '\', this)">
@@ -457,251 +457,109 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
 
 <link rel="stylesheet" href="css/manage-risk-rating.css">
 
-<div class="modal-overlay" id="deleteModal">
-    <div class="del-modal">
-        <div class="dm-icon"><i class="fas fa-trash-alt"></i></div>
-        <h5>Delete Risk Rating?</h5>
-        <p>
-            Permanently delete the risk rating for<br>
-            <span class="dm-name" id="deleteModalName">-</span><br>
-            including all sections, checks, scores and files.
-            This <strong>cannot be undone</strong>.
-        </p>
-        <div class="dm-btns">
-            <button type="button" class="btn btn-light border" onclick="closeDeleteModal()">
-                <i class="fas fa-times me-1"></i> Cancel
-            </button>
-            <form method="post" action="manage_risk_ratings" id="deleteForm" style="display:inline">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="rr_id" id="deleteRrId" value="">
-                <input type="hidden" name="search" value="<?= h($search) ?>">
-                <input type="hidden" name="status" value="<?= h($filterStatus) ?>">
-                <input type="hidden" name="rating" value="<?= h($filterRating) ?>">
-                <input type="hidden" name="opportunity_id" value="<?= h($filterOpportunity ?: '') ?>">
-                <input type="hidden" name="page" value="<?= h($page) ?>">
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash-alt me-1"></i> Yes, Delete
-                </button>
-            </form>
+<div class="page-stack">
+
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-shield-alt" aria-hidden="true"></i> Manage Risk Ratings</h1>
+            <p>Due diligence risk assessments for all startups.</p>
         </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="wfModal">
-    <div class="wf-modal">
-        <div class="wf-head">
-            <div class="wf-head-top">
-                <div>
-                    <h4><i class="fas fa-signature me-2" style="color:#ff6b35"></i>Signature Workflow</h4>
-                    <div class="wf-sub" id="wfStartupName">-</div>
-                </div>
-                <button type="button" class="wf-close-btn" onclick="closeWf()">&times;</button>
-            </div>
-
-            <div class="wf-step-tabs">
-                <div class="wf-step-tab active" id="wfTab0" onclick="goStep(0)">
-                    <div class="step-num">1</div>
-                    <span class="step-lbl">Prepared By</span>
-                </div>
-                <div class="wf-step-tab" id="wfTab1" onclick="goStep(1)">
-                    <div class="step-num">2</div>
-                    <span class="step-lbl">Reviewed By</span>
-                </div>
-                <div class="wf-step-tab" id="wfTab2" onclick="goStep(2)">
-                    <div class="step-num">3</div>
-                    <span class="step-lbl">Approved by ED</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="wf-body">
-            <div class="wf-pane active" id="wfPane0">
-                <div class="wf-sec-label"><i class="fas fa-user-edit"></i> Prepared By</div>
-                <div class="sig-saved" id="prepSaved">
-                    <img id="prepSavedImg" src="" alt="">
-                    <div class="sig-saved-info">
-                        <div class="sig-saved-name" id="prepSavedName">-</div>
-                        <div class="sig-saved-sub"><i class="fas fa-check-circle me-1"></i>Signature on record</div>
-                    </div>
-                    <button type="button" class="sig-saved-clear" onclick="clearSaved('prep')">
-                        <i class="fas fa-times me-1"></i>Remove
-                    </button>
-                </div>
-                <div class="wf-current-user-box">
-                    <div class="wf-current-user-label">Signed by</div>
-                    <div class="wf-current-user-name" id="prepCurrentUserName"><?= h($currentUserName) ?></div>
-                    <div class="wf-current-user-role"><?= h($currentUserRole) ?></div>
-                </div>
-                <input type="hidden" id="prepUserId" value="<?= (int)$currentUserId ?>">
-                <input type="hidden" id="prepUserName" value="<?= h($currentUserName) ?>">
-                <?= buildSigArea('prep', $signaturePermissions['prep']['allowed'], $signaturePermissions['prep']['roles'], $signaturePermissions['prep']['label']) ?>
-            </div>
-
-            <div class="wf-pane" id="wfPane1">
-                <div class="wf-sec-label"><i class="fas fa-user-check"></i> Reviewed By</div>
-                <div class="sig-saved" id="revSaved">
-                    <img id="revSavedImg" src="" alt="">
-                    <div class="sig-saved-info">
-                        <div class="sig-saved-name" id="revSavedName">-</div>
-                        <div class="sig-saved-sub"><i class="fas fa-check-circle me-1"></i>Signature on record</div>
-                    </div>
-                    <button type="button" class="sig-saved-clear" onclick="clearSaved('rev')">
-                        <i class="fas fa-times me-1"></i>Remove
-                    </button>
-                </div>
-                <div class="wf-current-user-box">
-                    <div class="wf-current-user-label">Signed by</div>
-                    <div class="wf-current-user-name" id="revCurrentUserName"><?= h($currentUserName) ?></div>
-                    <div class="wf-current-user-role"><?= h($currentUserRole) ?></div>
-                </div>
-                <input type="hidden" id="revUserId" value="<?= (int)$currentUserId ?>">
-                <input type="hidden" id="revUserName" value="<?= h($currentUserName) ?>">
-                <?= buildSigArea('rev', $signaturePermissions['rev']['allowed'], $signaturePermissions['rev']['roles'], $signaturePermissions['rev']['label']) ?>
-
-                <div class="wf-sec-label mt-3"><i class="fas fa-comment-alt"></i> Reviewer Comments</div>
-                <textarea class="wf-comments" id="reviewerComments" placeholder="Enter reviewer comments..."></textarea>
-            </div>
-
-            <div class="wf-pane" id="wfPane2">
-                <div class="wf-sec-label"><i class="fas fa-user-shield"></i> Approved by ED</div>
-                <div class="sig-saved" id="appSaved">
-                    <img id="appSavedImg" src="" alt="">
-                    <div class="sig-saved-info">
-                        <div class="sig-saved-name" id="appSavedName">-</div>
-                        <div class="sig-saved-sub"><i class="fas fa-check-circle me-1"></i>Signature on record</div>
-                    </div>
-                    <button type="button" class="sig-saved-clear" onclick="clearSaved('app')">
-                        <i class="fas fa-times me-1"></i>Remove
-                    </button>
-                </div>
-                <div class="wf-current-user-box">
-                    <div class="wf-current-user-label">Signed by</div>
-                    <div class="wf-current-user-name" id="appCurrentUserName"><?= h($currentUserName) ?></div>
-                    <div class="wf-current-user-role"><?= h($currentUserRole) ?></div>
-                </div>
-                <input type="hidden" id="appUserId" value="<?= (int)$currentUserId ?>">
-                <input type="hidden" id="appUserName" value="<?= h($currentUserName) ?>">
-                <?= buildSigArea('app', $signaturePermissions['app']['allowed'], $signaturePermissions['app']['roles'], $signaturePermissions['app']['label']) ?>
-            </div>
-        </div>
-
-        <div class="wf-footer">
-            <div class="wf-status" id="wfStatus"></div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button type="button" class="btn btn-light border" onclick="closeWf()">Close</button>
-                <button type="button" class="wf-save-btn" id="wfSaveBtn" onclick="saveWorkflow()">
-                    <i class="fas fa-save"></i> Save &amp; Regenerate PDF
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="container-fluid py-4">
-    <div class="mrr-wrap">
-
-        <?php if (!empty($_SESSION['success'])): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                <?= h($_SESSION['success']) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            <?php unset($_SESSION['success']); ?>
-        <?php endif; ?>
-
-        <?php if (!empty($_SESSION['error'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <?= h($_SESSION['error']) ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            <?php unset($_SESSION['error']); ?>
-        <?php endif; ?>
-
-        <div class="mrr-page-header">
-            <div>
-                <h2><i class="fas fa-shield-alt me-2 text-primary"></i>Manage Risk Ratings</h2>
-                <div class="sub">Due diligence risk assessments for all startups</div>
-            </div>
-            <div class="d-flex gap-2 flex-wrap">
-                <a href="risk_ratings_report" class="btn btn-success">
-                    <i class="fas fa-file-pdf me-1"></i> Generate Risk Report
-                </a>
-                <a href="startups-shortlisting" class="btn btn-light border">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Shortlisting
-                </a>
-            </div>
-        </div>
-
-        <div class="stats-grid reports-stats">
-            <a href="risk_ratings_report" class="stat-card-link" title="View full Risk Ratings Report">
-                <div class="stat-card">
-                    <div class="stat-icon bg-blue"><i class="fas fa-shield-halved" aria-hidden="true"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-label">Total <i class="fas fa-external-link-alt link-icon" aria-hidden="true"></i></span>
-                        <span class="stat-value"><?= number_format((int)($stats['total'] ?? 0)) ?></span>
-                    </div>
-                </div>
+        <div class="hero-actions">
+            <a href="startups-shortlisting" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Shortlisting
             </a>
+            <a href="risk_ratings_report" class="btn btn-primary">
+                <i class="fas fa-file-pdf" aria-hidden="true"></i> Generate Risk Report
+            </a>
+        </div>
+    </div>
+
+    <?php if (!empty($_SESSION['success'])): ?>
+        <div class="alert alert-success">
+            <?= h($_SESSION['success']) ?>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
+
+    <?php if (!empty($_SESSION['error'])): ?>
+        <div class="alert alert-danger">
+            <?= h($_SESSION['error']) ?>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
+
+    <div class="stats-grid reports-stats">
+        <a href="risk_ratings_report" class="mrr-stat-link" title="View full Risk Ratings Report">
             <div class="stat-card">
-                <div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
+                <div class="stat-icon bg-blue"><i class="fas fa-shield-halved" aria-hidden="true"></i></div>
                 <div class="stat-info">
-                    <span class="stat-label">Generated</span>
-                    <span class="stat-value"><?= number_format((int)($stats['generated'] ?? 0)) ?></span>
+                    <span class="stat-label">Total <i class="fas fa-external-link-alt link-icon" aria-hidden="true"></i></span>
+                    <span class="stat-value"><?= number_format((int)($stats['total'] ?? 0)) ?></span>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-slate"><i class="fas fa-file-pen" aria-hidden="true"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Draft</span>
-                    <span class="stat-value"><?= number_format((int)($stats['draft'] ?? 0)) ?></span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-teal"><i class="fas fa-signal" aria-hidden="true"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Minor</span>
-                    <span class="stat-value"><?= number_format((int)($stats['minor'] ?? 0)) ?></span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-blue"><i class="fas fa-gauge" aria-hidden="true"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Moderate</span>
-                    <span class="stat-value"><?= number_format((int)($stats['moderate'] ?? 0)) ?></span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-amber"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Major</span>
-                    <span class="stat-value"><?= number_format((int)($stats['major'] ?? 0)) ?></span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-red"><i class="fas fa-radiation" aria-hidden="true"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Severe</span>
-                    <span class="stat-value"><?= number_format((int)($stats['severe'] ?? 0)) ?></span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon bg-purple"><i class="fas fa-file-pdf" aria-hidden="true"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">PDFs</span>
-                    <span class="stat-value"><?= number_format((int)($stats['has_pdf'] ?? 0)) ?></span>
-                </div>
+        </a>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Generated</span>
+                <span class="stat-value"><?= number_format((int)($stats['generated'] ?? 0)) ?></span>
             </div>
         </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-slate"><i class="fas fa-file-pen" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Draft</span>
+                <span class="stat-value"><?= number_format((int)($stats['draft'] ?? 0)) ?></span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-teal"><i class="fas fa-signal" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Minor</span>
+                <span class="stat-value"><?= number_format((int)($stats['minor'] ?? 0)) ?></span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-gauge" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Moderate</span>
+                <span class="stat-value"><?= number_format((int)($stats['moderate'] ?? 0)) ?></span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Major</span>
+                <span class="stat-value"><?= number_format((int)($stats['major'] ?? 0)) ?></span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-red"><i class="fas fa-radiation" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Severe</span>
+                <span class="stat-value"><?= number_format((int)($stats['severe'] ?? 0)) ?></span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="fas fa-file-pdf" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">PDFs</span>
+                <span class="stat-value"><?= number_format((int)($stats['has_pdf'] ?? 0)) ?></span>
+            </div>
+        </div>
+    </div>
 
-        <div class="mrr-filters">
+    <div class="card">
+        <div class="card-body">
             <form method="get" action="manage_risk_ratings" class="filters-bar" role="search" aria-label="Filter risk ratings">
-                <div class="fg form-group filters-grow">
-                    <label>Search</label>
-                    <input type="text" name="search" class="fg-search" placeholder="Startup, email, contact..." value="<?= h($search) ?>">
+                <div class="form-group filters-grow">
+                    <label for="mrrSearch">Search</label>
+                    <input type="text" id="mrrSearch" name="search" class="form-control" placeholder="Startup, email, contact..." value="<?= h($search) ?>">
                 </div>
 
-                <div class="fg form-group">
-                    <label>Opportunity</label>
-                    <select name="opportunity_id" class="fg-select">
+                <div class="form-group">
+                    <label for="mrrOpportunity">Opportunity</label>
+                    <select id="mrrOpportunity" name="opportunity_id" class="form-control">
                         <option value="">All Opportunities</option>
                         <?php foreach ($opportunities as $opp): ?>
                             <option value="<?= (int)$opp['opportunity_id'] ?>" <?= ($filterOpportunity === (int)$opp['opportunity_id']) ? 'selected' : '' ?>>
@@ -711,9 +569,9 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
                     </select>
                 </div>
 
-                <div class="fg form-group">
-                    <label>Risk Level</label>
-                    <select name="rating" class="fg-select">
+                <div class="form-group">
+                    <label for="mrrRating">Risk Level</label>
+                    <select id="mrrRating" name="rating" class="form-control">
                         <option value="">All Levels</option>
                         <?php foreach (['Minor', 'Moderate', 'Major', 'Severe'] as $r): ?>
                             <option value="<?= h($r) ?>" <?= ($filterRating === $r) ? 'selected' : '' ?>><?= h($r) ?></option>
@@ -721,243 +579,381 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
                     </select>
                 </div>
 
-                <div class="fg form-group">
-                    <label>Status</label>
-                    <select name="status" class="fg-select">
+                <div class="form-group">
+                    <label for="mrrStatus">Status</label>
+                    <select id="mrrStatus" name="status" class="form-control">
                         <option value="">All Statuses</option>
                         <option value="draft" <?= ($filterStatus === 'draft') ? 'selected' : '' ?>>Draft</option>
                         <option value="generated" <?= ($filterStatus === 'generated') ? 'selected' : '' ?>>Generated</option>
                     </select>
                 </div>
 
-                <div class="fg">
-                    <label>&nbsp;</label>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary" style="height:38px;border-radius:10px;">
-                            <i class="fas fa-search me-1"></i> Filter
-                        </button>
-                        <a href="manage_risk_ratings" class="btn btn-light border" style="height:38px;border-radius:10px;display:inline-flex;align-items:center;">
-                            <i class="fas fa-times me-1"></i> Clear
-                        </a>
-                    </div>
+                <div class="filters-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search" aria-hidden="true"></i> Filter
+                    </button>
+                    <a href="manage_risk_ratings" class="btn btn-secondary">
+                        <i class="fas fa-times" aria-hidden="true"></i> Clear
+                    </a>
                 </div>
             </form>
         </div>
+    </div>
 
-        <div class="mrr-card">
-            <div class="mrr-card-head">
-                <div class="d-flex align-items-center gap-3">
-                    <span class="ctitle"><i class="fas fa-list me-1"></i> All Risk Ratings</span>
-                    <span class="count-pill"><?= number_format($totalRows) ?> record<?= $totalRows !== 1 ? 's' : '' ?></span>
-                </div>
-                <?php if ($search !== '' || $filterStatus !== '' || $filterRating !== '' || $filterOpportunity > 0): ?>
-                    <a href="manage_risk_ratings" class="btn btn-sm btn-light border">
-                        <i class="fas fa-filter me-1"></i> Filtered - Clear
-                    </a>
-                <?php endif; ?>
+    <div class="card">
+        <div class="card-header">
+            <h3>
+                <i class="fas fa-list" aria-hidden="true"></i> All Risk Ratings
+                <span class="badge badge-info"><?= number_format($totalRows) ?> record<?= $totalRows !== 1 ? 's' : '' ?></span>
+            </h3>
+            <?php if ($search !== '' || $filterStatus !== '' || $filterRating !== '' || $filterOpportunity > 0): ?>
+                <a href="manage_risk_ratings" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-filter" aria-hidden="true"></i> Filtered - Clear
+                </a>
+            <?php endif; ?>
+        </div>
+
+        <?php if (empty($ratings)): ?>
+            <div class="empty-state">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                <h4>No risk ratings found</h4>
+                <p>
+                    <?= ($search !== '' || $filterStatus !== '' || $filterRating !== '' || $filterOpportunity > 0)
+                        ? 'Try adjusting your filters'
+                        : 'Risk ratings will appear here once created from the shortlisting page' ?>
+                </p>
             </div>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-stack mrr-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Startup</th>
+                            <th>Opportunity</th>
+                            <th>Risk Score</th>
+                            <th>Recommendation</th>
+                            <th>Status</th>
+                            <th>Files</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($ratings as $i => $rr): ?>
+                        <?php
+                        $label    = (string)($rr['overall_rating_label'] ?? 'Minor');
+                        $score    = (float)($rr['overall_rating'] ?? 1);
+                        $rec      = (string)($rr['recommendation'] ?? '');
+                        $status   = (string)($rr['status'] ?? 'draft');
+                        $hasPdf   = !empty($rr['generated_pdf_path']);
+                        $hasExcel = !empty($rr['generated_excel_path']);
+                        $rowNum   = $offset + $i + 1;
+                        $sig      = sigStatus($rr);
 
-            <?php if (empty($ratings)): ?>
-                <div class="mrr-empty">
-                    <i class="fas fa-shield-alt"></i>
-                    <div class="em">No risk ratings found</div>
-                    <div class="esub">
-                        <?= ($search !== '' || $filterStatus !== '' || $filterRating !== '' || $filterOpportunity > 0)
-                            ? 'Try adjusting your filters'
-                            : 'Risk ratings will appear here once created from the shortlisting page' ?>
-                    </div>
-                </div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="mrr-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Startup</th>
-                                <th>Opportunity</th>
-                                <th>Risk Score</th>
-                                <th>Recommendation</th>
-                                <th>Status</th>
-                                <th>Files</th>
-                                <th>Last Updated</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($ratings as $i => $rr): ?>
-                                <?php
-                                $label    = (string)($rr['overall_rating_label'] ?? 'Minor');
-                                $score    = (float)($rr['overall_rating'] ?? 1);
-                                $rec      = (string)($rr['recommendation'] ?? '');
-                                $status   = (string)($rr['status'] ?? 'draft');
-                                $hasPdf   = !empty($rr['generated_pdf_path']);
-                                $hasExcel = !empty($rr['generated_excel_path']);
-                                $rowNum   = $offset + $i + 1;
-                                $sig      = sigStatus($rr);
+                        $wfPayload = json_encode([
+                            'rrId'        => (int)$rr['rr_id'],
+                            'appId'       => (int)$rr['application_id'],
+                            'startupName' => $rr['startup_name'] ?? '',
+                            'prepSig'     => ims_upload_url($rr['prepared_by_signature'] ?? ''),
+                            'revSig'      => ims_upload_url($rr['reviewed_by_signature'] ?? ''),
+                            'appSig'      => ims_upload_url($rr['approved_by_signature'] ?? ''),
+                            'revComments' => $rr['reviewer_comments'] ?? '',
+                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+                        ?>
+                        <tr>
+                            <td class="mrr-rownum" data-label="#"><?= $rowNum ?></td>
 
-                                $wfPayload = json_encode([
-                                    'rrId'        => (int)$rr['rr_id'],
-                                    'appId'       => (int)$rr['application_id'],
-                                    'startupName' => $rr['startup_name'] ?? '',
-                                    'prepSig'     => ims_upload_url($rr['prepared_by_signature'] ?? ''),
-                                    'revSig'      => ims_upload_url($rr['reviewed_by_signature'] ?? ''),
-                                    'appSig'      => ims_upload_url($rr['approved_by_signature'] ?? ''),
-                                    'revComments' => $rr['reviewer_comments'] ?? '',
-                                ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-                                ?>
-                                <tr>
-                                    <td style="color:#9ca3af;font-size:12px"><?= $rowNum ?></td>
+                            <td data-label="Startup">
+                                <div class="mrr-name"><?= h($rr['startup_name'] ?: '-') ?></div>
+                                <div class="cell-muted">
+                                    <?= h($rr['founder_names'] ?: ($rr['contact_person'] ?? '')) ?>
+                                    <?php if (!empty($rr['email'])): ?>
+                                        &middot; <?= h($rr['email']) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
 
-                                    <td>
-                                        <div class="sn-name"><?= h($rr['startup_name'] ?: '-') ?></div>
-                                        <div class="sn-meta">
-                                            <?= h($rr['founder_names'] ?: ($rr['contact_person'] ?? '')) ?>
-                                            <?php if (!empty($rr['email'])): ?>
-                                                &middot; <?= h($rr['email']) ?>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
+                            <td class="mrr-opp" data-label="Opportunity">
+                                <?= h($rr['opportunity_title'] ?: '-') ?>
+                            </td>
 
-                                    <td style="font-size:12px;color:#6b7280;max-width:150px">
-                                        <?= h($rr['opportunity_title'] ?: '-') ?>
-                                    </td>
+                            <td data-label="Risk Score">
+                                <div class="mrr-score">
+                                    <span class="score-circle <?= h(scoreCircleClass($label)) ?>">
+                                        <?= number_format($score, 1) ?>
+                                    </span>
+                                    <span class="badge <?= h(ratingBadgeClass($label)) ?>">
+                                        <?= h($label) ?>
+                                    </span>
+                                </div>
+                            </td>
 
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span class="score-circle <?= h(scoreCircleClass($label)) ?>">
-                                                <?= number_format($score, 1) ?>
-                                            </span>
-                                            <span class="risk-badge <?= h(ratingBadgeClass($label)) ?>">
-                                                <?= h($label) ?>
-                                            </span>
-                                        </div>
-                                    </td>
+                            <td data-label="Recommendation">
+                                <?php if ($rec !== ''): ?>
+                                    <span class="badge <?= h(recClass($rec)) ?>"><?= h($rec) ?></span>
+                                <?php else: ?>
+                                    <span class="cell-muted">-</span>
+                                <?php endif; ?>
+                            </td>
 
-                                    <td>
-                                        <?php if ($rec !== ''): ?>
-                                            <span class="rec-badge <?= h(recClass($rec)) ?>"><?= h($rec) ?></span>
-                                        <?php else: ?>
-                                            <span style="color:#d1d5db;font-size:12px">-</span>
-                                        <?php endif; ?>
-                                    </td>
+                            <td data-label="Status">
+                                <span class="badge <?= $status === 'generated' ? 'badge-success' : 'badge-secondary' ?>">
+                                    <i class="fas <?= $status === 'generated' ? 'fa-check-circle' : 'fa-pencil-alt' ?>" aria-hidden="true"></i>
+                                    <?= ucfirst(h($status)) ?>
+                                </span>
+                            </td>
 
-                                    <td>
-                                        <span class="status-badge <?= $status === 'generated' ? 'sb-generated' : 'sb-draft' ?>">
-                                            <i class="fas <?= $status === 'generated' ? 'fa-check-circle' : 'fa-pencil-alt' ?>" style="font-size:10px"></i>
-                                            <?= ucfirst(h($status)) ?>
-                                        </span>
-                                    </td>
+                            <td data-label="Files">
+                                <div class="mrr-stack">
+                                    <?php if ($hasPdf): ?>
+                                        <a href="<?= h(ims_upload_url($rr['generated_pdf_path'])) ?>" target="_blank" class="btn btn-sm btn-danger" title="<?= h($rr['generated_pdf_name'] ?? '') ?>">
+                                            <i class="fas fa-file-pdf" aria-hidden="true"></i> View
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="badge badge-secondary"><i class="fas fa-file-pdf" aria-hidden="true"></i> No PDF</span>
+                                    <?php endif; ?>
 
-                                    <td>
-                                        <div class="file-btns">
-                                            <?php if ($hasPdf): ?>
-                                                <a href="<?= h(ims_upload_url($rr['generated_pdf_path'])) ?>" target="_blank" class="fbtn fbtn-pdf" title="<?= h($rr['generated_pdf_name'] ?? '') ?>">
-                                                    <i class="fas fa-file-pdf"></i> View
-                                                </a>
-                                            <?php else: ?>
-                                                <span class="fbtn fbtn-none"><i class="fas fa-file-pdf"></i> No PDF</span>
-                                            <?php endif; ?>
+                                    <?php if ($hasExcel): ?>
+                                        <a href="<?= h(ims_upload_url($rr['generated_excel_path'])) ?>" target="_blank" class="btn btn-sm btn-success" title="<?= h($rr['generated_excel_name'] ?? '') ?>">
+                                            <i class="fas fa-file-excel" aria-hidden="true"></i> Excel
+                                        </a>
+                                    <?php else: ?>
+                                        <span class="badge badge-secondary"><i class="fas fa-file-excel" aria-hidden="true"></i> No Excel</span>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
 
-                                            <?php if ($hasExcel): ?>
-                                                <a href="<?= h(ims_upload_url($rr['generated_excel_path'])) ?>" target="_blank" class="fbtn fbtn-excel" title="<?= h($rr['generated_excel_name'] ?? '') ?>">
-                                                    <i class="fas fa-file-excel"></i> Excel
-                                                </a>
-                                            <?php else: ?>
-                                                <span class="fbtn fbtn-none"><i class="fas fa-file-excel"></i> No Excel</span>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
+                            <td class="text-nowrap" data-label="Last Updated">
+                                <div class="mrr-date">
+                                    <?= h(date('d M Y', strtotime($rr['updated_at'] ?? 'now'))) ?>
+                                </div>
+                                <div class="cell-muted">
+                                    <?= h(date('H:i', strtotime($rr['updated_at'] ?? 'now'))) ?>
+                                    <?php $pn = trim((string)($rr['prepared_by_full_name'] ?? '')); ?>
+                                    <?php if ($pn !== ''): ?>
+                                        &middot; <?= h($pn) ?>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
 
-                                    <td style="white-space:nowrap">
-                                        <div style="font-size:12px;color:#374151">
-                                            <?= h(date('d M Y', strtotime($rr['updated_at'] ?? 'now'))) ?>
-                                        </div>
-                                        <div style="font-size:11px;color:#9ca3af">
-                                            <?= h(date('H:i', strtotime($rr['updated_at'] ?? 'now'))) ?>
-                                            <?php $pn = trim((string)($rr['prepared_by_full_name'] ?? '')); ?>
-                                            <?php if ($pn !== ''): ?>
-                                                &middot; <?= h($pn) ?>
-                                            <?php endif; ?>
-                                        </div>
-                                    </td>
+                            <td data-label="Actions">
+                                <div class="mrr-stack">
+                                    <a href="risk_rating?application_id=<?= (int)$rr['application_id'] ?>" class="btn btn-sm btn-info" title="Edit Risk Rating">
+                                        <i class="fas fa-edit" aria-hidden="true"></i>
+                                    </a>
 
-                                    <td>
-                                        <div class="action-btns">
-                                            <a href="risk_rating?application_id=<?= (int)$rr['application_id'] ?>" class="abtn abtn-edit" title="Edit Risk Rating">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-
-                                            <?php if ($hasPdf): ?>
-                                                <button type="button" class="abtn abtn-workflow" onclick='openWf(<?= $wfPayload ?>)' title="Signature Workflow">
-                                                    <i class="fas fa-signature"></i>
-                                                    <?php if ($sig['done'] > 0): ?>
-                                                        <span style="background:rgba(255,255,255,.25);border-radius:999px;padding:1px 6px;font-size:10px">
-                                                            <?= $sig['done'] ?>/3
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </button>
-                                            <?php else: ?>
-                                                <span class="abtn abtn-disabled" title="Generate PDF first to enable workflow">
-                                                    <i class="fas fa-signature"></i>
+                                    <?php if ($hasPdf): ?>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick='openWf(<?= $wfPayload ?>)' title="Signature Workflow">
+                                            <i class="fas fa-signature" aria-hidden="true"></i>
+                                            <?php if ($sig['done'] > 0): ?>
+                                                <span class="mrr-step-count">
+                                                    <?= $sig['done'] ?>/3
                                                 </span>
                                             <?php endif; ?>
+                                        </button>
+                                    <?php else: ?>
+                                        <span class="btn btn-sm btn-secondary mrr-btn-off" aria-disabled="true" title="Generate PDF first to enable workflow">
+                                            <i class="fas fa-signature" aria-hidden="true"></i>
+                                        </span>
+                                    <?php endif; ?>
 
-                                            <button
-                                                type="button"
-                                                class="abtn abtn-delete"
-                                                onclick="confirmDelete(<?= (int)$rr['rr_id'] ?>, '<?= addslashes(strip_tags((string)($rr['startup_name'] ?? ''))) ?>')"
-                                                title="Delete this risk rating">
-                                                <i class="fas fa-trash-alt"></i>
-                                            </button>
-                                        </div>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-danger"
+                                        onclick="confirmDelete(<?= (int)$rr['rr_id'] ?>, '<?= addslashes(strip_tags((string)($rr['startup_name'] ?? ''))) ?>')"
+                                        title="Delete this risk rating">
+                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                    </button>
+                                </div>
 
-                                        <?php if ($hasPdf): ?>
-                                            <div class="sig-progress" title="Prepared / Reviewed / Approved">
-                                                <span class="sig-pip <?= $sig['steps']['prepared'] ? 'done' : '' ?>"></span>
-                                                <span class="sig-pip <?= $sig['steps']['reviewed'] ? 'done' : '' ?>"></span>
-                                                <span class="sig-pip <?= $sig['steps']['approved'] ? 'done' : '' ?>"></span>
-                                                <span class="sig-prog-label"><?= $sig['done'] ?>/3 signed</span>
-                                            </div>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                                <?php if ($hasPdf): ?>
+                                    <div class="sig-progress" title="Prepared / Reviewed / Approved">
+                                        <span class="sig-pip <?= $sig['steps']['prepared'] ? 'done' : '' ?>"></span>
+                                        <span class="sig-pip <?= $sig['steps']['reviewed'] ? 'done' : '' ?>"></span>
+                                        <span class="sig-pip <?= $sig['steps']['approved'] ? 'done' : '' ?>"></span>
+                                        <span class="sig-prog-label"><?= $sig['done'] ?>/3 signed</span>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mrr-pagination">
+                <div class="cell-muted">
+                    Showing <?= number_format($totalRows > 0 ? $offset + 1 : 0) ?>-<?= number_format(min($offset + $perPage, $totalRows)) ?>
+                    of <?= number_format($totalRows) ?> records
                 </div>
+                <div class="pag-links">
+                    <?php if ($page > 1): ?>
+                        <a href="?<?= buildQS(['page' => 1]) ?>"><i class="fas fa-angle-double-left"></i></a>
+                        <a href="?<?= buildQS(['page' => $page - 1]) ?>"><i class="fas fa-angle-left"></i></a>
+                    <?php else: ?>
+                        <span class="dis"><i class="fas fa-angle-double-left"></i></span>
+                        <span class="dis"><i class="fas fa-angle-left"></i></span>
+                    <?php endif; ?>
 
-                <div class="mrr-pagination">
-                    <div class="pi">
-                        Showing <?= number_format($totalRows > 0 ? $offset + 1 : 0) ?>-<?= number_format(min($offset + $perPage, $totalRows)) ?>
-                        of <?= number_format($totalRows) ?> records
-                    </div>
-                    <div class="pag-links">
-                        <?php if ($page > 1): ?>
-                            <a href="?<?= buildQS(['page' => 1]) ?>"><i class="fas fa-angle-double-left"></i></a>
-                            <a href="?<?= buildQS(['page' => $page - 1]) ?>"><i class="fas fa-angle-left"></i></a>
+                    <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
+                        <?php if ($p === $page): ?>
+                            <span class="active"><?= $p ?></span>
                         <?php else: ?>
-                            <span class="dis"><i class="fas fa-angle-double-left"></i></span>
-                            <span class="dis"><i class="fas fa-angle-left"></i></span>
+                            <a href="?<?= buildQS(['page' => $p]) ?>"><?= $p ?></a>
                         <?php endif; ?>
+                    <?php endfor; ?>
 
-                        <?php for ($p = max(1, $page - 2); $p <= min($totalPages, $page + 2); $p++): ?>
-                            <?php if ($p === $page): ?>
-                                <span class="active"><?= $p ?></span>
-                            <?php else: ?>
-                                <a href="?<?= buildQS(['page' => $p]) ?>"><?= $p ?></a>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-
-                        <?php if ($page < $totalPages): ?>
-                            <a href="?<?= buildQS(['page' => $page + 1]) ?>"><i class="fas fa-angle-right"></i></a>
-                            <a href="?<?= buildQS(['page' => $totalPages]) ?>"><i class="fas fa-angle-double-right"></i></a>
-                        <?php else: ?>
-                            <span class="dis"><i class="fas fa-angle-right"></i></span>
-                            <span class="dis"><i class="fas fa-angle-double-right"></i></span>
-                        <?php endif; ?>
-                    </div>
+                    <?php if ($page < $totalPages): ?>
+                        <a href="?<?= buildQS(['page' => $page + 1]) ?>"><i class="fas fa-angle-right"></i></a>
+                        <a href="?<?= buildQS(['page' => $totalPages]) ?>"><i class="fas fa-angle-double-right"></i></a>
+                    <?php else: ?>
+                        <span class="dis"><i class="fas fa-angle-right"></i></span>
+                        <span class="dis"><i class="fas fa-angle-double-right"></i></span>
+                    <?php endif; ?>
                 </div>
-            <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+
+</div><!-- /.page-stack -->
+
+<div class="modal" id="deleteModal">
+    <div class="modal-card mrr-modal-sm" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-body mrr-delete-body">
+            <div class="stat-icon bg-red" aria-hidden="true"><i class="fas fa-trash-alt"></i></div>
+            <h3 id="deleteModalTitle">Delete Risk Rating?</h3>
+            <p>
+                Permanently delete the risk rating for<br>
+                <span class="mrr-delete-name" id="deleteModalName">-</span><br>
+                including all sections, checks, scores and files.
+                This <strong>cannot be undone</strong>.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                    <i class="fas fa-times" aria-hidden="true"></i> Cancel
+                </button>
+                <form method="post" action="manage_risk_ratings" id="deleteForm">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="rr_id" id="deleteRrId" value="">
+                    <input type="hidden" name="search" value="<?= h($search) ?>">
+                    <input type="hidden" name="status" value="<?= h($filterStatus) ?>">
+                    <input type="hidden" name="rating" value="<?= h($filterRating) ?>">
+                    <input type="hidden" name="opportunity_id" value="<?= h($filterOpportunity ?: '') ?>">
+                    <input type="hidden" name="page" value="<?= h($page) ?>">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i> Yes, Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="wfModal">
+    <div class="modal-card mrr-wf-card" role="dialog" aria-modal="true" aria-labelledby="wfModalTitle">
+        <div class="modal-head">
+            <div>
+                <h3 id="wfModalTitle"><i class="fas fa-signature" aria-hidden="true"></i> Signature Workflow</h3>
+                <div class="wf-sub" id="wfStartupName">-</div>
+            </div>
+            <button type="button" class="modal-close" onclick="closeWf()" aria-label="Close">&times;</button>
+        </div>
+
+        <div class="wf-step-tabs">
+            <div class="wf-step-tab active" id="wfTab0" onclick="goStep(0)">
+                <div class="step-num">1</div>
+                <span class="step-lbl">Prepared By</span>
+            </div>
+            <div class="wf-step-tab" id="wfTab1" onclick="goStep(1)">
+                <div class="step-num">2</div>
+                <span class="step-lbl">Reviewed By</span>
+            </div>
+            <div class="wf-step-tab" id="wfTab2" onclick="goStep(2)">
+                <div class="step-num">3</div>
+                <span class="step-lbl">Approved by ED</span>
+            </div>
+        </div>
+
+        <div class="modal-body">
+        <div class="wf-pane active" id="wfPane0">
+            <div class="modal-section-label"><i class="fas fa-user-edit" aria-hidden="true"></i> Prepared By</div>
+            <div class="sig-saved" id="prepSaved">
+                <img id="prepSavedImg" src="" alt="">
+                <div class="sig-saved-info">
+                    <div class="sig-saved-name" id="prepSavedName">-</div>
+                    <div class="sig-saved-sub"><i class="fas fa-check-circle" aria-hidden="true"></i> Signature on record</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-soft" onclick="clearSaved('prep')">
+                    <i class="fas fa-times" aria-hidden="true"></i> Remove
+                </button>
+            </div>
+            <div class="wf-current-user-box">
+                <div class="stat-label">Signed by</div>
+                <div class="wf-current-user-name" id="prepCurrentUserName"><?= h($currentUserName) ?></div>
+                <div class="cell-muted"><?= h($currentUserRole) ?></div>
+            </div>
+            <input type="hidden" id="prepUserId" value="<?= (int)$currentUserId ?>">
+            <input type="hidden" id="prepUserName" value="<?= h($currentUserName) ?>">
+            <?= buildSigArea('prep', $signaturePermissions['prep']['allowed'], $signaturePermissions['prep']['roles'], $signaturePermissions['prep']['label']) ?>
+        </div>
+
+        <div class="wf-pane" id="wfPane1">
+            <div class="modal-section-label"><i class="fas fa-user-check" aria-hidden="true"></i> Reviewed By</div>
+            <div class="sig-saved" id="revSaved">
+                <img id="revSavedImg" src="" alt="">
+                <div class="sig-saved-info">
+                    <div class="sig-saved-name" id="revSavedName">-</div>
+                    <div class="sig-saved-sub"><i class="fas fa-check-circle" aria-hidden="true"></i> Signature on record</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-soft" onclick="clearSaved('rev')">
+                    <i class="fas fa-times" aria-hidden="true"></i> Remove
+                </button>
+            </div>
+            <div class="wf-current-user-box">
+                <div class="stat-label">Signed by</div>
+                <div class="wf-current-user-name" id="revCurrentUserName"><?= h($currentUserName) ?></div>
+                <div class="cell-muted"><?= h($currentUserRole) ?></div>
+            </div>
+            <input type="hidden" id="revUserId" value="<?= (int)$currentUserId ?>">
+            <input type="hidden" id="revUserName" value="<?= h($currentUserName) ?>">
+            <?= buildSigArea('rev', $signaturePermissions['rev']['allowed'], $signaturePermissions['rev']['roles'], $signaturePermissions['rev']['label']) ?>
+
+            <div class="modal-section-label"><i class="fas fa-comment-alt" aria-hidden="true"></i> Reviewer Comments</div>
+            <textarea class="form-control" id="reviewerComments" placeholder="Enter reviewer comments..."></textarea>
+        </div>
+
+        <div class="wf-pane" id="wfPane2">
+            <div class="modal-section-label"><i class="fas fa-user-shield" aria-hidden="true"></i> Approved by ED</div>
+            <div class="sig-saved" id="appSaved">
+                <img id="appSavedImg" src="" alt="">
+                <div class="sig-saved-info">
+                    <div class="sig-saved-name" id="appSavedName">-</div>
+                    <div class="sig-saved-sub"><i class="fas fa-check-circle" aria-hidden="true"></i> Signature on record</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-soft" onclick="clearSaved('app')">
+                    <i class="fas fa-times" aria-hidden="true"></i> Remove
+                </button>
+            </div>
+            <div class="wf-current-user-box">
+                <div class="stat-label">Signed by</div>
+                <div class="wf-current-user-name" id="appCurrentUserName"><?= h($currentUserName) ?></div>
+                <div class="cell-muted"><?= h($currentUserRole) ?></div>
+            </div>
+            <input type="hidden" id="appUserId" value="<?= (int)$currentUserId ?>">
+            <input type="hidden" id="appUserName" value="<?= h($currentUserName) ?>">
+            <?= buildSigArea('app', $signaturePermissions['app']['allowed'], $signaturePermissions['app']['roles'], $signaturePermissions['app']['label']) ?>
+        </div>
+        </div>
+
+        <div class="wf-footer">
+            <div class="wf-status" id="wfStatus"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeWf()">Close</button>
+                <button type="button" class="btn btn-primary" id="wfSaveBtn" onclick="saveWorkflow()">
+                    <i class="fas fa-save" aria-hidden="true"></i> Save &amp; Regenerate PDF
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -119,6 +119,25 @@ $stats_result = $conn->query($stats_query);
 $stats = $stats_result->fetch_assoc();
 ?>
 
+<style>
+/* Activity log: compact role chip, IP column and the pager row. */
+.al-time-col { width: 150px; }
+.al-role { font-size: 10px; }
+.al-ip { font-size: 12px; }
+.al-pager { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 20px; gap: 10px; }
+.al-pager-info { padding: 0 15px; }
+.al-danger-title { color: var(--red-fg); }
+.al-modal-intro { margin-bottom: 20px; }
+</style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-history" aria-hidden="true"></i> Activity Log</h1>
+        <p>Review who did what across the system, filter by user, action or module, and export the results.</p>
+    </div>
+</div>
+
 <!-- Statistics -->
 <div class="stats-grid reports-stats">
     <div class="stat-card">
@@ -172,7 +191,7 @@ $stats = $stats_result->fetch_assoc();
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-history"></i> System Activity Log</h3>
+        <h3><i class="fas fa-history" aria-hidden="true"></i> System Activity Log</h3>
         <div>
             <button onclick="exportLogs()" class="btn btn-info">
                 <i class="fas fa-download"></i> Export
@@ -245,10 +264,10 @@ $stats = $stats_result->fetch_assoc();
         
         <!-- Activity Log Table -->
         <div class="table-responsive">
-            <table class="data-table" id="activityLogTable">
+            <table class="table" id="activityLogTable">
                 <thead>
                     <tr>
-                        <th style="width: 150px;">Time</th>
+                        <th class="al-time-col">Time</th>
                         <th>User</th>
                         <th>Action</th>
                         <th>Module</th>
@@ -259,10 +278,10 @@ $stats = $stats_result->fetch_assoc();
                 <tbody>
                     <?php if (empty($logs)): ?>
                         <tr>
-                            <td colspan="6" class="text-center">
-                                <div style="padding: 40px;">
-                                    <i class="fas fa-history" style="font-size: 48px; color: #bdc3c7; margin-bottom: 15px;"></i>
-                                    <p style="color: #7f8c8d; font-size: 16px;">No activity logs found</p>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fas fa-history" aria-hidden="true"></i>
+                                    <p>No activity logs found</p>
                                 </div>
                             </td>
                         </tr>
@@ -279,10 +298,10 @@ $stats = $stats_result->fetch_assoc();
                                     <div>
                                         <strong><?php echo htmlspecialchars($log['full_name'] ?? 'Unknown User'); ?></strong>
                                         <?php if ($log['username']): ?>
-                                            <br><small style="color: #7f8c8d;">@<?php echo htmlspecialchars($log['username']); ?></small>
+                                            <br><small class="cell-muted">@<?php echo htmlspecialchars($log['username']); ?></small>
                                         <?php endif; ?>
                                         <?php if ($log['role']): ?>
-                                            <br><span class="badge badge-secondary" style="font-size: 10px;"><?php echo htmlspecialchars($log['role']); ?></span>
+                                            <br><span class="badge badge-secondary al-role"><?php echo htmlspecialchars($log['role']); ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -319,17 +338,17 @@ $stats = $stats_result->fetch_assoc();
                                             <?php echo htmlspecialchars($log['module']); ?>
                                         </span>
                                     <?php else: ?>
-                                        <span style="color: #95a5a6;">-</span>
+                                        <span class="cell-muted">-</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <small><?php echo htmlspecialchars($log['description'] ?? '-'); ?></small>
                                     <?php if ($log['record_id']): ?>
-                                        <br><small style="color: #7f8c8d;">Record ID: <?php echo $log['record_id']; ?></small>
+                                        <br><small class="cell-muted">Record ID: <?php echo $log['record_id']; ?></small>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <small style="font-family: monospace;"><?php echo htmlspecialchars($log['ip_address'] ?? '-'); ?></small>
+                                    <code class="al-ip"><?php echo htmlspecialchars($log['ip_address'] ?? '-'); ?></code>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -340,7 +359,7 @@ $stats = $stats_result->fetch_assoc();
         
         <!-- Pagination -->
         <?php if ($total_pages > 1): ?>
-            <div style="display: flex; justify-content: center; align-items: center; margin-top: 20px; gap: 10px;">
+            <div class="al-pager">
                 <?php if ($page > 1): ?>
                     <a href="?page=<?php echo $page - 1; ?><?php echo $filter_user ? '&user=' . $filter_user : ''; ?><?php echo $filter_action ? '&action=' . urlencode($filter_action) : ''; ?><?php echo $filter_module ? '&module=' . urlencode($filter_module) : ''; ?><?php echo $filter_date_from ? '&date_from=' . urlencode($filter_date_from) : ''; ?><?php echo $filter_date_to ? '&date_to=' . urlencode($filter_date_to) : ''; ?><?php echo $search ? '&search=' . urlencode($search) : ''; ?>" 
                        class="btn btn-secondary">
@@ -348,7 +367,7 @@ $stats = $stats_result->fetch_assoc();
                     </a>
                 <?php endif; ?>
                 
-                <span style="padding: 0 15px;">
+                <span class="al-pager-info">
                     Page <?php echo $page; ?> of <?php echo $total_pages; ?> 
                     (<?php echo number_format($total_records); ?> records)
                 </span>
@@ -363,17 +382,18 @@ $stats = $stats_result->fetch_assoc();
         <?php endif; ?>
     </div>
 </div>
+</div><!-- /.page-stack -->
 
 <!-- Clear Logs Modal -->
 <div id="clearLogsModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-            <h3 style="color: #E74C3C;"><i class="fas fa-exclamation-triangle"></i> Clear Old Logs</h3>
+            <h3 class="al-danger-title"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Clear Old Logs</h3>
             <span class="close" onclick="closeModal('clearLogsModal')">&times;</span>
         </div>
         <div class="modal-body">
             <form method="POST" action="activity-log-process">
-                <p style="margin-bottom: 20px;">
+                <p class="al-modal-intro">
                     Delete activity logs older than a specified number of days to keep the database clean.
                 </p>
                 

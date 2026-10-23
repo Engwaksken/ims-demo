@@ -122,47 +122,48 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
 
 <link rel="stylesheet" href="css/opportunities.css">
 <style>
-.rich-help{font-size:12px;color:#64748b;margin-top:6px;line-height:1.5}
-.html-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 7px}
-.html-toolbar button{border:1px solid #dbe2ea;background:#fff;border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12px}
-.content-repeater{display:flex;flex-direction:column;gap:14px}
-.content-row,.bullet-row{border:1px solid #e5e7eb;border-radius:12px;padding:14px;background:#fafafa}
-.content-row-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
-.content-row-head strong{font-size:13px;color:#334155}
-.btn-icon-danger{border:0;background:#fee2e2;color:#b91c1c;width:34px;height:34px;border-radius:8px;cursor:pointer}
-.bullet-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.bullet-row{display:flex;gap:8px;padding:8px;background:#fff}
-.bullet-row input{flex:1}
-.form-note{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px;color:#9a4f0b;font-size:13px}
-.opp-panel-head > .filters-bar{flex:0 1 auto;min-width:0;margin:0 0 0 auto}
-@media(max-width:760px){.modal-card{width:96vw!important}.form-grid{grid-template-columns:1fr!important}}
+/* Application opportunities: filters in the card header, HTML helper toolbar
+   and the repeatable section / bullet rows of the create form. */
+.ao-filters { flex: 0 1 auto; min-width: 0; margin: 0 0 0 auto; }
+.ao-filters .ao-cohort-select { min-width: 170px; }
+.ao-modal-wide { max-width: 1000px; }
+.html-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 7px; }
+.content-repeater { display: flex; flex-direction: column; gap: 14px; margin-top: 12px; }
+.content-row { border: 1px solid var(--ink-100); border-radius: var(--radius-md); padding: 14px; background: var(--surface-hover); }
+.content-row-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 10px; }
+.content-row-head strong { font-size: 13px; color: var(--ink-500); }
+.bullet-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.bullet-row { display: flex; gap: 8px; padding: 8px; border: 1px solid var(--ink-100); border-radius: var(--radius-md); background: var(--surface-card); }
+.bullet-row input { flex: 1; }
+.ao-add-btn { margin-top: 10px; }
 </style>
 
-<div class="opp-hero">
-    <div class="opp-hero-left">
-        <div class="opp-eyebrow"><span class="opp-dot"></span> Programs</div>
-        <h1>Application Opportunities</h1>
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-bullhorn" aria-hidden="true"></i> Application Opportunities</h1>
         <p>Create programme opportunities, link them to cohorts and publish formatted application information.</p>
     </div>
-    <div class="opp-hero-actions">
-        <button type="button" onclick="openModal('createOpportunityModal')" class="btn btn-white">
-            <i class="fas fa-plus"></i> Create Opportunity
+    <div class="hero-actions">
+        <button type="button" onclick="openModal('createOpportunityModal')" class="btn btn-primary">
+            <i class="fas fa-plus" aria-hidden="true"></i> Create Opportunity
         </button>
     </div>
 </div>
 
 <div class="stats-grid reports-stats">
-    <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-bullhorn"></i></div><div class="stat-info"><span class="stat-label">Total</span><span class="stat-value"><?= $total_opportunities ?></span></div></div>
-    <div class="stat-card"><div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div><div class="stat-info"><span class="stat-label">Published</span><span class="stat-value"><?= $published ?></span></div></div>
-    <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-edit"></i></div><div class="stat-info"><span class="stat-label">Drafts</span><span class="stat-value"><?= $draft ?></span></div></div>
-    <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-file-alt"></i></div><div class="stat-info"><span class="stat-label">Applications</span><span class="stat-value"><?= $total_apps ?></span></div></div>
+    <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-bullhorn" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Total</span><span class="stat-value"><?= $total_opportunities ?></span></div></div>
+    <div class="stat-card"><div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Published</span><span class="stat-value"><?= $published ?></span></div></div>
+    <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-edit" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Drafts</span><span class="stat-value"><?= $draft ?></span></div></div>
+    <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-file-alt" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Applications</span><span class="stat-value"><?= $total_apps ?></span></div></div>
 </div>
 
-<div class="opp-panel">
-    <div class="opp-panel-head">
-        <h3><i class="fas fa-bullhorn" style="color:var(--brand-500);"></i> Opportunities</h3>
-        <form method="GET" class="filters-bar" role="search" aria-label="Filter opportunities">
-            <select name="cohort_id" class="form-control" style="min-width:170px">
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-bullhorn" aria-hidden="true"></i> Opportunities</h3>
+        <form method="GET" class="filters-bar ao-filters" role="search" aria-label="Filter opportunities">
+            <select name="cohort_id" class="form-control ao-cohort-select">
                 <option value="">All Cohorts</option>
                 <?php foreach ($cohorts as $cohort): ?>
                     <option value="<?= (int)$cohort['cohort_id'] ?>" <?= $filter_cohort === (int)$cohort['cohort_id'] ? 'selected' : '' ?>>
@@ -172,15 +173,15 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
             </select>
             <select name="type" class="form-control"><option value="">All Types</option><?php foreach($allowed_types as $type): ?><option value="<?= h($type) ?>" <?= $filter_type===$type?'selected':'' ?>><?= h($type) ?></option><?php endforeach; ?></select>
             <select name="status" class="form-control"><option value="">All Statuses</option><?php foreach($allowed_statuses as $status): ?><option value="<?= h($status) ?>" <?= $filter_status===$status?'selected':'' ?>><?= h($status) ?></option><?php endforeach; ?></select>
-            <button class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
+            <button class="btn btn-primary btn-sm"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
             <?php if ($filter_status !== '' || $filter_type !== '' || $filter_cohort > 0): ?><a href="application-opportunities" class="btn btn-secondary btn-sm">Clear</a><?php endif; ?>
         </form>
     </div>
 
-    <div class="opp-panel-body">
+    <div class="card-body">
         <?php if (!$opportunities): ?>
-            <div class="opp-empty">
-                <div class="opp-empty-icon"><i class="fas fa-bullhorn"></i></div>
+            <div class="empty-state">
+                <i class="fas fa-bullhorn" aria-hidden="true"></i>
                 <h4>No Opportunities Found</h4>
                 <p>Create your first opportunity or change the filters.</p>
             </div>
@@ -188,29 +189,29 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
             <div class="opp-list">
             <?php foreach($opportunities as $i => $opp):
                 $status = (string)($opp['status'] ?? 'Draft');
-                $badgeMap = ['Published'=>'badge-published','Draft'=>'badge-draft','Closed'=>'badge-closed','Completed'=>'badge-completed'];
+                $badgeMap = ['Published'=>'badge-available','Draft'=>'badge-pending','Closed'=>'badge-returned','Completed'=>'badge-purple'];
             ?>
                 <div class="opp-card" style="animation-delay:<?= $i*50 ?>ms">
                     <div class="opp-card-head">
-                        <div class="opp-card-title-row"><div class="opp-card-title" title="<?= h($opp['opportunity_title']) ?>"><?= h($opp['opportunity_title']) ?><?php if(!empty($opp['is_featured'])): ?> <span class="opp-featured-badge"><i class="fas fa-star"></i> Featured</span><?php endif; ?></div></div>
-                        <span class="badge <?= $badgeMap[$status] ?? 'badge-secondary' ?>"><?= h($status) ?></span>
+                        <div class="opp-card-title-row"><div class="opp-card-title" title="<?= h($opp['opportunity_title']) ?>"><?= h($opp['opportunity_title']) ?><?php if(!empty($opp['is_featured'])): ?> <span class="badge badge-pending"><i class="fas fa-star" aria-hidden="true"></i> Featured</span><?php endif; ?></div></div>
+                        <span class="badge <?= $badgeMap[$status] ?? 'badge-returned' ?>"><?= h($status) ?></span>
                     </div>
                     <div class="opp-meta">
-                        <span class="opp-meta-item"><i class="fas fa-layer-group"></i> <?= h($opp['cohort_name'] ?? 'No cohort') ?></span>
-                        <span class="opp-meta-item"><i class="fas fa-tag"></i> <?= h($opp['opportunity_type']) ?></span>
-                        <span class="opp-meta-item"><i class="fas fa-calendar"></i> Deadline: <?= !empty($opp['deadline']) ? date('d M Y', strtotime($opp['deadline'])) : 'N/A' ?></span>
-                        <span class="opp-meta-item"><i class="fas fa-file-alt"></i> <?= (int)$opp['total_applications'] ?> applications</span>
+                        <span class="opp-meta-item"><i class="fas fa-layer-group" aria-hidden="true"></i> <?= h($opp['cohort_name'] ?? 'No cohort') ?></span>
+                        <span class="opp-meta-item"><i class="fas fa-tag" aria-hidden="true"></i> <?= h($opp['opportunity_type']) ?></span>
+                        <span class="opp-meta-item"><i class="fas fa-calendar" aria-hidden="true"></i> Deadline: <?= !empty($opp['deadline']) ? date('d M Y', strtotime($opp['deadline'])) : 'N/A' ?></span>
+                        <span class="opp-meta-item"><i class="fas fa-file-alt" aria-hidden="true"></i> <?= (int)$opp['total_applications'] ?> applications</span>
                     </div>
                     <div class="opp-actions">
-                        <a href="view-opportunity?id=<?= (int)$opp['opportunity_id'] ?>" class="btn btn-secondary btn-sm"><i class="fas fa-eye"></i> View</a>
-                        <a href="manage-applications?opportunity_id=<?= (int)$opp['opportunity_id'] ?>" class="btn btn-info btn-sm"><i class="fas fa-file-alt"></i> Applications</a>
-                        <?php if($status==='Draft'): ?><button type="button" onclick="publishOpportunity(<?= (int)$opp['opportunity_id'] ?>)" class="btn btn-success btn-sm"><i class="fas fa-check"></i> Publish</button><?php endif; ?>
-                        <?php if($status==='Published'): ?><button type="button" onclick="closeOpportunity(<?= (int)$opp['opportunity_id'] ?>)" class="btn btn-warning btn-sm"><i class="fas fa-lock"></i> Close</button><?php endif; ?>
-                        <?php if($status==='Closed'): ?><a href="includes/opportunity-process.php?action=reopen&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-success btn-sm" onclick="return confirm('Reopen this opportunity?')"><i class="fas fa-unlock"></i> Reopen</a><?php endif; ?>
-                        <?php if($status!=='Completed'): ?><a href="includes/opportunity-process.php?action=complete&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-dark btn-sm" onclick="return confirm('Mark as completed?')"><i class="fas fa-flag-checkered"></i> Complete</a><?php endif; ?>
-                        <a href="edit-opportunity?id=<?= (int)$opp['opportunity_id'] ?>" class="btn btn-secondary btn-sm"><i class="fas fa-edit"></i> Edit</a>
-                        <a href="includes/opportunity-process.php?action=toggle_featured&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-light btn-sm"><i class="fas fa-star"></i> <?= !empty($opp['is_featured'])?'Unfeature':'Feature' ?></a>
-                        <?php if($status==='Draft'): ?><a href="includes/opportunity-process.php?action=delete&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Delete this draft opportunity?')"><i class="fas fa-trash"></i> Delete</a><?php endif; ?>
+                        <a href="view-opportunity?id=<?= (int)$opp['opportunity_id'] ?>" class="btn btn-secondary btn-sm"><i class="fas fa-eye" aria-hidden="true"></i> View</a>
+                        <a href="manage-applications?opportunity_id=<?= (int)$opp['opportunity_id'] ?>" class="btn btn-info btn-sm"><i class="fas fa-file-alt" aria-hidden="true"></i> Applications</a>
+                        <?php if($status==='Draft'): ?><button type="button" onclick="publishOpportunity(<?= (int)$opp['opportunity_id'] ?>)" class="btn btn-primary btn-sm"><i class="fas fa-check" aria-hidden="true"></i> Publish</button><?php endif; ?>
+                        <?php if($status==='Published'): ?><button type="button" onclick="closeOpportunity(<?= (int)$opp['opportunity_id'] ?>)" class="btn btn-warning btn-sm"><i class="fas fa-lock" aria-hidden="true"></i> Close</button><?php endif; ?>
+                        <?php if($status==='Closed'): ?><a href="includes/opportunity-process.php?action=reopen&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-primary btn-sm" onclick="return confirm('Reopen this opportunity?')"><i class="fas fa-unlock" aria-hidden="true"></i> Reopen</a><?php endif; ?>
+                        <?php if($status!=='Completed'): ?><a href="includes/opportunity-process.php?action=complete&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-dark btn-sm" onclick="return confirm('Mark as completed?')"><i class="fas fa-flag-checkered" aria-hidden="true"></i> Complete</a><?php endif; ?>
+                        <a href="edit-opportunity?id=<?= (int)$opp['opportunity_id'] ?>" class="btn btn-secondary btn-sm"><i class="fas fa-edit" aria-hidden="true"></i> Edit</a>
+                        <a href="includes/opportunity-process.php?action=toggle_featured&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-soft btn-sm"><i class="fas fa-star" aria-hidden="true"></i> <?= !empty($opp['is_featured'])?'Unfeature':'Feature' ?></a>
+                        <?php if($status==='Draft'): ?><a href="includes/opportunity-process.php?action=delete&id=<?= (int)$opp['opportunity_id'] ?>&csrf_token=<?= h(csrf_token()) ?>" class="btn btn-danger btn-sm" onclick="return confirm('Delete this draft opportunity?')"><i class="fas fa-trash" aria-hidden="true"></i> Delete</a><?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -219,10 +220,12 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
     </div>
 </div>
 
+</div><!-- /.page-stack -->
+
 <div id="createOpportunityModal" class="modal">
-    <div class="modal-card" style="max-width:1000px">
-        <div class="modal-head">
-            <h3><i class="fas fa-plus-circle" style="color:var(--brand-500)"></i> Create Application Opportunity</h3>
+    <div class="modal-content ao-modal-wide">
+        <div class="modal-header">
+            <h3><i class="fas fa-plus-circle" aria-hidden="true"></i> Create Application Opportunity</h3>
             <button type="button" class="modal-close" onclick="closeModal('createOpportunityModal')">&times;</button>
         </div>
 
@@ -241,9 +244,9 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
                     <div class="form-group">
                         <label class="form-label required">Cohort</label>
                         <?php if (!$cohorts): ?>
-                            <div class="form-note" style="margin-bottom:8px">
-                                <i class="fas fa-triangle-exclamation"></i>
-                                No cohorts were found in the <strong>cohorts</strong> table.
+                            <div class="alert alert-warning">
+                                <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+                                <span>No cohorts were found in the <strong>cohorts</strong> table.</span>
                             </div>
                         <?php endif; ?>
                         <select name="cohort_id" class="form-control" required <?= !$cohorts ? 'disabled' : '' ?>>
@@ -270,19 +273,19 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
                     <div class="form-group full">
                         <label class="form-label required">Short Description</label>
                         <div class="html-toolbar">
-                            <button type="button" onclick="wrapHtml('description','<strong>','</strong>')"><b>B</b></button>
-                            <button type="button" onclick="wrapHtml('description','<p>','</p>')">P</button>
-                            <button type="button" onclick="wrapHtml('description','<ul><li>','</li></ul>')">• List</button>
+                            <button type="button" class="btn btn-soft btn-sm" onclick="wrapHtml('description','<strong>','</strong>')"><b>B</b></button>
+                            <button type="button" class="btn btn-soft btn-sm" onclick="wrapHtml('description','<p>','</p>')">P</button>
+                            <button type="button" class="btn btn-soft btn-sm" onclick="wrapHtml('description','<ul><li>','</li></ul>')">• List</button>
                         </div>
                         <textarea id="description" name="description" class="form-control" required placeholder="<p>Short introduction...</p>"></textarea>
-                        <div class="rich-help">Allowed HTML: &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;b&gt;, &lt;em&gt;, &lt;i&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a&gt;, &lt;h2&gt;, &lt;h3&gt;, &lt;h4&gt;.</div>
+                        <div class="form-hint">Allowed HTML: &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;b&gt;, &lt;em&gt;, &lt;i&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;a&gt;, &lt;h2&gt;, &lt;h3&gt;, &lt;h4&gt;.</div>
                     </div>
 
                     <div class="form-section-label">Application Details Sections</div>
                     <div class="form-group full">
-                        <div class="form-note">Add as many headings as required. Each section can contain formatted HTML descriptions and bullet points.</div>
-                        <div id="contentSections" class="content-repeater" style="margin-top:12px"></div>
-                        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="addContentSection()"><i class="fas fa-plus"></i> Add Heading &amp; Description</button>
+                        <div class="alert alert-info">Add as many headings as required. Each section can contain formatted HTML descriptions and bullet points.</div>
+                        <div id="contentSections" class="content-repeater"></div>
+                        <button type="button" class="btn btn-secondary btn-sm ao-add-btn" onclick="addContentSection()"><i class="fas fa-plus" aria-hidden="true"></i> Add Heading &amp; Description</button>
                     </div>
 
                     <div class="form-section-label">Eligibility Criteria</div>
@@ -295,9 +298,9 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
                     <div class="form-group full">
                         <label class="form-label">Eligibility Description</label>
                         <div class="html-toolbar">
-                            <button type="button" onclick="wrapHtml('eligibility_description_html','<strong>','</strong>')"><b>B</b></button>
-                            <button type="button" onclick="wrapHtml('eligibility_description_html','<p>','</p>')">P</button>
-                            <button type="button" onclick="wrapHtml('eligibility_description_html','<h3>','</h3>')">H3</button>
+                            <button type="button" class="btn btn-soft btn-sm" onclick="wrapHtml('eligibility_description_html','<strong>','</strong>')"><b>B</b></button>
+                            <button type="button" class="btn btn-soft btn-sm" onclick="wrapHtml('eligibility_description_html','<p>','</p>')">P</button>
+                            <button type="button" class="btn btn-soft btn-sm" onclick="wrapHtml('eligibility_description_html','<h3>','</h3>')">H3</button>
                         </div>
                         <textarea id="eligibility_description_html" name="eligibility_description_html" class="form-control" placeholder="<p>Applicants should meet the following conditions...</p>"></textarea>
                     </div>
@@ -305,8 +308,8 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
                     <div class="form-group full">
                         <label class="form-label">Eligibility Bullets</label>
                         <div id="eligibilityBullets" class="bullet-list"></div>
-                        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addEligibilityBullet()"><i class="fas fa-plus"></i> Add Bullet</button>
-                        <div class="rich-help">You may use &lt;strong&gt; inside bullets, e.g. &lt;strong&gt;Registered venture:&lt;/strong&gt; Must be legally registered.</div>
+                        <button type="button" class="btn btn-secondary btn-sm ao-add-btn" onclick="addEligibilityBullet()"><i class="fas fa-plus" aria-hidden="true"></i> Add Bullet</button>
+                        <div class="form-hint">You may use &lt;strong&gt; inside bullets, e.g. &lt;strong&gt;Registered venture:&lt;/strong&gt; Must be legally registered.</div>
                     </div>
 
                     <div class="form-section-label">Required Documents</div>
@@ -334,10 +337,10 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
                 </div>
             </div>
 
-            <div class="modal-foot">
-                <button type="button" onclick="closeModal('createOpportunityModal')" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</button>
-                <button type="submit" name="save_draft" class="btn btn-warning"><i class="fas fa-save"></i> Save as Draft</button>
-                <button type="submit" name="publish" class="btn btn-success"><i class="fas fa-check"></i> Publish Now</button>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('createOpportunityModal')" class="btn btn-secondary"><i class="fas fa-times" aria-hidden="true"></i> Cancel</button>
+                <button type="submit" name="save_draft" class="btn btn-warning"><i class="fas fa-save" aria-hidden="true"></i> Save as Draft</button>
+                <button type="submit" name="publish" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Publish Now</button>
             </div>
         </form>
     </div>
@@ -345,15 +348,16 @@ $total_apps = array_sum(array_map(fn($o) => (int)$o['total_applications'], $oppo
 
 <template id="contentSectionTemplate">
     <div class="content-row">
-        <div class="content-row-head"><strong>Application Detail Section</strong><button type="button" class="btn-icon-danger" onclick="this.closest('.content-row').remove()"><i class="fas fa-trash"></i></button></div>
+        <div class="content-row-head"><strong>Application Detail Section</strong><button type="button" class="btn btn-danger btn-sm" aria-label="Remove section" onclick="this.closest('.content-row').remove()"><i class="fas fa-trash" aria-hidden="true"></i></button></div>
         <div class="form-group"><label class="form-label">Heading</label><input type="text" data-field="heading" class="form-control" placeholder="e.g. About the Fellowship"></div>
         <div class="form-group">
             <label class="form-label">Description</label>
             <textarea data-field="description_html" class="form-control" placeholder="<p>Description with <strong>important text</strong>.</p>"></textarea>
         </div>
-        <div><label class="form-label">Bullets</label><div class="bullet-list section-bullets"></div><button type="button" class="btn btn-secondary btn-sm" onclick="addSectionBullet(this)"><i class="fas fa-plus"></i> Add Bullet</button></div>
+        <div><label class="form-label">Bullets</label><div class="bullet-list section-bullets"></div><button type="button" class="btn btn-secondary btn-sm ao-add-btn" onclick="addSectionBullet(this)"><i class="fas fa-plus" aria-hidden="true"></i> Add Bullet</button></div>
     </div>
 </template>
+
 
 <script>
 let contentIndex = 0;
@@ -390,7 +394,7 @@ function addSectionBullet(btn) {
     const list = btn.parentElement.querySelector('.section-bullets');
     const row = document.createElement('div');
     row.className = 'bullet-row';
-    row.innerHTML = '<input type="text" class="form-control" placeholder="<strong>Label:</strong> bullet text"><button type="button" class="btn-icon-danger" onclick="this.parentElement.remove();renumberSections()"><i class="fas fa-trash"></i></button>';
+    row.innerHTML = '<input type="text" class="form-control" placeholder="<strong>Label:</strong> bullet text"><button type="button" class="btn btn-danger btn-sm" aria-label="Remove bullet" onclick="this.parentElement.remove();renumberSections()"><i class="fas fa-trash" aria-hidden="true"></i></button>';
     list.appendChild(row);
     renumberSections();
 }
@@ -398,7 +402,7 @@ function addSectionBullet(btn) {
 function addEligibilityBullet() {
     const row = document.createElement('div');
     row.className = 'bullet-row';
-    row.innerHTML = `<input type="text" name="eligibility_bullets[${eligibilityBulletIndex++}]" class="form-control" placeholder="<strong>Requirement:</strong> Details"><button type="button" class="btn-icon-danger" onclick="this.parentElement.remove()"><i class="fas fa-trash"></i></button>`;
+    row.innerHTML = `<input type="text" name="eligibility_bullets[${eligibilityBulletIndex++}]" class="form-control" placeholder="<strong>Requirement:</strong> Details"><button type="button" class="btn btn-danger btn-sm" aria-label="Remove bullet" onclick="this.parentElement.remove()"><i class="fas fa-trash" aria-hidden="true"></i></button>`;
     document.getElementById('eligibilityBullets').appendChild(row);
 }
 

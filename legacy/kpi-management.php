@@ -126,161 +126,183 @@ foreach ($departments as $dept) {
 ?>
 
 <style>
-.kpi-management-card {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s;
-}
-
-.kpi-list-item {
-    background: white;
-    border-radius: 8px;
+.km-item {
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--ink-100);
+    border-radius: var(--radius-md);
     padding: 18px;
     margin-bottom: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-left: 4px solid #ecf0f1;
-    transition: all 0.3s;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s, transform 0.2s;
 }
 
-.kpi-list-item:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.km-item:hover {
+    box-shadow: var(--shadow-md);
     transform: translateX(3px);
 }
 
-.kpi-list-item.submitted {
-    border-left-color: #3498DB;
-    background: #f8fcff;
+.km-item.submitted {
+    border-left-color: var(--blue-fg);
+    background: var(--blue-bg);
 }
 
-.kpi-list-item.under-review {
-    border-left-color: #F39C12;
-    background: #fffef8;
+.km-item.under-review {
+    border-left-color: var(--amber-fg);
+    background: var(--amber-bg);
 }
 
-.kpi-list-item.approved {
-    border-left-color: #27AE60;
-}
+.km-item.approved,
+.km-item.completed { border-left-color: var(--green-fg); }
+.km-item.rejected { border-left-color: var(--red-fg); }
 
-.kpi-list-item.rejected {
-    border-left-color: #E74C3C;
-}
-
-.kpi-item-header {
+.km-item-header {
     display: flex;
     justify-content: space-between;
-    align-items: start;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
     margin-bottom: 12px;
 }
 
-.kpi-item-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 5px;
+.km-item-main {
+    flex: 1;
+    min-width: 0;
 }
 
-.kpi-item-meta {
+.km-item-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-900);
+    margin-bottom: 5px;
+    overflow-wrap: anywhere;
+}
+
+.km-item-meta {
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
     font-size: 13px;
-    color: #7f8c8d;
-    margin-bottom: 12px;
+    color: var(--ink-400);
 }
 
-.kpi-item-actions {
+.km-waiting { color: var(--amber-fg); }
+.km-waiting.overdue { color: var(--red-fg); }
+
+.km-item-badges {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.km-item-actions {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     margin-top: 10px;
 }
 
-.priority-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
+.km-achievement { margin-bottom: 10px; }
+
+.km-achievement-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 3px;
 }
 
-.priority-high {
-    background: #ffebee;
-    color: #c62828;
-}
-
-.priority-medium {
-    background: #fff3e0;
-    color: #e65100;
-}
-
-.priority-low {
-    background: #e8f5e9;
-    color: #2e7d32;
-}
-
-.dept-stats-card {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border-left: 4px solid var(--primary-color);
-}
-
-.mini-progress {
+.km-progress {
     height: 6px;
-    background: #ecf0f1;
-    border-radius: 3px;
+    background: var(--ink-50);
+    border-radius: var(--radius-pill);
     overflow: hidden;
     margin-top: 5px;
 }
 
-.mini-progress-fill {
+.km-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    background: var(--brand-500);
     transition: width 0.5s ease;
 }
 
-.tab-container {
-    display: flex;
-    gap: 10px;
+.km-tabs {
+    padding: 0;
     margin-bottom: 20px;
-    border-bottom: 2px solid #ecf0f1;
 }
 
-.tab-button {
-    padding: 10px 20px;
-    background: transparent;
-    border: none;
-    border-bottom: 3px solid transparent;
-    cursor: pointer;
-    font-weight: 600;
-    color: #7f8c8d;
-    transition: all 0.3s;
+.km-dept-heading { margin: 0 0 20px; }
+
+.km-dept {
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand-500);
+    padding: 15px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 10px;
 }
 
-.tab-button.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
-}
-
-.tab-button:hover {
-    color: var(--primary-color);
-}
-
-.action-required-banner {
-    background: linear-gradient(135deg, #FF6B35, #F7931E);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+.km-dept-head {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
 }
+
+.km-dept-head h5 { margin: 0; }
+
+.km-dept-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.km-dept-rate {
+    font-size: 13px;
+    color: var(--ink-400);
+    margin-bottom: 5px;
+}
+
+.km-dept-rate strong { color: var(--green-fg); }
+
+.km-action-alert {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.km-modal-sm { max-width: 500px; }
+.km-modal-md { max-width: 600px; }
+
+.km-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-900);
+}
+
+.km-approve-head h3 i { color: var(--green-fg); }
+.km-reject-head h3 i { color: var(--red-fg); }
 </style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-tasks" aria-hidden="true"></i> KPI Management</h1>
+        <p>Review, approve and track staff KPIs across departments for <?php echo $filter_year; ?>.</p>
+    </div>
+    <div class="hero-actions">
+        <button type="button" onclick="window.location.href='kpi-reports'" class="btn">
+            <i class="fas fa-chart-bar" aria-hidden="true"></i> Analytics
+        </button>
+        <button type="button" onclick="exportAllKPIs()" class="btn btn-primary">
+            <i class="fas fa-file-export" aria-hidden="true"></i> Export All
+        </button>
+    </div>
+</div>
 
 <!-- Statistics -->
 <div class="stats-grid reports-stats">
@@ -335,28 +357,20 @@ foreach ($departments as $dept) {
 
 <!-- Action Required Banner -->
 <?php if ($submitted > 0): ?>
-<div class="action-required-banner">
-    <div>
-        <i class="fas fa-exclamation-circle" style="font-size: 24px; margin-right: 15px;"></i>
+<div class="alert alert-warning km-action-alert">
+    <span>
+        <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
         <strong><?php echo $submitted; ?> KPI<?php echo $submitted > 1 ? 's' : ''; ?> waiting for your review</strong>
-    </div>
-    <button onclick="filterByStatus('Submitted')" class="btn" style="background: white; color: #FF6B35;">
-        <i class="fas fa-eye"></i> Review Now
+    </span>
+    <button type="button" onclick="filterByStatus('Submitted')" class="btn btn-warning btn-sm">
+        <i class="fas fa-eye" aria-hidden="true"></i> Review Now
     </button>
 </div>
 <?php endif; ?>
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-tasks"></i> KPI Management Dashboard</h3>
-        <div>
-            <button onclick="exportAllKPIs()" class="btn btn-success">
-                <i class="fas fa-file-excel"></i> Export All
-            </button>
-            <button onclick="window.location.href='kpi-reports'" class="btn btn-info">
-                <i class="fas fa-chart-bar"></i> Analytics
-            </button>
-        </div>
+        <h3><i class="fas fa-list" aria-hidden="true"></i> KPIs</h3>
     </div>
     
     <div class="card-body">
@@ -419,17 +433,17 @@ foreach ($departments as $dept) {
         </form>
         
         <!-- Tabs -->
-        <div class="tab-container">
-            <button class="tab-button active" onclick="switchTab('all')">
+        <div class="tab-nav km-tabs">
+            <button type="button" class="tab-btn tab-button active" onclick="switchTab('all')">
                 All KPIs (<?php echo $total_kpis; ?>)
             </button>
-            <button class="tab-button" onclick="filterByStatus('Submitted')">
+            <button type="button" class="tab-btn tab-button" onclick="filterByStatus('Submitted')">
                 Pending (<?php echo $submitted; ?>)
             </button>
-            <button class="tab-button" onclick="filterByStatus('Approved')">
+            <button type="button" class="tab-btn tab-button" onclick="filterByStatus('Approved')">
                 Approved (<?php echo $approved; ?>)
             </button>
-            <button class="tab-button" onclick="switchTab('departments')">
+            <button type="button" class="tab-btn tab-button" onclick="switchTab('departments')">
                 By Department
             </button>
         </div>
@@ -437,10 +451,10 @@ foreach ($departments as $dept) {
         <!-- KPI List -->
         <div id="kpiListTab">
             <?php if (empty($kpis)): ?>
-                <div style="text-align: center; padding: 60px;">
-                    <i class="fas fa-bullseye" style="font-size: 64px; color: #bdc3c7; margin-bottom: 20px;"></i>
-                    <h4 style="color: #7f8c8d;">No KPIs Found</h4>
-                    <p style="color: #95a5a6;">Try adjusting your filters or search criteria</p>
+                <div class="empty-state">
+                    <i class="fas fa-bullseye" aria-hidden="true"></i>
+                    <h4>No KPIs Found</h4>
+                    <p>Try adjusting your filters or search criteria</p>
                 </div>
             <?php else: ?>
                 <?php foreach ($kpis as $kpi): ?>
@@ -462,26 +476,26 @@ foreach ($departments as $dept) {
                     }
                     ?>
                     
-                    <div class="kpi-list-item <?php echo strtolower(str_replace(' ', '-', $kpi['status'])); ?>">
-                        <div class="kpi-item-header">
-                            <div style="flex: 1;">
-                                <div class="kpi-item-title"><?php echo htmlspecialchars($kpi['kpi_title']); ?></div>
-                                <div class="kpi-item-meta">
+                    <div class="km-item <?php echo strtolower(str_replace(' ', '-', $kpi['status'])); ?>">
+                        <div class="km-item-header">
+                            <div class="km-item-main">
+                                <div class="km-item-title"><?php echo htmlspecialchars($kpi['kpi_title']); ?></div>
+                                <div class="km-item-meta">
                                     <span><i class="fas fa-user"></i> <?php echo htmlspecialchars($kpi['owner_name']); ?></span>
                                     <span><i class="fas fa-building"></i> <?php echo htmlspecialchars($kpi['department_name']); ?></span>
                                     <span><i class="fas fa-tag"></i> <?php echo htmlspecialchars($kpi['category_name']); ?></span>
                                     <span><i class="fas fa-weight"></i> <?php echo $kpi['weight_percentage']; ?>%</span>
                                     <span><i class="fas fa-bullseye"></i> <?php echo $kpi['target_value']; ?> <?php echo htmlspecialchars($kpi['unit_of_measure']); ?></span>
                                     <?php if ($days_waiting !== null && $kpi['status'] == 'Submitted'): ?>
-                                        <span style="color: <?php echo $days_waiting > 7 ? '#E74C3C' : '#F39C12'; ?>;">
+                                        <span class="km-waiting<?php echo $days_waiting > 7 ? ' overdue' : ''; ?>">
                                             <i class="fas fa-clock"></i> Waiting <?php echo $days_waiting; ?> day<?php echo $days_waiting > 1 ? 's' : ''; ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="km-item-badges">
                                 <?php if ($priority != 'low' && $kpi['status'] == 'Submitted'): ?>
-                                    <span class="priority-badge priority-<?php echo $priority; ?>">
+                                    <span class="badge badge-<?php echo $priority === 'high' ? 'danger' : 'warning'; ?>">
                                         <?php echo ucfirst($priority); ?> Priority
                                     </span>
                                 <?php endif; ?>
@@ -498,25 +512,25 @@ foreach ($departments as $dept) {
                         </div>
                         
                         <?php if ($kpi['overall_achievement'] !== null): ?>
-                            <div style="margin-bottom: 10px;">
-                                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px;">
+                            <div class="km-achievement">
+                                <div class="km-achievement-head">
                                     <span>Overall Achievement</span>
                                     <span><strong><?php echo $kpi['overall_achievement']; ?>%</strong></span>
                                 </div>
-                                <div class="mini-progress">
-                                    <div class="mini-progress-fill" style="width: <?php echo min($kpi['overall_achievement'], 100); ?>%;"></div>
+                                <div class="km-progress">
+                                    <div class="km-progress-fill" style="width: <?php echo min($kpi['overall_achievement'], 100); ?>%;"></div>
                                 </div>
                             </div>
                         <?php endif; ?>
                         
-                        <div class="kpi-item-actions">
+                        <div class="km-item-actions">
                             <a href="view-kpi?id=<?php echo $kpi['kpi_id']; ?>" class="btn btn-info btn-sm">
                                 <i class="fas fa-eye"></i> View
                             </a>
                             
                             <?php if ($kpi['status'] == 'Submitted' && $can_review_kpi): ?>
                                 <button onclick="quickApprove(<?php echo $kpi['kpi_id']; ?>, <?= htmlspecialchars(json_encode((string)($kpi['kpi_title'])), ENT_QUOTES, 'UTF-8') ?>)" 
-                                        class="btn btn-success btn-sm">
+                                        class="btn btn-primary btn-sm">
                                     <i class="fas fa-check"></i> Approve
                                 </button>
                                 <button onclick="quickReject(<?php echo $kpi['kpi_id']; ?>, <?= htmlspecialchars(json_encode((string)($kpi['kpi_title'])), ENT_QUOTES, 'UTF-8') ?>)" 
@@ -536,26 +550,29 @@ foreach ($departments as $dept) {
         
         <!-- Department Stats Tab -->
         <div id="departmentsTab" style="display: none;">
-            <h4 style="margin-bottom: 20px;">Department-wise KPI Overview</h4>
+            <h4 class="km-dept-heading">Department-wise KPI Overview</h4>
             
             <?php if (empty($dept_stats)): ?>
-                <p style="text-align: center; color: #7f8c8d; padding: 40px;">No data available</p>
+                <div class="empty-state">
+                    <i class="fas fa-building" aria-hidden="true"></i>
+                    <p>No data available</p>
+                </div>
             <?php else: ?>
                 <?php foreach ($dept_stats as $stat): ?>
-                    <div class="dept-stats-card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h5 style="margin: 0;"><?php echo htmlspecialchars($stat['name']); ?></h5>
-                            <div style="display: flex; gap: 15px;">
-                                <span class="badge badge-primary"><?php echo $stat['total']; ?> Total</span>
+                    <div class="km-dept">
+                        <div class="km-dept-head">
+                            <h5><?php echo htmlspecialchars($stat['name']); ?></h5>
+                            <div class="km-dept-badges">
+                                <span class="badge badge-secondary"><?php echo $stat['total']; ?> Total</span>
                                 <span class="badge badge-success"><?php echo $stat['approved']; ?> Approved</span>
                                 <span class="badge badge-info"><?php echo $stat['submitted']; ?> Pending</span>
                             </div>
                         </div>
-                        <div style="font-size: 13px; color: #7f8c8d; margin-bottom: 5px;">
-                            Approval Rate: <strong style="color: #27AE60;"><?php echo $stat['approval_rate']; ?>%</strong>
+                        <div class="km-dept-rate">
+                            Approval Rate: <strong><?php echo $stat['approval_rate']; ?>%</strong>
                         </div>
-                        <div class="mini-progress">
-                            <div class="mini-progress-fill" style="width: <?php echo $stat['approval_rate']; ?>%;"></div>
+                        <div class="km-progress">
+                            <div class="km-progress-fill" style="width: <?php echo $stat['approval_rate']; ?>%;"></div>
                         </div>
                     </div>
                 <?php endforeach; ?>
@@ -563,13 +580,14 @@ foreach ($departments as $dept) {
         </div>
     </div>
 </div>
+</div><!-- /.page-stack -->
 
 <!-- Quick Approve Modal -->
 <div id="quickApproveModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3 style="color: #27AE60;"><i class="fas fa-check-circle"></i> Quick Approve KPI</h3>
-            <span class="close" onclick="closeModal('quickApproveModal')">&times;</span>
+    <div class="modal-card km-modal-sm">
+        <div class="modal-head km-approve-head">
+            <h3><i class="fas fa-check-circle" aria-hidden="true"></i> Quick Approve KPI</h3>
+            <button type="button" class="modal-close" onclick="closeModal('quickApproveModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="kpi-process">
@@ -577,7 +595,7 @@ foreach ($departments as $dept) {
                 <input type="hidden" name="kpi_id" id="quickApproveId">
                 
                 <p>Approve this KPI:</p>
-                <p style="font-size: 16px; font-weight: 600; color: #2c3e50;" id="quickApproveTitle"></p>
+                <p class="km-modal-title" id="quickApproveTitle"></p>
                 
                 <div class="form-group">
                     <label for="quick_approve_comments">Review Comments (Optional)</label>
@@ -585,9 +603,9 @@ foreach ($departments as $dept) {
                               placeholder="Add feedback..."></textarea>
                 </div>
                 
-                <div class="modal-footer">
+                <div class="modal-actions">
                     <button type="button" onclick="closeModal('quickApproveModal')" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-check"></i> Approve
                     </button>
                 </div>
@@ -598,10 +616,10 @@ foreach ($departments as $dept) {
 
 <!-- Quick Reject Modal -->
 <div id="quickRejectModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3 style="color: #E74C3C;"><i class="fas fa-times-circle"></i> Reject KPI</h3>
-            <span class="close" onclick="closeModal('quickRejectModal')">&times;</span>
+    <div class="modal-card km-modal-md">
+        <div class="modal-head km-reject-head">
+            <h3><i class="fas fa-times-circle" aria-hidden="true"></i> Reject KPI</h3>
+            <button type="button" class="modal-close" onclick="closeModal('quickRejectModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="kpi-process">
@@ -609,7 +627,7 @@ foreach ($departments as $dept) {
                 <input type="hidden" name="kpi_id" id="quickRejectId">
                 
                 <p>Reject this KPI:</p>
-                <p style="font-size: 16px; font-weight: 600; color: #2c3e50;" id="quickRejectTitle"></p>
+                <p class="km-modal-title" id="quickRejectTitle"></p>
                 
                 <div class="form-group">
                     <label for="quick_reject_reason" class="required">Reason for Rejection</label>
@@ -617,7 +635,7 @@ foreach ($departments as $dept) {
                               placeholder="Provide clear feedback..." required></textarea>
                 </div>
                 
-                <div class="modal-footer">
+                <div class="modal-actions">
                     <button type="button" onclick="closeModal('quickRejectModal')" class="btn btn-secondary">Cancel</button>
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-times"></i> Reject

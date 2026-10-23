@@ -486,7 +486,7 @@ function updateChips(q, feat, urg) {
 function addChip(wrap, label, onRemove) {
   const chip = document.createElement('span');
   chip.className = 'filter-chip';
-  chip.innerHTML = `${escHtml(label)} <button title="Remove filter">×</button>`;
+  chip.innerHTML = `${escHtml(label)} <button title="Remove filter">Ã—</button>`;
   chip.querySelector('button').addEventListener('click', onRemove);
   wrap.appendChild(chip);
 }

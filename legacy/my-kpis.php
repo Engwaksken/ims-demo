@@ -91,32 +91,45 @@ $avg_achievement = !empty($completed_kpis) ?
 
 <style>
 .kpi-card {
-    background: white;
-    border-radius: 8px;
+    background: var(--surface-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
     padding: 20px;
     margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.3s;
-    border-left: 4px solid var(--primary-color);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s, transform 0.2s;
+    border-left: 4px solid var(--ink-200);
 }
 
 .kpi-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
 }
+
+.kpi-card.kpi-status-approved { border-left-color: var(--green-fg); }
+.kpi-card.kpi-status-submitted { border-left-color: var(--blue-fg); }
+.kpi-card.kpi-status-rejected { border-left-color: var(--red-fg); }
 
 .kpi-header {
     display: flex;
     justify-content: space-between;
     align-items: start;
+    gap: 12px;
+    flex-wrap: wrap;
     margin-bottom: 15px;
+}
+
+.kpi-header-main {
+    flex: 1;
+    min-width: 0;
 }
 
 .kpi-title {
     font-size: 18px;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--ink-900);
     margin-bottom: 5px;
+    overflow-wrap: anywhere;
 }
 
 .kpi-meta {
@@ -124,7 +137,15 @@ $avg_achievement = !empty($completed_kpis) ?
     gap: 15px;
     flex-wrap: wrap;
     font-size: 13px;
-    color: #7f8c8d;
+    margin-bottom: 15px;
+}
+
+.kpi-meta,
+.kpi-description {
+    color: var(--ink-400);
+}
+
+.kpi-description {
     margin-bottom: 15px;
 }
 
@@ -137,15 +158,15 @@ $avg_achievement = !empty($completed_kpis) ?
 
 .quarter-box {
     padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
+    background: var(--surface-hover);
+    border-radius: var(--radius-sm);
     text-align: center;
-    border: 2px solid #ecf0f1;
+    border: 1px solid var(--border);
 }
 
 .quarter-label {
     font-size: 11px;
-    color: #7f8c8d;
+    color: var(--ink-300);
     font-weight: 600;
     text-transform: uppercase;
     margin-bottom: 5px;
@@ -153,67 +174,18 @@ $avg_achievement = !empty($completed_kpis) ?
 
 .quarter-target {
     font-size: 20px;
-    font-weight: bold;
-    color: var(--primary-color);
+    font-weight: 700;
+    color: var(--brand-600);
     margin-bottom: 3px;
 }
 
 .quarter-actual {
     font-size: 14px;
-    color: #27AE60;
-}
-
-.quarter-status {
-    margin-top: 8px;
-}
-
-.achievement-bar {
-    height: 8px;
-    background: #ecf0f1;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 5px;
-}
-
-.achievement-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #27AE60, #2ECC71);
-    transition: width 0.5s ease;
-}
-
-.kpi-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-/* Display fixes: readable contrast, wrapping header, responsive quarters. */
-.kpi-header {
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.kpi-header-main {
-    flex: 1;
-    min-width: 0;
-}
-
-.kpi-title {
-    overflow-wrap: anywhere;
-}
-
-.kpi-meta,
-.kpi-description {
-    color: #5f6b76;
-}
-
-.kpi-description {
-    margin-bottom: 15px;
 }
 
 .quarter-actual,
 .quarter-achievement {
-    color: #15803d;
+    color: var(--green-fg);
 }
 
 .quarter-achievement {
@@ -222,17 +194,38 @@ $avg_achievement = !empty($completed_kpis) ?
     margin-top: 3px;
 }
 
-.quarter-status .badge {
-    font-size: 11px;
+.quarter-status {
+    margin-top: 8px;
+}
+
+.achievement-bar {
+    height: 8px;
+    background: var(--ink-50);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 5px;
+}
+
+.achievement-fill {
+    height: 100%;
+    background: var(--green-fg);
+    transition: width 0.5s ease;
 }
 
 .kpi-overall {
     margin-top: 15px;
     padding: 12px;
-    background: #e8f5e9;
-    border-radius: 8px;
+    background: var(--green-bg);
+    border-radius: var(--radius-sm);
     text-align: center;
-    color: #15803d;
+    color: var(--green-fg);
+}
+
+.kpi-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 15px;
 }
 
 @media (max-width: 768px) {
@@ -250,6 +243,19 @@ $avg_achievement = !empty($completed_kpis) ?
     }
 }
 </style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-bullseye" aria-hidden="true"></i> My KPIs</h1>
+        <p>Set, submit and track your key performance indicators for <?php echo h($user_dept['department_name'] ?? 'your department'); ?>.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="create-kpi" class="btn btn-primary">
+            <i class="fas fa-plus" aria-hidden="true"></i> Create New KPI
+        </a>
+    </div>
+</div>
 
 <!-- Statistics -->
 <div class="stats-grid reports-stats">
@@ -296,12 +302,7 @@ $avg_achievement = !empty($completed_kpis) ?
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-bullseye"></i> My KPIs - <?php echo h($user_dept['department_name'] ?? ''); ?></h3>
-        <div class="card-header-actions">
-            <a href="create-kpi" class="btn btn-success">
-                <i class="fas fa-plus" aria-hidden="true"></i> Create New KPI
-            </a>
-        </div>
+        <h3><i class="fas fa-list" aria-hidden="true"></i> KPIs - <?php echo h($user_dept['department_name'] ?? ''); ?></h3>
     </div>
 
     <div class="card-body">
@@ -344,17 +345,17 @@ $avg_achievement = !empty($completed_kpis) ?
                 <i class="fas fa-bullseye" aria-hidden="true"></i>
                 <h4>No KPIs Found</h4>
                 <p>Create your first KPI to get started with performance tracking.</p>
-                <a href="create-kpi" class="btn btn-success">
+                <a href="create-kpi" class="btn btn-primary">
                     <i class="fas fa-plus" aria-hidden="true"></i> Create Your First KPI
                 </a>
             </div>
         <?php else: ?>
             <?php foreach ($kpis as $kpi): ?>
-                <div class="kpi-card" style="border-left-color: <?php 
-                    echo $kpi['status'] == 'Approved' ? '#27AE60' : 
-                        ($kpi['status'] == 'Submitted' ? '#3498DB' : 
-                        ($kpi['status'] == 'Rejected' ? '#E74C3C' : '#95A5A6')); 
-                ?>;">
+                <div class="kpi-card <?php
+                    echo $kpi['status'] == 'Approved' ? 'kpi-status-approved' :
+                        ($kpi['status'] == 'Submitted' ? 'kpi-status-submitted' :
+                        ($kpi['status'] == 'Rejected' ? 'kpi-status-rejected' : ''));
+                ?>">
                     <div class="kpi-header">
                         <div class="kpi-header-main">
                             <div class="kpi-title"><?php echo htmlspecialchars($kpi['kpi_title']); ?></div>
@@ -431,7 +432,7 @@ $avg_achievement = !empty($completed_kpis) ?
                         </div>
                     <?php endif; ?>
                     
-                    <div class="kpi-actions" style="margin-top: 15px;">
+                    <div class="kpi-actions">
                         <a href="view-kpi?id=<?php echo (int) $kpi['kpi_id']; ?>" class="btn btn-info btn-sm">
                             <i class="fas fa-eye"></i> View Details
                         </a>
@@ -458,6 +459,7 @@ $avg_achievement = !empty($completed_kpis) ?
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+</div>
 </div>
 
 <?php include 'includes/footer.php'; ?>

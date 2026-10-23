@@ -232,20 +232,246 @@ if ($criteria_search !== '')  $crit_base['criteria_search'] = $criteria_search;
 if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_rt_id;
 ?>
 
-<link rel="stylesheet" href="css/assets.css">
-<link rel="stylesheet" href="css/manage-reviewers.css">
+<style>
+/* -- manage-reviewers page-specific layout -- */
+.mr-tab-panel.active { display: flex; flex-direction: column; gap: 20px; }
+.mr-tabs .tab-btn .badge { padding: 1px 7px; font-size: 10px; }
 
-<div class="assets-wrap">
+.mr-field-icon { color: var(--brand-400); margin-right: 4px; }
+.mr-opt { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; }
+.mr-step-group { margin-bottom: 24px; }
+.mr-step-hint { margin-top: 8px; }
+.mr-form-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.mr-assign-actions { margin-top: 22px; }
+.mr-assign-summary { display: none; font-size: 12px; color: var(--ink-400); }
+.mr-divider { border: none; border-top: 1px solid var(--ink-100); margin: 16px 0; }
+.mr-check { width: 15px; height: 15px; cursor: pointer; accent-color: var(--brand-500); }
+.mr-inline-form { display: inline; }
+.mr-sent { color: var(--red-fg); }
+.mr-mt-4 { margin-top: 4px; }
+
+/* Step indicator */
+.assign-steps { display: flex; align-items: center; margin-bottom: 24px; }
+.assign-step { display: flex; align-items: center; gap: 10px; flex: 1; }
+.assign-step-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--ink-50);
+    color: var(--ink-300);
+    font-size: 13px;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    transition: background .2s, color .2s;
+}
+.assign-step.active .assign-step-num { background: var(--brand-500); color: var(--ink-0); }
+.assign-step.done .assign-step-num { background: var(--green-fg); color: var(--ink-0); }
+.assign-step-label { font-size: 12px; font-weight: 700; color: var(--ink-400); letter-spacing: .02em; line-height: 1.2; }
+.assign-step.active .assign-step-label { color: var(--ink-900); }
+.assign-step.done .assign-step-label { color: var(--green-fg); }
+.assign-step-connector { width: 32px; height: 2px; background: var(--ink-100); flex-shrink: 0; }
+
+/* Review type tile selector */
+.rt-tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 4px; }
+.rt-tile-opt { display: none; }
+.rt-tile-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1.5px solid var(--ink-100);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: var(--surface-card);
+}
+.rt-tile-label:hover,
+.rt-tile-opt:checked + .rt-tile-label { border-color: var(--brand-500); background: var(--brand-50); }
+.rt-tile-opt:checked + .rt-tile-label { box-shadow: var(--focus-ring); }
+.rt-tile-name { font-size: 13px; font-weight: 700; color: var(--ink-900); line-height: 1.2; }
+.rt-tile-desc { font-size: 11px; color: var(--ink-400); line-height: 1.4; }
+.rt-tile-meta { font-size: 10px; font-weight: 700; color: var(--brand-600); letter-spacing: .04em; text-transform: uppercase; }
+
+/* Reviewer / application multi-selects */
+.select-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; position: relative; }
+.multi-select-wrap { display: flex; flex-direction: column; gap: 8px; }
+.multi-select-wrap .form-control { height: 230px; min-height: 200px; padding: 6px; resize: vertical; }
+.multi-select-wrap option { padding: 6px 10px; border-radius: var(--radius-sm); }
+.select-hint { font-size: 11px; color: var(--ink-300); display: flex; align-items: center; gap: 5px; }
+.select-panels-disabled::after {
+    content: 'Select a Review Type above first';
+    position: absolute;
+    inset: 0;
+    background: var(--surface-page);
+    opacity: .9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-400);
+    border-radius: var(--radius-md);
+    z-index: 5;
+}
+
+/* Reviewer workload cards */
+.reviewer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.reviewer-card {
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+    border-left: 4px solid var(--brand-500);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.rc-name { font-size: 14px; font-weight: 800; color: var(--ink-900); }
+.rc-role { font-size: 11px; color: var(--ink-400); }
+.rc-email { font-size: 11px; color: var(--ink-400); font-style: italic; }
+.rc-progress { margin-top: 4px; }
+.rc-progress-bar { height: 6px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 8px; }
+.rc-progress-fill { height: 100%; border-radius: var(--radius-pill); background: var(--green-fg); transition: width .4s ease; }
+.rc-counts { display: flex; gap: 7px; flex-wrap: wrap; }
+
+/* Status table */
+.mr-toolbar.filters-bar { margin-bottom: 0; }
+.select-all-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 22px;
+    background: var(--ink-50);
+    border-top: 1px solid var(--ink-100);
+    border-bottom: 1px solid var(--ink-100);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-400);
+}
+.select-all-bar label { margin: 0; }
+.mr-selected-count { margin-left: auto; font-size: 11px; color: var(--brand-600); font-weight: 700; }
+.mr-col-check { width: 38px; }
+.overdue-row td { background: var(--red-bg); }
+.overdue-row td:first-child { border-left: 3px solid var(--brand-500); }
+.inactive-row td { opacity: .55; }
+
+/* Criteria table group / category sub-headers */
+.group-header td {
+    background: var(--ink-900);
+    color: var(--ink-0);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+}
+.cat-header td {
+    background: var(--brand-50);
+    color: var(--brand-600);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    padding: 7px 16px;
+    border-left: 3px solid var(--brand-500);
+}
+.group-sub { display: inline-block; margin-left: 8px; font-weight: 400; font-size: 10px; opacity: .7; text-transform: none; letter-spacing: normal; }
+.rt-cell-name strong { display: block; font-size: 14px; font-weight: 600; color: var(--ink-900); }
+.rt-cell-name span { display: block; font-size: 12px; color: var(--ink-300); margin-top: 2px; font-style: italic; }
+
+.mr-search { min-width: 200px; }
+.mr-actions { display: flex; gap: 6px; align-items: center; justify-content: center; }
+
+/* Hover preview tooltip */
+.hover-preview { position: relative; line-height: 1.55; color: var(--ink-600); font-weight: 500; cursor: help; max-width: 320px; }
+.hover-preview::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    width: 340px;
+    max-width: 90vw;
+    background: var(--ink-900);
+    color: var(--ink-0);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    line-height: 1.55;
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity .16s, transform .16s, visibility .16s;
+    z-index: 200;
+    white-space: normal;
+    pointer-events: none;
+}
+.hover-preview:hover { color: var(--ink-900); }
+.hover-preview:hover::after { opacity: 1; visibility: visible; transform: translateY(0); }
+
+/* Pagination row + summary */
+.mr-pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 22px; border-top: 1px solid var(--ink-50); }
+.mr-pager .pagination { margin: 0; }
+.criteria-summary {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    background: var(--ink-50);
+    padding: 12px 22px;
+    border-top: 1px solid var(--ink-100);
+}
+.criteria-summary .lbl { color: var(--ink-400); }
+.criteria-summary strong { color: var(--ink-900); font-weight: 800; }
+
+/* Criteria bundle builder */
+.cat-block { background: var(--surface-card); border: 1.5px solid var(--ink-100); border-radius: var(--radius-lg); margin-bottom: 16px; overflow: hidden; }
+.cat-block-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--brand-50); border-bottom: 1px solid var(--brand-100); }
+.cat-block-head i { color: var(--brand-400); flex-shrink: 0; }
+.cat-block-head input[type="text"] { flex: 1; border: none; background: transparent; font-size: 14px; font-weight: 700; color: var(--ink-900); outline: none; }
+.cat-block-head input[type="text"]::placeholder { color: var(--ink-300); font-weight: 400; }
+.cat-block-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+.cat-block-foot { padding: 10px 16px; border-top: 1px solid var(--brand-100); display: flex; gap: 8px; }
+.criterion-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 10px;
+    align-items: start;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+}
+.criterion-row textarea { grid-column: 1; min-height: 64px; resize: vertical; }
+.criterion-row .num-field { width: 80px; }
+.remove-row-btn { background: none; border: none; color: var(--red-fg); cursor: pointer; font-size: 14px; padding: 4px; align-self: center; }
+.remove-row-btn:hover { opacity: .7; }
+
+@media (max-width: 900px) {
+    .select-panels { grid-template-columns: 1fr; }
+    .reviewer-grid { grid-template-columns: 1fr; }
+    .rt-tile-grid { grid-template-columns: 1fr 1fr; }
+    .criterion-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+    .assign-steps { flex-wrap: wrap; gap: 8px; }
+    .rt-tile-grid { grid-template-columns: 1fr; }
+    .criteria-summary { flex-direction: column; gap: 8px; }
+}
+</style>
+
+<div class="page-stack">
 
 <!-- -- Hero ---------------------------------------------------- -->
 <div class="page-hero">
     <div>
-        <h1><i class="fas fa-user-check"></i> Manage Reviewers</h1>
+        <h1><i class="fas fa-user-check" aria-hidden="true"></i> Manage Reviewers</h1>
         <p>Assign reviewers to applications with a review type, monitor progress, and manage scoring criteria.</p>
     </div>
     <div class="hero-actions">
-        <a href="progress-board" class="btn btn-primary"><i class="fas fa-chart-line"></i> Progress Report</a>
-        <a href="manage_application_scores" class="btn btn-dark"><i class="fas fa-star-half-stroke"></i> Scores</a>
+        <a href="manage_application_scores" class="btn"><i class="fas fa-star-half-stroke" aria-hidden="true"></i> Scores</a>
+        <a href="progress-board" class="btn btn-primary"><i class="fas fa-chart-line" aria-hidden="true"></i> Progress Report</a>
     </div>
 </div>
 
@@ -253,7 +479,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 <?php if ($success_msg !== ''): ?>
     <div class="alert alert-success" id="flashAlert"><i class="fas fa-check-circle"></i> <?= h($success_msg) ?></div>
 <?php elseif ($error_msg !== ''): ?>
-    <div class="alert alert-error"   id="flashAlert"><i class="fas fa-exclamation-circle"></i> <?= h($error_msg) ?></div>
+    <div class="alert alert-danger"  id="flashAlert"><i class="fas fa-exclamation-circle"></i> <?= h($error_msg) ?></div>
 <?php endif; ?>
 
 <!-- -- Stats ---------------------------------------------------- -->
@@ -277,6 +503,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 </div>
 
 <!-- -- Tab nav -------------------------------------------------- -->
+<div class="tab-shell mr-tabs">
 <nav class="tab-nav" role="tablist">
     <?php
     $tabs_cfg = [
@@ -289,16 +516,17 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
     ?>
     <button class="tab-btn<?= $active_tab===$key?' active':'' ?>" type="button" data-tab="<?= h($key) ?>">
         <i class="fas <?= h($ico) ?>"></i> <?= $lbl ?>
-        <?php if ($cnt !== null): ?><span class="tab-badge"><?= (int)$cnt ?></span><?php endif; ?>
+        <?php if ($cnt !== null): ?><span class="badge badge-secondary"><?= (int)$cnt ?></span><?php endif; ?>
     </button>
     <?php endforeach; ?>
 </nav>
+</div>
 
 <!-- --------------------------------------------------------------
      TAB 1 - ASSIGN REVIEWERS
      Step 1: Review Type  ?  Step 2: Reviewer(s)  ?  Step 3: Application(s)
 --------------------------------------------------------------- -->
-<div id="tab-assign" class="tab-panel<?= $active_tab==='assign'?' active':'' ?>">
+<div id="tab-assign" class="tab-panel mr-tab-panel<?= $active_tab==='assign'?' active':'' ?>">
 
     <div class="panel">
         <div class="panel-head">
@@ -327,15 +555,15 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 </div>
 
                 <!-- -- STEP 1: Review Type tile grid ---------------- -->
-                <div class="form-group" style="margin-bottom:24px;">
+                <div class="form-group mr-step-group">
                     <label class="form-label">
-                        <i class="fas fa-layer-group" style="color:var(--brand-400);margin-right:4px;"></i>
+                        <i class="fas fa-layer-group mr-field-icon"></i>
                         Step 1 - Select Review Type
-                        <sup style="color:var(--red-fg);">*</sup>
+                        <span class="required-mark"></span>
                     </label>
 
                     <?php if (empty($active_rts)): ?>
-                        <div class="alert alert-error" style="margin-top:8px;">
+                        <div class="alert alert-danger mr-step-hint">
                             <i class="fas fa-exclamation-triangle"></i>
                             No active review types. Please add one in the <strong>Review Types</strong> tab first.
                         </div>
@@ -368,7 +596,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     </div>
                     <?php endif; ?>
 
-                    <div class="form-hint" id="rtHint" style="margin-top:8px;">
+                    <div class="form-hint mr-step-hint" id="rtHint">
                         <i class="fas fa-arrow-up"></i> Choose a review type to unlock steps 2 and 3.
                     </div>
                 </div>
@@ -379,11 +607,11 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     <!-- Reviewer(s) -->
                     <div class="multi-select-wrap">
                         <label class="form-label">
-                            <i class="fas fa-users" style="color:var(--brand-400);margin-right:4px;"></i>
+                            <i class="fas fa-users mr-field-icon"></i>
                             Step 2 - Reviewer(s)
-                            <sup style="color:var(--red-fg);">*</sup>
+                            <span class="required-mark"></span>
                         </label>
-                        <select name="reviewer_ids[]" multiple class="multi-select" id="reviewerSelect" required>
+                        <select name="reviewer_ids[]" multiple class="form-control multi-select" id="reviewerSelect" required>
                             <?php foreach ($reviewers as $r): ?>
                                 <option value="<?= (int)$r['user_id'] ?>">
                                     <?= h($r['full_name']) ?> (<?= h($r['role']) ?>)
@@ -399,11 +627,11 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     <!-- Application(s) -->
                     <div class="multi-select-wrap">
                         <label class="form-label">
-                            <i class="fas fa-file-alt" style="color:var(--brand-400);margin-right:4px;"></i>
+                            <i class="fas fa-file-alt mr-field-icon"></i>
                             Step 3 - Application(s)
-                            <sup style="color:var(--red-fg);">*</sup>
+                            <span class="required-mark"></span>
                         </label>
-                        <select name="application_ids[]" multiple class="multi-select" id="appSelect" required>
+                        <select name="application_ids[]" multiple class="form-control multi-select" id="appSelect" required>
                             <?php foreach ($applications as $a): ?>
                                 <option value="<?= (int)$a['application_id'] ?>">
                                     #<?= (int)$a['application_id'] ?> - <?= h($a['startup_name']) ?>
@@ -420,8 +648,8 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 </div>
 
                 <!-- Submit -->
-                <div style="margin-top:22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <button type="submit" class="btn btn-dark" id="assignBtn" disabled>
+                <div class="mr-form-actions mr-assign-actions">
+                    <button type="submit" class="btn btn-primary" id="assignBtn" disabled>
                         <i class="fas fa-save"></i> Assign Selected
                     </button>
                     <span class="form-hint" id="assignHint">
@@ -429,7 +657,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         Select a review type above to continue.
                     </span>
                     <!-- Live selection summary -->
-                    <span id="assignSummary" style="display:none;font-size:12px;color:var(--ink-400);font-family:var(--font-mono);"></span>
+                    <span id="assignSummary" class="mr-assign-summary"></span>
                 </div>
             </form>
         </div>
@@ -443,9 +671,9 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
         </div>
         <div class="panel-body">
             <?php if (empty($reviewers)): ?>
-                <div style="text-align:center;padding:40px;color:var(--ink-200);">
-                    <i class="fas fa-user-slash" style="display:block;font-size:2rem;margin-bottom:12px;opacity:.3;"></i>
-                    No eligible reviewers found.
+                <div class="empty-state">
+                    <i class="fas fa-user-slash" aria-hidden="true"></i>
+                    <p>No eligible reviewers found.</p>
                 </div>
             <?php else: ?>
             <div class="reviewer-grid">
@@ -464,9 +692,9 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                             <div class="rc-progress-fill" style="width:<?= $pct ?>%"></div>
                         </div>
                         <div class="rc-counts">
-                            <span class="rc-chip assigned"><i class="fas fa-clipboard"></i> <?= $rTot ?> assigned</span>
-                            <span class="rc-chip done"><i class="fas fa-check"></i> <?= $rDone ?> done</span>
-                            <span class="rc-chip pending"><i class="fas fa-hourglass-half"></i> <?= $rTot - $rDone ?> pending</span>
+                            <span class="badge badge-info"><i class="fas fa-clipboard"></i> <?= $rTot ?> assigned</span>
+                            <span class="badge badge-success"><i class="fas fa-check"></i> <?= $rDone ?> done</span>
+                            <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> <?= $rTot - $rDone ?> pending</span>
                         </div>
                     </div>
                 </div>
@@ -480,7 +708,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 <!-- --------------------------------------------------------------
      TAB 2 - STATUS & REMINDERS
 --------------------------------------------------------------- -->
-<div id="tab-status" class="tab-panel<?= $active_tab==='status'?' active':'' ?>">
+<div id="tab-status" class="tab-panel mr-tab-panel<?= $active_tab==='status'?' active':'' ?>">
 <div class="panel">
     <div class="panel-head">
         <h3><i class="fas fa-tasks"></i> Assignment Status &amp; Reminders</h3>
@@ -491,42 +719,43 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
         <input type="hidden" name="action" value="send_reminders">
 
         <!-- Toolbar -->
-        <div class="asgn-toolbar filters-bar">
-            <input type="search" id="asgnSearch" placeholder="Search startup or reviewer..."
-                   class="form-control" style="height:38px;padding:0 12px;font-size:13px;width:220px;"
-                   autocomplete="off">
-            <select id="asgnStatusFilter" class="form-control" style="height:38px;padding:0 36px 0 10px;font-size:13px;width:160px;">
-                <option value="">All statuses</option>
-                <option value="reviewed">Reviewed</option>
-                <option value="overdue">Overdue (5h+)</option>
-                <option value="pending">Pending</option>
-            </select>
-            <select id="asgnTypeFilter" class="form-control" style="height:38px;padding:0 36px 0 10px;font-size:13px;width:180px;">
-                <option value="">All review types</option>
-                <?php foreach ($review_types as $rt): ?>
-                    <option value="<?= h($rt['name']) ?>"><?= h($rt['name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <button type="button" class="btn btn-sm btn-soft" id="selectOverdueBtn">
-                <i class="fas fa-bell"></i> Select Overdue
-            </button>
-            <button type="submit" class="btn btn-sm btn-dark">
-                <i class="fas fa-paper-plane"></i> Send Reminders
-            </button>
+        <div class="panel-body">
+            <div class="asgn-toolbar filters-bar mr-toolbar">
+                <input type="search" id="asgnSearch" placeholder="Search startup or reviewer..."
+                       class="form-control" autocomplete="off">
+                <select id="asgnStatusFilter" class="form-control">
+                    <option value="">All statuses</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="overdue">Overdue (5h+)</option>
+                    <option value="pending">Pending</option>
+                </select>
+                <select id="asgnTypeFilter" class="form-control">
+                    <option value="">All review types</option>
+                    <?php foreach ($review_types as $rt): ?>
+                        <option value="<?= h($rt['name']) ?>"><?= h($rt['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="button" class="btn btn-sm btn-soft" id="selectOverdueBtn">
+                    <i class="fas fa-bell"></i> Select Overdue
+                </button>
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send Reminders
+                </button>
+            </div>
         </div>
 
         <!-- Select all bar -->
         <div class="select-all-bar">
-            <input type="checkbox" id="checkAll" style="width:15px;height:15px;accent-color:var(--brand-500);">
+            <input type="checkbox" id="checkAll" class="mr-check">
             <label for="checkAll">Select all visible</label>
-            <span id="selectedCount" style="margin-left:auto;font-size:11px;color:var(--brand-500);font-weight:700;font-family:var(--font-mono);"></span>
+            <span id="selectedCount" class="mr-selected-count"></span>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-responsive">
             <table class="table" id="asgnTable">
                 <thead>
                 <tr>
-                    <th style="width:38px;"></th>
+                    <th class="mr-col-check"></th>
                     <th>Application</th>
                     <th>Reviewer</th>
                     <th>Review Type</th>
@@ -539,9 +768,11 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 </thead>
                 <tbody>
                 <?php if (empty($assignments)): ?>
-                    <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--ink-200);">
-                        <i class="fas fa-inbox" style="display:block;font-size:1.8rem;margin-bottom:10px;opacity:.3;"></i>
-                        No assignments yet.
+                    <tr><td colspan="9">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox" aria-hidden="true"></i>
+                            <p>No assignments yet.</p>
+                        </div>
                     </td></tr>
                 <?php else: ?>
                     <?php foreach ($assignments as $a):
@@ -561,80 +792,79 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         data-rt="<?= h($rtname) ?>">
                         <td>
                             <?php if (!$is_rev): ?>
-                                <input type="checkbox" class="asgn-check"
+                                <input type="checkbox" class="asgn-check mr-check"
                                        name="assignment_ids[]" value="<?= (int)$a['assignment_id'] ?>"
                                        <?= $overdue ? 'data-overdue="1"' : '' ?>
-                                       style="width:15px;height:15px;accent-color:var(--brand-500);"
                                        onchange="updateCount()">
                             <?php endif; ?>
                         </td>
                         <td>
                             <strong><?= h($a['startup_name']) ?></strong><br>
-                            <span class="note"><?= h($a['opportunity_title']) ?> . App #<?= (int)$a['application_id'] ?></span>
+                            <span class="cell-muted"><?= h($a['opportunity_title']) ?> . App #<?= (int)$a['application_id'] ?></span>
                         </td>
                         <td>
                             <strong><?= h($a['reviewer_name']) ?></strong><br>
-                            <span class="note"><?= h($a['reviewer_role']) ?></span><br>
-                            <span class="note" style="font-style:italic;"><?= h($a['reviewer_email']) ?></span>
+                            <span class="cell-muted"><?= h($a['reviewer_role']) ?></span><br>
+                            <span class="note"><?= h($a['reviewer_email']) ?></span>
                         </td>
                         <td>
                             <?php if (!empty($a['review_type_name'])): ?>
-                                <span class="pill blue"><?= h($a['review_type_name']) ?></span>
+                                <span class="badge badge-info"><?= h($a['review_type_name']) ?></span>
                             <?php else: ?>
-                                <span class="note">-</span>
+                                <span class="cell-muted">-</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <span class="note"><?= date('d M Y', strtotime((string)$a['assigned_at'])) ?></span><br>
-                            <span class="note"><?= date('h:i A', strtotime((string)$a['assigned_at'])) ?></span><br>
-                            <span class="note" style="font-style:italic;">by <?= h($a['assigned_by_name']) ?></span>
+                            <span class="cell-muted"><?= date('d M Y', strtotime((string)$a['assigned_at'])) ?></span><br>
+                            <span class="cell-muted"><?= date('h:i A', strtotime((string)$a['assigned_at'])) ?></span><br>
+                            <span class="note">by <?= h($a['assigned_by_name']) ?></span>
                         </td>
                         <td>
                             <?php if ($is_rev): ?>
-                                <span class="asgn-badge reviewed"><i class="fas fa-check"></i> Reviewed</span>
-                                <div class="note" style="margin-top:4px;">
+                                <span class="badge badge-success"><i class="fas fa-check"></i> Reviewed</span>
+                                <div class="cell-muted mr-mt-4">
                                     <?= h((string)$a['overall_score']) ?>%
                                     <?= !empty($a['recommendation']) ? ' . '.h($a['recommendation']) : '' ?>
                                 </div>
                                 <?php if (!empty($a['reviewed_at'])): ?>
-                                    <div class="note"><?= date('d M Y', strtotime((string)$a['reviewed_at'])) ?></div>
+                                    <div class="cell-muted"><?= date('d M Y', strtotime((string)$a['reviewed_at'])) ?></div>
                                 <?php endif; ?>
                             <?php elseif ($very): ?>
-                                <span class="asgn-badge very-late"><i class="fas fa-exclamation-triangle"></i> Very Late</span>
+                                <span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> Very Late</span>
                             <?php elseif ($overdue): ?>
-                                <span class="asgn-badge overdue"><i class="fas fa-clock"></i> Overdue</span>
+                                <span class="badge badge-danger"><i class="fas fa-clock"></i> Overdue</span>
                             <?php else: ?>
-                                <span class="asgn-badge pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                                <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> Pending</span>
                             <?php endif; ?>
                         </td>
-                        <td class="note"><?= $elapsed ?></td>
+                        <td class="cell-muted"><?= $elapsed ?></td>
                         <td>
                             <?php if ((int)$a['reminder_count'] > 0): ?>
-                                <strong style="color:var(--red-fg);"><?= (int)$a['reminder_count'] ?> sent</strong>
+                                <strong class="mr-sent"><?= (int)$a['reminder_count'] ?> sent</strong>
                                 <?php if (!empty($a['reminder_sent_at'])): ?>
-                                    <div class="note">Last: <?= date('d M, h:i A', strtotime((string)$a['reminder_sent_at'])) ?></div>
+                                    <div class="cell-muted">Last: <?= date('d M, h:i A', strtotime((string)$a['reminder_sent_at'])) ?></div>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <span class="note">None</span>
+                                <span class="cell-muted">None</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <div class="tbl-actions">
+                            <div class="table-actions">
                                 <?php if ($is_rev): ?>
-                                    <a href="view-review?id=<?= (int)$a['review_id'] ?>" class="btn btn-sm btn-green" title="View review">
+                                    <a href="view-review?id=<?= (int)$a['review_id'] ?>" class="btn btn-sm btn-success" title="View review">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                 <?php else: ?>
-                                    <?= af('send_reminders','style="display:inline;"') ?>
+                                    <?= af('send_reminders','class="mr-inline-form"') ?>
                                         <input type="hidden" name="assignment_ids[]" value="<?= (int)$a['assignment_id'] ?>">
                                         <button type="submit" class="btn btn-sm btn-soft" title="Send reminder">
                                             <i class="fas fa-bell"></i>
                                         </button>
                                     </form>
                                 <?php endif; ?>
-                                <?= af('remove_assignment','style="display:inline;" onsubmit="return confirm(\'Remove this assignment?\')"') ?>
+                                <?= af('remove_assignment','class="mr-inline-form" onsubmit="return confirm(\'Remove this assignment?\')"') ?>
                                     <input type="hidden" name="assignment_id" value="<?= (int)$a['assignment_id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-red" title="Remove">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Remove">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
@@ -653,7 +883,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 <!-- --------------------------------------------------------------
      TAB 3 - REVIEW TYPES
 --------------------------------------------------------------- -->
-<div id="tab-review_types" class="tab-panel<?= $active_tab==='review_types'?' active':'' ?>">
+<div id="tab-review_types" class="tab-panel mr-tab-panel<?= $active_tab==='review_types'?' active':'' ?>">
 
     <div class="stats-grid reports-stats">
         <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-layer-group"></i></div><div class="stat-info"><span class="stat-label">Total</span><span class="stat-value"><?= $rt_total ?></span></div></div>
@@ -668,7 +898,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 <?= $edit_rt ? 'Edit Review Type' : 'Add Review Type' ?>
             </h3>
             <?php if ($edit_rt): ?>
-                <a href="manage-reviewers?tab=review_types" class="btn btn-gray btn-sm"><i class="fas fa-times"></i> Cancel</a>
+                <a href="manage-reviewers?tab=review_types" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Cancel</a>
             <?php endif; ?>
         </div>
         <div class="panel-body">
@@ -677,7 +907,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 <?php if ($edit_rt): ?><input type="hidden" name="review_type_id" value="<?= (int)$edit_rt['review_type_id'] ?>"><?php endif; ?>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Name <sup style="color:var(--red-fg)">*</sup></label>
+                        <label class="form-label">Name <span class="required-mark"></span></label>
                         <input type="text" name="name" class="form-control" required maxlength="120"
                                placeholder="e.g. Technical Review, Financial Assessment"
                                value="<?= h($edit_rt['name'] ?? '') ?>">
@@ -689,7 +919,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         <span class="form-hint">Lower = first in lists.</span>
                     </div>
                     <div class="form-group full">
-                        <label class="form-label">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">(optional)</span></label>
+                        <label class="form-label">Description <span class="mr-opt">(optional)</span></label>
                         <textarea name="description" class="form-control" rows="2" maxlength="500"
                                   placeholder="Briefly describe what this review type covers..."><?= h($edit_rt['description'] ?? '') ?></textarea>
                     </div>
@@ -703,12 +933,12 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     </div>
                     <?php endif; ?>
                 </div>
-                <div style="margin-top:16px;display:flex;gap:10px;">
-                    <button type="submit" class="btn btn-dark">
+                <div class="mr-form-actions">
+                    <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> <?= $edit_rt ? 'Save Changes' : 'Add Review Type' ?>
                     </button>
                     <?php if ($edit_rt): ?>
-                        <a href="manage-reviewers?tab=review_types" class="btn btn-gray"><i class="fas fa-times"></i> Cancel</a>
+                        <a href="manage-reviewers?tab=review_types" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
                     <?php endif; ?>
                 </div>
             </form>
@@ -719,21 +949,21 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
     <div class="panel">
         <div class="panel-head">
             <h3><i class="fas fa-layer-group"></i> All Review Types</h3>
-            <div class="rt-search-wrap">
-                <i class="fas fa-search rt-search-icon"></i>
-                <input type="search" id="rtSearch" class="rt-search-input" placeholder="Search..." autocomplete="off">
+            <div class="search-input-wrap mr-search">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input type="search" id="rtSearch" class="form-control" placeholder="Search..." autocomplete="off">
             </div>
         </div>
         <?php if (empty($review_types)): ?>
-            <div style="text-align:center;padding:48px;color:var(--ink-200);">
-                <i class="fas fa-layer-group" style="display:block;font-size:2rem;opacity:.3;margin-bottom:12px;"></i>
-                No review types yet. Add your first one above.
+            <div class="empty-state">
+                <i class="fas fa-layer-group" aria-hidden="true"></i>
+                <p>No review types yet. Add your first one above.</p>
             </div>
         <?php else: ?>
-        <div class="table-wrap">
+        <div class="table-responsive">
             <table class="table" id="rtTable">
                 <thead>
-                <tr><th>#</th><th>Name &amp; Description</th><th>Order</th><th>Uses</th><th>Status</th><th>Created By</th><th style="text-align:center;">Actions</th></tr>
+                <tr><th>#</th><th>Name &amp; Description</th><th>Order</th><th>Uses</th><th>Status</th><th>Created By</th><th class="text-center">Actions</th></tr>
                 </thead>
                 <tbody>
                 <?php foreach ($review_types as $i => $rt):
@@ -742,31 +972,31 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 ?>
                 <tr class="<?= $active?'':'inactive-row' ?>"
                     data-rt-name="<?= h(strtolower($rt['name'].' '.($rt['description']??''))) ?>">
-                    <td class="note"><?= $i+1 ?></td>
+                    <td class="cell-muted"><?= $i+1 ?></td>
                     <td class="rt-cell-name">
                         <strong><?= h($rt['name']) ?></strong>
                         <span class="hover-preview" title="<?= h($rt['description']??'') ?>"><?= h(preview_words($rt['description']??'',16)) ?></span>
                     </td>
-                    <td><span class="order-badge"><?= (int)$rt['sort_order'] ?></span></td>
-                    <td><span class="usage-pill <?= $uses>0?'has-uses':'no-uses' ?>"><i class="fas fa-chart-line"></i> <?= $uses ?></span></td>
+                    <td><span class="badge badge-secondary"><?= (int)$rt['sort_order'] ?></span></td>
+                    <td><span class="badge <?= $uses>0?'badge-info':'badge-secondary' ?>"><i class="fas fa-chart-line"></i> <?= $uses ?></span></td>
                     <td><?= $active
-                        ? '<span class="status-active"><i class="fas fa-circle"></i> Active</span>'
-                        : '<span class="status-inactive"><i class="fas fa-circle"></i> Inactive</span>' ?></td>
-                    <td class="note"><?= h($rt['created_by_name'] ?? '-') ?></td>
-                    <td style="text-align:center;">
-                        <div class="tbl-actions" style="justify-content:center;">
-                            <a href="manage-reviewers?tab=review_types&edit_review_type=<?= (int)$rt['review_type_id'] ?>" class="btn-icon" title="Edit"><i class="fas fa-pen"></i></a>
-                            <?= af('toggle_review_type','style="display:inline;"') ?>
+                        ? '<span class="badge badge-success">Active</span>'
+                        : '<span class="badge badge-secondary">Inactive</span>' ?></td>
+                    <td class="cell-muted"><?= h($rt['created_by_name'] ?? '-') ?></td>
+                    <td class="text-center">
+                        <div class="mr-actions">
+                            <a href="manage-reviewers?tab=review_types&edit_review_type=<?= (int)$rt['review_type_id'] ?>" class="btn btn-sm btn-secondary" title="Edit"><i class="fas fa-pen"></i></a>
+                            <?= af('toggle_review_type','class="mr-inline-form"') ?>
                                 <input type="hidden" name="review_type_id" value="<?= (int)$rt['review_type_id'] ?>">
-                                <button type="submit" class="btn-icon toggle-off" title="Toggle status"><i class="fas fa-power-off"></i></button>
+                                <button type="submit" class="btn btn-sm btn-warning" title="Toggle status"><i class="fas fa-power-off"></i></button>
                             </form>
                             <?php if ($uses === 0): ?>
-                                <?= af('delete_review_type','style="display:inline;" onsubmit="return confirm(\'Delete \\\''.addslashes(h($rt['name'])).'\\\' permanently?\')"') ?>
+                                <?= af('delete_review_type','class="mr-inline-form" onsubmit="return confirm(\'Delete \\\''.addslashes(h($rt['name'])).'\\\' permanently?\')"') ?>
                                     <input type="hidden" name="review_type_id" value="<?= (int)$rt['review_type_id'] ?>">
-                                    <button type="submit" class="btn-icon del" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
                                 </form>
                             <?php else: ?>
-                                <button class="btn-icon" disabled title="In use - deactivate instead" style="opacity:.3;cursor:not-allowed;"><i class="fas fa-trash-alt"></i></button>
+                                <button class="btn btn-sm btn-secondary" disabled title="In use - deactivate instead"><i class="fas fa-trash-alt"></i></button>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -782,7 +1012,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 <!-- --------------------------------------------------------------
      TAB 4 - SCORING CRITERIA
 --------------------------------------------------------------- -->
-<div id="tab-criteria" class="tab-panel<?= $active_tab==='criteria'?' active':'' ?>">
+<div id="tab-criteria" class="tab-panel mr-tab-panel<?= $active_tab==='criteria'?' active':'' ?>">
 
     <!-- Add / edit -->
     <div class="panel">
@@ -791,7 +1021,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 <?= $edit_criteria ? 'Edit Criterion' : 'Add Scoring Criteria' ?>
             </h3>
             <?php if ($edit_criteria): ?>
-                <a href="manage-reviewers?tab=criteria" class="btn btn-gray btn-sm"><i class="fas fa-times"></i> Cancel</a>
+                <a href="manage-reviewers?tab=criteria" class="btn btn-secondary btn-sm"><i class="fas fa-times"></i> Cancel</a>
             <?php endif; ?>
         </div>
         <div class="panel-body">
@@ -803,12 +1033,12 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
             <input type="hidden" name="criteria_id" value="<?= (int)$edit_criteria['criteria_id'] ?>">
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="form-label">Category <sup style="color:var(--red-fg)">*</sup></label>
+                    <label class="form-label">Category <span class="required-mark"></span></label>
                     <input type="text" name="category" class="form-control" required list="catSugg"
                            value="<?= h($edit_criteria['category'] ?? '') ?>">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Max Score <sup style="color:var(--red-fg)">*</sup></label>
+                    <label class="form-label">Max Score <span class="required-mark"></span></label>
                     <input type="number" name="max_score" class="form-control" min="0" step="0.01" required
                            value="<?= h((string)($edit_criteria['max_score'] ?? '0')) ?>">
                 </div>
@@ -826,13 +1056,13 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     </select>
                 </div>
                 <div class="form-group full">
-                    <label class="form-label">Question / Criterion <sup style="color:var(--red-fg)">*</sup></label>
+                    <label class="form-label">Question / Criterion <span class="required-mark"></span></label>
                     <textarea name="question" class="form-control" rows="2" required><?= h($edit_criteria['question'] ?? '') ?></textarea>
                 </div>
                 <div class="form-group full">
-                    <label class="form-label">Scoring Guide <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;">(optional)</span></label>
+                    <label class="form-label">Scoring Guide <span class="mr-opt">(optional)</span></label>
                     <textarea name="description" class="form-control" rows="3"
-                              placeholder="e.g. 1–3: Minimal; 4–6: Moderate; 7–10: Exceptional..."><?= h($edit_criteria['description'] ?? '') ?></textarea>
+                              placeholder="e.g. 1â€“3: Minimal; 4â€“6: Moderate; 7â€“10: Exceptional..."><?= h($edit_criteria['description'] ?? '') ?></textarea>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Weight</label>
@@ -847,9 +1077,9 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     </select>
                 </div>
             </div>
-            <div style="margin-top:16px;display:flex;gap:10px;">
-                <button type="submit" class="btn btn-dark"><i class="fas fa-save"></i> Update Criterion</button>
-                <a href="manage-reviewers?tab=criteria" class="btn btn-gray"><i class="fas fa-times"></i> Cancel</a>
+            <div class="mr-form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Update Criterion</button>
+                <a href="manage-reviewers?tab=criteria" class="btn btn-secondary"><i class="fas fa-times"></i> Cancel</a>
             </div>
         </form>
 
@@ -857,7 +1087,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
         <!-- -- BUNDLE ADD FORM -- -->
         <form method="POST" action="includes/process_manage_reviewers.php" id="bundleForm">
             <input type="hidden" name="action" value="save_criteria_bundle">
-            <div class="form-grid" style="margin-bottom:16px;">
+            <div class="form-grid">
                 <div class="form-group">
                     <label class="form-label">Review Type</label>
                     <select name="bundle_review_type_id" class="form-control">
@@ -879,7 +1109,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 </div>
             </div>
 
-            <hr style="border:none;border-top:1px solid var(--ink-100);margin:16px 0;">
+            <hr class="mr-divider">
 
             <datalist id="catSugg">
                 <option value="Innovation"><option value="Market Potential">
@@ -889,11 +1119,11 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 
             <div id="catBlocks"></div>
 
-            <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-gray" id="addCatBtn">
+            <div class="mr-form-actions">
+                <button type="button" class="btn btn-secondary" id="addCatBtn">
                     <i class="fas fa-folder-plus"></i> Add Category
                 </button>
-                <button type="submit" class="btn btn-dark">
+                <button type="submit" class="btn btn-primary">
                     <i class="fas fa-save"></i> Save All Criteria
                 </button>
             </div>
@@ -911,16 +1141,15 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
         </div>
 
         <!-- Filter bar -->
-        <div style="padding:12px 20px;border-bottom:1px solid var(--ink-50);">
-            <form method="GET" action="manage-reviewers" class="filters-bar" role="search" style="margin:0;">
+        <div class="panel-body">
+            <form method="GET" action="manage-reviewers" class="filters-bar mr-toolbar" role="search">
                 <input type="hidden" name="tab" value="criteria">
-                <div class="criteria-search-wrap filters-grow">
-                    <i class="fas fa-search criteria-search-icon"></i>
+                <div class="search-input-wrap filters-grow">
+                    <i class="fas fa-search" aria-hidden="true"></i>
                     <input type="search" name="criteria_search" value="<?= h($criteria_search) ?>"
-                           class="criteria-search-input" placeholder="Search category, question, guide, type...">
+                           class="form-control" placeholder="Search category, question, guide, type...">
                 </div>
-                <select name="criteria_review_type_id" class="form-control"
-                        style="height:38px;padding:0 36px 0 10px;font-size:13px;width:190px;">
+                <select name="criteria_review_type_id" class="form-control">
                     <option value="">All Review Types</option>
                     <?php foreach ($review_types as $rt): ?>
                         <option value="<?= (int)$rt['review_type_id'] ?>"
@@ -929,27 +1158,27 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <button type="submit" class="btn btn-sm btn-dark"><i class="fas fa-filter"></i> Filter</button>
-                <a href="manage-reviewers?tab=criteria" class="btn btn-sm btn-gray"><i class="fas fa-undo"></i> Reset</a>
+                <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter"></i> Filter</button>
+                <a href="manage-reviewers?tab=criteria" class="btn btn-sm btn-secondary"><i class="fas fa-undo"></i> Reset</a>
             </form>
         </div>
 
         <?php if (empty($criteria)): ?>
-            <div style="text-align:center;padding:48px;color:var(--ink-200);">
-                <i class="fas fa-clipboard-list" style="display:block;font-size:2rem;opacity:.3;margin-bottom:12px;"></i>
-                No criteria found.
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                <p>No criteria found.</p>
             </div>
         <?php else: ?>
-        <div class="table-wrap">
+        <div class="table-responsive">
             <table class="table">
                 <thead>
                 <tr>
                     <th>#</th><th>Category</th><th>Question</th><th>Scoring Guide</th>
                     <th>Review Type</th>
-                    <th style="text-align:center;">Max</th>
-                    <th style="text-align:center;">Wt</th>
-                    <th style="text-align:center;">Status</th>
-                    <th style="text-align:center;">Actions</th>
+                    <th class="text-center">Max</th>
+                    <th class="text-center">Wt</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-center">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -973,37 +1202,37 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         </td></tr>
                     <?php endif; ?>
                     <tr class="<?= (int)$c['is_active']===0?'inactive-row':'' ?>">
-                        <td class="note"><?= $rowNo+$idx ?></td>
-                        <td><span class="cat-tag"><?= h($c['category']) ?></span></td>
+                        <td class="cell-muted"><?= $rowNo+$idx ?></td>
+                        <td><span class="badge badge-warning"><?= h($c['category']) ?></span></td>
                         <td>
                             <div class="hover-preview" title="<?= h(trim($c['question']??'')) ?>">
                                 <?= h(preview_words($c['question']??'',18)) ?>
                             </div>
-                            <div class="note">By <?= h($c['created_by_name']) ?> . <?= date('d M Y',strtotime($c['created_at'])) ?></div>
+                            <div class="cell-muted">By <?= h($c['created_by_name']) ?> . <?= date('d M Y',strtotime($c['created_at'])) ?></div>
                         </td>
                         <td>
                             <div class="hover-preview" title="<?= h(trim($c['description']??'')) ?>">
-                                <?= h(preview_words($c['description']??'',16)) ?: '<span class="note">-</span>' ?>
+                                <?= h(preview_words($c['description']??'',16)) ?: '<span class="cell-muted">-</span>' ?>
                             </div>
                         </td>
                         <td>
                             <?php if (!empty($c['review_type_name'])): ?>
-                                <span class="rt-chip"><i class="fas fa-layer-group"></i> <?= h($c['review_type_name']) ?></span>
-                            <?php else: ?><span class="note" style="font-style:italic;">All types</span><?php endif; ?>
+                                <span class="badge badge-purple"><i class="fas fa-layer-group"></i> <?= h($c['review_type_name']) ?></span>
+                            <?php else: ?><span class="note">All types</span><?php endif; ?>
                         </td>
-                        <td style="text-align:center;"><span class="score-pill"><?= number_format((float)$c['max_score'],2) ?></span></td>
-                        <td style="text-align:center;"><span class="score-pill">×<?= number_format((float)$c['weight'],1) ?></span></td>
-                        <td style="text-align:center;">
+                        <td class="text-center"><span class="badge badge-info"><?= number_format((float)$c['max_score'],2) ?></span></td>
+                        <td class="text-center"><span class="badge badge-secondary">Ã—<?= number_format((float)$c['weight'],1) ?></span></td>
+                        <td class="text-center">
                             <?= (int)$c['is_active']===1
-                                ? '<span class="status-active"><i class="fas fa-circle"></i> Active</span>'
-                                : '<span class="status-inactive"><i class="fas fa-circle"></i> Inactive</span>' ?>
+                                ? '<span class="badge badge-success">Active</span>'
+                                : '<span class="badge badge-secondary">Inactive</span>' ?>
                         </td>
-                        <td style="text-align:center;">
-                            <div class="tbl-actions" style="justify-content:center;">
-                                <a href="manage-reviewers?tab=criteria&edit_criteria=<?= (int)$c['criteria_id'] ?>" class="btn-icon" title="Edit"><i class="fas fa-pen"></i></a>
-                                <?= af('delete_criteria','style="display:inline;" onsubmit="return confirm(\'Delete this criterion?\')"') ?>
+                        <td class="text-center">
+                            <div class="mr-actions">
+                                <a href="manage-reviewers?tab=criteria&edit_criteria=<?= (int)$c['criteria_id'] ?>" class="btn btn-sm btn-secondary" title="Edit"><i class="fas fa-pen"></i></a>
+                                <?= af('delete_criteria','class="mr-inline-form" onsubmit="return confirm(\'Delete this criterion?\')"') ?>
                                     <input type="hidden" name="criteria_id" value="<?= (int)$c['criteria_id'] ?>">
-                                    <button type="submit" class="btn-icon del" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
                                 </form>
                             </div>
                         </td>
@@ -1015,16 +1244,16 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 
         <!-- Pagination -->
         <?php if ($criteria_total_pages > 1): ?>
-        <div class="pg-wrap">
-            <span class="pg-info">Page <?= $criteria_page ?> of <?= $criteria_total_pages ?></span>
-            <div class="pg-links">
+        <div class="mr-pager">
+            <span class="cell-muted">Page <?= $criteria_page ?> of <?= $criteria_total_pages ?></span>
+            <div class="pagination">
                 <?php foreach (pgRange($criteria_page, $criteria_total_pages) as $pn): ?>
                     <?php if ($pn === '...'): ?>
-                        <span class="pg-link disabled">...</span>
+                        <span class="disabled">...</span>
                     <?php else:
                         $pp = array_merge($crit_base, ['criteria_page'=>(int)$pn]); ?>
                         <a href="manage-reviewers?<?= http_build_query($pp) ?>"
-                           class="pg-link<?= (int)$pn===$criteria_page?' active':'' ?>"><?= $pn ?></a>
+                           class="<?= (int)$pn===$criteria_page?'active':'' ?>"><?= $pn ?></a>
                     <?php endif; ?>
                 <?php endforeach; ?>
             </div>
@@ -1042,7 +1271,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 
 </div><!-- /#tab-criteria -->
 
-</div><!-- /.assets-wrap -->
+</div><!-- /.page-stack -->
 
 <script>
 /* -- Tab switching --------------------------------------------- */
@@ -1164,14 +1393,14 @@ function addCat() {
     div.id = 'cb-' + c;
     div.innerHTML = `
         <div class="cat-block-head">
-            <i class="fas fa-folder-open" style="color:var(--brand-400);flex-shrink:0;"></i>
+            <i class="fas fa-folder-open"></i>
             <input type="text" name="categories[${c}][name]" placeholder="Category name..." required list="catSugg">
-            <button type="button" class="btn btn-sm btn-red" onclick="this.closest('.cat-block').remove()">
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.cat-block').remove()">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="cat-block-body" id="cbb-${c}"></div>
-        <div style="padding:10px 16px;border-top:1px solid var(--brand-100);display:flex;gap:8px;">
+        <div class="cat-block-foot">
             <button type="button" class="btn btn-sm btn-soft" onclick="addQ(${c})">
                 <i class="fas fa-plus"></i> Add Question
             </button>
@@ -1190,8 +1419,7 @@ function addQ(catId) {
     row.className = 'criterion-row';
     row.innerHTML = `
         <textarea name="categories[${catId}][questions][${q}][question]"
-                  class="form-control" placeholder="Question / criterion..." required
-                  style="min-height:58px;"></textarea>
+                  class="form-control" placeholder="Question / criterion..." required></textarea>
         <input type="number" name="categories[${catId}][questions][${q}][max_score]"
                class="form-control num-field" placeholder="Max" min="0" step="0.01" required>
         <input type="number" name="categories[${catId}][questions][${q}][weight]"
