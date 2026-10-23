@@ -1,263 +1,59 @@
 /* Page scope: internet_subscriptions.php wraps its markup in .page-internet-subs.
-   Tokens are local to the wrapper (they used to come from internet-portal.css :root)
-   so they never override the app-wide design tokens. */
-.page-internet-subs {
-  --brand: #FF6B00;
-  --brand-dark: #D45200;
-  --brand-light: #FFF3E8;
-  --brand-glow: rgba(255,107,0,.18);
-  --bg: #F7F8FC;
-  --surface: #FFFFFF;
-  --surface-2: #F1F4FB;
-  --border: #E4E8F2;
-  --ink: #0D1321;
-  --ink-2: #3B4560;
-  --ink-3: #7B87A0;
-  --green: #12B76A;
-  --green-bg: #ECFDF5;
-  --red: #D92D20;
-  --red-bg: #FFF1F0;
-  --radius-sm: 10px;
-  --radius-md: 18px;
-  --shadow-md: 0 8px 28px rgba(13,19,33,.10);
-  --font-head: 'DM Sans', Arial, sans-serif;
-  --font-body: 'DM Sans', Arial, sans-serif;
-}
+   Page chrome (hero, alerts, cards, stats, table, buttons, status pills) comes from
+   the global components in style.css / reports.css. This file only holds what is
+   unique to the page: the status filter tabs, member/plan cells, the overlay modal
+   shell (the page's own .modal-overlay system), member search and the receipt lightbox. */
 
-.page-internet-subs *, .page-internet-subs *::before, .page-internet-subs *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-.page-internet-subs {
-    font-family: var(--font-body);
-    background: var(--bg);
-    color: var(--ink);
-    padding: 24px;
-    border-radius: 16px;
-    background-image: radial-gradient(circle, rgba(255,107,0,.06) 1px, transparent 1px);
-    background-size: 28px 28px;
-}
-
-/* Header */
-.page-internet-subs .page-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 28px;
-}
-
-.page-internet-subs .page-header-left h1 {
-    font-family: var(--font-head);
-    font-size: clamp(22px, 3vw, 30px);
-    font-weight: 800;
-    color: var(--ink);
-}
-
-.page-internet-subs .page-header-left h1 span {
-    color: var(--brand);
-}
-
-.page-internet-subs .page-header-left p {
-    margin-top: 5px;
-    font-size: 13.5px;
-    color: var(--ink-3);
-}
-
-.page-internet-subs .header-actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.page-internet-subs .btn-icon,
-.page-internet-subs .btn-add-device {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 9px 16px;
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    transition: all .18s;
-}
-
-.page-internet-subs .btn-icon {
-    border: 1.5px solid var(--border);
-    background: var(--surface);
-    color: var(--ink-2);
-}
-
-.page-internet-subs .btn-icon:hover {
-    border-color: var(--brand);
-    color: var(--brand);
-    background: rgba(255,107,0,.08);
-}
-
-.page-internet-subs .btn-add-device {
-    position: relative;
-    z-index: 5;
-    border: 0;
-    background: var(--brand);
-    color: #fff;
-    pointer-events: auto;
-}
-
-.page-internet-subs .btn-add-device:hover {
-    background: #e55d00;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(255,107,0,.3);
-}
-
-/* Flash */
-.page-internet-subs .flash {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 13px 18px;
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 22px;
-}
-
-.page-internet-subs .flash-success {
-    background: var(--green-bg);
-    border: 1px solid rgba(18,183,106,.3);
-    color: var(--green);
-}
-
-.page-internet-subs .flash-error {
-    background: var(--red-bg);
-    border: 1px solid rgba(217,45,32,.3);
-    color: var(--red);
-}
-
-/* Stats: global .stats-grid.reports-stats / .stat-card standard (reports.css).
-   The cards double as status filters, so show a pointer. */
+/* Stat cards double as status filters, so show a pointer. */
 .page-internet-subs .stat-card[data-filter] { cursor: pointer; }
 
-/* Toolbar: one-row layout comes from .filters-bar (style.css). */
-.page-internet-subs .toolbar {
-    margin-bottom: 18px;
-}
+/* No global .stat-icon.bg-red yet; local stand-in for the "Rejected" card. */
+.page-internet-subs .stat-icon.bg-red { background: var(--red-bg); color: var(--red-fg); }
 
-.page-internet-subs .toolbar > .filter-tabs {
-    flex: 0 0 auto;
-}
+/* Toolbar: one-row layout comes from .filters-bar (style.css). */
+.page-internet-subs .toolbar { margin-bottom: 0; }
+.page-internet-subs .toolbar > .filter-tabs { flex: 0 0 auto; }
 
 .page-internet-subs .filter-tabs {
     display: flex;
     gap: 4px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    background: var(--surface-card);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-lg);
     padding: 4px;
 }
 
 .page-internet-subs .filter-tab {
     padding: 7px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     border: none;
     background: transparent;
-    color: var(--ink-3);
+    color: var(--ink-400);
 }
 
 .page-internet-subs .filter-tab.active {
-    background: var(--brand);
-    color: #fff;
+    background: var(--brand-500);
+    color: var(--ink-0);
 }
 
-.page-internet-subs .search-wrap {
-    position: relative;
-}
+.page-internet-subs .search-wrap { position: relative; }
 
 .page-internet-subs .search-wrap i {
     position: absolute;
     left: 13px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--ink-3);
+    color: var(--ink-300);
+    pointer-events: none;
 }
 
-.page-internet-subs .search-input {
-    width: 100%;
-    padding: 10px 13px 10px 36px;
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--ink);
-    font-size: 13.5px;
-    outline: none;
-}
+.page-internet-subs .search-wrap .form-control { padding-left: 36px; }
 
-.page-internet-subs .search-input:focus,
-.page-internet-subs .form-row input:focus,
-.page-internet-subs .form-row select:focus,
-.page-internet-subs .reason-input:focus {
-    border-color: var(--brand);
-    box-shadow: 0 0 0 3px var(--brand-glow);
-}
-
-/* Table */
-.page-internet-subs .table-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-}
-
-.page-internet-subs .table-wrap {
-    overflow-x: auto;
-}
-
-.page-internet-subs table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 860px;
-}
-
-.page-internet-subs thead tr {
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-}
-
-.page-internet-subs th,
-.page-internet-subs td {
-    padding: 14px 16px;
-    text-align: left;
-    vertical-align: middle;
-}
-
-.page-internet-subs th {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: var(--ink-3);
-}
-
-.page-internet-subs td {
-    font-size: 13.5px;
-    color: var(--ink);
-}
-
-.page-internet-subs tbody tr {
-    border-bottom: 1px solid var(--border);
-}
-
-.page-internet-subs tbody tr:hover {
-    background: var(--surface-2);
-}
+/* Table cells */
+.page-internet-subs tr.row-hidden { display: none; }
 
 .page-internet-subs .member-cell {
     display: flex;
@@ -266,165 +62,70 @@
 }
 
 .page-internet-subs .member-avatar {
+    flex-shrink: 0;
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(255,107,0,.1);
-    border: 1.5px solid rgba(255,107,0,.25);
+    background: var(--brand-50);
+    border: 1px solid var(--brand-200);
     display: grid;
     place-items: center;
     font-weight: 700;
-    color: var(--brand);
+    color: var(--brand-600);
 }
 
-.page-internet-subs .member-name {
-    font-weight: 600;
-}
+.page-internet-subs .member-name { font-weight: 600; }
 
-.page-internet-subs .member-number,
-.page-internet-subs .receipt-none,
-.page-internet-subs .mac-code,
+.page-internet-subs .isub-sub,
 .page-internet-subs .date-cell small {
-    color: var(--ink-3);
+    display: block;
+    color: var(--ink-300);
     font-size: 11.5px;
-}
-
-.page-internet-subs .plan-chip,
-.page-internet-subs .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    border-radius: 999px;
-    white-space: nowrap;
+    margin-top: 2px;
 }
 
 .page-internet-subs .plan-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     padding: 4px 10px;
-    background: rgba(255,107,0,.1);
-    border: 1px solid rgba(255,107,0,.2);
-    color: var(--brand);
+    border-radius: var(--radius-pill);
+    background: var(--brand-50);
+    border: 1px solid var(--brand-200);
+    color: var(--brand-600);
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
 }
 
-.page-internet-subs .amount {
-    font-family: var(--font-head);
-    font-weight: 700;
-    color: var(--green);
-}
+.page-internet-subs .plan-chip i { font-size: 10px; }
 
-.page-internet-subs .currency {
-    font-size: 11px;
-    color: var(--ink-3);
-}
-
-.page-internet-subs .receipt-photo-btn {
-    display: inline-flex;
-    gap: 5px;
-    padding: 6px 11px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,107,0,.3);
-    background: rgba(255,107,0,.08);
-    color: var(--brand);
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.page-internet-subs .receipt-photo-btn:hover {
-    background: var(--brand);
-    color: #fff;
-}
-
-.page-internet-subs .mac-code {
-    font-family: 'Courier New', monospace;
-    letter-spacing: .3px;
-}
-
-.page-internet-subs .badge {
-    padding: 4px 10px;
-    font-size: 11.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
-
-.page-internet-subs .badge::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-.page-internet-subs .badge-pending { background: rgba(245,158,11,.12); color: #D97706; }
-.page-internet-subs .badge-active { background: var(--green-bg); color: var(--green); }
-.page-internet-subs .badge-expired { background: rgba(100,116,139,.1); color: #64748B; }
-.page-internet-subs .badge-rejected { background: var(--red-bg); color: var(--red); }
+.page-internet-subs .amount { font-weight: 700; color: var(--green-fg); }
+.page-internet-subs .currency { font-size: 11px; color: var(--ink-300); }
+.page-internet-subs .mac-code { letter-spacing: .3px; }
 
 .page-internet-subs .action-wrap {
     display: flex;
     gap: 6px;
     align-items: center;
+    justify-content: flex-end;
 }
 
-.page-internet-subs .btn-approve,
-.page-internet-subs .btn-reject {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 13px;
-    border-radius: var(--radius-sm);
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-}
+.page-internet-subs .isub-actions-col { text-align: right; }
 
-.page-internet-subs .btn-approve {
-    background: var(--green-bg);
-    color: var(--green);
-    border: 1px solid rgba(18,183,106,.3);
-}
-
-.page-internet-subs .btn-reject {
-    background: var(--red-bg);
-    color: var(--red);
-    border: 1px solid rgba(217,45,32,.3);
-}
-
-.page-internet-subs .btn-approve:hover {
-    background: var(--green);
-    color: #fff;
-}
-
-.page-internet-subs .btn-reject:hover {
-    background: var(--red);
-    color: #fff;
-}
-
-.page-internet-subs .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--ink-2);
-}
-
-.page-internet-subs .table-footer {
+.page-internet-subs .isub-table-footer {
     display: flex;
     justify-content: space-between;
-    padding: 13px 20px;
-    border-top: 1px solid var(--border);
-    font-size: 13px;
-    color: var(--ink-3);
-    background: var(--surface-2);
     flex-wrap: wrap;
     gap: 8px;
+    padding: 13px 22px;
+    border-top: 1px solid var(--ink-50);
+    font-size: 13px;
+    color: var(--ink-400);
 }
 
-.page-internet-subs tr.row-hidden {
-    display: none;
-}
-
-/* Modals */
+/* Overlay modals: the page toggles .modal-overlay.open; the inner .modal must
+   undo the global .modal overlay rules (display:none, fixed, backdrop). */
 .page-internet-subs .modal-overlay {
     position: fixed !important;
     inset: 0 !important;
@@ -433,14 +134,12 @@
     align-items: center !important;
     justify-content: center !important;
     padding: 20px !important;
-    background: rgba(13, 19, 33, 0.65) !important;
+    background: color-mix(in srgb, var(--ink-900) 65%, transparent) !important;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
 }
 
-.page-internet-subs .modal-overlay.open {
-    display: flex !important;
-}
+.page-internet-subs .modal-overlay.open { display: flex !important; }
 
 .page-internet-subs .modal-overlay .modal {
     position: relative !important;
@@ -449,67 +148,42 @@
     opacity: 1 !important;
     visibility: visible !important;
     transform: none !important;
-    background: #fff !important;
+    padding: 0 !important;
+    background: var(--surface-card) !important;
     width: 100% !important;
     max-width: 560px !important;
     max-height: 90vh !important;
     overflow-y: auto !important;
-    border-radius: 18px !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: 0 25px 80px rgba(0,0,0,.35) !important;
+    border-radius: var(--radius-xl) !important;
+    border: 1px solid var(--ink-100) !important;
+    box-shadow: var(--shadow-xl) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .page-internet-subs #approveOverlay .modal,
-.page-internet-subs #rejectOverlay .modal {
-    max-width: 480px !important;
-}
+.page-internet-subs #rejectOverlay .modal { max-width: 480px !important; }
 
-.page-internet-subs .modal form {
-    display: flex;
-    flex-direction: column;
-}
-
-.page-internet-subs .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid var(--border);
-    background: #fff;
-}
+.page-internet-subs .modal form { display: flex; flex-direction: column; }
 
 .page-internet-subs .modal-title {
-    font-family: var(--font-head);
-    font-size: 17px;
-    font-weight: 700;
-    color: var(--ink);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--ink-700);
     display: inline-flex;
     align-items: center;
+    gap: 8px;
 }
 
-.page-internet-subs .modal-close {
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: var(--surface-2);
-    color: var(--ink-2);
-    cursor: pointer;
-}
+.page-internet-subs .isub-ic-brand { color: var(--brand-500); }
+.page-internet-subs .isub-ic-green { color: var(--green-fg); }
+.page-internet-subs .isub-ic-red { color: var(--red-fg); }
 
-.page-internet-subs .modal-body {
-    padding: 20px 24px;
-    background: #fff !important;
-    overflow: visible;
-}
-
-.page-internet-subs .modal-footer {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
+/* The footer sits flush under the body inside this shell. */
+.page-internet-subs .modal-overlay .modal-footer {
+    margin-top: 0;
     padding: 16px 24px 20px;
-    border-top: 1px solid var(--border);
-    background: var(--surface-2);
+    border-top: 1px solid var(--ink-50);
 }
 
 .page-internet-subs .modal-info-row {
@@ -517,72 +191,21 @@
     justify-content: space-between;
     gap: 14px;
     padding: 9px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--ink-50);
 }
 
-.page-internet-subs .modal-info-label {
-    color: var(--ink-3);
-}
+.page-internet-subs .modal-info-label { color: var(--ink-300); }
+.page-internet-subs .modal-info-value { font-weight: 700; text-align: right; }
 
-.page-internet-subs .modal-info-value {
-    font-weight: 700;
-    text-align: right;
-}
-
-.page-internet-subs .modal-warning {
-    display: flex;
-    gap: 10px;
-    padding: 12px 14px;
-    margin-top: 14px;
-    border-radius: var(--radius-sm);
-    background: rgba(245,158,11,.1);
-    border: 1px solid rgba(245,158,11,.25);
-    color: #B45309;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-/* Form rows */
-.page-internet-subs .form-row {
-    margin-bottom: 14px;
-}
-
-.page-internet-subs .form-row label {
-    display: block;
-    font-size: 13px;
-    color: var(--ink-2);
-    font-weight: 700;
-    margin-bottom: 6px;
-}
-
-.page-internet-subs .form-row input,
-.page-internet-subs .form-row select,
-.page-internet-subs .reason-input {
-    width: 100%;
-    padding: 10px 13px;
-    background: var(--surface-2);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--ink);
-    font-size: 13.5px;
-    outline: none;
-}
-
-.page-internet-subs .reason-input {
-    resize: vertical;
-    min-height: 90px;
-}
+.page-internet-subs .reason-input { resize: vertical; min-height: 90px; }
 
 .page-internet-subs #macAddressInput {
-    font-family: 'Courier New', monospace;
     letter-spacing: 1px;
     text-transform: uppercase;
 }
 
 /* Member search */
-.page-internet-subs .member-search-box {
-    position: relative;
-}
+.page-internet-subs .member-search-box { position: relative; }
 
 .page-internet-subs .member-results {
     display: none;
@@ -591,94 +214,44 @@
     left: 0;
     right: 0;
     top: calc(100% + 6px);
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: 0 18px 50px rgba(13,19,33,.22);
+    background: var(--surface-card);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     max-height: 260px;
     overflow-y: auto;
 }
 
-.page-internet-subs .member-results.open {
-    display: block !important;
-}
+.page-internet-subs .member-results.open { display: block !important; }
 
 .page-internet-subs .member-result-item {
     padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--ink-50);
     cursor: pointer;
 }
 
-.page-internet-subs .member-result-item:hover {
-    background: var(--surface-2);
-}
-
-.page-internet-subs .member-result-name {
-    font-size: 13.5px;
-    font-weight: 700;
-}
-
-.page-internet-subs .member-result-meta {
-    font-size: 11.5px;
-    color: var(--ink-3);
-    margin-top: 2px;
-}
+.page-internet-subs .member-result-item:hover { background: var(--surface-hover); }
+.page-internet-subs .member-result-name { font-size: 13.5px; font-weight: 700; }
+.page-internet-subs .member-result-meta { font-size: 11.5px; color: var(--ink-300); margin-top: 2px; }
 
 .page-internet-subs .selected-member-card {
     display: none;
     margin-top: 10px;
     padding: 12px;
-    border-radius: var(--radius-sm);
-    background: rgba(18,183,106,.08);
-    border: 1px solid rgba(18,183,106,.25);
-    color: var(--green);
+    border-radius: var(--radius-md);
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    color: var(--green-fg);
     font-size: 13px;
 }
 
-.page-internet-subs .selected-member-card.visible {
-    display: block;
-}
-
-/* Modal buttons */
-.page-internet-subs .btn-cancel,
-.page-internet-subs .btn-confirm-approve,
-.page-internet-subs .btn-confirm-reject,
-.page-internet-subs .btn-primary-solid {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 10px 20px;
-    border-radius: var(--radius-sm);
-    font-size: 13.5px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.page-internet-subs .btn-cancel {
-    border: 1.5px solid var(--border);
-    background: transparent;
-    color: var(--ink-2);
-}
-
-.page-internet-subs .btn-confirm-approve,
-.page-internet-subs .btn-primary-solid {
-    border: 0;
-    background: var(--green);
-    color: #fff;
-}
-
-.page-internet-subs .btn-confirm-reject {
-    border: 0;
-    background: var(--red);
-    color: #fff;
-}
+.page-internet-subs .selected-member-card.visible { display: block; }
 
 /* Lightbox */
 .page-internet-subs .lightbox {
     position: fixed;
     inset: 0;
-    background: rgba(13,19,33,.92);
+    background: color-mix(in srgb, var(--ink-900) 92%, transparent);
     z-index: 1000002;
     display: none;
     flex-direction: column;
@@ -687,9 +260,7 @@
     padding: 24px;
 }
 
-.page-internet-subs .lightbox.open {
-    display: flex;
-}
+.page-internet-subs .lightbox.open { display: flex; }
 
 .page-internet-subs .lightbox-header {
     display: flex;
@@ -699,75 +270,35 @@
     margin-bottom: 16px;
 }
 
-.page-internet-subs .lightbox-title {
-    color: #fff;
-    font-weight: 700;
-}
+.page-internet-subs .lightbox-title { color: var(--ink-0); font-weight: 700; }
 
 .page-internet-subs .lightbox-close {
     width: 36px;
     height: 36px;
-    border-radius: 9px;
-    border: 1px solid rgba(255,255,255,.2);
-    background: rgba(255,255,255,.1);
-    color: #fff;
+    border-radius: var(--radius-sm);
+    border: 1px solid color-mix(in srgb, var(--ink-0) 20%, transparent);
+    background: color-mix(in srgb, var(--ink-0) 10%, transparent);
+    color: var(--ink-0);
     cursor: pointer;
 }
 
 .page-internet-subs .lightbox img {
     max-width: 100%;
     max-height: 76vh;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     object-fit: contain;
-    background: #fff;
+    background: var(--surface-card);
 }
 
 /* Mobile */
 @media (max-width: 700px) {
-    .page-internet-subs {
-        padding: 16px 12px 40px;
-    }
-
-    .page-internet-subs .page-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .page-internet-subs .header-actions {
-        width: 100%;
-        flex-wrap: wrap;
-    }
-
-    .page-internet-subs .btn-add-device,
-    .page-internet-subs .btn-icon {
-        flex: 1;
-    }
-
-    .page-internet-subs .search-wrap {
-        max-width: 100%;
-    }
-
     .page-internet-subs .toolbar > .filter-tabs {
         flex: 1 1 100%;
         overflow-x: auto;
     }
 
-    .page-internet-subs .modal-overlay .modal {
-        max-width: calc(100vw - 32px) !important;
-    }
-
-    .page-internet-subs .modal-footer {
-        flex-direction: column;
-    }
-
-    .page-internet-subs .btn-cancel,
-    .page-internet-subs .btn-confirm-approve,
-    .page-internet-subs .btn-confirm-reject,
-    .page-internet-subs .btn-primary-solid {
-        width: 100%;
-    }
-
-    .page-internet-subs .member-results {
-        max-height: 200px;
-    }
+    .page-internet-subs .modal-overlay .modal { max-width: calc(100vw - 32px) !important; }
+    .page-internet-subs .modal-overlay .modal-footer { flex-direction: column; }
+    .page-internet-subs .modal-overlay .modal-footer .btn { width: 100%; }
+    .page-internet-subs .member-results { max-height: 200px; }
 }

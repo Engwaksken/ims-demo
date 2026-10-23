@@ -203,7 +203,7 @@ $isFiltered = ($search !== '' || $filter_role !== '' || $filter_status !== '');
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background:var(--ink-50);color:var(--ink-300);">
+            <div class="stat-icon bg-slate">
                 <i class="fas fa-user-times" aria-hidden="true"></i>
             </div>
             <div class="stat-info">

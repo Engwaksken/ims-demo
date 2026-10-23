@@ -1,101 +1,14 @@
+/* Programs / projects pages (programs.php, projects.php, program-details.php,
+   project-details.php). Page header, stat cards, cards, tables, badges,
+   buttons, alerts, empty states and modals are global (reports.css /
+   style.css): this file only keeps the list cells and detail-page layouts
+   that are unique to these pages. Page-only helpers use the pj- prefix. */
 
+/* -- List page: small helpers ------------------------------------------ */
+.pj-note { padding: var(--space-4) 0; }
+.pj-field-gap { margin-bottom: 14px; }
 
-/* -- Page Wrapper ------------------------------------------------------ */
-.projects-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-/* -- Page Hero --------------------------------------------------------- */
-.projects-hero {
-  position: relative;
-  overflow: hidden;
- background: linear-gradient(
-    135deg,
-    #c2410c 0%,
-    #f97316 60%,
-    #fb923c 100%
-  );
-  color: var(--ink-0);
-  border-radius: var(--radius-2xl);
-  padding: 32px 36px;
-  box-shadow: 0 16px 40px rgba(15, 41, 66, .38);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.projects-hero::before,
-.projects-hero::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.projects-hero::before {
-  width: 320px; height: 320px;
-  background: #3b82f6;
-  opacity: .08;
-  top: -130px; right: 60px;
-}
-.projects-hero::after {
-  width: 180px; height: 180px;
-  background: var(--brand-400);
-  opacity: .07;
-  bottom: -80px; right: 260px;
-}
-
-.projects-hero-text { position: relative; }
-
-.projects-hero h1 {
-  font-size: clamp(22px, 3vw, 30px);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  margin-bottom: 6px;
-}
-
-.projects-hero p {
-  font-size: 14px;
-  opacity: .80;
-  max-width: 460px;
-  position: relative;
-}
-
-/* -- Stats Grid -------------------------------------------------------- */
-/* reuses .stat-card, .stat-icon, .stat-label, .stat-value from assets.css */
-.projects-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-/* -- Filter Bar -------------------------------------------------------- */
-.filter-bar {
-  background: var(--surface-card);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(0,0,0,.04);
-  padding: 16px 20px;
-  margin-bottom: 0; /* parent wrapper spaces sections with gap; layout comes from .filters-bar */
-}
-
-/* .search-input-wrap* and .filter-actions moved to style.css (section 7.5). */
-
-/* search input with icon */
-
-
-
-
-/* -- Projects Panel ---------------------------------------------------- */
-/* reuses .panel, .panel-head, .table-wrap, .table from assets.css */
-
-/* project code chip */
+/* -- List page: table cells -------------------------------------------- */
 .project-code {
   display: inline-flex;
   align-items: center;
@@ -104,14 +17,13 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .06em;
-  font-family: var(--font-mono);
   background: var(--ink-50);
   color: var(--ink-500);
   border: 1px solid var(--ink-100);
   white-space: nowrap;
+  align-self: flex-start;
 }
 
-/* project name + code stacked cell */
 .project-name-cell { display: flex; flex-direction: column; gap: 3px; }
 
 .project-name-cell .name {
@@ -121,7 +33,6 @@
   line-height: 1.3;
 }
 
-/* donor cell */
 .donor-chip {
   display: inline-flex;
   align-items: center;
@@ -133,7 +44,6 @@
 
 .donor-chip i { opacity: .6; }
 
-/* duration cell */
 .duration-cell {
   display: flex;
   flex-direction: column;
@@ -148,7 +58,6 @@
   color: var(--ink-500);
 }
 
-/* budget cell */
 .budget-cell {
   font-size: 13px;
   font-weight: 700;
@@ -165,7 +74,6 @@
   margin-left: 3px;
 }
 
-/* count badges in table */
 .count-badge {
   display: inline-flex;
   align-items: center;
@@ -173,7 +81,7 @@
   min-width: 28px;
   height: 22px;
   padding: 0 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 11px;
   font-weight: 700;
 }
@@ -181,239 +89,76 @@
 .count-badge.participants { background: var(--blue-bg);  color: var(--blue-fg);  border: 1px solid var(--blue-border); }
 .count-badge.indicators   { background: var(--amber-bg); color: var(--amber-fg); border: 1px solid var(--amber-border); }
 
-/* status badges — map to assets.css badge classes */
-.badge-ongoing    { background: var(--green-bg);  color: var(--green-fg);  border-color: var(--green-border);  }
-.badge-completed  { background: var(--blue-bg);   color: var(--blue-fg);   border-color: var(--blue-border);   }
-.badge-pending    { background: var(--amber-bg);  color: var(--amber-fg);  border-color: var(--amber-border);  }
-.badge-cancelled  { background: var(--red-bg);    color: var(--red-fg);    border-color: var(--red-border);    }
-
-/* -- Modal — project form specific ------------------------------------ */
-.modal-section-label {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--ink-300);
-  margin: 20px 0 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--ink-50);
-}
-
-.modal-section-label:first-child { margin-top: 0; }
-
-/* required asterisk */
-.required-mark {
-  color: var(--red-fg);
-  margin-left: 2px;
-  font-size: 12px;
-}
-
-/* -- Alert / info box inside modal ------------------------------------- */
-.info-box {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 13px 16px;
-  background: var(--amber-bg);
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--amber-border);
-  border-left: 4px solid var(--amber-fg);
-  font-size: 13px;
-  color: var(--amber-fg);
-  line-height: 1.6;
-}
-
-.info-box i { flex-shrink: 0; margin-top: 1px; }
-
-/* -- Danger zone (delete modal) ---------------------------------------- */
-.danger-zone {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  padding: 16px;
-  background: var(--red-bg);
-  border-radius: var(--radius-lg);
-  border: 1.5px solid var(--red-border);
-}
-
-.danger-zone-icon { font-size: 22px; color: var(--red-fg); flex-shrink: 0; margin-top: 2px; }
-
-.danger-zone p    { font-size: 13px; color: var(--red-fg); line-height: 1.6; }
-.danger-zone strong { font-weight: 800; }
-
-/* ----------------------------------------------------------------------
-   PROJECT DETAILS PAGE — additional components
-   ---------------------------------------------------------------------- */
-
-/* -- Details hero ------------------------------------------------------ */
-.detail-hero {
-  position: relative;
-  overflow: hidden;
- background: linear-gradient(
-    135deg,
-    #c2410c 0%,
-    #f97316 60%,
-    #fb923c 100%
-  );
-  color: var(--ink-0);
-  border-radius: var(--radius-2xl);
-  padding: 28px 36px 32px;
-  box-shadow: 0 16px 40px rgba(15, 41, 66, .38);
-}
-
-.detail-hero::before,
-.detail-hero::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-}
-.detail-hero::before {
-  width: 340px; height: 340px;
-  background: #3b82f6; opacity: .07;
-  top: -150px; right: 40px;
-}
-.detail-hero::after {
-  width: 180px; height: 180px;
-  background: var(--brand-400); opacity: .07;
-  bottom: -80px; right: 280px;
-}
-
-.detail-hero-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.detail-hero-title {
-  font-size: clamp(20px, 3vw, 30px);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-  margin-bottom: 6px;
-}
-
-.detail-hero-code {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 500;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: var(--radius-md);
-  padding: 4px 12px;
-  color: rgba(255,255,255,.85);
-}
-
-.detail-hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-  position: relative;
-}
-
-/* Key info tiles inside hero */
-.detail-hero-tiles {
+/* -- Detail page: overview facts + timeline ---------------------------- */
+.pj-facts {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  position: relative;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 
-.detail-tile {
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
+.pj-fact {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: background .18s;
+  padding: 14px 16px;
+  background: var(--ink-50);
+  border: 1px solid var(--ink-100);
+  border-radius: var(--radius-lg);
 }
 
-.detail-tile:hover { background: rgba(255,255,255,.13); }
-
-.detail-tile-label {
+.pj-fact-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: .07em;
   text-transform: uppercase;
-  color: rgba(255,255,255,.55);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  color: var(--ink-300);
 }
 
-.detail-tile-value {
+.pj-fact-value {
   font-size: 15px;
   font-weight: 700;
-  color: var(--ink-0);
+  color: var(--ink-700);
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
-/* -- Progress bar ------------------------------------------------------ */
-.progress-wrap {
-  margin-top: 20px;
-  position: relative;
-}
+.pj-timeline { margin-top: var(--space-5); }
 
-.progress-meta {
+.pj-timeline-meta {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 8px;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
   font-size: 12px;
 }
 
-.progress-meta .prog-label {
-  font-weight: 700;
-  color: rgba(255,255,255,.75);
-  display: flex;
+.pj-timeline-label {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-weight: 700;
+  color: var(--ink-500);
 }
 
-.progress-meta .prog-value {
+.pj-timeline-dates { margin-left: 10px; font-size: 11px; color: var(--ink-300); }
+.pj-timeline-value { font-size: 13px; font-weight: 800; color: var(--ink-700); }
+.pj-timeline-remaining { margin-left: 8px; font-size: 11px; color: var(--ink-300); }
+.pj-timeline-fill { background: var(--brand-500); }
+
+.pj-donor-name {
+  margin-bottom: 14px;
+  font-size: 15px;
   font-weight: 800;
-  font-size: 13px;
-  color: var(--ink-0);
+  color: var(--ink-700);
 }
 
-.progress-meta .prog-remaining {
-  font-size: 11px;
-  color: rgba(255,255,255,.55);
-}
-
-.progress-track {
-  height: 10px;
-  background: rgba(255,255,255,.14);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #60a5fa, #93c5fd);
-  transition: width .5s var(--ease-out);
-  position: relative;
-}
-
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 4px;
-  background: rgba(255,255,255,.5);
-  border-radius: 999px;
-}
+.pj-more-note { margin-top: var(--space-3); }
+.pj-muted-icon { margin-right: 5px; opacity: .5; }
 
 /* -- Detail content grid ----------------------------------------------- */
 .detail-grid-2 {
@@ -422,48 +167,11 @@
   gap: 20px;
 }
 
-/* -- Info panel (description / objectives / donor) --------------------- */
-.info-panel {
-  background: var(--surface-card);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(0,0,0,.04);
-  overflow: hidden;
-}
-
-.info-panel-head {
-  padding: 16px 22px;
-  border-bottom: 1px solid var(--ink-50);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.info-panel-head h3 {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--ink-700);
-  letter-spacing: -0.1px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.info-panel-head h3 i { color: var(--brand-500); font-size: 13px; }
-
-.info-panel-body { padding: 18px 22px; }
-
+/* -- Description / objectives / donor ---------------------------------- */
 .prose-text {
   font-size: 13px;
   color: var(--ink-400);
   line-height: 1.75;
-}
-
-.prose-empty {
-  font-size: 13px;
-  color: var(--ink-200);
-  font-style: italic;
 }
 
 /* value chain tag */
@@ -550,6 +258,7 @@
   flex-shrink: 0;
 }
 
+.partner-body { flex: 1; min-width: 0; }
 .partner-name { font-size: 13px; font-weight: 700; color: var(--ink-700); margin-bottom: 4px; }
 .partner-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .partner-role { font-size: 11px; color: var(--ink-300); }
@@ -805,10 +514,10 @@
   font-size: 20px;
 }
 
-.doc-icon.pdf   { background: #fef2f2; color: #dc2626; }
-.doc-icon.word  { background: #eff6ff; color: #2563eb; }
-.doc-icon.excel { background: #f0fdf4; color: #16a34a; }
-.doc-icon.ppt   { background: #fff7ed; color: #ea580c; }
+.doc-icon.pdf   { background: var(--red-bg);   color: var(--red-fg); }
+.doc-icon.word  { background: var(--blue-bg);  color: var(--blue-fg); }
+.doc-icon.excel { background: var(--green-bg); color: var(--green-fg); }
+.doc-icon.ppt   { background: var(--brand-50); color: var(--brand-600); }
 .doc-icon.file  { background: var(--ink-50); color: var(--ink-300); }
 
 .doc-name {
@@ -881,65 +590,17 @@
 
 /* -- Responsive -------------------------------------------------------- */
 @media (max-width: 1100px) {
-  .detail-hero-tiles { grid-template-columns: repeat(2, 1fr); }
+  .pj-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
-  .detail-grid-2   { grid-template-columns: 1fr; }
-  .detail-hero     { padding: 22px 24px 26px; }
+  .detail-grid-2 { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
-  .detail-hero { padding: 18px 20px 22px; }
-
-  .detail-hero-top {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .detail-hero-actions {
-    width: 100%;
-  }
-  .detail-hero-actions .btn { flex: 1; justify-content: center; }
-
-  .detail-hero-tiles { grid-template-columns: 1fr 1fr; gap: 10px; }
-
   .doc-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
 }
 
-/* -- Responsive -------------------------------------------------------- */
-@media (max-width: 1200px) {
-  .projects-stats { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (max-width: 900px) {
-  .projects-wrap { padding: 16px; gap: 16px; }
-  .projects-hero { padding: 24px; }
-}
-
-@media (max-width: 640px) {
-  .projects-wrap { padding: 12px; gap: 14px; }
-
-  .projects-hero {
-    padding: 20px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .projects-hero .hero-actions {
-    width: 100%;
-  }
-  .projects-hero .hero-actions .btn {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .projects-stats { grid-template-columns: 1fr 1fr; gap: 12px; }
-
-}
-
 @media (max-width: 400px) {
-  .projects-stats { grid-template-columns: 1fr; }
+  .pj-facts { grid-template-columns: 1fr; }
 }

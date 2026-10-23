@@ -228,9 +228,9 @@ $days_ago = $submitted_ts === null
 $badgeMap = [
     'Draft'        => 'badge-secondary',
     'Pending'      => 'badge-pending',
-    'Submitted'    => 'badge-under-review',
-    'Under Review' => 'badge-under-review',
-    'Shortlisted'  => 'badge-under-review',
+    'Submitted'    => 'badge-info',
+    'Under Review' => 'badge-info',
+    'Shortlisted'  => 'badge-info',
     'Accepted'     => 'badge-success',
     'Rejected'     => 'badge-danger',
     'Withdrawn'    => 'badge-secondary',
@@ -299,173 +299,161 @@ foreach ($doc_fields as $field => $meta) {
 }
 ?>
 
-<link rel="stylesheet" href="css/opportunities.css">
+<?php
+// Status -> global alert variant (no neutral alert exists, so draft/withdrawn use info).
+$vmaAlertClass = [
+    'pending'     => 'alert-warning',
+    'shortlisted' => 'alert-info',
+    'accepted'    => 'alert-success',
+    'rejected'    => 'alert-danger',
+    'withdrawn'   => 'alert-info',
+][$alert[0]] ?? 'alert-info';
+?>
 
 <style>
-.vma-tab-nav{display:flex;border-bottom:2px solid var(--ink-100);margin-bottom:24px;overflow-x:auto;scrollbar-width:none}
-.vma-tab-nav::-webkit-scrollbar{display:none}
-.vma-tab-btn{display:inline-flex;align-items:center;gap:7px;padding:11px 16px;font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--ink-300);background:transparent;border:0;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.vma-tab-btn.active{color:var(--ink-700);border-bottom-color:var(--brand-500);font-weight:700}
-.vma-tab-panel{display:none}.vma-tab-panel.active{display:block}
-.vma-progress-wrap{background:var(--surface-card);border-radius:var(--radius-xl);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.04);padding:22px 24px;margin-bottom:20px}
-.vma-progress-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
-.vma-progress-label{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-300)}
-.vma-progress-pct{font-size:22px;font-weight:800;color:var(--ink-700)}
-.vma-progress-track{height:10px;background:var(--ink-100);border-radius:999px;overflow:hidden;margin-bottom:8px}
-.vma-progress-fill{height:100%;border-radius:999px}
-.vma-progress-fill.accepted{background:linear-gradient(90deg,var(--green-fg),#4ade80)}
-.vma-progress-fill.pending{background:linear-gradient(90deg,var(--amber-fg),#fbbf24)}
-.vma-progress-fill.shortlist{background:linear-gradient(90deg,var(--blue-fg),#60a5fa)}
-.vma-progress-fill.rejected{background:linear-gradient(90deg,var(--red-fg),#f87171)}
-.vma-progress-sub{font-size:12px;color:var(--ink-300);font-weight:600}
-.vma-status-alert{display:flex;align-items:flex-start;gap:13px;padding:14px 18px;border-radius:var(--radius-lg);border:1.5px solid;margin-bottom:20px;font-size:13px;font-weight:600;line-height:1.55}
-.vma-status-alert i{font-size:18px;flex-shrink:0;margin-top:1px}
-.vma-status-alert strong{display:block;font-size:13.5px;margin-bottom:2px}
-.vma-status-alert.pending{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber-fg)}
-.vma-status-alert.shortlisted{background:var(--blue-bg);border-color:var(--blue-border);color:var(--blue-fg)}
-.vma-status-alert.accepted{background:var(--green-bg);border-color:var(--green-border);color:var(--green-fg)}
-.vma-status-alert.rejected{background:var(--red-bg);border-color:var(--red-border);color:var(--red-fg)}
-.vma-status-alert.withdrawn{background:var(--slate-bg);border-color:var(--slate-border);color:var(--slate-fg)}
-.vma-detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.vma-detail-item{background:var(--ink-50);border-radius:var(--radius-md);padding:12px 14px;border-left:3px solid var(--brand-400)}
-.vma-detail-item.full{grid-column:1/-1}
-.vma-detail-label{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-300);margin-bottom:4px}
-.vma-detail-value{font-size:13.5px;font-weight:600;color:var(--ink-700);word-break:break-word;line-height:1.5}
-.vma-detail-value a{color:var(--brand-600)}
-.vma-prose-block{margin-bottom:18px}
-.vma-prose-label{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--brand-600);margin-bottom:6px}
-.vma-prose{font-size:13.5px;color:var(--ink-400);line-height:1.8;white-space:pre-wrap;background:var(--ink-50);border-radius:var(--radius-md);padding:14px 16px;margin:0}
-.vma-table-wrap{overflow-x:auto}
-.vma-table{width:100%;border-collapse:collapse;font-size:13px}
-.vma-table th,.vma-table td{padding:10px 12px;border-bottom:1px solid var(--ink-100);text-align:left;vertical-align:top}
-.vma-table th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-300);background:var(--ink-50)}
-.vma-doc-list{display:flex;flex-direction:column;gap:10px}
-.vma-doc-item{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--ink-50);border-radius:var(--radius-md);padding:12px 15px;border:1px solid var(--ink-100)}
-.vma-doc-left{display:flex;align-items:center;gap:12px}
-.vma-doc-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:grid;place-items:center;font-size:18px;flex-shrink:0}
-.vma-doc-icon.pdf{background:#fef2f2;color:#dc2626}.vma-doc-icon.pptx{background:#fff7ed;color:#c2410c}.vma-doc-icon.xls{background:#f0fdf4;color:#15803d}.vma-doc-icon.doc{background:var(--blue-bg);color:var(--blue-fg)}
-.vma-feedback-card{border-radius:var(--radius-lg);padding:16px 20px;border:1.5px solid;margin-bottom:14px}
-.vma-feedback-card.notes{background:var(--blue-bg);border-color:var(--blue-border)}
-.vma-feedback-card.rejection{background:var(--red-bg);border-color:var(--red-border)}
-.vma-feedback-title{font-size:13px;font-weight:800;margin-bottom:10px}
-.vma-feedback-body{font-size:13.5px;color:var(--ink-500);line-height:1.75}
-.vma-timeline{position:relative;padding-left:28px}
-.vma-timeline:before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--ink-100)}
-.vma-tl-item{position:relative;background:var(--ink-50);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:10px}
-.vma-tl-item:before{content:'';position:absolute;left:-22px;top:15px;width:12px;height:12px;border-radius:50%;background:var(--brand-500);border:3px solid var(--surface-card);box-shadow:0 0 0 2px var(--brand-400)}
-.vma-tl-title{font-size:13px;font-weight:700;color:var(--ink-700);margin-bottom:3px}
-.vma-tl-sub{font-size:11.5px;color:var(--ink-300);line-height:1.55}
-.badge-pending{background:var(--amber-bg);color:var(--amber-fg);border-color:var(--amber-border)}
-.badge-danger{background:var(--red-bg);color:var(--red-fg);border-color:var(--red-border)}
-.badge-under-review{background:var(--blue-bg);color:var(--blue-fg);border-color:var(--blue-border)}
-@media(max-width:900px){.vma-two-col{grid-template-columns:1fr!important}}
-@media(max-width:640px){.vma-detail-grid{grid-template-columns:1fr}.vma-tab-btn{padding:10px 12px;font-size:12px}}
+/* view-my-application.php: page-only layout. */
+.vma-hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.vma-hero-meta i { margin-right: 4px; }
+.vma-progress-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+.vma-progress-label { font-size: var(--fs-xs); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-300); }
+.vma-progress-pct { font-size: var(--fs-xl); font-weight: 800; color: var(--ink-700); }
+.vma-progress-track { height: 10px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 8px; }
+.vma-progress-fill { height: 100%; border-radius: var(--radius-pill); }
+.vma-progress-fill.accepted { background: var(--green-fg); }
+.vma-progress-fill.pending { background: var(--amber-fg); }
+.vma-progress-fill.shortlist { background: var(--blue-fg); }
+.vma-progress-fill.rejected { background: var(--red-fg); }
+.vma-progress-sub { font-size: var(--fs-xs); color: var(--ink-300); font-weight: 600; }
+.vma-alert { align-items: flex-start; line-height: 1.55; }
+.vma-alert > i { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.vma-alert strong { display: block; margin-bottom: 2px; }
+.vma-panel-title { display: flex; align-items: center; gap: 8px; margin: 0 0 var(--space-4); font-size: 15px; font-weight: 800; color: var(--ink-700); }
+.vma-panel-title i { color: var(--brand-500); }
+.vma-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.vma-detail-grid + * { margin-top: var(--space-5); }
+.vma-detail-item { background: var(--ink-50); border-radius: var(--radius-md); padding: 12px 14px; border-left: 3px solid var(--brand-400); }
+.vma-detail-item.full { grid-column: 1 / -1; }
+.vma-detail-label { font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-300); margin-bottom: 4px; }
+.vma-detail-value { font-size: 13.5px; font-weight: 600; color: var(--ink-700); word-break: break-word; line-height: 1.5; }
+.vma-prose-block { margin-bottom: 18px; }
+.vma-prose-label { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--brand-600); margin-bottom: 6px; }
+.vma-prose { font-size: 13.5px; color: var(--ink-400); line-height: 1.8; white-space: pre-wrap; background: var(--ink-50); border-radius: var(--radius-md); padding: 14px 16px; margin: 0; }
+.vma-table-block { margin-bottom: var(--space-5); }
+.vma-doc-list { display: flex; flex-direction: column; gap: 10px; }
+.vma-doc-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--ink-50); border-radius: var(--radius-md); padding: 12px 15px; border: 1px solid var(--ink-100); }
+.vma-doc-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.vma-doc-name { font-size: var(--fs-sm); font-weight: 700; color: var(--ink-700); }
+.vma-doc-file { font-size: 11px; margin-top: 2px; overflow-wrap: anywhere; }
+.vma-doc-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
+.vma-doc-icon.pdf { background: var(--red-bg); color: var(--red-fg); }
+.vma-doc-icon.pptx { background: var(--brand-50); color: var(--brand-700); }
+.vma-doc-icon.xls { background: var(--green-bg); color: var(--green-fg); }
+.vma-doc-icon.doc { background: var(--blue-bg); color: var(--blue-fg); }
+.vma-feedback { margin-top: var(--space-5); align-items: flex-start; }
+.vma-feedback + .vma-feedback { margin-top: var(--space-3); }
+.vma-feedback strong { display: block; margin-bottom: 6px; }
+.vma-feedback-body { color: var(--ink-500); line-height: 1.75; }
+.vma-timeline { position: relative; padding-left: 28px; }
+.vma-timeline::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--ink-100); }
+.vma-tl-item { position: relative; background: var(--ink-50); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 10px; }
+.vma-tl-item::before { content: ''; position: absolute; left: -22px; top: 15px; width: 12px; height: 12px; border-radius: 50%; background: var(--brand-500); border: 3px solid var(--surface-card); box-shadow: 0 0 0 2px var(--brand-400); }
+.vma-tl-title { font-size: var(--fs-sm); font-weight: 700; color: var(--ink-700); margin-bottom: 3px; }
+.vma-tl-sub { font-size: 11.5px; color: var(--ink-300); line-height: 1.55; }
+@media (max-width: 640px) {
+    .vma-detail-grid { grid-template-columns: 1fr; }
+    .vma-doc-item { flex-wrap: wrap; }
+}
 </style>
 
-<div class="opp-hero" style="margin-bottom:20px;">
-    <div class="opp-hero-left">
-        <div class="opp-eyebrow">
-            <span class="opp-dot"></span>
-            <?= h(vma_value($application, 'opportunity_type', 'Opportunity')) ?>
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-file-alt" aria-hidden="true"></i> <?= h(vma_value($application, 'opportunity_title', 'Application Details')) ?></h1>
+        <p class="vma-hero-meta">
+            <span><?= h(vma_value($application, 'opportunity_type', 'Opportunity')) ?></span>
             <?php if (!empty($application['is_featured'])): ?>
-                <span style="margin-left:6px;background:rgba(255,255,255,.15);border-radius:999px;padding:2px 10px;font-size:10px;font-weight:700;">
-                    <i class="fas fa-star" style="color:#fbbf24;"></i> Featured
-                </span>
+                <span><i class="fas fa-star" aria-hidden="true"></i>Featured</span>
             <?php endif; ?>
-        </div>
-
-        <h1><?= h(vma_value($application, 'opportunity_title', 'Application Details')) ?></h1>
-
-        <div class="opp-meta" style="margin-top:8px;opacity:.9;">
-            <span class="opp-meta-item">
-                <i class="fas fa-hashtag"></i>
-                #<?= (int)$application_id ?>
-            </span>
-
+            <span><i class="fas fa-hashtag" aria-hidden="true"></i><?= (int)$application_id ?></span>
             <?php if ($submitted_ts !== null): ?>
-                <span class="opp-meta-item">
-                    <i class="fas fa-calendar"></i>
-                    <?= $status === 'Draft' ? 'Last saved' : 'Submitted' ?>
+                <span>
+                    <i class="fas fa-calendar" aria-hidden="true"></i><?= $status === 'Draft' ? 'Last saved' : 'Submitted' ?>
                     <?= h(vma_date($submitted_at)) ?>
                 </span>
             <?php endif; ?>
-        </div>
+            <span class="badge <?= h($badgeClass) ?>"><?= h($status) ?></span>
+        </p>
     </div>
 
-    <div class="opp-hero-actions" style="position:relative;flex-direction:column;align-items:flex-end;gap:10px;">
-        <span class="badge <?= h($badgeClass) ?>" style="font-size:13px;padding:7px 18px;">
-            <?= h($status) ?>
-        </span>
+    <div class="hero-actions">
+        <a href="my-applications" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> My Applications
+        </a>
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-            <a href="my-applications" class="btn btn-white btn-sm">
-                <i class="fas fa-arrow-left"></i> My Applications
+        <button type="button" onclick="window.print()" class="btn">
+            <i class="fas fa-print" aria-hidden="true"></i> Print
+        </button>
+
+        <?php if ($status === 'Draft'): ?>
+            <a
+                href="submit-application?opportunity_id=<?= (int)($application['opportunity_id'] ?? 0) ?>&draft_id=<?= (int)$application_id ?>"
+                class="btn btn-primary"
+            >
+                <i class="fas fa-edit" aria-hidden="true"></i> Continue Draft
             </a>
-
-            <?php if ($status === 'Draft'): ?>
-                <a
-                    href="submit-application?opportunity_id=<?= (int)($application['opportunity_id'] ?? 0) ?>&draft_id=<?= (int)$application_id ?>"
-                    class="btn btn-white btn-sm"
-                >
-                    <i class="fas fa-edit"></i> Continue Draft
-                </a>
-            <?php endif; ?>
-
-            <button type="button" onclick="window.print()" class="btn btn-white btn-sm">
-                <i class="fas fa-print"></i> Print
-            </button>
-        </div>
-    </div>
-</div>
-
-<div class="vma-progress-wrap">
-    <div class="vma-progress-header">
-        <span class="vma-progress-label">Application Progress</span>
-        <span class="vma-progress-pct"><?= (int)$progress ?>%</span>
-    </div>
-
-    <div class="vma-progress-track">
-        <div class="vma-progress-fill <?= h($fillClass) ?>" style="width:<?= (int)$progress ?>%;"></div>
-    </div>
-
-    <div class="vma-progress-sub">
-        <?= h($status) ?>
-        <?php if ($days_ago !== null): ?>
-            &nbsp;.&nbsp;
-            <?= $days_ago === 0 ? 'Today' : h($days_ago) . ' day' . ($days_ago === 1 ? '' : 's') . ' ago' ?>
         <?php endif; ?>
     </div>
 </div>
 
-<div class="vma-status-alert <?= h($alert[0]) ?>">
-    <i class="fas fa-<?= h($alert[1]) ?>"></i>
+<div class="card">
+    <div class="card-body">
+        <div class="vma-progress-header">
+            <span class="vma-progress-label">Application Progress</span>
+            <span class="vma-progress-pct"><?= (int)$progress ?>%</span>
+        </div>
+
+        <div class="vma-progress-track">
+            <div class="vma-progress-fill <?= h($fillClass) ?>" style="width:<?= (int)$progress ?>%;"></div>
+        </div>
+
+        <div class="vma-progress-sub">
+            <?= h($status) ?>
+            <?php if ($days_ago !== null): ?>
+                &nbsp;.&nbsp;
+                <?= $days_ago === 0 ? 'Today' : h($days_ago) . ' day' . ($days_ago === 1 ? '' : 's') . ' ago' ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<div class="alert <?= h($vmaAlertClass) ?> vma-alert">
+    <i class="fas fa-<?= h($alert[1]) ?>" aria-hidden="true"></i>
     <div>
         <strong><?= h($alert[2]) ?></strong>
         <?= h($alert[3]) ?>
     </div>
 </div>
 
-<div class="vma-tab-nav">
-    <button class="vma-tab-btn active" data-tab="overview"><i class="fas fa-rocket"></i> Venture</button>
-    <button class="vma-tab-btn" data-tab="team"><i class="fas fa-users"></i> Team</button>
-    <button class="vma-tab-btn" data-tab="solution"><i class="fas fa-lightbulb"></i> Problem & Solution</button>
-    <button class="vma-tab-btn" data-tab="traction"><i class="fas fa-chart-line"></i> Traction</button>
-    <button class="vma-tab-btn" data-tab="business"><i class="fas fa-briefcase"></i> Business & Funding</button>
-    <button class="vma-tab-btn" data-tab="safeguarding"><i class="fas fa-shield-alt"></i> Safeguarding</button>
-    <button class="vma-tab-btn" data-tab="mel"><i class="fas fa-chart-bar"></i> MEL</button>
+<div class="detail-tabs">
+<div class="tab-nav">
+    <button type="button" class="tab-btn vma-tab-btn active" data-tab="overview"><i class="fas fa-rocket" aria-hidden="true"></i> Venture</button>
+    <button type="button" class="tab-btn vma-tab-btn" data-tab="team"><i class="fas fa-users" aria-hidden="true"></i> Team</button>
+    <button type="button" class="tab-btn vma-tab-btn" data-tab="solution"><i class="fas fa-lightbulb" aria-hidden="true"></i> Problem & Solution</button>
+    <button type="button" class="tab-btn vma-tab-btn" data-tab="traction"><i class="fas fa-chart-line" aria-hidden="true"></i> Traction</button>
+    <button type="button" class="tab-btn vma-tab-btn" data-tab="business"><i class="fas fa-briefcase" aria-hidden="true"></i> Business & Funding</button>
+    <button type="button" class="tab-btn vma-tab-btn" data-tab="safeguarding"><i class="fas fa-shield-alt" aria-hidden="true"></i> Safeguarding</button>
+    <button type="button" class="tab-btn vma-tab-btn" data-tab="mel"><i class="fas fa-chart-bar" aria-hidden="true"></i> MEL</button>
     <?php if ($has_docs): ?>
-        <button class="vma-tab-btn" data-tab="documents"><i class="fas fa-paperclip"></i> Documents</button>
+        <button type="button" class="tab-btn vma-tab-btn" data-tab="documents"><i class="fas fa-paperclip" aria-hidden="true"></i> Documents</button>
     <?php endif; ?>
-    <button class="vma-tab-btn" data-tab="timeline"><i class="fas fa-history"></i> Timeline</button>
+    <button type="button" class="tab-btn vma-tab-btn" data-tab="timeline"><i class="fas fa-history" aria-hidden="true"></i> Timeline</button>
 </div>
 
-<div class="vma-tab-panel active" id="tab-overview">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-rocket" style="color:var(--brand-500);"></i> Venture Information</h3>
-        </div>
+<div class="tab-panels">
+<div class="tab-panel vma-tab-panel active" id="tab-overview">
+            <h3 class="vma-panel-title"><i class="fas fa-rocket" aria-hidden="true"></i> Venture Information</h3>
 
-        <div class="opp-panel-body">
             <div class="vma-detail-grid">
                 <?php
                 $venture_items = [
@@ -520,18 +508,18 @@ foreach ($doc_fields as $field => $meta) {
             </div>
 
             <?php if ($incubation_programmes): ?>
-                <div style="margin-top:20px;">
+                <div>
                     <div class="vma-prose-label">Incubation / Accelerator Programmes</div>
-                    <div class="vma-table-wrap">
-                        <table class="vma-table">
+                    <div class="table-responsive">
+                        <table class="table">
                             <thead><tr><th>Programme</th><th>Organisation</th><th>Year</th><th>Outcomes</th></tr></thead>
                             <tbody>
                             <?php foreach ($incubation_programmes as $row): ?>
                                 <tr>
-                                    <td><?= h($row['programme'] ?? '—') ?></td>
-                                    <td><?= h($row['organisation'] ?? '—') ?></td>
-                                    <td><?= h($row['year'] ?? '—') ?></td>
-                                    <td><?= h($row['outcomes'] ?? '—') ?></td>
+                                    <td><?= h($row['programme'] ?? 'â€”') ?></td>
+                                    <td><?= h($row['organisation'] ?? 'â€”') ?></td>
+                                    <td><?= h($row['year'] ?? 'â€”') ?></td>
+                                    <td><?= h($row['outcomes'] ?? 'â€”') ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             </tbody>
@@ -539,17 +527,12 @@ foreach ($doc_fields as $field => $meta) {
                     </div>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
 </div>
 
-<div class="vma-tab-panel" id="tab-team">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-users" style="color:var(--brand-500);"></i> Team Information</h3>
-        </div>
-        <div class="opp-panel-body">
-            <div class="vma-detail-grid" style="margin-bottom:20px;">
+<div class="tab-panel vma-tab-panel" id="tab-team">
+            <h3 class="vma-panel-title"><i class="fas fa-users" aria-hidden="true"></i> Team Information</h3>
+
+            <div class="vma-detail-grid">
                 <?php foreach ([
                     'contact_person' => 'Contact Person',
                     'email' => 'Email',
@@ -568,44 +551,48 @@ foreach ($doc_fields as $field => $meta) {
             </div>
 
             <?php if ($founders): ?>
+                <div class="vma-table-block">
                 <div class="vma-prose-label">Founders</div>
-                <div class="vma-table-wrap" style="margin-bottom:20px;">
-                    <table class="vma-table">
+                <div class="table-responsive">
+                    <table class="table">
                         <thead><tr><th>Name</th><th>Role</th><th>Age</th><th>Gender</th><th>Shareholding</th><th>Full Time</th><th>PWD</th></tr></thead>
                         <tbody>
                         <?php foreach ($founders as $row): ?>
                             <tr>
-                                <td><?= h($row['name'] ?? '—') ?></td>
-                                <td><?= h($row['role'] ?? '—') ?></td>
-                                <td><?= h($row['age'] ?? '—') ?></td>
-                                <td><?= h($row['gender'] ?? '—') ?></td>
-                                <td><?= h($row['shareholding'] ?? '—') ?></td>
-                                <td><?= h($row['full_time'] ?? '—') ?></td>
-                                <td><?= h($row['pwd_status'] ?? '—') ?></td>
+                                <td><?= h($row['name'] ?? 'â€”') ?></td>
+                                <td><?= h($row['role'] ?? 'â€”') ?></td>
+                                <td><?= h($row['age'] ?? 'â€”') ?></td>
+                                <td><?= h($row['gender'] ?? 'â€”') ?></td>
+                                <td><?= h($row['shareholding'] ?? 'â€”') ?></td>
+                                <td><?= h($row['full_time'] ?? 'â€”') ?></td>
+                                <td><?= h($row['pwd_status'] ?? 'â€”') ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
+                </div>
             <?php endif; ?>
 
             <?php if ($other_team_members): ?>
+                <div class="vma-table-block">
                 <div class="vma-prose-label">Other Team Members</div>
-                <div class="vma-table-wrap" style="margin-bottom:20px;">
-                    <table class="vma-table">
+                <div class="table-responsive">
+                    <table class="table">
                         <thead><tr><th>Name</th><th>Role</th><th>Age</th><th>Gender</th><th>PWD</th></tr></thead>
                         <tbody>
                         <?php foreach ($other_team_members as $row): ?>
                             <tr>
-                                <td><?= h($row['name'] ?? '—') ?></td>
-                                <td><?= h($row['role'] ?? '—') ?></td>
-                                <td><?= h($row['age'] ?? '—') ?></td>
-                                <td><?= h($row['gender'] ?? '—') ?></td>
-                                <td><?= h($row['pwd_status'] ?? '—') ?></td>
+                                <td><?= h($row['name'] ?? 'â€”') ?></td>
+                                <td><?= h($row['role'] ?? 'â€”') ?></td>
+                                <td><?= h($row['age'] ?? 'â€”') ?></td>
+                                <td><?= h($row['gender'] ?? 'â€”') ?></td>
+                                <td><?= h($row['pwd_status'] ?? 'â€”') ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
+                </div>
                 </div>
             <?php endif; ?>
 
@@ -615,16 +602,11 @@ foreach ($doc_fields as $field => $meta) {
                     <p class="vma-prose"><?= h($application['team_positioning']) ?></p>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
 </div>
 
-<div class="vma-tab-panel" id="tab-solution">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-lightbulb" style="color:var(--brand-500);"></i> Problem & Solution</h3>
-        </div>
-        <div class="opp-panel-body">
+<div class="tab-panel vma-tab-panel" id="tab-solution">
+            <h3 class="vma-panel-title"><i class="fas fa-lightbulb" aria-hidden="true"></i> Problem & Solution</h3>
+
             <?php foreach ([
                 'problem_solution' => 'Problem & Solution',
                 'primary_users' => 'Primary Users',
@@ -649,16 +631,11 @@ foreach ($doc_fields as $field => $meta) {
                     <p class="vma-prose"><?= h(vma_list($regions_served)) ?></p>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
 </div>
 
-<div class="vma-tab-panel" id="tab-traction">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-chart-line" style="color:var(--brand-500);"></i> Traction</h3>
-        </div>
-        <div class="opp-panel-body">
+<div class="tab-panel vma-tab-panel" id="tab-traction">
+            <h3 class="vma-panel-title"><i class="fas fa-chart-line" aria-hidden="true"></i> Traction</h3>
+
             <div class="vma-detail-grid">
                 <?php foreach ([
                     'total_users_reached' => 'Total Users Reached',
@@ -682,26 +659,21 @@ foreach ($doc_fields as $field => $meta) {
             </div>
 
             <?php if (!empty($application['other_traction_metrics'])): ?>
-                <div class="vma-prose-block" style="margin-top:20px;">
+                <div class="vma-prose-block">
                     <div class="vma-prose-label">Other Traction Metrics</div>
                     <p class="vma-prose"><?= h($application['other_traction_metrics']) ?></p>
                 </div>
             <?php elseif (!empty($application['traction'])): ?>
-                <div class="vma-prose-block" style="margin-top:20px;">
+                <div class="vma-prose-block">
                     <div class="vma-prose-label">Traction</div>
                     <p class="vma-prose"><?= h($application['traction']) ?></p>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
 </div>
 
-<div class="vma-tab-panel" id="tab-business">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-briefcase" style="color:var(--brand-500);"></i> Business & Funding</h3>
-        </div>
-        <div class="opp-panel-body">
+<div class="tab-panel vma-tab-panel" id="tab-business">
+            <h3 class="vma-panel-title"><i class="fas fa-briefcase" aria-hidden="true"></i> Business & Funding</h3>
+
             <?php if ($revenue_models): ?>
                 <div class="vma-prose-block">
                     <div class="vma-prose-label">Revenue Models</div>
@@ -727,34 +699,29 @@ foreach ($doc_fields as $field => $meta) {
 
             <?php if ($external_funding_details): ?>
                 <div class="vma-prose-label">External Funding Details</div>
-                <div class="vma-table-wrap">
-                    <table class="vma-table">
+                <div class="table-responsive">
+                    <table class="table">
                         <thead><tr><th>Funder</th><th>Type</th><th>Amount</th><th>Currency</th><th>Year</th><th>Status</th></tr></thead>
                         <tbody>
                         <?php foreach ($external_funding_details as $row): ?>
                             <tr>
-                                <td><?= h($row['funder'] ?? '—') ?></td>
-                                <td><?= h($row['type'] ?? '—') ?></td>
-                                <td><?= h($row['amount'] ?? '—') ?></td>
-                                <td><?= h($row['currency'] ?? '—') ?></td>
-                                <td><?= h($row['year'] ?? '—') ?></td>
-                                <td><?= h($row['status'] ?? '—') ?></td>
+                                <td><?= h($row['funder'] ?? 'â€”') ?></td>
+                                <td><?= h($row['type'] ?? 'â€”') ?></td>
+                                <td><?= h($row['amount'] ?? 'â€”') ?></td>
+                                <td><?= h($row['currency'] ?? 'â€”') ?></td>
+                                <td><?= h($row['year'] ?? 'â€”') ?></td>
+                                <td><?= h($row['status'] ?? 'â€”') ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
 </div>
 
-<div class="vma-tab-panel" id="tab-safeguarding">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-shield-alt" style="color:var(--brand-500);"></i> Safeguarding & Inclusion</h3>
-        </div>
-        <div class="opp-panel-body">
+<div class="tab-panel vma-tab-panel" id="tab-safeguarding">
+            <h3 class="vma-panel-title"><i class="fas fa-shield-alt" aria-hidden="true"></i> Safeguarding & Inclusion</h3>
+
             <?php foreach ([
                 'has_safeguarding_policy' => 'Has Safeguarding Policy',
                 'safeguarding_measures' => 'Safeguarding Measures',
@@ -774,16 +741,11 @@ foreach ($doc_fields as $field => $meta) {
                     <p class="vma-prose"><?= h($application[$field]) ?></p>
                 </div>
             <?php endforeach; ?>
-        </div>
-    </div>
 </div>
 
-<div class="vma-tab-panel" id="tab-mel">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-chart-bar" style="color:var(--brand-500);"></i> Monitoring, Evaluation & Learning</h3>
-        </div>
-        <div class="opp-panel-body">
+<div class="tab-panel vma-tab-panel" id="tab-mel">
+            <h3 class="vma-panel-title"><i class="fas fa-chart-bar" aria-hidden="true"></i> Monitoring, Evaluation & Learning</h3>
+
             <?php foreach ([
                 'impact_measurement' => 'Impact Measurement',
                 'data_collection_frequency' => 'Data Collection Frequency',
@@ -807,17 +769,12 @@ foreach ($doc_fields as $field => $meta) {
                     <p class="vma-prose"><?= h(vma_list($data_uses)) ?></p>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
 </div>
 
 <?php if ($has_docs): ?>
-<div class="vma-tab-panel" id="tab-documents">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-paperclip" style="color:var(--brand-500);"></i> Supporting Documents</h3>
-        </div>
-        <div class="opp-panel-body">
+<div class="tab-panel vma-tab-panel" id="tab-documents">
+            <h3 class="vma-panel-title"><i class="fas fa-paperclip" aria-hidden="true"></i> Supporting Documents</h3>
+
             <div class="vma-doc-list">
                 <?php foreach ($doc_fields as $field => [$label, $icon, $type]):
                     if (empty($application[$field])) continue;
@@ -826,31 +783,26 @@ foreach ($doc_fields as $field => $meta) {
                     <div class="vma-doc-item">
                         <div class="vma-doc-left">
                             <div class="vma-doc-icon <?= h($type) ?>">
-                                <i class="fas <?= h($icon) ?>"></i>
+                                <i class="fas <?= h($icon) ?>" aria-hidden="true"></i>
                             </div>
                             <div>
-                                <div style="font-size:13px;font-weight:700;color:var(--ink-700);"><?= h($label) ?></div>
-                                <div style="font-size:11px;color:var(--ink-300);margin-top:2px;"><?= h(basename($path)) ?></div>
+                                <div class="vma-doc-name"><?= h($label) ?></div>
+                                <div class="vma-doc-file cell-muted"><?= h(basename($path)) ?></div>
                             </div>
                         </div>
 
                         <a href="<?= h(ims_upload_url($path)) ?>" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
-                            <i class="fas fa-eye"></i> Open
+                            <i class="fas fa-eye" aria-hidden="true"></i> Open
                         </a>
                     </div>
                 <?php endforeach; ?>
             </div>
-        </div>
-    </div>
 </div>
 <?php endif; ?>
 
-<div class="vma-tab-panel" id="tab-timeline">
-    <div class="opp-panel">
-        <div class="opp-panel-head">
-            <h3><i class="fas fa-history" style="color:var(--brand-500);"></i> Application Timeline</h3>
-        </div>
-        <div class="opp-panel-body">
+<div class="tab-panel vma-tab-panel" id="tab-timeline">
+            <h3 class="vma-panel-title"><i class="fas fa-history" aria-hidden="true"></i> Application Timeline</h3>
+
             <div class="vma-timeline">
                 <?php if (!empty($application['created_at'])): ?>
                     <div class="vma-tl-item">
@@ -894,21 +846,29 @@ foreach ($doc_fields as $field => $meta) {
             </div>
 
             <?php if (!empty($application['reviewer_notes'])): ?>
-                <div class="vma-feedback-card notes" style="margin-top:20px;">
-                    <div class="vma-feedback-title"><i class="fas fa-comment-dots"></i> Reviewer Notes</div>
-                    <div class="vma-feedback-body"><?= nl2br(h($application['reviewer_notes'])) ?></div>
+                <div class="alert alert-info vma-feedback">
+                    <i class="fas fa-comment-dots" aria-hidden="true"></i>
+                    <div>
+                        <strong>Reviewer Notes</strong>
+                        <div class="vma-feedback-body"><?= nl2br(h($application['reviewer_notes'])) ?></div>
+                    </div>
                 </div>
             <?php endif; ?>
 
             <?php if ($status === 'Rejected' && !empty($application['rejection_reason'])): ?>
-                <div class="vma-feedback-card rejection">
-                    <div class="vma-feedback-title"><i class="fas fa-times-circle"></i> Rejection Reason</div>
-                    <div class="vma-feedback-body"><?= nl2br(h($application['rejection_reason'])) ?></div>
+                <div class="alert alert-danger vma-feedback">
+                    <i class="fas fa-times-circle" aria-hidden="true"></i>
+                    <div>
+                        <strong>Rejection Reason</strong>
+                        <div class="vma-feedback-body"><?= nl2br(h($application['rejection_reason'])) ?></div>
+                    </div>
                 </div>
             <?php endif; ?>
-        </div>
-    </div>
 </div>
+</div><!-- /.tab-panels -->
+</div><!-- /.detail-tabs -->
+
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 

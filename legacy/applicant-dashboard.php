@@ -205,476 +205,83 @@ if ($stmt) {
 ?>
 
 <style>
-.dashboard-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
+/* Applicant dashboard: application / opportunity cards, 3 per row on desktop. */
+.ad-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.ad-panel-head h3 { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink-700); }
+.ad-card-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+.ad-grid-footer { grid-column: 1 / -1; text-align: center; margin-top: 4px; }
 
-.dashboard-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
+.ad-card { display: flex; flex-direction: column; min-width: 0; height: 100%; }
+.ad-card .card-body { display: flex; flex-direction: column; flex: 1; padding: 18px; }
+.ad-card-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; padding-top: 15px; border-top: 1px solid var(--ink-50); }
 
-.welcome-text {
-    font-size: 16px;
-    opacity: 0.9;
-}
+/* Application card: left accent follows the application status. */
+.ad-app-card { border-left: 5px solid var(--brand-500); }
+.ad-app-card.is-pending { border-left-color: var(--amber-fg); }
+.ad-app-card.is-shortlisted { border-left-color: var(--blue-fg); }
+.ad-app-card.is-accepted { border-left-color: var(--green-fg); }
+.ad-app-card.is-rejected { border-left-color: var(--red-fg); }
 
-.quick-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
+.ad-card-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.ad-card-title { flex: 1; min-width: 0; }
+.ad-card-title h3 { margin: 0 0 6px; font-size: 17px; color: var(--ink-700); }
+.ad-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.ad-app-id { text-align: right; }
+.ad-app-id code { font-size: 14px; }
 
-.quick-action-btn {
-    background: rgba(255,255,255,0.2);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    text-decoration: none;
-    transition: all 0.3s;
-    border: 1px solid rgba(255,255,255,0.3);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
+.ad-info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.ad-info-item { background: var(--ink-50); padding: 12px; border-radius: var(--radius-sm); }
+.ad-label { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-300); }
+.ad-value { font-size: 14px; font-weight: 600; color: var(--ink-700); }
 
-.quick-action-btn:hover {
-    background: rgba(255,255,255,0.3);
-    transform: translateY(-2px);
-    color: white;
-}
+.ad-note { background: var(--ink-50); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 15px; color: var(--ink-700); }
+.ad-note.is-danger { background: var(--red-bg); border-left: 3px solid var(--red-fg); }
+.ad-note.is-danger .ad-label { color: var(--red-fg); }
+.ad-note.is-info { background: var(--blue-bg); border-left: 3px solid var(--blue-fg); font-size: 14px; }
+.ad-note.is-info .ad-label { color: var(--blue-fg); }
+.ad-note .cell-muted { margin-top: 8px; }
 
-.application-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border-left: 5px solid #ff6b35;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
+.ad-timeline { position: relative; padding-left: 30px; margin-bottom: 15px; }
+.ad-timeline-item { position: relative; padding-bottom: 16px; }
+.ad-timeline-item:last-child { padding-bottom: 0; }
+.ad-timeline-item::before { content: ''; position: absolute; left: -30px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--brand-500); }
+.ad-timeline-item::after { content: ''; position: absolute; left: -25px; top: 17px; width: 2px; height: calc(100% - 12px); background: var(--ink-50); }
+.ad-timeline-item:last-child::after { display: none; }
+.ad-timeline-content { background: var(--ink-50); padding: 12px; border-radius: var(--radius-sm); }
+.ad-timeline-content strong { display: block; margin-bottom: 3px; color: var(--ink-700); }
+.ad-timeline-content strong.is-info { color: var(--blue-fg); }
+.ad-timeline-content strong.is-success { color: var(--green-fg); }
+.ad-timeline-content small { color: var(--ink-300); }
 
-.application-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+.ad-opp-desc { color: var(--ink-300); margin-bottom: 15px; line-height: 1.6; }
+.ad-opp-details { display: flex; gap: 8px 20px; margin-bottom: 15px; flex-wrap: wrap; }
+.ad-opp-detail { display: flex; align-items: center; gap: 5px; color: var(--ink-300); font-size: 14px; }
 
-.application-card.pending {
-    border-left-color: #F39C12;
-}
-
-.application-card.shortlisted {
-    border-left-color: #3498DB;
-}
-
-.application-card.accepted {
-    border-left-color: #2ECC71;
-}
-
-.application-card.rejected {
-    border-left-color: #E74C3C;
-}
-
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.app-title {
-    flex: 1;
-    min-width: 250px;
-}
-
-.app-title h3 {
-    font-size: 22px;
-    color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.app-badges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.app-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.info-item {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.info-item label {
-    font-size: 11px;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 5px;
-}
-
-.info-item .value {
-    font-size: 14px;
-    color: #2c3e50;
-    font-weight: 600;
-}
-
-.app-actions {
-    display: flex;
-    gap: 10px;
-    padding-top: 15px;
-    border-top: 1px solid #ecf0f1;
-    flex-wrap: wrap;
-}
-
-.opportunity-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
-}
-
-.opportunity-card:hover {
-    transform: translateY(-2px);
-}
-
-.opportunity-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 15px;
-}
-
-.opportunity-title {
-    flex: 1;
-}
-
-.opportunity-title h3 {
-    color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.deadline-badge {
-    background: #fff3cd;
-    color: #856404;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.deadline-badge.urgent {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.opportunity-description {
-    color: #7f8c8d;
-    margin-bottom: 15px;
-    line-height: 1.6;
-}
-
-.opportunity-details {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-}
-
-.opportunity-detail {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #7f8c8d;
-    font-size: 14px;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-}
-
-.empty-state i {
-    font-size: 64px;
-    color: #bdc3c7;
-    margin-bottom: 20px;
-}
-
-.timeline {
-    position: relative;
-    padding-left: 30px;
-    margin-top: 15px;
-}
-
-.timeline-item {
-    position: relative;
-    padding-bottom: 20px;
-}
-
-.timeline-item:last-child {
-    padding-bottom: 0;
-}
-
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ff6b35;
-}
-
-.timeline-item::after {
-    content: '';
-    position: absolute;
-    left: -24px;
-    top: 17px;
-    width: 2px;
-    height: calc(100% - 12px);
-    background: #ecf0f1;
-}
-
-.timeline-item:last-child::after {
-    display: none;
-}
-
-.timeline-content {
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 8px;
-}
-
-.timeline-content strong {
-    color: #2c3e50;
-    display: block;
-    margin-bottom: 3px;
-}
-
-.timeline-content small {
-    color: #7f8c8d;
-}
-
+@media (max-width: 1200px) { .ad-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 768px) {
-    .app-info-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .app-actions {
-        flex-direction: column;
-    }
-    
-    .app-actions a,
-    .app-actions button {
-        width: 100%;
-    }
+    .ad-card-grid, .ad-info-grid { grid-template-columns: 1fr; }
+    .ad-card-actions { flex-direction: column; }
+    .ad-card-actions .btn { width: 100%; justify-content: center; }
 }
-
-/* Dashboard application/opportunity tabs */
-.dashboard-content-tabs {
-    margin-top: 30px;
-}
-
-.dashboard-tab-nav {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 6px;
-    margin-bottom: 18px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
-    scrollbar-width: none;
-}
-
-.dashboard-tab-nav::-webkit-scrollbar {
-    display: none;
-}
-
-.dashboard-tab-btn {
-    appearance: none;
-    border: 0;
-    background: transparent;
-    color: #64748b;
-    min-height: 42px;
-    padding: 10px 16px;
-    border-radius: 9px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: .2s ease;
-}
-
-.dashboard-tab-btn:hover {
-    background: #f8fafc;
-    color: #334155;
-}
-
-.dashboard-tab-btn.active {
-    background: #fff7ed;
-    color: #ea580c;
-    box-shadow: inset 0 0 0 1px #fed7aa;
-}
-
-.dashboard-tab-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 7px;
-    border-radius: 999px;
-    background: #f1f5f9;
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.dashboard-tab-btn.active .dashboard-tab-count {
-    background: #ffedd5;
-    color: #ea580c;
-}
-
-.dashboard-tab-panel {
-    display: none;
-}
-
-.dashboard-tab-panel.active {
-    display: block;
-}
-
-.dashboard-tab-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
-}
-
-.dashboard-tab-card-header {
-    padding: 16px 18px;
-    border-bottom: 1px solid #edf0f2;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.dashboard-tab-card-header h3 {
-    margin: 0;
-    font-size: 17px;
-    color: #2c3e50;
-}
-
-.dashboard-tab-card-body {
-    padding: 18px;
-}
-
-/* 3 cards per row on desktop */
-.dashboard-card-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
-    align-items: stretch;
-}
-
-.dashboard-card-grid .application-card,
-.dashboard-card-grid .opportunity-card {
-    margin-bottom: 0;
-    height: 100%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.dashboard-card-grid .application-card .app-actions {
-    margin-top: auto;
-}
-
-.dashboard-card-grid .opportunity-card > div:last-child {
-    margin-top: auto;
-}
-
-.dashboard-card-grid .application-card {
-    padding: 18px;
-}
-
-.dashboard-card-grid .opportunity-card {
-    padding: 18px;
-}
-
-.dashboard-card-grid .app-info-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.dashboard-grid-footer {
-    grid-column: 1 / -1;
-    text-align: center;
-    margin-top: 4px;
-}
-
-@media (max-width: 1200px) {
-    .dashboard-card-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .dashboard-card-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .dashboard-card-grid .app-info-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .dashboard-tab-card-body {
-        padding: 14px;
-    }
-}
-
 </style>
 
-<!-- Dashboard Header -->
-<div class="dashboard-header">
-    <h1><i class="fas fa-rocket"></i> Welcome, <?php echo h($applicant['full_name'] ?? 'Applicant'); ?>!</h1>
-    <div class="welcome-text">
-        Track your applications and discover new opportunities
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-rocket" aria-hidden="true"></i> Welcome, <?php echo h($applicant['full_name'] ?? 'Applicant'); ?>!</h1>
+        <p>Track your applications and discover new opportunities.</p>
     </div>
-    
-    <div class="quick-actions">
-        <a href="#available-opportunities" class="quick-action-btn">
-            <i class="fas fa-plus-circle"></i> Apply to Opportunity
+
+    <div class="hero-actions">
+        <a href="my-applications" class="btn">
+            <i class="fas fa-list" aria-hidden="true"></i> All Applications
         </a>
-        <a href="user-profile" class="quick-action-btn">
-            <i class="fas fa-user-edit"></i> Update Profile
+        <a href="user-profile" class="btn">
+            <i class="fas fa-user-edit" aria-hidden="true"></i> Update Profile
         </a>
-        <a href="my-applications" class="quick-action-btn">
-            <i class="fas fa-list"></i> All Applications
+        <a href="#available-opportunities" class="btn btn-primary">
+            <i class="fas fa-plus-circle" aria-hidden="true"></i> Apply to Opportunity
         </a>
     </div>
 </div>
@@ -688,7 +295,7 @@ if ($stmt) {
             <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -696,7 +303,7 @@ if ($stmt) {
             <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -704,7 +311,7 @@ if ($stmt) {
             <span class="stat-value"><?php echo $stats['accepted']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-purple"><i class="fas fa-star" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -715,151 +322,149 @@ if ($stmt) {
 </div>
 
 <!-- Applications & Opportunities Tabs -->
-<div class="dashboard-content-tabs">
-    <div class="dashboard-tab-nav" role="tablist" aria-label="Applicant dashboard sections">
+<div class="tab-shell">
+    <div class="tab-header" role="tablist" aria-label="Applicant dashboard sections">
         <button
             type="button"
-            class="dashboard-tab-btn active"
+            class="tab-btn active"
             data-dashboard-tab="recent"
             role="tab"
             aria-selected="true"
             aria-controls="dashboard-tab-recent"
         >
-            <i class="fas fa-history"></i>
+            <i class="fas fa-history" aria-hidden="true"></i>
             Recent Applications
-            <span class="dashboard-tab-count"><?php echo count($applications); ?></span>
+            <span class="badge badge-light"><?php echo count($applications); ?></span>
         </button>
 
         <button
             type="button"
-            class="dashboard-tab-btn"
+            class="tab-btn"
             data-dashboard-tab="available"
             role="tab"
             aria-selected="false"
             aria-controls="dashboard-tab-available"
         >
-            <i class="fas fa-clipboard-check"></i>
+            <i class="fas fa-clipboard-check" aria-hidden="true"></i>
             Available Opportunities
-            <span class="dashboard-tab-count"><?php echo count($available_opportunities); ?></span>
+            <span class="badge badge-light"><?php echo count($available_opportunities); ?></span>
         </button>
     </div>
 
+    <div class="tab-panels">
     <section
-        class="dashboard-tab-panel active"
+        class="tab-panel active"
         id="dashboard-tab-recent"
         data-dashboard-panel="recent"
         role="tabpanel"
     >
-        <div class="dashboard-tab-card">
-            <div class="dashboard-tab-card-header">
-                <h3><i class="fas fa-history"></i> Recent Applications</h3>
-                <a href="my-applications" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-list"></i> All Applications
-                </a>
-            </div>
-            <div class="dashboard-tab-card-body">
+        <div class="ad-panel-head">
+            <h3><i class="fas fa-history" aria-hidden="true"></i> Recent Applications</h3>
+            <a href="my-applications" class="btn btn-secondary btn-sm">
+                <i class="fas fa-list" aria-hidden="true"></i> All Applications
+            </a>
+        </div>
 
         <?php if (empty($applications)): ?>
             <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                <h3>No Applications Yet</h3>
-                <p style="color: #7f8c8d;">You haven't submitted any applications. Browse available opportunities below to get started!</p>
+                <i class="fas fa-inbox" aria-hidden="true"></i>
+                <h4>No Applications Yet</h4>
+                <p>You haven't submitted any applications. Browse available opportunities below to get started!</p>
             </div>
         <?php else: ?>
-            <div class="dashboard-card-grid">
-            <?php 
+            <div class="ad-card-grid">
+            <?php
             $recent_apps = array_slice($applications, 0, 3);
-            foreach ($recent_apps as $app): 
+            foreach ($recent_apps as $app):
                 $status_class = strtolower(trim((string)($app['status'] ?? 'Draft')));
                 $status_badges = [
-                    'pending'     => 'warning',
-                    'shortlisted' => 'info',
-                    'accepted'    => 'success',
-                    'rejected'    => 'danger',
-                    'withdrawn'   => 'secondary'
+                    'pending'     => 'pending',
+                    'shortlisted' => 'assigned',
+                    'accepted'    => 'available',
+                    'rejected'    => 'rejected',
+                    'withdrawn'   => 'returned'
                 ];
-                $badge = $status_badges[$status_class] ?? 'secondary';
-                
+                $badge = $status_badges[$status_class] ?? 'returned';
+
                 $submitted_at = $app['submitted_at'] ?? null;
                 if (safe_timestamp($submitted_at) === null) {
                     $submitted_at = $app['last_saved_at'] ?? $app['created_at'] ?? null;
                 }
                 $days_ago = safe_days_since($submitted_at);
             ?>
-            <div class="application-card <?php echo $status_class; ?>">
-                <div class="app-header">
-                    <div class="app-title">
+            <div class="card ad-card ad-app-card is-<?php echo h($status_class); ?>">
+              <div class="card-body">
+                <div class="ad-card-head">
+                    <div class="ad-card-title">
                         <h3><?php echo h($app['opportunity_title'] ?? 'Opportunity'); ?></h3>
-                        <div class="app-badges">
+                        <div class="ad-badges">
                             <span class="badge badge-<?php echo $badge; ?>">
                                 <?php echo h($app['status'] ?? 'Draft'); ?>
                             </span>
                             <?php if (!empty($app['opportunity_type'])): ?>
                                 <span class="badge badge-light">
-                                    <i class="fas fa-tag"></i> <?php echo h($app['opportunity_type'] ?? ''); ?>
+                                    <i class="fas fa-tag" aria-hidden="true"></i> <?php echo h($app['opportunity_type'] ?? ''); ?>
                                 </span>
                             <?php endif; ?>
                             <?php if ($days_ago === 0): ?>
-                                <span class="badge badge-primary">
-                                    <i class="fas fa-star"></i> New Today
+                                <span class="badge badge-purple">
+                                    <i class="fas fa-star" aria-hidden="true"></i> New Today
                                 </span>
                             <?php endif; ?>
                         </div>
                     </div>
-                    
-                    <div style="text-align: right;">
-                        <div style="font-size: 12px; color: #7f8c8d;">Application ID</div>
-                        <code style="font-size: 14px;">#<?php echo h($app['application_id'] ?? ''); ?></code>
+
+                    <div class="ad-app-id">
+                        <span class="ad-label">Application ID</span>
+                        <code>#<?php echo h($app['application_id'] ?? ''); ?></code>
                     </div>
                 </div>
-                
-                <div class="app-info-grid">
-                    <div class="info-item">
-                        <label>Startup Name</label>
-                        <div class="value"><?php echo h(row_value($app, 'startup_name')); ?></div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <label>Sector</label>
-                        <div class="value"><?php echo h(row_value($app, 'sector')); ?></div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <label>Business Stage</label>
-                        <div class="value"><?php echo h(row_value($app, 'business_stage')); ?></div>
+
+                <div class="ad-info-grid">
+                    <div class="ad-info-item">
+                        <span class="ad-label">Startup Name</span>
+                        <div class="ad-value"><?php echo h(row_value($app, 'startup_name')); ?></div>
                     </div>
 
-                    <div class="info-item">
-                        <label>Team Size</label>
-                        <div class="value"><?php echo isset($app['team_size']) && $app['team_size'] !== null && $app['team_size'] !== '' ? h($app['team_size']) . ' members' : 'Not provided'; ?></div>
+                    <div class="ad-info-item">
+                        <span class="ad-label">Sector</span>
+                        <div class="ad-value"><?php echo h(row_value($app, 'sector')); ?></div>
                     </div>
 
-                    <div class="info-item">
-                        <label>Submitted</label>
-                        <div class="value">
+                    <div class="ad-info-item">
+                        <span class="ad-label">Business Stage</span>
+                        <div class="ad-value"><?php echo h(row_value($app, 'business_stage')); ?></div>
+                    </div>
+
+                    <div class="ad-info-item">
+                        <span class="ad-label">Team Size</span>
+                        <div class="ad-value"><?php echo isset($app['team_size']) && $app['team_size'] !== null && $app['team_size'] !== '' ? h($app['team_size']) . ' members' : 'Not provided'; ?></div>
+                    </div>
+
+                    <div class="ad-info-item">
+                        <span class="ad-label">Submitted</span>
+                        <div class="ad-value">
                             <?php echo h(safe_date($submitted_at)); ?>
-                            <small style="color: #7f8c8d; display: block; font-weight: normal;">
+                            <small class="cell-muted">
                                 <?php echo $days_ago === null ? 'Date not available' : ($days_ago === 0 ? 'Today' : h($days_ago) . ' days ago'); ?>
                             </small>
                         </div>
                     </div>
 
                     <?php if (isset($app['score']) && $app['score'] !== null && $app['score'] !== ''): ?>
-                    <div class="info-item">
-                        <label>Score</label>
-                        <div class="value"><?php echo h($app['score'] ?? ''); ?></div>
+                    <div class="ad-info-item">
+                        <span class="ad-label">Score</span>
+                        <div class="ad-value"><?php echo h($app['score'] ?? ''); ?></div>
                     </div>
                     <?php endif; ?>
                 </div>
-                
+
                 <?php if (!empty($app['reviewer_notes'])): ?>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <label style="font-size: 11px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 5px; display: block;">
-                        Reviewer Notes
-                    </label>
-                    <div style="color: #2c3e50;"><?php echo nl2br(h($app['reviewer_notes'] ?? '')); ?></div>
+                <div class="ad-note">
+                    <span class="ad-label">Reviewer Notes</span>
+                    <div><?php echo nl2br(h($app['reviewer_notes'] ?? '')); ?></div>
                     <?php if (!empty($app['reviewer_name'])): ?>
-                        <small style="color: #7f8c8d; margin-top: 10px; display: block;">
+                        <small class="cell-muted">
                             By <?php echo h($app['reviewer_name'] ?? ''); ?>
                             on <?php echo h(safe_date($app['reviewed_at'] ?? null)); ?>
                         </small>
@@ -868,26 +473,24 @@ if ($stmt) {
                 <?php endif; ?>
 
                 <?php if (($app['status'] ?? '') === 'Rejected' && !empty($app['rejection_reason'])): ?>
-                <div style="background: #fdf0f0; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 3px solid #E74C3C;">
-                    <label style="font-size: 11px; color: #E74C3C; text-transform: uppercase; margin-bottom: 5px; display: block;">
-                        Rejection Reason
-                    </label>
-                    <div style="color: #2c3e50;"><?php echo nl2br(h($app['rejection_reason'] ?? '')); ?></div>
+                <div class="ad-note is-danger">
+                    <span class="ad-label">Rejection Reason</span>
+                    <div><?php echo nl2br(h($app['rejection_reason'] ?? '')); ?></div>
                 </div>
                 <?php endif; ?>
-                
+
                 <!-- Timeline -->
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-content">
+                <div class="ad-timeline">
+                    <div class="ad-timeline-item">
+                        <div class="ad-timeline-content">
                             <strong>Application Submitted</strong>
                             <small><?php echo h(safe_date($submitted_at, 'd M Y, h:i A')); ?></small>
                         </div>
                     </div>
-                    
+
                     <?php if (!empty($app['reviewed_at'])): ?>
-                    <div class="timeline-item">
-                        <div class="timeline-content">
+                    <div class="ad-timeline-item">
+                        <div class="ad-timeline-content">
                             <strong>Application Reviewed</strong>
                             <small>
                                 <?php if (!empty($app['reviewer_name'])): ?>
@@ -898,104 +501,99 @@ if ($stmt) {
                         </div>
                     </div>
                     <?php endif; ?>
-                    
+
                     <?php if (($app['status'] ?? '') === 'Shortlisted'): ?>
-                    <div class="timeline-item">
-                        <div class="timeline-content">
-                            <strong style="color: #3498DB;">Shortlisted</strong>
+                    <div class="ad-timeline-item">
+                        <div class="ad-timeline-content">
+                            <strong class="is-info">Shortlisted</strong>
                             <small>Your application has been shortlisted for further review.</small>
                         </div>
                     </div>
                     <?php endif; ?>
 
                     <?php if (($app['status'] ?? '') === 'Accepted'): ?>
-                    <div class="timeline-item">
-                        <div class="timeline-content">
-                            <strong style="color: #2ECC71;">Application Accepted</strong>
+                    <div class="ad-timeline-item">
+                        <div class="ad-timeline-content">
+                            <strong class="is-success">Application Accepted</strong>
                             <small>Congratulations on your acceptance!</small>
                         </div>
                     </div>
                     <?php endif; ?>
                 </div>
-                
-                <div class="app-actions">
+
+                <div class="ad-card-actions">
                     <a href="view-my-application?id=<?php echo $app['application_id']; ?>" class="btn btn-info btn-sm">
-                        <i class="fas fa-eye"></i> View Details
+                        <i class="fas fa-eye" aria-hidden="true"></i> View Details
                     </a>
-                    
+
                     <?php if (($app['status'] ?? '') === 'Draft'): ?>
                         <a href="submit-application?opportunity_id=<?php echo (int)($app['opportunity_id'] ?? 0); ?>&amp;draft_id=<?php echo (int)$app['application_id']; ?>" class="btn btn-warning btn-sm">
-                            <i class="fas fa-edit"></i> Continue Draft
+                            <i class="fas fa-edit" aria-hidden="true"></i> Continue Draft
                         </a>
                     <?php endif; ?>
-                    
+
                     <a href="contact-support?app_id=<?php echo $app['application_id']; ?>" class="btn btn-secondary btn-sm">
-                        <i class="fas fa-envelope"></i> Contact Support
+                        <i class="fas fa-envelope" aria-hidden="true"></i> Contact Support
                     </a>
                 </div>
+              </div>
             </div>
             <?php endforeach; ?>
-            
+
             <?php if (count($applications) > 3): ?>
-                <div class="dashboard-grid-footer">
+                <div class="ad-grid-footer">
                     <a href="my-applications" class="btn btn-primary">
-                        <i class="fas fa-list"></i> View All <?php echo count($applications); ?> Applications
+                        <i class="fas fa-list" aria-hidden="true"></i> View All <?php echo count($applications); ?> Applications
                     </a>
                 </div>
             <?php endif; ?>
             </div>
         <?php endif; ?>
-    
-            </div>
-        </div>
     </section>
 
     <section
-        class="dashboard-tab-panel"
+        class="tab-panel"
         id="dashboard-tab-available"
         data-dashboard-panel="available"
         role="tabpanel"
         hidden
     >
-        <div class="dashboard-tab-card">
-            <div class="dashboard-tab-card-header">
-                <h3><i class="fas fa-clipboard-check"></i> Available Opportunities</h3>
-                <a href="opportunities" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-search"></i> Browse All
-                </a>
-            </div>
-            <div class="dashboard-tab-card-body">
+        <div class="ad-panel-head">
+            <h3><i class="fas fa-clipboard-check" aria-hidden="true"></i> Available Opportunities</h3>
+            <a href="opportunities" class="btn btn-secondary btn-sm">
+                <i class="fas fa-search" aria-hidden="true"></i> Browse All
+            </a>
+        </div>
 
         <?php if (empty($available_opportunities)): ?>
             <div class="empty-state">
-                <i class="fas fa-check-circle"></i>
-                <h3>No New Opportunities Available</h3>
-                <p style="color: #7f8c8d;">
-                    You've applied to all available opportunities. Check back later for new ones!
-                </p>
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                <h4>No New Opportunities Available</h4>
+                <p>You've applied to all available opportunities. Check back later for new ones!</p>
             </div>
         <?php else: ?>
-            <div class="dashboard-card-grid">
-            <?php foreach ($available_opportunities as $opportunity): 
+            <div class="ad-card-grid">
+            <?php foreach ($available_opportunities as $opportunity):
                 $deadline = $opportunity['deadline'] ?? null;
                 $deadline_ts = safe_timestamp($deadline);
                 $days_left = safe_days_until($deadline);
                 $is_urgent = $days_left !== null && $days_left >= 0 && $days_left <= 7;
             ?>
-            <div class="opportunity-card">
-                <div class="opportunity-header">
-                    <div class="opportunity-title">
+            <div class="card ad-card">
+              <div class="card-body">
+                <div class="ad-card-head">
+                    <div class="ad-card-title">
                         <h3><?php echo h($opportunity['opportunity_title'] ?? 'Opportunity'); ?></h3>
-                        <small style="color: #7f8c8d;">
-                            <i class="fas fa-tag"></i> <?php echo h($opportunity['opportunity_type'] ?? ''); ?>
+                        <small class="cell-muted">
+                            <i class="fas fa-tag" aria-hidden="true"></i> <?php echo h($opportunity['opportunity_type'] ?? ''); ?>
                             <?php if (!empty($opportunity['is_featured'])): ?>
-                                &nbsp;<span class="badge badge-warning"><i class="fas fa-star"></i> Featured</span>
+                                &nbsp;<span class="badge badge-pending"><i class="fas fa-star" aria-hidden="true"></i> Featured</span>
                             <?php endif; ?>
                         </small>
                     </div>
-                    <div class="deadline-badge <?php echo $deadline_ts === null ? '' : ($is_urgent ? 'urgent' : ''); ?>">
-                        <i class="fas fa-clock"></i>
-                        <?php 
+                    <span class="badge <?php echo $deadline_ts === null ? 'badge-returned' : ($is_urgent ? 'badge-rejected' : 'badge-pending'); ?>">
+                        <i class="fas fa-clock" aria-hidden="true"></i>
+                        <?php
                         if ($days_left === null) {
                             echo 'No Deadline';
                         } elseif ($days_left < 0) {
@@ -1008,46 +606,46 @@ if ($stmt) {
                             echo h($days_left) . ' Days Left';
                         }
                         ?>
-                    </div>
+                    </span>
                 </div>
-                
-                <div class="opportunity-description">
+
+                <div class="ad-opp-desc">
                     <?php echo nl2br(h(mb_substr((string)($opportunity['description'] ?? ''), 0, 200))); ?>
                     <?php if (mb_strlen((string)($opportunity['description'] ?? '')) > 200): ?>...<?php endif; ?>
                 </div>
-                
-                <div class="opportunity-details">
-                    <div class="opportunity-detail">
-                        <i class="fas fa-calendar-alt"></i>
+
+                <div class="ad-opp-details">
+                    <div class="ad-opp-detail">
+                        <i class="fas fa-calendar-alt" aria-hidden="true"></i>
                         <span>Deadline: <?php echo h(safe_date($deadline, 'd M Y', 'No deadline')); ?></span>
                     </div>
 
                     <?php if (!empty($opportunity['start_date'])): ?>
-                    <div class="opportunity-detail">
-                        <i class="fas fa-play-circle"></i>
+                    <div class="ad-opp-detail">
+                        <i class="fas fa-play-circle" aria-hidden="true"></i>
                         <span>Starts: <?php echo h(safe_date($opportunity['start_date'] ?? null)); ?></span>
                     </div>
                     <?php endif; ?>
 
                     <?php if (isset($opportunity['available_slots']) && $opportunity['available_slots'] !== null && $opportunity['available_slots'] !== ''): ?>
-                    <div class="opportunity-detail">
-                        <i class="fas fa-users"></i>
+                    <div class="ad-opp-detail">
+                        <i class="fas fa-users" aria-hidden="true"></i>
                         <span>Slots Available: <?php echo h($opportunity['available_slots'] ?? ''); ?></span>
                     </div>
                     <?php endif; ?>
 
                     <?php if (!empty($opportunity['sectors_allowed'])): ?>
-                    <div class="opportunity-detail">
-                        <i class="fas fa-industry"></i>
+                    <div class="ad-opp-detail">
+                        <i class="fas fa-industry" aria-hidden="true"></i>
                         <span>Sectors: <?php echo h($opportunity['sectors_allowed'] ?? ''); ?></span>
                     </div>
                     <?php endif; ?>
 
                     <?php if (!empty($opportunity['min_team_size']) || !empty($opportunity['max_team_size'])): ?>
-                    <div class="opportunity-detail">
-                        <i class="fas fa-user-friends"></i>
-                        <span>Team Size: 
-                            <?php 
+                    <div class="ad-opp-detail">
+                        <i class="fas fa-user-friends" aria-hidden="true"></i>
+                        <span>Team Size:
+                            <?php
                             if (!empty($opportunity['min_team_size']) && !empty($opportunity['max_team_size'])) {
                                 echo $opportunity['min_team_size'] . ' - ' . $opportunity['max_team_size'] . ' members';
                             } elseif (!empty($opportunity['min_team_size'])) {
@@ -1062,34 +660,33 @@ if ($stmt) {
                 </div>
 
                 <?php if (!empty($opportunity['eligibility_criteria'])): ?>
-                <div style="background: #f0f9ff; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; border-left: 3px solid #3498DB;">
-                    <label style="font-size: 11px; color: #3498DB; text-transform: uppercase; display: block; margin-bottom: 4px;">
-                        Eligibility Criteria
-                    </label>
-                    <div style="color: #2c3e50; font-size: 14px;">
+                <div class="ad-note is-info">
+                    <span class="ad-label">Eligibility Criteria</span>
+                    <div>
                         <?php echo nl2br(h(mb_substr((string)($opportunity['eligibility_criteria'] ?? ''), 0, 150))); ?>
                         <?php if (mb_strlen((string)($opportunity['eligibility_criteria'] ?? '')) > 150): ?>...<?php endif; ?>
                     </div>
                 </div>
                 <?php endif; ?>
-                
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="submit-application?opportunity_id=<?php echo (int)($opportunity['opportunity_id'] ?? 0); ?>" class="btn btn-success">
-                        <i class="fas fa-paper-plane"></i> Apply Now
+
+                <div class="ad-card-actions">
+                    <a href="submit-application?opportunity_id=<?php echo (int)($opportunity['opportunity_id'] ?? 0); ?>" class="btn btn-primary">
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i> Apply Now
                     </a>
                     <a href="view-opportunity?id=<?php echo $opportunity['opportunity_id']; ?>" class="btn btn-info">
-                        <i class="fas fa-info-circle"></i> Learn More
+                        <i class="fas fa-info-circle" aria-hidden="true"></i> Learn More
                     </a>
                 </div>
+              </div>
             </div>
             <?php endforeach; ?>
             </div>
         <?php endif; ?>
-    
-            </div>
-        </div>
     </section>
+    </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <script>
 (function () {

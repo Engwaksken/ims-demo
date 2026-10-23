@@ -313,7 +313,7 @@ foreach ($by_category['Monthly Receipt'] as $d) {
 <link rel="stylesheet" href="css/assets.css">
 <link rel="stylesheet" href="css/member-folder.css">
 
-<div class="mf-page">
+<div class="page-stack mf-page">
 
     <div class="page-hero">
         <div>
@@ -325,9 +325,9 @@ foreach ($by_category['Monthly Receipt'] as $d) {
             </p>
         </div>
         <div class="hero-actions mf-no-print">
-            <a href="hub-operations?tab=members" class="btn mf-hero-btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Members</a>
-            <button type="button" class="btn mf-hero-btn" onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> Print</button>
-            <a href="member-folder?id=<?= $member_id ?>&amp;export=pdf&amp;year=<?= $year ?>" class="btn mf-hero-btn mf-hero-btn-solid"><i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF</a>
+            <a href="hub-operations?tab=members" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Members</a>
+            <button type="button" class="btn" onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> Print</button>
+            <a href="member-folder?id=<?= $member_id ?>&amp;export=pdf&amp;year=<?= $year ?>" class="btn btn-primary"><i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF</a>
         </div>
     </div>
 
@@ -370,6 +370,7 @@ foreach ($by_category['Monthly Receipt'] as $d) {
                 </select>
             </form>
         </div>
+        <div class="card-body">
         <div class="mf-months" role="list">
             <?php for ($mo = 1; $mo <= 12; $mo++): $c = $coverage[$mo]; ?>
                 <div class="mf-month <?= $c['count'] ? 'is-covered' : 'is-missing' ?>" role="listitem"
@@ -383,12 +384,14 @@ foreach ($by_category['Monthly Receipt'] as $d) {
         <?php if ($last_receipt): ?>
             <p class="cell-muted mf-last">Latest receipt covers <?= date('F Y', strtotime($last_receipt)) ?>.</p>
         <?php endif; ?>
+        </div>
     </div>
 
     <?php if ($mf_can_upload && $mf_table_ready): ?>
     <!-- Upload -->
     <div class="card mf-card mf-no-print">
         <div class="card-header"><h3><i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> Add Documents</h3></div>
+        <div class="card-body">
         <form method="post" action="includes/member-folder-process.php" enctype="multipart/form-data" class="mf-upload">
             <input type="hidden" name="action" value="upload">
             <input type="hidden" name="member_id" value="<?= $member_id ?>">
@@ -430,6 +433,7 @@ foreach ($by_category['Monthly Receipt'] as $d) {
             </div>
             <button type="submit" class="btn btn-primary"><i class="fas fa-upload" aria-hidden="true"></i> Upload</button>
         </form>
+        </div>
     </div>
     <?php endif; ?>
 
@@ -454,13 +458,14 @@ foreach ($by_category['Monthly Receipt'] as $d) {
             </div>
         </div>
 
+        <div class="card-body">
         <?php if (!$documents): ?>
             <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No documents yet<?= $mf_can_upload ? ' - add a contract or receipt above.' : '.' ?></p></div>
         <?php else: ?>
             <?php foreach ($visible as $cat => $docs): if (!$docs) continue; ?>
                 <h4 class="mf-group"><i class="fas <?= $cat_icons[$cat] ?>" aria-hidden="true"></i> <?= mf_e($cat) ?> <span><?= count($docs) ?></span></h4>
                 <div class="table-responsive">
-                    <table class="table-stack mf-table">
+                    <table class="table table-stack mf-table">
                         <thead>
                             <tr>
                                 <th>Title</th>
@@ -507,8 +512,9 @@ foreach ($by_category['Monthly Receipt'] as $d) {
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
+        </div>
     </div>
-</div>
+</div><!-- /.page-stack -->
 
 <script>
 (function () {

@@ -74,26 +74,26 @@ $text_types  = ['text', 'textarea', 'date'];
 <!-- Progress bar for polling refresh -->
 <div class="refresh-bar" id="refresh-bar"></div>
 
-<div class="surveys-wrap">
+<div class="surveys-wrap page-stack">
 
     <!-- -- Page Hero ---------------------------------------------------- -->
-    <div class="analytics-hero">
-        <div class="analytics-hero-text">
-            <h1><i class="fas fa-chart-bar" style="margin-right:10px;opacity:.9;"></i><?= h($surveyName) ?></h1>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-chart-bar" aria-hidden="true"></i> <?= h($surveyName) ?></h1>
             <p>Live response analytics - auto-refreshes every 5 seconds.</p>
         </div>
-        <div class="hero-actions" style="gap:12px;align-items:center;">
+        <div class="hero-actions" style="align-items:center;">
             <div class="live-pill">
                 <span class="live-dot"></span> Live
             </div>
-            <a href="surveys" class="btn btn-primary">
-                <i class="fas fa-arrow-left"></i> Back to Surveys
+            <a href="surveys" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Surveys
             </a>
         </div>
     </div>
 
     <!-- -- Stats Row ---------------------------------------------------- -->
-    <div class="analytics-stats">
+    <div class="stats-grid reports-stats analytics-stats">
 
         <div class="stat-card">
             <div class="stat-icon bg-blue">
@@ -129,13 +129,15 @@ $text_types  = ['text', 'textarea', 'date'];
 
     <!-- -- Charts Grid -------------------------------------------------- -->
     <?php if (empty($questions)): ?>
+        <div class="card">
         <div class="empty-state">
-            <div class="empty-state-icon"><i class="fas fa-chart-pie"></i></div>
-            <h3>No questions found</h3>
+            <i class="fas fa-chart-pie" aria-hidden="true"></i>
+            <h4>No questions found</h4>
             <p>Add questions to this survey in the builder to see analytics here.</p>
             <a href="survey-builder?id=<?= $surveyId ?>" class="btn btn-primary">
                 <i class="fas fa-tools"></i> Go to Builder
             </a>
+        </div>
         </div>
     <?php else: ?>
         <div class="charts-grid" id="charts-grid">
@@ -146,12 +148,12 @@ $text_types  = ['text', 'textarea', 'date'];
                 $icon   = $type_icons[$qtype]  ?? 'fa-circle';
                 $label  = $type_labels[$qtype] ?? $qtype;
             ?>
-                <div class="chart-card" data-qid="<?= $qid ?>">
+                <div class="card chart-card" data-qid="<?= $qid ?>">
 
                     <div class="chart-card-head">
                         <div class="chart-card-qnum"><?= $i + 1 ?></div>
                         <div class="chart-card-title"><?= h($q['question_text']) ?></div>
-                        <span class="chart-card-type">
+                        <span class="badge badge-info">
                             <i class="fas <?= $icon ?>"></i> <?= $label ?>
                         </span>
                     </div>
@@ -161,7 +163,7 @@ $text_types  = ['text', 'textarea', 'date'];
                             <!-- Text / date questions show answer list -->
                             <div class="text-answers-list" id="text-list-<?= $qid ?>">
                                 <div class="text-answer-item placeholder">
-                                    <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading responses…
+                                    <i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Loading responsesâ€¦
                                 </div>
                             </div>
                         <?php else: ?>

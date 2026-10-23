@@ -178,92 +178,26 @@ $avg_score = !empty($scored)
 $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Waitlisted','Shortlisted','Accepted'];
 ?>
 
-<link rel="stylesheet" href="css/opportunities.css">
-
 <style>
-/* -- manage-applications page-specific additions -- */
+/* -- manage-applications page-specific layout -- */
 
-/* Sortable table */
-.ma-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
+/* Sortable column headers */
+.ma-table th.sortable { cursor: pointer; user-select: none; transition: color .12s, background .12s; }
+.ma-table th.sortable:hover,
+.ma-table th.sort-active { color: var(--brand-600); background: var(--brand-50); }
+.ma-table th .sort-icon { margin-left: 4px; font-size: 10px; opacity: .6; }
+.ma-table th.ma-col-check { width: 44px; }
+.ma-table th.ma-col-actions { width: 130px; }
 
-.ma-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 900px;
-    font-size: 13px;
-}
-
-.ma-table th {
-    background: var(--ink-50);
-    color: var(--ink-300);
-    text-align: left;
-    padding: 11px 14px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .07em;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--ink-100);
-    white-space: nowrap;
-    user-select: none;
-}
-
-.ma-table th.sortable {
-    cursor: pointer;
-    transition: color .12s, background .12s;
-}
-
-.ma-table th.sortable:hover {
-    color: var(--brand-600);
-    background: var(--brand-50);
-}
-
-.ma-table th.sort-active {
-    color: var(--brand-600);
-    background: var(--brand-50);
-}
-
-.ma-table th .sort-icon {
-    margin-left: 4px;
-    font-size: 10px;
-    opacity: .6;
-}
-
-.ma-table td {
-    padding: 13px 14px;
-    border-bottom: 1px solid var(--ink-50);
-    color: var(--ink-500);
-    vertical-align: middle;
-}
-
-.ma-table tbody tr {
-    transition: background .1s;
-}
-
-.ma-table tbody tr:hover { background: var(--surface-hover); }
-.ma-table tbody tr:last-child td { border-bottom: none; }
+.ma-check { width: 15px; height: 15px; accent-color: var(--brand-500); }
 
 /* Startup name cell */
-.ma-startup-name {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: var(--ink-700);
-    margin-bottom: 3px;
-}
-
-.ma-startup-sub {
-    font-size: 11.5px;
-    color: var(--ink-300);
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
+.ma-startup-name { font-size: 13.5px; font-weight: 700; color: var(--ink-700); margin-bottom: 3px; }
+.ma-startup-sub { font-size: 11.5px; color: var(--ink-300); display: flex; gap: 10px; flex-wrap: wrap; }
 .ma-startup-sub i { color: var(--brand-400); }
+.ma-cell-sm { font-size: 12px; }
 
-/* Score badge */
+/* Score circle */
 .ma-score {
     display: inline-flex;
     align-items: center;
@@ -275,33 +209,16 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
     font-size: 13px;
     flex-shrink: 0;
 }
-
-.ma-score.high   { background: var(--green-bg);  color: var(--green-fg);  border: 2px solid var(--green-border); }
-.ma-score.medium { background: var(--amber-bg);  color: var(--amber-fg);  border: 2px solid var(--amber-border); }
-.ma-score.low    { background: var(--red-bg);    color: var(--red-fg);    border: 2px solid var(--red-border);   }
+.ma-score.high   { background: var(--green-bg); color: var(--green-fg); border: 2px solid var(--green-border); }
+.ma-score.medium { background: var(--amber-bg); color: var(--amber-fg); border: 2px solid var(--amber-border); }
+.ma-score.low    { background: var(--red-bg);   color: var(--red-fg);   border: 2px solid var(--red-border); }
 .ma-score.none   { color: var(--ink-200); font-size: 18px; }
 
-/* Review count pill */
-.ma-review-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 28px;
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 700;
-    background: var(--ink-100);
-    color: var(--ink-400);
-}
+.ma-actions { display: flex; gap: 5px; align-items: center; }
 
-/* Quick action buttons */
-.ma-actions {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
+/* Utility buttons under the filters */
+.ma-utility-row { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 10px; border-top: 1px solid var(--ink-50); }
+.ma-filters { margin-bottom: 12px; }
 
 /* Bulk actions bar */
 .ma-bulk-bar {
@@ -314,117 +231,31 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
     border-bottom: 1px solid var(--brand-100);
     font-size: 13px;
 }
-
-.ma-bulk-divider {
-    width: 1px;
-    height: 20px;
-    background: var(--brand-200);
-    flex-shrink: 0;
-}
-
-.ma-selected-count {
-    font-weight: 700;
-    color: var(--brand-600);
-    white-space: nowrap;
-}
-
-.ma-bulk-select {
-    height: 36px;
-    padding: 0 32px 0 10px;
-    border: 1.5px solid var(--brand-200);
-    border-radius: var(--radius-md);
-    background: var(--surface-card)
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")
-        no-repeat right 10px center;
-    font-family: var(--font-body);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-700);
-    outline: none;
-    cursor: pointer;
-    appearance: none;
-    min-width: 200px;
-    transition: border-color .15s;
-}
-
-.ma-bulk-select:focus { border-color: var(--brand-500); }
-
-/* Empty state */
-.ma-empty {
-    text-align: center;
-    padding: 72px 24px;
-    color: var(--ink-200);
-}
-
-.ma-empty i { font-size: 3rem; opacity: .3; display: block; margin-bottom: 16px; }
-.ma-empty h3 { font-size: 18px; font-weight: 800; color: var(--ink-700); margin-bottom: 8px; }
-.ma-empty p  { font-size: 13px; color: var(--ink-300); margin-bottom: 20px; line-height: 1.65; }
-
-/* Search input in filter bar */
-.ma-search-wrap {
-    position: relative;
-    flex: 1;
-    min-width: 200px;
-    max-width: 340px;
-}
-
-.ma-search-icon {
-    position: absolute;
-    left: 11px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--ink-200);
-    font-size: 12px;
-    pointer-events: none;
-}
-
-.ma-search-input {
-    width: 100%;
-    height: 38px;
-    padding: 0 12px 0 32px;
-    background: var(--surface-card);
-    border: 1.5px solid var(--ink-100);
-    border-radius: var(--radius-md);
-    font-family: var(--font-body);
-    font-size: 13px;
-    color: var(--ink-700);
-    outline: none;
-    transition: border-color .15s, box-shadow .15s;
-}
-
-.ma-search-input:focus {
-    border-color: var(--brand-500);
-    box-shadow: 0 0 0 3px rgba(249,115,22,.12);
-}
-
-/* App status badge variants not in opportunities.css */
-.badge-under-review { background: var(--blue-bg);   color: var(--blue-fg);   border-color: var(--blue-border);   }
-.badge-shortlisted  { background: var(--amber-bg);  color: var(--amber-fg);  border-color: var(--amber-border);  }
-.badge-waitlisted   { background: var(--slate-bg);  color: var(--slate-fg);  border-color: var(--slate-border);  }
+.ma-bulk-label { display: flex; align-items: center; gap: 7px; font-weight: 700; color: var(--ink-700); cursor: pointer; margin: 0; }
+.ma-bulk-divider { width: 1px; height: 20px; background: var(--brand-200); flex-shrink: 0; }
+.ma-selected-count { font-weight: 700; color: var(--brand-600); white-space: nowrap; }
+.ma-bulk-bar .form-control { width: auto; min-width: 200px; margin: 0; }
 
 @media (max-width: 640px) {
-    .ma-search-wrap { max-width: none; }
-    .ma-bulk-bar    { flex-direction: column; align-items: stretch; }
-    .ma-bulk-select { min-width: 0; }
+    .ma-bulk-bar { flex-direction: column; align-items: stretch; }
+    .ma-bulk-bar .form-control { min-width: 0; width: 100%; }
 }
 </style>
 
+<div class="page-stack">
+
 <!-- -- Hero -------------------------------------------------- -->
-<div class="opp-hero" style="margin-bottom:20px;">
-    <div class="opp-hero-left">
-        <div class="opp-eyebrow">
-            <span class="opp-dot"></span>
-            <?= h($opportunity['opportunity_type'] ?? 'Opportunity') ?>
-        </div>
-        <h1>Manage Applications</h1>
-        <p><?= h($opportunity['opportunity_title']) ?></p>
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-file-alt" aria-hidden="true"></i> Manage Applications</h1>
+        <p><?= h($opportunity['opportunity_type'] ?? 'Opportunity') ?>: <?= h($opportunity['opportunity_title']) ?></p>
     </div>
-    <div class="opp-hero-actions" style="position:relative;">
-        <a href="view-opportunity?id=<?= $opportunity_id ?>" class="btn btn-white btn-sm">
-            <i class="fas fa-eye"></i> View Opportunity
+    <div class="hero-actions">
+        <a href="application-opportunities" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
         </a>
-        <a href="application-opportunities" class="btn btn-white btn-sm">
-            <i class="fas fa-arrow-left"></i> Back
+        <a href="view-opportunity?id=<?= $opportunity_id ?>" class="btn btn-primary">
+            <i class="fas fa-eye" aria-hidden="true"></i> View Opportunity
         </a>
     </div>
 </div>
@@ -469,7 +300,7 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
         </div>
     </div>
     <div class="stat-card">
-        <div class="stat-icon bg-green">
+        <div class="stat-icon bg-teal">
             <i class="fas fa-chart-line"></i>
         </div>
         <div class="stat-info">
@@ -480,23 +311,23 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
 </div>
 
 <!-- -- Filter bar ---------------------------------------------- -->
-<div class="opp-panel" style="margin-bottom:20px;">
-    <div class="opp-panel-body" style="padding:14px 18px;">
+<div class="card">
+    <div class="card-body">
         <form method="GET" action="">
             <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
 
-            <div class="filters-bar" role="search" aria-label="Filter applications" style="margin-bottom:12px;">
+            <div class="filters-bar ma-filters" role="search" aria-label="Filter applications">
 
                 <!-- Search -->
-                <div class="ma-search-wrap filters-grow">
-                    <i class="fas fa-search ma-search-icon"></i>
-                    <input type="text" name="search" class="ma-search-input"
+                <div class="search-input-wrap filters-grow">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="text" name="search" class="form-control"
                            placeholder="Startup, contact, email, phone..."
                            value="<?= h($search) ?>">
                 </div>
 
                 <!-- Status -->
-                <select name="status" class="form-control" style="height:38px;font-size:13px;padding:0 32px 0 10px;min-width:160px;border:1.5px solid var(--ink-100);border-radius:var(--radius-md);appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;outline:none;font-family:var(--font-body);color:var(--ink-700);">
+                <select name="status" class="form-control">
                     <option value="">All Statuses</option>
                     <?php foreach ($status_options as $opt): ?>
                         <option value="<?= h($opt) ?>" <?= $filter_status === $opt ? 'selected' : '' ?>><?= h($opt) ?></option>
@@ -505,7 +336,7 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
 
                 <!-- Stage -->
                 <?php if (!empty($stages)): ?>
-                <select name="stage" class="form-control" style="height:38px;font-size:13px;padding:0 32px 0 10px;min-width:150px;border:1.5px solid var(--ink-100);border-radius:var(--radius-md);appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 10px center;outline:none;font-family:var(--font-body);color:var(--ink-700);">
+                <select name="stage" class="form-control">
                     <option value="">All Stages</option>
                     <?php foreach ($stages as $stage): ?>
                         <option value="<?= h($stage) ?>" <?= $filter_stage === $stage ? 'selected' : '' ?>><?= h($stage) ?></option>
@@ -524,7 +355,7 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
             </div>
 
             <!-- Utility buttons row -->
-            <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--ink-50);">
+            <div class="ma-utility-row">
                 <button type="button" onclick="exportApplications()" class="btn btn-success btn-sm">
                     <i class="fas fa-download"></i> Export CSV
                 </button>
@@ -543,19 +374,18 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
     <input type="hidden" name="action" value="bulk_status_change">
     <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
 
-    <div class="opp-panel">
+    <div class="card">
 
         <!-- Bulk actions bar -->
         <div class="ma-bulk-bar">
-            <label style="display:flex;align-items:center;gap:7px;font-weight:700;color:var(--ink-700);cursor:pointer;margin:0;">
-                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"
-                       style="width:15px;height:15px;accent-color:var(--brand-500);">
+            <label class="ma-bulk-label">
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="ma-check">
                 Select All
             </label>
             <div class="ma-bulk-divider"></div>
             <span id="selectedCount" class="ma-selected-count">0 selected</span>
             <div class="ma-bulk-divider"></div>
-            <select name="new_status" class="ma-bulk-select" required>
+            <select name="new_status" class="form-control" required>
                 <option value="">Change status to...</option>
                 <option value="Under Review">Under Review</option>
                 <option value="Shortlisted">Shortlisted</option>
@@ -569,13 +399,12 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
         </div>
 
         <!-- Table -->
-        <div class="ma-table-wrap">
-            <table class="ma-table">
+        <div class="table-responsive">
+            <table class="table ma-table">
                 <thead>
                     <tr>
-                        <th style="width:44px;cursor:default;">
-                            <input type="checkbox" id="selectAllHeader" onchange="toggleSelectAll(this)"
-                                   style="width:15px;height:15px;accent-color:var(--brand-500);">
+                        <th class="ma-col-check">
+                            <input type="checkbox" id="selectAllHeader" onchange="toggleSelectAll(this)" class="ma-check">
                         </th>
 
                         <?php
@@ -599,7 +428,7 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
                         </th>
                         <?php endforeach; ?>
 
-                        <th style="width:130px;cursor:default;">Actions</th>
+                        <th class="ma-col-actions">Actions</th>
                     </tr>
                 </thead>
 
@@ -612,10 +441,9 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
                         $appBadge = match(true) {
                             $st === 'Accepted'    => 'badge-success',
                             $st === 'Rejected'    => 'badge-danger',
-                            $st === 'Shortlisted' => 'badge-shortlisted',
-                            $st === 'Under Review'=> 'badge-under-review',
-                            $st === 'Waitlisted'  => 'badge-waitlisted',
-                            $st === 'Draft'       => 'badge-draft',
+                            $st === 'Shortlisted' => 'badge-warning',
+                            $st === 'Under Review'=> 'badge-info',
+                            $st === 'Waitlisted'  => 'badge-purple',
                             default               => 'badge-secondary',
                         };
                     ?>
@@ -624,9 +452,8 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
                             <input type="checkbox"
                                    name="selected_applications[]"
                                    value="<?= (int)$app['application_id'] ?>"
-                                   class="app-checkbox"
-                                   onchange="updateSelectedCount()"
-                                   style="width:15px;height:15px;accent-color:var(--brand-500);">
+                                   class="app-checkbox ma-check"
+                                   onchange="updateSelectedCount()">
                         </td>
 
                         <td>
@@ -637,7 +464,7 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
                             </div>
                         </td>
 
-                        <td style="font-size:12.5px;color:var(--ink-400);">
+                        <td class="ma-cell-sm">
                             <?= h($app['business_stage'] ?? '-') ?>
                         </td>
 
@@ -652,14 +479,14 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
                         </td>
 
                         <td>
-                            <span class="ma-review-count"><?= (int)$app['review_count'] ?></span>
+                            <span class="badge badge-secondary"><?= (int)$app['review_count'] ?></span>
                         </td>
 
                         <td>
                             <span class="badge <?= $appBadge ?>"><?= h($st) ?></span>
                         </td>
 
-                        <td style="font-size:12px;color:var(--ink-300);">
+                        <td class="cell-muted ma-cell-sm text-nowrap">
                             <?= !empty($app['submitted_at'])
                                 ? h(date('d M Y', strtotime($app['submitted_at'])))
                                 : '-' ?>
@@ -690,18 +517,17 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        </div><!-- /.ma-table-wrap -->
+        </div><!-- /.table-responsive -->
 
-    </div><!-- /.opp-panel -->
+    </div><!-- /.card -->
 </form>
 
 <?php else: ?>
 
-<div class="opp-panel">
-    <div class="opp-panel-body">
-        <div class="ma-empty">
-            <i class="fas fa-inbox"></i>
-            <h3>No Applications Found</h3>
+<div class="card">
+    <div class="card-body">
+        <div class="empty-state">
+            <i class="fas fa-inbox" aria-hidden="true"></i>
             <p>
                 <?php if ($filter_status !== '' || $filter_stage !== '' || $search !== ''): ?>
                     No applications match your current filters. Try adjusting or clearing them.
@@ -719,6 +545,8 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
 </div>
 
 <?php endif; ?>
+
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 

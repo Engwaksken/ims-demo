@@ -287,42 +287,41 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 <link rel="stylesheet" href="css/subscriptions-admin.css">
 
 <div class="page-internet-subs">
+<div class="page-stack">
 
-<div class="page-header">
-    <div class="page-header-left">
-        <h1>Internet <span>Subscriptions</span></h1>
-        <p>Review, approve, reject, or manually add member devices to internet access</p>
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-wifi" aria-hidden="true"></i> Internet Subscriptions</h1>
+        <p>Review, approve, reject, or manually add member devices to internet access.</p>
     </div>
 
-    <div class="header-actions">
-    
-    <a href="internet_connection_logs" class="btn-add-device">  <i class="fas fa-bars"></i> Connection Logs </a>
-        <button type="button" class="btn-add-device" id="openAddDeviceBtn">
-            <i class="fas fa-laptop-medical"></i>
-            Add Device
+    <div class="hero-actions">
+        <a href="internet_connection_logs" class="btn"><i class="fas fa-bars" aria-hidden="true"></i> Connection Logs</a>
+
+        <a href="javascript:window.print()" class="btn">
+            <i class="fas fa-print" aria-hidden="true"></i> Print
+        </a>
+
+        <a href="<?= h($currentPage) ?>?export=pdf" class="btn">
+            <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+        </a>
+
+        <button type="button" class="btn btn-primary" id="openAddDeviceBtn">
+            <i class="fas fa-laptop-medical" aria-hidden="true"></i> Add Device
         </button>
-
-        <a href="javascript:window.print()" class="btn-icon">
-            <i class="fas fa-print"></i>
-        </a>
-
-        <a href="<?= h($currentPage) ?>?export=pdf" class="btn-icon">
-            <i class="fas fa-file-pdf"></i>
-            PDF
-        </a>
     </div>
 </div>
 
 <?php if (!empty($_SESSION['success'])): ?>
-<div class="flash flash-success">
-    <i class="fas fa-circle-check"></i>
+<div class="alert alert-success">
+    <i class="fas fa-circle-check" aria-hidden="true"></i>
     <?= h($_SESSION['success']); unset($_SESSION['success']); ?>
 </div>
 <?php endif; ?>
 
 <?php if (!empty($_SESSION['error'])): ?>
-<div class="flash flash-error">
-    <i class="fas fa-triangle-exclamation"></i>
+<div class="alert alert-danger">
+    <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
     <?= h($_SESSION['error']); unset($_SESSION['error']); ?>
 </div>
 <?php endif; ?>
@@ -369,6 +368,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     </div>
 </div>
 
+<div class="card">
+    <div class="card-body">
 <div class="toolbar filters-bar" role="search" aria-label="Filter subscriptions">
     <div class="filter-tabs" id="filterTabs">
         <button type="button" class="filter-tab active" data-filter="all">All</button>
@@ -381,15 +382,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     <div class="search-wrap filters-grow">
         <i class="fas fa-magnifying-glass"></i>
         <input type="text"
-               class="search-input"
+               class="form-control search-input"
                id="searchInput"
                placeholder="Search member, plan, receipt, MAC...">
     </div>
 </div>
+    </div>
+</div>
 
-<div class="table-card">
-    <div class="table-wrap">
-        <table id="subsTable">
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-list" aria-hidden="true"></i> Subscriptions</h3></div>
+    <div class="card-body">
+    <div class="table-responsive">
+        <table class="table" id="subsTable">
             <thead>
             <tr>
                 <th>Member</th>
@@ -401,7 +406,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                 <th>Status</th>
                 <th>Submitted</th>
                 <th>Expires</th>
-                <th style="text-align:right">Actions</th>
+                <th class="isub-actions-col">Actions</th>
             </tr>
             </thead>
 
@@ -410,7 +415,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             <tr>
                 <td colspan="10">
                     <div class="empty-state">
-                        <i class="fas fa-inbox"></i>
+                        <i class="fas fa-inbox" aria-hidden="true"></i>
                         <p>No subscriptions found.</p>
                     </div>
                 </td>
@@ -457,9 +462,9 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     </td>
 
                     <td>
-                        <div style="font-size:13px;"><?= h($row['phone'] ?? '-') ?></div>
+                        <div><?= h($row['phone'] ?? '-') ?></div>
                         <?php if (!empty($row['email'])): ?>
-                        <div style="font-size:11.5px;color:var(--ink-3);margin-top:2px;">
+                        <div class="isub-sub">
                             <?= h($row['email']) ?>
                         </div>
                         <?php endif; ?>
@@ -467,7 +472,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 
                     <td>
                         <span class="plan-chip">
-                            <i class="fas fa-wifi" style="font-size:10px;"></i>
+                            <i class="fas fa-wifi"></i>
                             <?= h($row['plan_name']) ?>
                         </span>
                     </td>
@@ -480,13 +485,13 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     <td>
                         <?php if ($hasPhoto): ?>
                             <button type="button"
-                                    class="receipt-photo-btn js-lightbox"
+                                    class="btn btn-sm btn-soft js-lightbox"
                                     data-photo="<?= h($receiptPhoto) ?>"
                                     data-member="<?= h($membershipNumber) ?>">
                                 <i class="fas fa-image"></i> View Image
                             </button>
                         <?php else: ?>
-                            <span class="receipt-none">No Image</span>
+                            <span class="cell-muted">No Image</span>
                         <?php endif; ?>
                     </td>
 
@@ -495,7 +500,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     </td>
 
                     <td>
-                        <span class="badge badge-<?= h($status) ?>">
+                        <?php $isub_pill = ['pending' => 'status-pending', 'active' => 'status-approved', 'expired' => 'status-cancelled', 'rejected' => 'status-rejected'][$status] ?? 'status-draft'; ?>
+                        <span class="status-pill <?= $isub_pill ?>">
                             <?= h(ucfirst($status)) ?>
                         </span>
                     </td>
@@ -514,15 +520,15 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                             <?= h(date('d M Y', strtotime($expiresAt))) ?>
                             <small><?= h(date('g:i A', strtotime($expiresAt))) ?></small>
                         <?php else: ?>
-                            <span style="color:var(--ink-3);font-size:12px;">-</span>
+                            <span class="cell-muted">-</span>
                         <?php endif; ?>
                     </td>
 
                     <td>
                         <?php if ($status === 'pending'): ?>
-                        <div class="action-wrap" style="justify-content:flex-end;">
+                        <div class="action-wrap">
                             <button type="button"
-                                    class="btn-approve js-approve"
+                                    class="btn btn-sm btn-success js-approve"
                                     data-id="<?= (int)$row['id'] ?>"
                                     data-name="<?= h($displayName) ?>"
                                     data-plan="<?= h($row['plan_name']) ?>"
@@ -531,14 +537,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                             </button>
 
                             <button type="button"
-                                    class="btn-reject js-reject"
+                                    class="btn btn-sm btn-danger js-reject"
                                     data-id="<?= (int)$row['id'] ?>"
                                     data-name="<?= h($displayName) ?>">
                                 <i class="fas fa-xmark"></i> Reject
                             </button>
                         </div>
                         <?php else: ?>
-                            <span style="color:var(--ink-3);font-size:12px;display:block;text-align:right;">-</span>
+                            <div class="cell-muted isub-actions-col">-</div>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -546,16 +552,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             </tbody>
         </table>
     </div>
+    </div>
 
-    <div class="table-footer">
+    <div class="isub-table-footer">
         <span id="rowCountLabel">
             Showing <strong><?= count($rows) ?></strong> record<?= count($rows) !== 1 ? 's' : '' ?>
         </span>
-        <span style="color:var(--ink-3);">
+        <span>
             Last updated: <?= date('d M Y, g:i A') ?> EAT
         </span>
     </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <!-- Add Device Modal -->
 <div class="modal-overlay" id="addDeviceOverlay">
@@ -566,7 +575,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 
             <div class="modal-header">
                 <span class="modal-title">
-                    <i class="fas fa-laptop-medical" style="color:#FF6B00;margin-right:8px;"></i>
+                    <i class="fas fa-laptop-medical isub-ic-brand"></i>
                     Add Device to Internet
                 </span>
                 <button type="button" class="modal-close" data-close-modal="addDeviceOverlay">
@@ -575,11 +584,12 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             </div>
 
             <div class="modal-body">
-                <div class="form-row">
+                <div class="form-group">
                     <label>Search Member</label>
                     <div class="member-search-box">
                         <input type="text"
                                id="memberSearchInput"
+                               class="form-control"
                                placeholder="Search by name, company, membership number, phone, or email..."
                                autocomplete="off">
 
@@ -618,18 +628,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     </div>
                 </div>
 
-                <div class="form-row">
+                <div class="form-group">
                     <label>Device MAC Address</label>
                     <input type="text"
                            name="mac_address"
+                           class="form-control"
                            id="macAddressInput"
                            placeholder="Example: AA:BB:CC:DD:EE:FF"
                            required>
                 </div>
 
-                <div class="form-row">
+                <div class="form-group">
                     <label>Internet Plan</label>
-                    <select name="plan_id" required>
+                    <select name="plan_id" class="form-control" required>
                         <option value="">Select internet plan</option>
                         <?php foreach ($plans as $plan): ?>
                             <option value="<?= (int)$plan['id'] ?>">
@@ -639,14 +650,15 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     </select>
                 </div>
 
-                <div class="form-row">
-                    <label>Receipt / Reference <span style="color:#7B87A0;">(optional)</span></label>
+                <div class="form-group">
+                    <label>Receipt / Reference <span class="cell-muted">(optional)</span></label>
                     <input type="text"
                            name="receipt_number"
+                           class="form-control"
                            placeholder="Receipt number, payment reference, or admin note">
                 </div>
 
-                <div class="modal-warning">
+                <div class="alert alert-warning">
                     <i class="fas fa-triangle-exclamation"></i>
                     <span>
                         This will create and activate an internet subscription for the selected member and MAC address.
@@ -655,8 +667,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-cancel" data-close-modal="addDeviceOverlay">Cancel</button>
-                <button type="submit" class="btn-primary-solid">
+                <button type="button" class="btn btn-secondary" data-close-modal="addDeviceOverlay">Cancel</button>
+                <button type="submit" class="btn btn-success">
                     <i class="fas fa-check"></i> Add & Activate
                 </button>
             </div>
@@ -673,7 +685,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 
             <div class="modal-header">
                 <span class="modal-title">
-                    <i class="fas fa-circle-check" style="color:#12B76A;margin-right:8px;"></i>
+                    <i class="fas fa-circle-check isub-ic-green"></i>
                     Approve Subscription
                 </span>
                 <button type="button" class="modal-close" data-close-modal="approveOverlay">
@@ -697,8 +709,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-cancel" data-close-modal="approveOverlay">Cancel</button>
-                <button type="submit" class="btn-confirm-approve">
+                <button type="button" class="btn btn-secondary" data-close-modal="approveOverlay">Cancel</button>
+                <button type="submit" class="btn btn-success">
                     <i class="fas fa-check"></i> Confirm Approve
                 </button>
             </div>
@@ -715,7 +727,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
 
             <div class="modal-header">
                 <span class="modal-title">
-                    <i class="fas fa-ban" style="color:#D92D20;margin-right:8px;"></i>
+                    <i class="fas fa-ban isub-ic-red"></i>
                     Reject Subscription
                 </span>
                 <button type="button" class="modal-close" data-close-modal="rejectOverlay">
@@ -729,19 +741,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
                     <span class="modal-info-value" id="rejectName">-</span>
                 </div>
 
-                <label style="font-size:13px;color:#3B4560;font-weight:600;display:block;margin-top:14px;margin-bottom:6px;">
-                    Rejection Reason <span style="color:#7B87A0;">(optional)</span>
+                <label class="form-label" for="rejectReasonInput">
+                    Rejection Reason <span class="cell-muted">(optional)</span>
                 </label>
 
-                <textarea class="reason-input"
+                <textarea class="form-control reason-input"
                           id="rejectReasonInput"
                           name="rejection_reason"
                           placeholder="e.g. Receipt image is unclear..."></textarea>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-cancel" data-close-modal="rejectOverlay">Cancel</button>
-                <button type="submit" class="btn-confirm-reject">
+                <button type="button" class="btn btn-secondary" data-close-modal="rejectOverlay">Cancel</button>
+                <button type="submit" class="btn btn-danger">
                     <i class="fas fa-ban"></i> Confirm Reject
                 </button>
             </div>

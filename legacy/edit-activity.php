@@ -147,74 +147,40 @@ $page_title = 'Edit Activity Plan';
 include 'includes/header.php';
 ?>
 <style>
-:root{
-    --ink:#0f172a;
-    --muted:#64748b;
-    --line:#e2e8f0;
-    --bg:#f8fafc;
-    --card:#ffffff;
-    --green:#16a34a;
-    --green-soft:#dcfce7;
-    --orange:#ea580c;
-    --orange-soft:#fff7ed;
-    --red:#dc2626;
-    --blue:#2563eb;
-    --radius:12px;
-    --shadow:0 8px 24px rgba(15,23,42,.06);
-}
-body{background:var(--bg)}
-.page-wrap{max-width:1200px;margin:0 auto;padding:24px 16px 80px}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-.topbar a{text-decoration:none;color:var(--muted);font-weight:600}
-.hero{background:linear-gradient(135deg,#15803d 0%,#16a34a 100%);color:#fff;border-radius:16px;padding:24px 28px;margin-bottom:20px}
-.hero h1{margin:0 0 6px;font-size:26px}
-.hero p{margin:0;opacity:.9}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
-.card-header{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:700;background:#fafafa}
-.card-body{padding:18px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.form-group{margin-bottom:16px}
-.form-label{display:block;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
-.form-control{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-size:14px;outline:none}
-.form-control:focus{border-color:var(--green)}
-textarea.form-control{min-height:90px;resize:vertical}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;border:1px solid transparent;text-decoration:none;font-weight:700;font-size:14px;cursor:pointer}
-.btn-green{background:var(--green);color:#fff}
-.btn-outline{background:#fff;color:var(--ink);border-color:var(--line)}
-.btn-orange{background:var(--orange);color:#fff}
-.activities-wrap{display:flex;flex-direction:column;gap:16px}
-.activity-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
-.activity-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f8fafc;border-bottom:1px solid var(--line)}
-.activity-title{font-weight:700}
-.activity-body{padding:16px}
-.row-actions{display:flex;gap:8px;flex-wrap:wrap}
-.small-btn{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:13px;font-weight:600}
-.small-btn.remove{color:var(--red);border-color:#fecaca;background:#fff5f5}
-.weekly-block{margin-top:16px;border-top:1px dashed var(--line);padding-top:16px}
-.quarter-box{margin-bottom:18px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.quarter-head{background:#f8fafc;padding:10px 12px;font-weight:700;border-bottom:1px solid var(--line)}
-.week-grid{overflow-x:auto}
-.week-table{width:100%;border-collapse:collapse;font-size:13px}
-.week-table th,.week-table td{border-bottom:1px solid #eef2f7;padding:8px 10px;text-align:left;vertical-align:top}
-.week-table th{background:#fcfcfd;font-size:11px;text-transform:uppercase;color:var(--muted)}
-.week-input{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px}
-.alert{padding:12px 14px;border-radius:10px;margin-bottom:16px;font-size:14px}
-.alert-danger{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.edit-activity-page .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.edit-activity-page .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.edit-activity-page .form-label{display:block;font-size:12px;font-weight:700;color:var(--ink-300);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.edit-activity-page textarea.form-control{min-height:90px;resize:vertical}
+.edit-activity-page .activities-wrap{display:flex;flex-direction:column;gap:16px}
+.edit-activity-page .activity-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--surface-card)}
+.edit-activity-page .activity-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--ink-50);border-bottom:1px solid var(--border)}
+.edit-activity-page .activity-title{font-weight:700;color:var(--ink-700)}
+.edit-activity-page .activity-body{padding:16px}
+.edit-activity-page .row-actions{display:flex;gap:8px;flex-wrap:wrap}
+.edit-activity-page .weekly-block{margin-top:16px;border-top:1px dashed var(--border);padding-top:16px}
+.edit-activity-page .quarter-box{margin-bottom:18px;border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+.edit-activity-page .quarter-head{background:var(--ink-50);padding:10px 12px;font-weight:700;border-bottom:1px solid var(--border)}
+.edit-activity-page .week-grid{overflow-x:auto}
+.edit-activity-page .week-table{width:100%;border-collapse:collapse;font-size:13px}
+.edit-activity-page .week-table th,.edit-activity-page .week-table td{border-bottom:1px solid var(--ink-50);padding:8px 10px;text-align:left;vertical-align:top}
+.edit-activity-page .week-table th{background:var(--ink-50);font-size:11px;text-transform:uppercase;color:var(--ink-300)}
+.edit-activity-page .week-input{width:100%;padding:8px 9px;border:1px solid var(--border);border-radius:var(--radius-sm)}
+.edit-activity-page .form-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 @media (max-width:900px){
-    .grid,.grid-2{grid-template-columns:1fr}
+    .edit-activity-page .grid,.edit-activity-page .grid-2{grid-template-columns:1fr}
 }
 </style>
 
-<div class="page-wrap">
+<div class="page-stack edit-activity-page">
 
-    <div class="topbar">
-        <a href="view-activity?id=<?= $plan_id ?>">? Back to Activity Plan</a>
-    </div>
-
-    <div class="hero">
-        <h1>Edit Activity Plan</h1>
-        <p>Update your draft plan, activities, weights, and weekly targets before submitting for review.</p>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-pen-to-square" aria-hidden="true"></i> Edit Activity Plan</h1>
+            <p>Update your draft plan, activities, weights, and weekly targets before submitting for review.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="view-activity?id=<?= $plan_id ?>" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Activity Plan</a>
+        </div>
     </div>
 
     <?php if (!empty($_SESSION['activity_error'])): ?>
@@ -230,7 +196,7 @@ textarea.form-control{min-height:90px;resize:vertical}
         <input type="hidden" name="department_id" value="<?= (int)$plan['department_id'] ?>">
 
         <div class="card">
-            <div class="card-header">Plan Details</div>
+            <div class="card-header"><h3><i class="fas fa-sliders" aria-hidden="true"></i> Plan Details</h3></div>
             <div class="card-body">
                 <div class="grid">
                     <div class="form-group">
@@ -259,19 +225,19 @@ textarea.form-control{min-height:90px;resize:vertical}
         </div>
 
         <div class="card">
-            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-                <span>Activities</span>
-                <button type="button" class="btn btn-outline" onclick="addActivity()">+ Add Activity</button>
+            <div class="card-header">
+                <h3><i class="fas fa-list-check" aria-hidden="true"></i> Activities</h3>
+                <button type="button" class="btn btn-soft btn-sm" onclick="addActivity()"><i class="fas fa-plus" aria-hidden="true"></i> Add Activity</button>
             </div>
             <div class="card-body">
                 <div id="activitiesWrap" class="activities-wrap"></div>
             </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap">
-            <a href="view-activity?id=<?= $plan_id ?>" class="btn btn-outline">Cancel</a>
-            <button type="submit" class="btn btn-outline">Save Draft</button>
-            <button type="submit" name="submit_plan" value="1" class="btn btn-green" onclick="return confirm('Submit this activity plan for review?')">Save & Submit</button>
+        <div class="form-actions">
+            <a href="view-activity?id=<?= $plan_id ?>" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-secondary">Save Draft</button>
+            <button type="submit" name="submit_plan" value="1" class="btn btn-primary" onclick="return confirm('Submit this activity plan for review?')">Save & Submit</button>
         </div>
     </form>
 </div>
@@ -345,7 +311,7 @@ function activityCardHtml(idx, data = {}, weeklyData = {}) {
             <div class="activity-head">
                 <div class="activity-title">Activity #${idx + 1}</div>
                 <div class="row-actions">
-                    <button type="button" class="small-btn remove" onclick="removeActivity(${idx})">Remove</button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeActivity(${idx})">Remove</button>
                 </div>
             </div>
             <div class="activity-body">
@@ -377,7 +343,7 @@ function activityCardHtml(idx, data = {}, weeklyData = {}) {
                 </div>
 
                 <div class="weekly-block">
-                    <div class="form-label" style="margin-bottom:10px;">Weekly Entries / Targets</div>
+                    <div class="form-label">Weekly Entries / Targets</div>
                     ${quarterHtml(idx, 'q1', weeklyData.q1 || {})}
                     ${quarterHtml(idx, 'q2', weeklyData.q2 || {})}
                     ${quarterHtml(idx, 'q3', weeklyData.q3 || {})}

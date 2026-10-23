@@ -178,155 +178,105 @@ $needs_attention = array_slice($needs_attention, 0, 5);
 ?>
 
 <style>
-.analytics-card {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.kr-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
-.chart-container {
+.kr-chart {
     position: relative;
     height: 300px;
-    margin: 20px 0;
 }
 
-.metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.metric-box {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-}
-
-.metric-box.success {
-    background: linear-gradient(135deg, #27AE60 0%, #2ECC71 100%);
-}
-
-.metric-box.warning {
-    background: linear-gradient(135deg, #F39C12 0%, #F1C40F 100%);
-}
-
-.metric-box.danger {
-    background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
-}
-
-.metric-box.info {
-    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
-}
-
-.metric-number {
-    font-size: 32px;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-.metric-label {
-    font-size: 13px;
-    opacity: 0.9;
-}
-
-.kpi-list-simple {
+.kr-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.kpi-list-simple li {
-    padding: 12px;
-    border-bottom: 1px solid #ecf0f1;
+.kr-list li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--ink-50);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
 }
 
-.kpi-list-simple li:last-child {
+.kr-list li:last-child {
     border-bottom: none;
 }
 
-.achievement-badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 15px;
-    font-weight: bold;
-    font-size: 12px;
-}
-
-.achievement-high {
-    background: #d4edda;
-    color: #155724;
-}
-
-.achievement-medium {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.achievement-low {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.section-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-.insights-box {
-    background: #f8f9fa;
-    padding: 15px;
-    border-left: 4px solid var(--primary-color);
-    border-radius: 5px;
-    margin: 15px 0;
-}
-
-.progress-indicator {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.progress-bar-slim {
-    flex: 1;
-    height: 8px;
-    background: #ecf0f1;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.progress-fill-slim {
-    height: 100%;
-    background: linear-gradient(90deg, #27AE60, #2ECC71);
-    transition: width 0.5s ease;
-}
-
-.kpi-weight-grid {
+.kr-weight-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
-    margin-top: 15px;
+}
+
+.kr-weight {
+    text-align: center;
+    padding: 20px;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+}
+
+.kr-weight-high { background: var(--red-bg); border-color: var(--red-border); color: var(--red-fg); }
+.kr-weight-medium { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber-fg); }
+.kr-weight-low { background: var(--green-bg); border-color: var(--green-border); color: var(--green-fg); }
+
+.kr-weight-value {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.kr-weight-label {
+    font-size: 13px;
+    color: var(--ink-400);
+    margin-top: 5px;
+}
+
+.kr-insight {
+    background: var(--surface-hover);
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand-500);
+    border-radius: var(--radius-sm);
+}
+
+.kr-insight + .kr-insight { margin-top: 15px; }
+
+.kr-insight h4 {
+    margin: 0;
+    color: var(--brand-600);
+}
+
+.kr-insight ul {
+    margin: 10px 0 0;
+    padding-left: 20px;
 }
 
 @media (max-width: 768px) {
-    .kpi-weight-grid { grid-template-columns: 1fr; }
+    .kr-grid-2,
+    .kr-weight-grid { grid-template-columns: 1fr; }
 }
 </style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-chart-bar" aria-hidden="true"></i> KPI Reports &amp; Analytics</h1>
+        <p>Status, achievement and weighting trends across KPIs for <?php echo $filter_year; ?>.</p>
+    </div>
+    <div class="hero-actions">
+        <button type="button" onclick="window.print()" class="btn">
+            <i class="fas fa-print" aria-hidden="true"></i> Print
+        </button>
+        <button type="button" onclick="exportReport()" class="btn btn-primary">
+            <i class="fas fa-download" aria-hidden="true"></i> Export Report
+        </button>
+    </div>
+</div>
 
 <!-- Statistics Overview -->
 <div class="stats-grid reports-stats">
@@ -337,7 +287,7 @@ $needs_attention = array_slice($needs_attention, 0, 5);
             <span class="stat-value"><?php echo $total_kpis; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -345,7 +295,7 @@ $needs_attention = array_slice($needs_attention, 0, 5);
             <span class="stat-value"><?php echo $status_counts['Approved']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-purple"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -353,7 +303,7 @@ $needs_attention = array_slice($needs_attention, 0, 5);
             <span class="stat-value"><?php echo $overall_avg_achievement; ?>%</span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-amber"><i class="fas fa-tasks" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -365,20 +315,12 @@ $needs_attention = array_slice($needs_attention, 0, 5);
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-chart-bar"></i> KPI Reports & Analytics (<?php echo $filter_year; ?>)</h3>
-        <div>
-            <button onclick="exportReport()" class="btn btn-success">
-                <i class="fas fa-download"></i> Export Report
-            </button>
-            <button onclick="window.print()" class="btn btn-info">
-                <i class="fas fa-print"></i> Print
-            </button>
-        </div>
+        <h3><i class="fas fa-filter" aria-hidden="true"></i> Report Filters (<?php echo $filter_year; ?>)</h3>
     </div>
-    
+
     <div class="card-body">
         <!-- Filters -->
-        <form method="GET" action="" class="filters-bar" style="margin-bottom: 30px;" aria-label="Report filters">
+        <form method="GET" action="" class="filters-bar" aria-label="Report filters">
             <div class="form-group">
                 <label>Fiscal Year</label>
                 <select name="year" class="form-control">
@@ -387,7 +329,7 @@ $needs_attention = array_slice($needs_attention, 0, 5);
                     <?php endfor; ?>
                 </select>
             </div>
-            
+
             <?php if ($is_hr): ?>
             <div class="form-group">
                 <label>Department</label>
@@ -400,7 +342,7 @@ $needs_attention = array_slice($needs_attention, 0, 5);
                     <?php endforeach; ?>
                 </select>
             </div>
-            
+
             <div class="form-group">
                 <label>Employee</label>
                 <select name="user" class="form-control">
@@ -416,7 +358,7 @@ $needs_attention = array_slice($needs_attention, 0, 5);
                 </select>
             </div>
             <?php endif; ?>
-            
+
             <div class="filters-actions">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-filter"></i> Apply Filters
@@ -426,213 +368,218 @@ $needs_attention = array_slice($needs_attention, 0, 5);
                 </a>
             </div>
         </form>
-        
-        <!-- Key Metrics -->
-        <div class="metric-grid">
-            <div class="metric-box success">
-                <div class="metric-label">Completion Rate</div>
-                <div class="metric-number">
-                    <?php echo $total_kpis > 0 ? round((count($kpis_with_achievement) / $total_kpis) * 100) : 0; ?>%
-                </div>
-            </div>
-            
-            <div class="metric-box info">
-                <div class="metric-label">Approval Rate</div>
-                <div class="metric-number">
-                    <?php echo $total_kpis > 0 ? round(($status_counts['Approved'] / $total_kpis) * 100) : 0; ?>%
-                </div>
-            </div>
-            
-            <div class="metric-box warning">
-                <div class="metric-label">Total Weight</div>
-                <div class="metric-number"><?php echo round($total_weight); ?>%</div>
-            </div>
-            
-            <div class="metric-box">
-                <div class="metric-label">Average Weight</div>
-                <div class="metric-number">
-                    <?php echo $total_kpis > 0 ? round($total_weight / $total_kpis, 1) : 0; ?>%
-                </div>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-flag-checkered" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Completion Rate</span>
+            <span class="stat-value"><?php echo $total_kpis > 0 ? round((count($kpis_with_achievement) / $total_kpis) * 100) : 0; ?>%</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fas fa-thumbs-up" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Approval Rate</span>
+            <span class="stat-value"><?php echo $total_kpis > 0 ? round(($status_counts['Approved'] / $total_kpis) * 100) : 0; ?>%</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-amber"><i class="fas fa-weight-hanging" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Total Weight</span>
+            <span class="stat-value"><?php echo round($total_weight); ?>%</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon bg-purple"><i class="fas fa-balance-scale" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Average Weight</span>
+            <span class="stat-value"><?php echo $total_kpis > 0 ? round($total_weight / $total_kpis, 1) : 0; ?>%</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="kr-grid-2">
+    <!-- Status Distribution -->
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-chart-pie" aria-hidden="true"></i> Status Distribution</h3></div>
+        <div class="card-body">
+            <div class="kr-chart">
+                <canvas id="statusChart"></canvas>
             </div>
         </div>
-        
-        <!-- Charts Row 1 -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
-            <!-- Status Distribution -->
-            <div class="analytics-card">
-                <div class="section-title">
-                    <i class="fas fa-chart-pie"></i> Status Distribution
-                </div>
-                <div class="chart-container">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
-            
-            <!-- Quarterly Performance -->
-            <div class="analytics-card">
-                <div class="section-title">
-                    <i class="fas fa-chart-line"></i> Quarterly Achievement
-                </div>
-                <div class="chart-container">
-                    <canvas id="quarterlyChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Charts Row 2 -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-            <!-- Category Performance -->
-            <div class="analytics-card">
-                <div class="section-title">
-                    <i class="fas fa-chart-bar"></i> Performance by Category
-                </div>
-                <div class="chart-container">
-                    <canvas id="categoryChart"></canvas>
-                </div>
-            </div>
-            
-            <!-- Target vs Actual -->
-            <div class="analytics-card">
-                <div class="section-title">
-                    <i class="fas fa-bullseye"></i> Target vs Actual
-                </div>
-                <div class="chart-container">
-                    <canvas id="targetActualChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Weight Distribution -->
-        <div class="analytics-card" style="margin-top: 20px;">
-            <div class="section-title">
-                <i class="fas fa-weight"></i> Weight Distribution
-            </div>
-            <div class="kpi-weight-grid">
-                <div style="text-align: center; padding: 20px; background: #ffe5e5; border-radius: 8px;">
-                    <div style="font-size: 28px; font-weight: bold; color: #c62828;"><?php echo $high_weight; ?></div>
-                    <div style="font-size: 13px; color: #666; margin-top: 5px;">High Weight (=30%)</div>
-                </div>
-                <div style="text-align: center; padding: 20px; background: #fff3e0; border-radius: 8px;">
-                    <div style="font-size: 28px; font-weight: bold; color: #e65100;"><?php echo $medium_weight; ?></div>
-                    <div style="font-size: 13px; color: #666; margin-top: 5px;">Medium Weight (15-29%)</div>
-                </div>
-                <div style="text-align: center; padding: 20px; background: #e8f5e9; border-radius: 8px;">
-                    <div style="font-size: 28px; font-weight: bold; color: #2e7d32;"><?php echo $low_weight; ?></div>
-                    <div style="font-size: 13px; color: #666; margin-top: 5px;">Low Weight (<15%)</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Top Performers & Needs Attention -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-            <!-- Top Performers -->
-            <div class="analytics-card">
-                <div class="section-header">
-                    <div class="section-title">
-                        <i class="fas fa-trophy"></i> Top Performers
-                    </div>
-                </div>
-                
-                <?php if (empty($top_performers)): ?>
-                    <p style="text-align: center; color: #7f8c8d; padding: 30px;">No data available</p>
-                <?php else: ?>
-                    <ul class="kpi-list-simple">
-                        <?php foreach ($top_performers as $kpi): ?>
-                            <li>
-                                <div>
-                                    <strong><?php echo htmlspecialchars($kpi['kpi_title']); ?></strong>
-                                    <div style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">
-                                        <?php echo htmlspecialchars($kpi['owner_name']); ?>
-                                    </div>
-                                </div>
-                                <span class="achievement-badge achievement-high">
-                                    <?php echo $kpi['overall_achievement']; ?>%
-                                </span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-            
-            <!-- Needs Attention -->
-            <div class="analytics-card">
-                <div class="section-header">
-                    <div class="section-title">
-                        <i class="fas fa-exclamation-triangle"></i> Needs Attention
-                    </div>
-                </div>
-                
-                <?php if (empty($needs_attention)): ?>
-                    <p style="text-align: center; color: #7f8c8d; padding: 30px;">No data available</p>
-                <?php else: ?>
-                    <ul class="kpi-list-simple">
-                        <?php foreach ($needs_attention as $kpi): ?>
-                            <li>
-                                <div>
-                                    <strong><?php echo htmlspecialchars($kpi['kpi_title']); ?></strong>
-                                    <div style="font-size: 12px; color: #7f8c8d; margin-top: 3px;">
-                                        <?php echo htmlspecialchars($kpi['owner_name']); ?>
-                                    </div>
-                                </div>
-                                <span class="achievement-badge <?php 
-                                    echo $kpi['overall_achievement'] >= 80 ? 'achievement-high' : 
-                                        ($kpi['overall_achievement'] >= 60 ? 'achievement-medium' : 'achievement-low'); 
-                                ?>">
-                                    <?php echo $kpi['overall_achievement']; ?>%
-                                </span>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                <?php endif; ?>
-            </div>
-        </div>
-        
-        <!-- Insights & Recommendations -->
-        <div class="analytics-card" style="margin-top: 20px;">
-            <div class="section-title">
-                <i class="fas fa-lightbulb"></i> Key Insights & Recommendations
-            </div>
-            
-            <div class="insights-box">
-                <h4 style="margin-top: 0; color: var(--primary-color);">Overall Performance</h4>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                    <?php if ($overall_avg_achievement >= 90): ?>
-                        <li>Excellent performance! Average achievement is <?php echo $overall_avg_achievement; ?>%, exceeding expectations.</li>
-                    <?php elseif ($overall_avg_achievement >= 75): ?>
-                        <li>Good performance with <?php echo $overall_avg_achievement; ?>% average achievement. Some room for improvement.</li>
-                    <?php else: ?>
-                        <li>Average achievement is <?php echo $overall_avg_achievement; ?>%. Focus needed to improve performance.</li>
-                    <?php endif; ?>
-                    
-                    <?php if ($status_counts['Rejected'] > 0): ?>
-                        <li><?php echo $status_counts['Rejected']; ?> KPI(s) rejected. Review feedback and resubmit with improvements.</li>
-                    <?php endif; ?>
-                    
-                    <?php if ($status_counts['Submitted'] > 0): ?>
-                        <li><?php echo $status_counts['Submitted']; ?> KPI(s) awaiting review. Timely approval needed.</li>
-                    <?php endif; ?>
-                </ul>
-            </div>
-            
-            <div class="insights-box">
-                <h4 style="margin-top: 0; color: var(--primary-color);">Quarterly Trends</h4>
-                <ul style="margin: 10px 0; padding-left: 20px;">
-                    <?php
-                    $best_quarter = array_keys($quarterly_performance, max($quarterly_performance))[0];
-                    $worst_quarter = array_keys($quarterly_performance, min($quarterly_performance))[0];
-                    ?>
-                    <li>Best performing quarter: <strong><?php echo $best_quarter; ?></strong> with <?php echo $quarterly_performance[$best_quarter]['avg_achievement']; ?>% achievement.</li>
-                    <li><?php echo $quarterly_performance['Q4']['completed']; ?> out of <?php echo $quarterly_performance['Q4']['total']; ?> Q4 targets completed.</li>
-                    <?php if ($quarterly_performance['Q1']['completion_rate'] < 50 && $filter_year == date('Y')): ?>
-                        <li>Q1 completion rate is low (<?php echo $quarterly_performance['Q1']['completion_rate']; ?>%). Encourage timely progress updates.</li>
-                    <?php endif; ?>
-                </ul>
+    </div>
+
+    <!-- Quarterly Performance -->
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-chart-line" aria-hidden="true"></i> Quarterly Achievement</h3></div>
+        <div class="card-body">
+            <div class="kr-chart">
+                <canvas id="quarterlyChart"></canvas>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Charts Row 2 -->
+<div class="kr-grid-2">
+    <!-- Category Performance -->
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-chart-bar" aria-hidden="true"></i> Performance by Category</h3></div>
+        <div class="card-body">
+            <div class="kr-chart">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Target vs Actual -->
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-bullseye" aria-hidden="true"></i> Target vs Actual</h3></div>
+        <div class="card-body">
+            <div class="kr-chart">
+                <canvas id="targetActualChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Weight Distribution -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-weight" aria-hidden="true"></i> Weight Distribution</h3></div>
+    <div class="card-body">
+        <div class="kr-weight-grid">
+            <div class="kr-weight kr-weight-high">
+                <div class="kr-weight-value"><?php echo $high_weight; ?></div>
+                <div class="kr-weight-label">High Weight (=30%)</div>
+            </div>
+            <div class="kr-weight kr-weight-medium">
+                <div class="kr-weight-value"><?php echo $medium_weight; ?></div>
+                <div class="kr-weight-label">Medium Weight (15-29%)</div>
+            </div>
+            <div class="kr-weight kr-weight-low">
+                <div class="kr-weight-value"><?php echo $low_weight; ?></div>
+                <div class="kr-weight-label">Low Weight (<15%)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Performers & Needs Attention -->
+<div class="kr-grid-2">
+    <!-- Top Performers -->
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-trophy" aria-hidden="true"></i> Top Performers</h3></div>
+        <div class="card-body">
+            <?php if (empty($top_performers)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-trophy" aria-hidden="true"></i>
+                    <p>No data available</p>
+                </div>
+            <?php else: ?>
+                <ul class="kr-list">
+                    <?php foreach ($top_performers as $kpi): ?>
+                        <li>
+                            <div>
+                                <strong><?php echo htmlspecialchars($kpi['kpi_title']); ?></strong>
+                                <span class="cell-muted"><?php echo htmlspecialchars($kpi['owner_name']); ?></span>
+                            </div>
+                            <span class="badge badge-success">
+                                <?php echo $kpi['overall_achievement']; ?>%
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Needs Attention -->
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Needs Attention</h3></div>
+        <div class="card-body">
+            <?php if (empty($needs_attention)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                    <p>No data available</p>
+                </div>
+            <?php else: ?>
+                <ul class="kr-list">
+                    <?php foreach ($needs_attention as $kpi): ?>
+                        <li>
+                            <div>
+                                <strong><?php echo htmlspecialchars($kpi['kpi_title']); ?></strong>
+                                <span class="cell-muted"><?php echo htmlspecialchars($kpi['owner_name']); ?></span>
+                            </div>
+                            <span class="badge <?php
+                                echo $kpi['overall_achievement'] >= 80 ? 'badge-success' :
+                                    ($kpi['overall_achievement'] >= 60 ? 'badge-warning' : 'badge-danger');
+                            ?>">
+                                <?php echo $kpi['overall_achievement']; ?>%
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Insights & Recommendations -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-lightbulb" aria-hidden="true"></i> Key Insights &amp; Recommendations</h3></div>
+    <div class="card-body">
+        <div class="kr-insight">
+            <h4>Overall Performance</h4>
+            <ul>
+                <?php if ($overall_avg_achievement >= 90): ?>
+                    <li>Excellent performance! Average achievement is <?php echo $overall_avg_achievement; ?>%, exceeding expectations.</li>
+                <?php elseif ($overall_avg_achievement >= 75): ?>
+                    <li>Good performance with <?php echo $overall_avg_achievement; ?>% average achievement. Some room for improvement.</li>
+                <?php else: ?>
+                    <li>Average achievement is <?php echo $overall_avg_achievement; ?>%. Focus needed to improve performance.</li>
+                <?php endif; ?>
+
+                <?php if ($status_counts['Rejected'] > 0): ?>
+                    <li><?php echo $status_counts['Rejected']; ?> KPI(s) rejected. Review feedback and resubmit with improvements.</li>
+                <?php endif; ?>
+
+                <?php if ($status_counts['Submitted'] > 0): ?>
+                    <li><?php echo $status_counts['Submitted']; ?> KPI(s) awaiting review. Timely approval needed.</li>
+                <?php endif; ?>
+            </ul>
+        </div>
+
+        <div class="kr-insight">
+            <h4>Quarterly Trends</h4>
+            <ul>
+                <?php
+                $best_quarter = array_keys($quarterly_performance, max($quarterly_performance))[0];
+                $worst_quarter = array_keys($quarterly_performance, min($quarterly_performance))[0];
+                ?>
+                <li>Best performing quarter: <strong><?php echo $best_quarter; ?></strong> with <?php echo $quarterly_performance[$best_quarter]['avg_achievement']; ?>% achievement.</li>
+                <li><?php echo $quarterly_performance['Q4']['completed']; ?> out of <?php echo $quarterly_performance['Q4']['total']; ?> Q4 targets completed.</li>
+                <?php if ($quarterly_performance['Q1']['completion_rate'] < 50 && $filter_year == date('Y')): ?>
+                    <li>Q1 completion rate is low (<?php echo $quarterly_performance['Q1']['completion_rate']; ?>%). Encourage timely progress updates.</li>
+                <?php endif; ?>
+            </ul>
+        </div>
+    </div>
+</div>
+</div><!-- /.page-stack -->
+
 <script>
+// Chart colours come from the design tokens in reports.css.
+const krToken = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
 // Status Distribution Chart
 const statusCtx = document.getElementById('statusChart').getContext('2d');
 new Chart(statusCtx, {
@@ -649,12 +596,12 @@ new Chart(statusCtx, {
                 <?php echo $status_counts['Completed']; ?>
             ],
             backgroundColor: [
-                '#27AE60',
-                '#3498DB',
-                '#F39C12',
-                '#E74C3C',
-                '#95A5A6',
-                '#2ECC71'
+                krToken('--green-fg'),
+                krToken('--blue-fg'),
+                krToken('--amber-fg'),
+                krToken('--red-fg'),
+                krToken('--ink-200'),
+                krToken('--teal-fg')
             ]
         }]
     },
@@ -683,8 +630,8 @@ new Chart(quarterlyCtx, {
                 <?php echo $quarterly_performance['Q3']['avg_achievement']; ?>,
                 <?php echo $quarterly_performance['Q4']['avg_achievement']; ?>
             ],
-            borderColor: '#667eea',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            borderColor: krToken('--brand-500'),
+            backgroundColor: krToken('--brand-50'),
             tension: 0.4,
             fill: true
         }]
@@ -715,7 +662,7 @@ new Chart(categoryCtx, {
         datasets: [{
             label: 'Avg Achievement (%)',
             data: <?php echo json_encode(array_column($category_stats, 'avg_achievement')); ?>,
-            backgroundColor: '#764ba2'
+            backgroundColor: krToken('--purple-fg')
         }]
     },
     options: {
@@ -750,7 +697,7 @@ new Chart(targetActualCtx, {
                     <?php echo $target_actual_data['Q3']['target']; ?>,
                     <?php echo $target_actual_data['Q4']['target']; ?>
                 ],
-                backgroundColor: '#95A5A6'
+                backgroundColor: krToken('--ink-200')
             },
             {
                 label: 'Actual',
@@ -760,7 +707,7 @@ new Chart(targetActualCtx, {
                     <?php echo $target_actual_data['Q3']['actual']; ?>,
                     <?php echo $target_actual_data['Q4']['actual']; ?>
                 ],
-                backgroundColor: '#27AE60'
+                backgroundColor: krToken('--green-fg')
             }
         ]
     },

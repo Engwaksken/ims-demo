@@ -171,560 +171,148 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
 ?>
 
 <style>
-    .settings-shell {
-        width: 100%;
-    }
+    /* System Settings: page-only layout (settings- prefix) */
+    .settings-tabs { margin-bottom: 0; }
 
-    .settings-hero {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        flex-wrap: wrap;
+    .settings-stats { margin-bottom: 18px; }
+    .settings-stats .stat-value.settings-stat-text { font-size: var(--fs-md); word-break: break-word; }
+    .settings-stats .stat-value.settings-stat-small { font-size: var(--fs-xs); }
+    .settings-stats.google-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-        margin-bottom: 18px;
-        padding: 22px 24px;
-
-        border-radius: 14px;
-
-        background:
-            linear-gradient(
-                135deg,
-                rgba(249, 115, 22, .98),
-                rgba(234, 88, 12, .95)
-            );
-
-        color: #fff;
-
-        box-shadow: 0 12px 30px rgba(234, 88, 12, .16);
-    }
-
-    .settings-hero h1 {
-        margin: 0 0 5px;
-        font-size: 24px;
-        font-weight: 800;
-    }
-
-    .settings-hero p {
-        margin: 0;
-        opacity: .9;
-        font-size: 13px;
-    }
-
-    .settings-hero-badges {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .settings-hero-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-
-        padding: 8px 11px;
-
-        border: 1px solid rgba(255,255,255,.28);
-        border-radius: 999px;
-
-        background: rgba(255,255,255,.13);
-
-        color: #fff;
-
-        font-size: 11px;
-        font-weight: 700;
-    }
-
-    .settings-tabs {
-        display: flex;
-        gap: 0;
-
-        margin-bottom: 20px;
-
-        overflow-x: auto;
-
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    .settings-tab {
-        flex: 0 0 auto;
-
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-
-        padding: 12px 15px;
-        margin-bottom: -2px;
-
-        border: none;
-        border-bottom: 2px solid transparent;
-
-        background: transparent;
-        color: #64748b;
-
-        cursor: pointer;
-
-        font-size: 12px;
-        font-weight: 800;
-
-        text-decoration: none;
-        white-space: nowrap;
-    }
-
-    .settings-tab:hover {
-        color: #ea580c;
-    }
-
-    .settings-tab.active {
-        border-bottom-color: #ea580c;
-        color: #ea580c;
-    }
-
-    .settings-section {
-        padding: 22px;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-
-        background: #fff;
-
-        box-shadow: 0 5px 18px rgba(15,23,42,.05);
-    }
-
-    .settings-section h3 {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-
-        margin: 0 0 20px;
-        padding-bottom: 12px;
-
-        border-bottom: 1px solid #e2e8f0;
-
-        color: #0f172a;
-
-        font-size: 17px;
-        font-weight: 800;
-    }
-
-    .settings-section h4 {
-        color: #0f172a;
-    }
-
-    .info-box {
+    .settings-info-box {
         margin-bottom: 18px;
         padding: 14px;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 9px;
-
-        background: #f8fafc;
+        border: 1px solid var(--ink-100);
+        border-radius: var(--radius-md);
+        background: var(--surface-hover);
     }
-
-    .info-box h4 {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-
+    .settings-info-box h4 {
+        display: flex; align-items: center; gap: 7px;
         margin: 0 0 10px;
-
-        color: #334155;
-
-        font-size: 13px;
-        font-weight: 800;
+        color: var(--ink-500);
+        font-size: var(--fs-sm); font-weight: 800;
     }
-
-    .info-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 15px;
-
+    .settings-info-box ol { margin: 10px 0; padding-left: 20px; }
+    .settings-info-box p { font-size: var(--fs-xs); color: var(--ink-300); margin: 0; }
+    .settings-info-row {
+        display: flex; justify-content: space-between; gap: 15px;
         padding: 8px 0;
-
-        border-bottom: 1px solid #e2e8f0;
-
-        font-size: 12px;
+        border-bottom: 1px solid var(--ink-100);
+        font-size: var(--fs-xs);
     }
+    .settings-info-row:last-child { border-bottom: none; }
+    .settings-info-row strong { text-align: right; word-break: break-word; }
+    .settings-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .settings-two-col .settings-info-box { margin-bottom: 0; }
+    .settings-space-top { margin-top: 24px; }
 
-    .info-row:last-child {
-        border-bottom: none;
-    }
+    .settings-ok { color: var(--green-fg); }
+    .settings-bad { color: var(--red-fg); }
+    .settings-hint { display: block; margin-top: 4px; color: var(--ink-300); font-size: var(--fs-xs); }
+    .form-group > label.settings-toggle-label { display: flex; align-items: center; gap: 10px; }
+    .settings-alert-tight { margin-bottom: 12px; }
+    .settings-alert-flush { margin: 14px 0 0; }
+    .settings-alert-top { margin-top: 14px; }
 
-    .settings-status-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0,1fr));
-
-        gap: 12px;
-
-        margin-bottom: 18px;
-    }
-
-    .settings-status-card {
-        min-width: 0;
-
-        padding: 14px;
-
-        border: 1px solid #e2e8f0;
-        border-left: 4px solid #94a3b8;
-        border-radius: 9px;
-
-        background: #fff;
-    }
-
-    .settings-status-card.ok {
-        border-left-color: #16a34a;
-    }
-
-    .settings-status-card.warn {
-        border-left-color: #f59e0b;
-    }
-
-    .settings-status-card.off {
-        border-left-color: #94a3b8;
-    }
-
-    .settings-status-label {
-        color: #64748b;
-        font-size: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-    }
-
-    .settings-status-value {
-        margin-top: 5px;
-
-        color: #0f172a;
-
-        font-size: 16px;
-        font-weight: 800;
-
-        word-break: break-word;
-    }
-
-    .settings-note {
-        display: flex;
-        align-items: flex-start;
-        gap: 9px;
-
-        margin-bottom: 17px;
-        padding: 12px 13px;
-
-        border: 1px solid #bae6fd;
-        border-left: 4px solid #0284c7;
-        border-radius: 8px;
-
-        background: #f0f9ff;
-        color: #0c4a6e;
-
-        font-size: 12px;
-        line-height: 1.55;
-    }
-
-    .settings-warning {
-        display: flex;
-        align-items: flex-start;
-        gap: 9px;
-
-        margin-bottom: 17px;
-        padding: 12px 13px;
-
-        border: 1px solid #fed7aa;
-        border-left: 4px solid #f97316;
-        border-radius: 8px;
-
-        background: #fff7ed;
-        color: #9a3412;
-
-        font-size: 12px;
-        line-height: 1.55;
-    }
-
-    .settings-check-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0,1fr));
-
-        gap: 10px;
-
-        margin-top: 5px;
-    }
-
+    .settings-check-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 5px; }
     .settings-check {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-
-        min-height: 56px;
-
-        padding: 11px 12px;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-
-        background: #f8fafc;
+        display: flex; align-items: flex-start; gap: 10px;
+        min-height: 56px; padding: 11px 12px;
+        border: 1px solid var(--ink-100); border-radius: var(--radius-sm);
+        background: var(--surface-hover);
     }
+    .settings-check input { margin-top: 2px; }
+    .settings-check strong { display: block; color: var(--ink-500); font-size: var(--fs-xs); }
+    .settings-check small { display: block; margin-top: 2px; color: var(--ink-300); font-size: 11px; line-height: 1.4; }
 
-    .settings-check input {
-        margin-top: 2px;
-    }
-
-    .settings-check strong {
-        display: block;
-        color: #334155;
-        font-size: 12px;
-    }
-
-    .settings-check small {
-        display: block;
-        margin-top: 2px;
-        color: #64748b;
-        font-size: 10.5px;
-        line-height: 1.4;
-    }
-
-    .settings-secret-wrap {
-        position: relative;
-    }
-
-    .settings-secret-wrap .form-control {
-        padding-right: 44px;
-    }
-
+    .settings-secret-wrap { position: relative; }
+    .settings-secret-wrap .form-control { padding-right: 44px; }
     .settings-secret-toggle {
-        position: absolute;
-        right: 8px;
-        top: 50%;
-
-        width: 32px;
-        height: 32px;
-
-        display: grid;
-        place-items: center;
-
-        transform: translateY(-50%);
-
-        border: 0;
-        border-radius: 7px;
-
-        background: transparent;
-        color: #64748b;
-
-        cursor: pointer;
+        position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+        width: 32px; height: 32px; display: grid; place-items: center;
+        border: 0; border-radius: var(--radius-sm);
+        background: transparent; color: var(--ink-300); cursor: pointer;
     }
+    .settings-secret-toggle:hover { background: var(--ink-50); color: var(--ink-700); }
 
-    .settings-secret-toggle:hover {
-        background: #f1f5f9;
-        color: #0f172a;
-    }
-
-    .settings-actions {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 9px;
-
-        flex-wrap: wrap;
-
-        margin-top: 22px;
-    }
+    .settings-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex-wrap: wrap; margin-top: 22px; }
+    .settings-actions.settings-actions-tight { margin-top: 12px; }
+    .settings-actions.settings-actions-flush { margin-top: 0; }
 
     .settings-confirm-box {
-        margin-top: 18px;
-        padding: 15px;
-
-        border: 1px solid #e2e8f0;
-        border-radius: 9px;
-
-        background: #f8fafc;
+        margin-top: 18px; padding: 15px;
+        border: 1px solid var(--ink-100); border-radius: var(--radius-md);
+        background: var(--surface-hover);
     }
+    .settings-confirm-box h4 { margin-top: 0; }
 
-    @media (max-width: 950px) {
-        .settings-status-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .settings-check-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 700px) {
-        .settings-hero {
-            padding: 18px;
-        }
-
-        .settings-section {
-            padding: 16px;
-        }
-
-        .settings-actions .btn {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    .backup-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-        margin-bottom: 18px;
-    }
-
-    .backup-card {
-        padding: 15px;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        background: #f8fafc;
-    }
-
-    .backup-card h4 {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        margin: 0 0 12px;
-        font-size: 13px;
-        font-weight: 800;
-    }
-
-    .backup-storage-options {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0,1fr));
-        gap: 9px;
-    }
-
+    .backup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .backup-grid.backup-grid-spaced { margin-top: 18px; }
+    .backup-card { padding: 15px; border: 1px solid var(--ink-100); border-radius: var(--radius-md); background: var(--surface-hover); }
+    .backup-card h4 { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; font-size: var(--fs-sm); font-weight: 800; }
+    .backup-card p { color: var(--ink-300); font-size: var(--fs-xs); line-height: 1.6; }
+    .backup-full-btn { width: 100%; }
+    .backup-cron { font-size: 11px; }
+    .backup-storage-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
     .backup-storage-option {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 11px;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        background: #fff;
-        cursor: pointer;
+        display: flex; align-items: flex-start; gap: 8px; padding: 11px;
+        border: 1px solid var(--ink-100); border-radius: var(--radius-sm);
+        background: var(--surface-card); cursor: pointer;
     }
-
-    .backup-storage-option strong {
-        display: block;
-        font-size: 11.5px;
-        color: #334155;
-    }
-
-    .backup-storage-option small {
-        display: block;
-        margin-top: 2px;
-        color: #64748b;
-        font-size: 9.5px;
-        line-height: 1.4;
-    }
-
+    .backup-storage-option strong { display: block; font-size: var(--fs-xs); color: var(--ink-500); }
+    .backup-storage-option small { display: block; margin-top: 2px; color: var(--ink-300); font-size: 11px; line-height: 1.4; }
     .backup-google-box {
-        margin-top: 14px;
-        padding: 14px;
-        border: 1px solid #dbeafe;
-        border-left: 4px solid #2563eb;
-        border-radius: 9px;
-        background: #eff6ff;
+        margin-top: 14px; padding: 14px;
+        border: 1px solid var(--blue-border); border-left: 4px solid var(--blue-fg);
+        border-radius: var(--radius-md); background: var(--blue-bg);
     }
-
-    .backup-secret-area {
-        min-height: 130px;
-        font-family: Consolas, monospace;
-        font-size: 10.5px;
-    }
-
-    @media (max-width: 850px) {
-        .backup-grid,
-        .backup-storage-options {
-            grid-template-columns: 1fr;
-        }
-    }
-
-
-    .settings-status-grid.google-grid {
-        grid-template-columns: repeat(4, minmax(0,1fr));
-    }
+    .backup-google-box h4 { margin-top: 0; }
+    .backup-secret-area { min-height: 130px; font-size: 11px; }
+    .backup-list-title { display: flex; align-items: center; gap: 7px; margin: 26px 0 14px; }
 
     .google-connect-panel {
-        margin-top: 18px;
-        padding: 16px;
-        border: 1px solid #e2e8f0;
-        border-left: 4px solid #4285f4;
-        border-radius: 10px;
-        background: #f8fafc;
+        margin-top: 18px; padding: 16px;
+        border: 1px solid var(--ink-100); border-left: 4px solid var(--blue-fg);
+        border-radius: var(--radius-md); background: var(--surface-hover);
     }
-
-    .google-connect-panel.connected {
-        border-left-color: #16a34a;
-        background: #f0fdf4;
-    }
-
-    .google-connect-panel h4 {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin: 0 0 10px;
-        color: #0f172a;
-        font-size: 13px;
-        font-weight: 800;
-    }
-
-    .google-connect-meta {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0,1fr));
-        gap: 10px 18px;
-        margin: 13px 0;
-    }
-
-    .google-connect-meta div {
-        min-width: 0;
-    }
-
-    .google-connect-meta span {
-        color: #64748b;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
-
-    .google-connect-meta strong {
-        display: block;
-        margin-top: 3px;
-        color: #0f172a;
-        font-size: 11px;
-        word-break: break-word;
-    }
+    .google-connect-panel.connected { border-left-color: var(--green-fg); background: var(--green-bg); }
+    .google-connect-panel h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: var(--ink-700); font-size: var(--fs-sm); font-weight: 800; }
+    .google-connect-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin: 13px 0; }
+    .google-connect-meta div { min-width: 0; }
+    .google-connect-meta span { color: var(--ink-300); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .google-connect-meta strong { display: block; margin-top: 3px; color: var(--ink-700); font-size: var(--fs-xs); word-break: break-word; }
 
     @media (max-width: 1050px) {
-        .settings-status-grid.google-grid {
-            grid-template-columns: repeat(2, minmax(0,1fr));
-        }
+        .settings-stats.google-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-
+    @media (max-width: 950px) {
+        .settings-check-grid, .settings-two-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 850px) {
+        .backup-grid, .backup-storage-options { grid-template-columns: 1fr; }
+    }
     @media (max-width: 700px) {
-        .settings-status-grid.google-grid,
-        .google-connect-meta {
-            grid-template-columns: 1fr;
-        }
+        .settings-actions .btn { width: 100%; justify-content: center; }
+        .settings-stats.google-grid, .google-connect-meta { grid-template-columns: 1fr; }
     }
 </style>
 
-<div class="settings-shell">
-    <div class="settings-hero">
+<div class="page-stack settings-shell">
+    <div class="page-hero">
         <div>
-            <h1><i class="fas fa-sliders-h"></i> System Settings</h1>
+            <h1><i class="fas fa-sliders-h" aria-hidden="true"></i> System Settings</h1>
             <p>Manage IMS configuration, integrations, email, backups and system information.</p>
         </div>
 
-        <div class="settings-hero-badges">
-            <span class="settings-hero-badge">
-                <i class="fab fa-google"></i>
+        <div class="hero-actions">
+            <span class="badge badge-<?= htmlspecialchars($google_status_class) ?>">
+                <i class="fab fa-google" aria-hidden="true"></i>
                 Google Calendar:
                 <?= htmlspecialchars($google_calendar_status) ?>
             </span>
 
-            <span class="settings-hero-badge">
-                <i class="fas fa-envelope"></i>
+            <span class="badge <?= $workspace_gmail_enabled ? 'badge-success' : 'badge-secondary' ?>">
+                <i class="fas fa-envelope" aria-hidden="true"></i>
                 Workspace Gmail:
                 <?= $workspace_gmail_enabled ? 'Enabled' : 'Disabled' ?>
             </span>
@@ -732,34 +320,35 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
     </div>
 
 <!-- Settings Navigation -->
-<div class="settings-tabs">
-    <a href="settings?tab=general" class="settings-tab <?php echo $active_tab == 'general' ? 'active' : ''; ?>">
-        <i class="fas fa-cog"></i> General
+<nav class="tab-nav settings-tabs" role="tablist">
+    <a href="settings?tab=general" class="tab-btn <?php echo $active_tab == 'general' ? 'active' : ''; ?>">
+        <i class="fas fa-cog" aria-hidden="true"></i> General
     </a>
-    <a href="settings?tab=powerbi" class="settings-tab <?php echo $active_tab == 'powerbi' ? 'active' : ''; ?>">
-        <i class="fas fa-chart-line"></i> Power BI
+    <a href="settings?tab=powerbi" class="tab-btn <?php echo $active_tab == 'powerbi' ? 'active' : ''; ?>">
+        <i class="fas fa-chart-line" aria-hidden="true"></i> Power BI
     </a>
-    <a href="settings?tab=email" class="settings-tab <?php echo $active_tab == 'email' ? 'active' : ''; ?>">
-        <i class="fas fa-envelope"></i> Email
+    <a href="settings?tab=email" class="tab-btn <?php echo $active_tab == 'email' ? 'active' : ''; ?>">
+        <i class="fas fa-envelope" aria-hidden="true"></i> Email
     </a>
-    <a href="settings?tab=google" class="settings-tab <?php echo $active_tab == 'google' ? 'active' : ''; ?>">
-        <i class="fab fa-google"></i> Google Calendar
+    <a href="settings?tab=google" class="tab-btn <?php echo $active_tab == 'google' ? 'active' : ''; ?>">
+        <i class="fab fa-google" aria-hidden="true"></i> Google Calendar
     </a>
-    <a href="settings?tab=workspace" class="settings-tab <?php echo $active_tab == 'workspace' ? 'active' : ''; ?>">
-        <i class="fas fa-building"></i> Workspace Gmail
+    <a href="settings?tab=workspace" class="tab-btn <?php echo $active_tab == 'workspace' ? 'active' : ''; ?>">
+        <i class="fas fa-building" aria-hidden="true"></i> Workspace Gmail
     </a>
-    <a href="settings?tab=backup" class="settings-tab <?php echo $active_tab == 'backup' ? 'active' : ''; ?>">
-        <i class="fas fa-database"></i> Backup
+    <a href="settings?tab=backup" class="tab-btn <?php echo $active_tab == 'backup' ? 'active' : ''; ?>">
+        <i class="fas fa-database" aria-hidden="true"></i> Backup
     </a>
-    <a href="settings?tab=system" class="settings-tab <?php echo $active_tab == 'system' ? 'active' : ''; ?>">
-        <i class="fas fa-server"></i> System Info
+    <a href="settings?tab=system" class="tab-btn <?php echo $active_tab == 'system' ? 'active' : ''; ?>">
+        <i class="fas fa-server" aria-hidden="true"></i> System Info
     </a>
-</div>
+</nav>
 
 <!-- General Settings -->
 <?php if ($active_tab == 'general'): ?>
-<div class="settings-section">
-    <h3><i class="fas fa-cog"></i> General Settings</h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-cog" aria-hidden="true"></i> General Settings</h3></div>
+    <div class="card-body">
     
     <form method="POST" action="includes/settings-process.php">
         <div class="form-row">
@@ -827,19 +416,21 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             </div>
         </div>
         
-        <div style="text-align: right; margin-top: 30px;">
-            <button type="submit" name="update_settings" class="btn btn-success">
+        <div class="settings-actions">
+            <button type="submit" name="update_settings" class="btn btn-primary">
                 <i class="fas fa-save"></i> Save Settings
             </button>
         </div>
     </form>
+    </div>
 </div>
 <?php endif; ?>
 
 <!-- Power BI Settings -->
 <?php if ($active_tab == 'powerbi'): ?>
-<div class="settings-section">
-    <h3><i class="fas fa-chart-line"></i> Power BI Integration</h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-chart-line" aria-hidden="true"></i> Power BI Integration</h3></div>
+    <div class="card-body">
     
     <!--<div class="alert alert-info">
         <i class="fas fa-info-circle"></i>
@@ -848,7 +439,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
     
     <form method="POST" action="includes/settings-process.php">
         <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 10px;">
+            <label class="settings-toggle-label">
                 <input type="checkbox" name="powerbi_enabled" <?php echo ($powerbi_settings['enabled'] ?? '0') == '1' ? 'checked' : ''; ?>>
                 <strong>Enable Power BI Integration</strong>
             </label>
@@ -859,7 +450,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             <input type="url" id="embed_url" name="embed_url" class="form-control" 
                    value="<?php echo htmlspecialchars($powerbi_settings['embed_url'] ?? ''); ?>"
                    placeholder="https://app.powerbi.com/reportEmbed?reportId=...">
-            <small style="color: #7f8c8d;">Copy the embed URL from your Power BI report's "Embed" option</small>
+            <small class="settings-hint">Copy the embed URL from your Power BI report's "Embed" option</small>
         </div>
         
         <div class="form-row">
@@ -882,9 +473,9 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                    value="<?php echo htmlspecialchars($powerbi_settings['client_id'] ?? ''); ?>">
         </div>
         
-        <div class="info-box">
+        <div class="settings-info-box">
             <h4><i class="fas fa-book"></i> Setup Instructions</h4>
-            <ol style="margin: 10px 0; padding-left: 20px;">
+            <ol>
                 <li>Create a Power BI workspace</li>
                 <li>Upload your reports to the workspace</li>
                 <li>Register an Azure AD application</li>
@@ -892,24 +483,26 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 <li>Get the embed URL from your report's "Embed" option</li>
                 <li>Enter the credentials above and save</li>
             </ol>
-            <a href="https://docs.microsoft.com/en-us/power-bi/developer/embedded/embed-sample-for-customers" target="_blank" style="color: var(--primary-color);">
+            <a href="https://docs.microsoft.com/en-us/power-bi/developer/embedded/embed-sample-for-customers" target="_blank">
                 <i class="fas fa-external-link-alt"></i> View Power BI Documentation
             </a>
         </div>
         
-        <div style="text-align: right; margin-top: 30px;">
-            <button type="submit" name="update_powerbi" class="btn btn-success">
+        <div class="settings-actions">
+            <button type="submit" name="update_powerbi" class="btn btn-primary">
                 <i class="fas fa-save"></i> Save Power BI Settings
             </button>
         </div>
     </form>
+    </div>
 </div>
 <?php endif; ?>
 
 <!-- Email Settings -->
 <?php if ($active_tab == 'email'): ?>
-<div class="settings-section">
-    <h3><i class="fas fa-envelope"></i> Email Configuration</h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-envelope" aria-hidden="true"></i> Email Configuration</h3></div>
+    <div class="card-body">
     
     <!--<div class="alert alert-warning">
         <i class="fas fa-exclamation-triangle"></i>
@@ -918,7 +511,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
     
     <form method="POST" action="includes/settings-process.php">
         <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 10px;">
+            <label class="settings-toggle-label">
                 <input type="checkbox" name="email_enabled" <?php echo ($settings['email_enabled'] ?? '0') == '1' ? 'checked' : ''; ?>>
                 <strong>Enable Email Notifications</strong>
             </label>
@@ -977,71 +570,82 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             </div>
         </div>
         
-        <div class="info-box">
+        <div class="settings-info-box">
             <h4><i class="fas fa-lightbulb"></i> Common SMTP Settings</h4>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span><strong>Gmail:</strong></span>
                 <span>smtp.gmail.com, Port 587 (TLS)</span>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span><strong>Outlook/Office365:</strong></span>
                 <span>smtp.office365.com, Port 587 (TLS)</span>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span><strong>Yahoo:</strong></span>
                 <span>smtp.mail.yahoo.com, Port 587 (TLS)</span>
             </div>
         </div>
         
-        <div style="text-align: right; margin-top: 30px;">
-            <button type="submit" name="update_email" class="btn btn-success">
+        <div class="settings-actions">
+            <button type="submit" name="update_email" class="btn btn-primary">
                 <i class="fas fa-save"></i> Save Email Settings
             </button>
         </div>
     </form>
+    </div>
 </div>
 <?php endif; ?>
 
 
 <!-- Google Calendar Settings -->
 <?php if ($active_tab == 'google'): ?>
-<div class="settings-section">
-    <h3>
-        <i class="fab fa-google"></i>
-        Google Calendar Integration
-    </h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fab fa-google" aria-hidden="true"></i> Google Calendar Integration</h3></div>
+    <div class="card-body">
 
-    <div class="settings-status-grid google-grid">
-        <div class="settings-status-card <?= $google_calendar_enabled ? 'ok' : 'off' ?>">
-            <div class="settings-status-label">Integration</div>
-            <div class="settings-status-value">
+    <div class="stats-grid reports-stats settings-stats google-grid">
+        <div class="stat-card">
+            <div class="stat-icon <?= $google_calendar_enabled ? 'bg-green' : 'bg-slate' ?>"><i class="fas fa-plug" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Integration</div>
+                <div class="stat-value settings-stat-text">
                 <?= $google_calendar_enabled ? 'Enabled' : 'Disabled' ?>
             </div>
+            </div>
         </div>
 
-        <div class="settings-status-card <?= $google_calendar_status === 'Confirmed' ? 'ok' : 'warn' ?>">
-            <div class="settings-status-label">Configuration</div>
-            <div class="settings-status-value">
+        <div class="stat-card">
+            <div class="stat-icon <?= $google_calendar_status === 'Confirmed' ? 'bg-green' : 'bg-amber' ?>"><i class="fas fa-clipboard-check" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Configuration</div>
+                <div class="stat-value settings-stat-text">
                 <?= htmlspecialchars($google_calendar_status) ?>
             </div>
-        </div>
-
-        <div class="settings-status-card">
-            <div class="settings-status-label">Shared Calendar</div>
-            <div class="settings-status-value">
-                <?= htmlspecialchars($google_settings['google_calendar_name'] ?? 'Hive Colab Events') ?>
             </div>
         </div>
 
-        <div class="settings-status-card <?= $google_calendar_connected ? 'ok' : 'warn' ?>">
-            <div class="settings-status-label">API Connection</div>
-            <div class="settings-status-value">
+        <div class="stat-card">
+            <div class="stat-icon bg-slate"><i class="fas fa-calendar" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Shared Calendar</div>
+                <div class="stat-value settings-stat-text">
+                <?= htmlspecialchars($google_settings['google_calendar_name'] ?? 'Hive Colab Events') ?>
+            </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon <?= $google_calendar_connected ? 'bg-green' : 'bg-amber' ?>"><i class="fas fa-link" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">API Connection</div>
+                <div class="stat-value settings-stat-text">
                 <?= $google_calendar_connected ? 'Connected' : 'Not Connected' ?>
+            </div>
             </div>
         </div>
     </div>
 
-    <div class="settings-note">
+    <div class="alert alert-info">
         <i class="fas fa-circle-info"></i>
 
         <div>
@@ -1052,7 +656,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
 
     <form method="POST" action="includes/settings-process.php">
         <div class="form-group">
-            <label style="display:flex;align-items:center;gap:10px;">
+            <label class="settings-toggle-label">
                 <input
                     type="checkbox"
                     name="google_calendar_enabled"
@@ -1136,7 +740,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 value="<?= htmlspecialchars($google_settings['google_redirect_uri'] ?? '') ?>"
                 placeholder="https://ims.hivecolab.com/includes/google-calendar-callback.php"
             >
-            <small style="color:#64748b;">
+            <small class="settings-hint">
                 This must exactly match the authorised redirect URI in Google Cloud.
             </small>
         </div>
@@ -1256,7 +860,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             <button
                 type="submit"
                 name="update_google_calendar"
-                class="btn btn-success"
+                class="btn btn-primary"
             >
                 <i class="fas fa-save"></i>
                 Save Google Calendar Settings
@@ -1271,15 +875,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
         </h4>
 
         <?php if ($google_calendar_connected): ?>
-            <div
-                class="settings-note"
-                style="
-                    margin-bottom:12px;
-                    border-left-color:#16a34a;
-                    background:#f0fdf4;
-                    color:#166534;
-                "
-            >
+            <div class="alert alert-success settings-alert-tight">
                 <i class="fas fa-circle-check"></i>
 
                 <div>
@@ -1291,7 +887,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 </div>
             </div>
         <?php else: ?>
-            <div class="settings-warning" style="margin-bottom:12px;">
+            <div class="alert alert-warning settings-alert-tight">
                 <i class="fas fa-triangle-exclamation"></i>
 
                 <div>
@@ -1332,7 +928,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             </div>
         </div>
 
-        <div class="settings-actions" style="margin-top:12px;">
+        <div class="settings-actions settings-actions-tight">
             <?php if ($google_calendar_connected): ?>
                 <a
                     href="includes/google-calendar-disconnect.php"
@@ -1353,7 +949,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 <?php else: ?>
                     <button
                         type="button"
-                        class="btn btn-gray"
+                        class="btn btn-secondary"
                         disabled
                         title="Enable and confirm the Calendar configuration first"
                     >
@@ -1366,31 +962,31 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
     </div>
 
     <div class="settings-confirm-box">
-        <h4 style="margin-top:0;">
+        <h4>
             <i class="fas fa-user-shield"></i>
             Administrator Confirmation
         </h4>
 
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Configuration Status</span>
             <strong><?= htmlspecialchars($google_calendar_status) ?></strong>
         </div>
 
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Confirmed By User ID</span>
             <strong>
                 <?= htmlspecialchars($google_settings['google_calendar_confirmed_by'] ?? '—') ?>
             </strong>
         </div>
 
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Confirmed At</span>
             <strong>
                 <?= htmlspecialchars($google_settings['google_calendar_confirmed_at'] ?? '—') ?>
             </strong>
         </div>
 
-        <div class="settings-warning" style="margin-top:14px;margin-bottom:12px;">
+        <div class="alert alert-warning settings-alert-tight settings-alert-top">
             <i class="fas fa-triangle-exclamation"></i>
             <div>
                 Confirmation verifies that the required configuration has been entered.
@@ -1400,7 +996,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
         </div>
 
         <form method="POST" action="includes/settings-process.php">
-            <div class="settings-actions" style="margin-top:0;">
+            <div class="settings-actions settings-actions-flush">
                 <button
                     type="submit"
                     name="confirm_google_calendar"
@@ -1412,42 +1008,50 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             </div>
         </form>
     </div>
+    </div>
 </div>
 <?php endif; ?>
 
 
 <!-- Workspace Gmail Settings -->
 <?php if ($active_tab == 'workspace'): ?>
-<div class="settings-section">
-    <h3>
-        <i class="fas fa-envelope-open-text"></i>
-        Google Workspace Gmail
-    </h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-envelope-open-text" aria-hidden="true"></i> Google Workspace Gmail</h3></div>
+    <div class="card-body">
 
-    <div class="settings-status-grid">
-        <div class="settings-status-card <?= $workspace_gmail_enabled ? 'ok' : 'off' ?>">
-            <div class="settings-status-label">Workspace Gmail</div>
-            <div class="settings-status-value">
+    <div class="stats-grid reports-stats settings-stats">
+        <div class="stat-card">
+            <div class="stat-icon <?= $workspace_gmail_enabled ? 'bg-green' : 'bg-slate' ?>"><i class="fas fa-envelope" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Workspace Gmail</div>
+                <div class="stat-value settings-stat-text">
                 <?= $workspace_gmail_enabled ? 'Enabled' : 'Disabled' ?>
             </div>
-        </div>
-
-        <div class="settings-status-card">
-            <div class="settings-status-label">Domain</div>
-            <div class="settings-status-value">
-                <?= htmlspecialchars($google_settings['workspace_gmail_domain'] ?? 'Not configured') ?>
             </div>
         </div>
 
-        <div class="settings-status-card">
-            <div class="settings-status-label">Sender</div>
-            <div class="settings-status-value">
+        <div class="stat-card">
+            <div class="stat-icon bg-slate"><i class="fas fa-globe" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Domain</div>
+                <div class="stat-value settings-stat-text">
+                <?= htmlspecialchars($google_settings['workspace_gmail_domain'] ?? 'Not configured') ?>
+            </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bg-slate"><i class="fas fa-paper-plane" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Sender</div>
+                <div class="stat-value settings-stat-text">
                 <?= htmlspecialchars($google_settings['workspace_gmail_sender_email'] ?? 'Not configured') ?>
+            </div>
             </div>
         </div>
     </div>
 
-    <div class="settings-note">
+    <div class="alert alert-info">
         <i class="fas fa-circle-info"></i>
         <div>
             Configure the organisation Gmail account used for IMS event notifications,
@@ -1457,7 +1061,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
 
     <form method="POST" action="includes/settings-process.php">
         <div class="form-group">
-            <label style="display:flex;align-items:center;gap:10px;">
+            <label class="settings-toggle-label">
                 <input
                     type="checkbox"
                     name="workspace_gmail_enabled"
@@ -1570,49 +1174,57 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             <button
                 type="submit"
                 name="update_google_workspace"
-                class="btn btn-success"
+                class="btn btn-primary"
             >
                 <i class="fas fa-save"></i>
                 Save Workspace Gmail Settings
             </button>
         </div>
     </form>
+    </div>
 </div>
 <?php endif; ?>
 
 
 <!-- Backup & Restore -->
 <?php if ($active_tab == 'backup'): ?>
-<div class="settings-section">
-    <h3>
-        <i class="fas fa-database"></i>
-        Backup & Google Storage
-    </h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-database" aria-hidden="true"></i> Backup & Google Storage</h3></div>
+    <div class="card-body">
 
-    <div class="settings-status-grid">
-        <div class="settings-status-card <?= $backup_auto_enabled ? 'ok' : 'off' ?>">
-            <div class="settings-status-label">Automatic Backup</div>
-            <div class="settings-status-value">
+    <div class="stats-grid reports-stats settings-stats">
+        <div class="stat-card">
+            <div class="stat-icon <?= $backup_auto_enabled ? 'bg-green' : 'bg-slate' ?>"><i class="fas fa-rotate" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Automatic Backup</div>
+                <div class="stat-value settings-stat-text">
                 <?= $backup_auto_enabled ? 'Enabled' : 'Disabled' ?>
             </div>
-        </div>
-
-        <div class="settings-status-card">
-            <div class="settings-status-label">Backup Period</div>
-            <div class="settings-status-value">
-                <?= htmlspecialchars(ucfirst($backup_frequency)) ?>
             </div>
         </div>
 
-        <div class="settings-status-card <?= stripos($backup_last_run_status, 'success') !== false ? 'ok' : 'warn' ?>">
-            <div class="settings-status-label">Last Backup</div>
-            <div class="settings-status-value" style="font-size:12px;">
+        <div class="stat-card">
+            <div class="stat-icon bg-slate"><i class="fas fa-clock" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Backup Period</div>
+                <div class="stat-value settings-stat-text">
+                <?= htmlspecialchars(ucfirst($backup_frequency)) ?>
+            </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon <?= stripos($backup_last_run_status, 'success') !== false ? 'bg-green' : 'bg-amber' ?>"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Last Backup</div>
+                <div class="stat-value settings-stat-small">
                 <?= htmlspecialchars($backup_last_run_at) ?>
+            </div>
             </div>
         </div>
     </div>
 
-    <div class="settings-note">
+    <div class="alert alert-info">
         <i class="fas fa-circle-info"></i>
         <div>
             Backups are automatically compressed as <strong>.sql.gz</strong>.
@@ -1630,7 +1242,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 </h4>
 
                 <div class="form-group">
-                    <label style="display:flex;align-items:center;gap:10px;">
+                    <label class="settings-toggle-label">
                         <input
                             type="checkbox"
                             name="backup_auto_enabled"
@@ -1728,7 +1340,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                         value="<?= (int)($backup_settings['backup_retention_count'] ?? 14) ?>"
                     >
 
-                    <small style="color:#64748b;">
+                    <small class="settings-hint">
                         Older local backup files are automatically removed.
                     </small>
                 </div>
@@ -1788,7 +1400,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     class="backup-google-box"
                     id="googleBackupConfig"
                 >
-                    <h4 style="margin-top:0;">
+                    <h4>
                         <i class="fab fa-google-drive"></i>
                         Google Drive Configuration
                     </h4>
@@ -1807,7 +1419,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                             placeholder="1AbCdEfGh..."
                         >
 
-                        <small style="color:#64748b;">
+                        <small class="settings-hint">
                             Share this Drive folder with the service account email below.
                         </small>
                     </div>
@@ -1855,7 +1467,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                             placeholder="<?= !empty($backup_settings['backup_google_service_account_json']) ? 'Service account JSON saved — leave blank to keep it' : 'Paste Google service account JSON here' ?>"
                         ></textarea>
 
-                        <small style="color:#64748b;">
+                        <small class="settings-hint">
                             For security, the saved JSON is not displayed again.
                         </small>
                     </div>
@@ -1867,7 +1479,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             <button
                 type="submit"
                 name="update_backup_settings"
-                class="btn btn-success"
+                class="btn btn-primary"
             >
                 <i class="fas fa-save"></i>
                 Save Backup Settings
@@ -1875,34 +1487,34 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
         </div>
     </form>
 
-    <div class="backup-grid" style="margin-top:18px;">
+    <div class="backup-grid backup-grid-spaced">
         <div class="backup-card">
             <h4>
                 <i class="fas fa-database"></i>
                 Database Information
             </h4>
 
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Database Size</span>
                 <strong><?= htmlspecialchars((string)$db_size) ?> MB</strong>
             </div>
 
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Users</span>
                 <strong><?= (int)$counts['users'] ?></strong>
             </div>
 
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Projects</span>
                 <strong><?= (int)$counts['projects'] ?></strong>
             </div>
 
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Documents</span>
                 <strong><?= (int)$counts['documents'] ?></strong>
             </div>
 
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Last Backup Status</span>
                 <strong><?= htmlspecialchars($backup_last_run_status) ?></strong>
             </div>
@@ -1914,7 +1526,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 Backup Now
             </h4>
 
-            <p style="color:#64748b;font-size:12px;line-height:1.6;">
+            <p>
                 Create a compressed backup immediately using the storage
                 destination configured above.
             </p>
@@ -1926,20 +1538,19 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 <button
                     type="submit"
                     name="create_backup"
-                    class="btn btn-primary"
-                    style="width:100%;"
+                    class="btn btn-primary backup-full-btn"
                 >
                     <i class="fas fa-cloud-arrow-up"></i>
                     Create Backup Now
                 </button>
             </form>
 
-            <div class="settings-warning" style="margin-top:14px;margin-bottom:0;">
+            <div class="alert alert-warning settings-alert-flush">
                 <i class="fas fa-terminal"></i>
                 <div>
                     Configure cPanel cron to run:
                     <br>
-                    <code style="font-size:10px;">
+                    <code class="backup-cron">
                         */15 * * * * php <?= htmlspecialchars(__DIR__) ?>/includes/backup-runner.php
                     </code>
                     <br>
@@ -1950,19 +1561,19 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
         </div>
     </div>
 
-    <h4 style="margin:26px 0 14px;">
+    <h4 class="backup-list-title">
         <i class="fas fa-history"></i>
         Recent Local Backups
     </h4>
 
     <?php if (empty($backups)): ?>
-        <div class="settings-warning">
-            <i class="fas fa-circle-info"></i>
-            <div>No local backups found yet.</div>
+        <div class="empty-state">
+            <i class="fas fa-box-archive" aria-hidden="true"></i>
+            <p>No local backups found yet.</p>
         </div>
     <?php else: ?>
         <div class="table-responsive">
-            <table>
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Backup File</th>
@@ -2005,110 +1616,113 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
         </div>
     <?php endif; ?>
 
-    <div class="info-box" style="margin-top:24px;">
+    <div class="settings-info-box settings-space-top">
         <h4>
             <i class="fas fa-redo"></i>
             Restore
         </h4>
 
-        <p style="font-size:12px;color:#64748b;">
+        <p>
             Download the required backup, decompress the
             <strong>.sql.gz</strong> file, and import the resulting SQL file
             through phpMyAdmin or MySQL command line.
         </p>
+    </div>
     </div>
 </div>
 <?php endif; ?>
 
 <!-- System Information -->
 <?php if ($active_tab == 'system'): ?>
-<div class="settings-section">
-    <h3><i class="fas fa-server"></i> System Information</h3>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-server" aria-hidden="true"></i> System Information</h3></div>
+    <div class="card-body">
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-        <div class="info-box">
+    <div class="settings-two-col">
+        <div class="settings-info-box">
             <h4><i class="fas fa-code"></i> Server Environment</h4>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>PHP Version:</span>
                 <strong><?php echo $system_info['php_version']; ?></strong>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>MySQL Version:</span>
                 <strong><?php echo $system_info['mysql_version']; ?></strong>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Server Software:</span>
                 <strong><?php echo $system_info['server_software']; ?></strong>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Operating System:</span>
                 <strong><?php echo PHP_OS; ?></strong>
             </div>
         </div>
         
-        <div class="info-box">
+        <div class="settings-info-box">
             <h4><i class="fas fa-sliders-h"></i> PHP Configuration</h4>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Max Upload Size:</span>
                 <strong><?php echo $system_info['max_upload']; ?></strong>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Max Post Size:</span>
                 <strong><?php echo $system_info['max_post']; ?></strong>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Memory Limit:</span>
                 <strong><?php echo $system_info['memory_limit']; ?></strong>
             </div>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span>Max Execution Time:</span>
                 <strong><?php echo $system_info['max_execution_time']; ?>s</strong>
             </div>
         </div>
     </div>
     
-    <div class="info-box" style="margin-top: 30px;">
+    <div class="settings-info-box settings-space-top">
         <h4><i class="fas fa-folder"></i> Directory Permissions</h4>
         <?php
         $dirs = ['uploads', 'exports'];
         foreach ($dirs as $dir):
             $writable = is_writable($dir);
         ?>
-            <div class="info-row">
+            <div class="settings-info-row">
                 <span><?php echo $dir; ?>/</span>
                 <span>
                     <?php if ($writable): ?>
-                        <span style="color: #2ECC71;"><i class="fas fa-check-circle"></i> Writable</span>
+                        <span class="settings-ok"><i class="fas fa-check-circle" aria-hidden="true"></i> Writable</span>
                     <?php else: ?>
-                        <span style="color: #E74C3C;"><i class="fas fa-times-circle"></i> Not Writable</span>
+                        <span class="settings-bad"><i class="fas fa-times-circle" aria-hidden="true"></i> Not Writable</span>
                     <?php endif; ?>
                 </span>
             </div>
         <?php endforeach; ?>
     </div>
     
-    <div class="info-box" style="margin-top: 30px;">
+    <div class="settings-info-box settings-space-top">
         <h4><i class="fas fa-info-circle"></i> Application Information</h4>
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Application Name:</span>
             <strong>Hive Colab IMS</strong>
         </div>
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Version:</span>
             <strong>1.0.0</strong>
         </div>
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Database:</span>
             <strong><?php echo DB_NAME; ?></strong>
         </div>
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Database Size:</span>
             <strong><?php echo $db_size; ?> MB</strong>
         </div>
-        <div class="info-row">
+        <div class="settings-info-row">
             <span>Installation Path:</span>
             <strong><?php echo __DIR__; ?></strong>
         </div>
+    </div>
     </div>
 </div>
 <?php endif; ?>
@@ -2199,6 +1813,6 @@ function toggleSecret(inputId, button) {
 }
 </script>
 
-</div><!-- /.settings-shell -->
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>

@@ -30,266 +30,84 @@ if (!$profile || !$profile['job_title']) {
 
 $current_year = date('Y');
 ?>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* -----------------------------------------------
-   VARIABLES & RESET
------------------------------------------------ */
-.page-appraisal {
-    --ink:       #ff5722;
-    --surface:   #f3f4f6;
-    --panel:     #ffffff;
-    --accent:    #ff9800;
-    --accent-lt: #dbeafe;
-    --gray-hd:   #6b7280;
-    --border:    #d1d5db;
-    --danger:    #dc2626;
-    --success:   #15803d;
-    --kra-bg:    #1e3a5f;
-    --kra-fg:    #ffffff;
-    --mono:      'JetBrains Mono', monospace;
-    --sans:      'Inter', sans-serif;
-}
-.page-appraisal *, .page-appraisal *::before, .page-appraisal *::after { box-sizing: border-box; margin: 0; padding: 0; }
-.page-appraisal { font-family: var(--sans); background: var(--surface); color: var(--ink); font-size: 14px; }
+/* Performance Appraisal: page-only layout (prefix pa-, scoped to .pa-page) */
+.pa-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pa-grid-3 .form-group { margin-bottom: 0; }
+.pa-grid-3 + .pa-grid-3 { margin-top: 16px; }
+.pa-page .form-control[readonly],
+.pa-page .form-control:disabled { background: var(--surface-hover); color: var(--ink-300); cursor: not-allowed; }
+.pa-period { display: flex; align-items: center; gap: 10px; }
+.pa-period span { font-size: 13px; color: var(--ink-300); }
+.pa-period .form-control { flex: 1; min-width: 0; }
+.pa-warn { color: var(--red-fg); }
+.pa-head-note { font-size: 12px; color: var(--ink-300); }
+.pa-page .alert.pa-flush { margin-bottom: 0; }
 
-/* -- Page hero -- */
-.page-appraisal .hero {
-    background: var(--ink);
-    color: #fff;
-    padding: 24px 32px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    gap: 16px;
-}
-.page-appraisal .hero h2 { font-size: 20px; font-weight: 700; letter-spacing: -.4px; }
-.page-appraisal .hero p  { font-size: 12px; color: #ffffff; margin-top: 4px; }
-.page-appraisal .hero-btns { display: flex; gap: 10px; flex-shrink: 0; }
-
-/* -- Buttons -- */
-.page-appraisal .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 9px 20px; border-radius: 7px;
-    font-family: var(--sans); font-size: 13px; font-weight: 600;
-    cursor: pointer; border: 2px solid transparent;
-    transition: all .15s; text-decoration: none;
-}
-.page-appraisal .btn-primary  { background: var(--accent); color: #fff; }
-.page-appraisal .btn-primary:hover { background: #ff9800; }
-.page-appraisal .btn-success  { background: var(--success); color: #fff; }
-.page-appraisal .btn-success:hover { background: #166534; }
-.page-appraisal .btn-outline  { background: #fff; color: var(--ink); border-color: var(--border); }
-.page-appraisal .btn-outline:hover { border-color: #9ca3af; }
-.page-appraisal .btn-danger   { background: #fff; color: var(--danger); border-color: var(--border); }
-.page-appraisal .btn-danger:hover { background: #fee2e2; border-color: var(--danger); }
-.page-appraisal .btn-print    { background: #ff9800; color: #fff; }
-.page-appraisal .btn-print:hover { background: #1f2937; }
-.page-appraisal .btn-sm { padding: 5px 12px; font-size: 12px; }
-
-/* -- Cards -- */
-.page-appraisal .card {
-    background: var(--panel);
+/* KRA builder */
+#kraContainer { display: flex; flex-direction: column; gap: 20px; }
+.pa-page .kra-block {
+    background: var(--surface-card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.05);
-    margin-bottom: 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
 }
-.page-appraisal .card-head {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    background: #f9fafb;
-    display: flex; align-items: center; justify-content: space-between;
-}
-.page-appraisal .card-head h4 {
-    font-size: 14px; font-weight: 600;
-    display: flex; align-items: center; gap: 8px; color: var(--ink);
-}
-.page-appraisal .card-head h4 i { color: var(--accent); }
-.page-appraisal .card-body { padding: 20px; }
-
-/* -- Field groups -- */
-.page-appraisal .field-grid { display: grid; gap: 14px; }
-.page-appraisal .col-2 { grid-template-columns: 1fr 1fr; }
-.page-appraisal .col-3 { grid-template-columns: 1fr 1fr 1fr; }
-.page-appraisal .col-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-.page-appraisal .field label {
-    display: block; font-size: 11px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .7px;
-    color: var(--gray-hd); margin-bottom: 5px;
-}
-.page-appraisal .field label .req { color: var(--danger); }
-.page-appraisal .field input, .page-appraisal .field select, .page-appraisal .field textarea {
-    width: 100%; padding: 8px 11px;
-    border: 1.5px solid var(--border); border-radius: 7px;
-    font-family: var(--sans); font-size: 13px; color: var(--ink);
-    background: #fff; outline: none;
-    transition: border-color .15s, box-shadow .15s;
-}
-.page-appraisal .field input:focus, .page-appraisal .field select:focus, .page-appraisal .field textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(29,78,216,.1);
-}
-.page-appraisal .field input[readonly], .page-appraisal .field input[disabled] {
-    background: #f9fafb; color: var(--gray-hd); cursor: not-allowed;
-}
-.page-appraisal .field textarea { resize: vertical; }
-.page-appraisal .field .hint { font-size: 11px; color: #9ca3af; margin-top: 4px; }
-
-/* -- Period row -- */
-.page-appraisal .period-row { display: flex; align-items: center; gap: 10px; }
-.page-appraisal .period-row span { font-size: 13px; color: var(--gray-hd); }
-
-/* -- KRA builder -- */
-.page-appraisal .kra-block {
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 20px;
-    overflow: hidden;
-}
-.page-appraisal .kra-header {
-    background: var(--kra-bg);
-    color: var(--kra-fg);
-    padding: 10px 16px;
+.pa-kra-header {
     display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    background: var(--brand-50);
+    border-bottom: 1px solid var(--brand-100);
 }
-.page-appraisal .kra-header input {
-    background: rgba(255,255,255,.12);
-    border: 1.5px solid rgba(255,255,255,.25);
-    border-radius: 6px;
-    color: #fff;
-    font-family: var(--sans); font-size: 13px; font-weight: 600;
-    padding: 6px 11px; flex: 1; outline: none;
-}
-.page-appraisal .kra-header input::placeholder { color: rgba(255,255,255,.5); }
-.page-appraisal .kra-header input:focus { border-color: rgba(255,255,255,.6); }
-.page-appraisal .kra-num {
-    background: rgba(255,255,255,.2);
-    border-radius: 5px;
+.pa-page .kra-num {
+    white-space: nowrap; font-size: 12px; font-weight: 700;
+    color: var(--brand-700); background: var(--surface-card);
+    border: 1px solid var(--brand-100); border-radius: var(--radius-sm);
     padding: 4px 10px;
-    font-size: 12px; font-weight: 700;
-    white-space: nowrap;
 }
-.page-appraisal .kra-meta {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px; padding: 14px 16px;
-    background: #f0f4ff; border-bottom: 1px solid var(--border);
+.pa-kra-header .form-control { flex: 1; font-weight: 600; }
+.pa-kra-header .btn { flex-shrink: 0; }
+.pa-kra-meta {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px; padding: 14px 16px 0;
+    background: var(--surface-hover); border-bottom: 1px solid var(--border);
 }
-.page-appraisal .kra-meta .field label { color: #3b4a6b; }
-
-/* -- KPI rows table -- */
-.page-appraisal .kpi-table-wrap { padding: 0 16px 14px; }
-.page-appraisal .kpi-table {
-    width: 100%; border-collapse: separate; border-spacing: 0;
-    font-size: 12.5px; margin-top: 10px;
-}
-.page-appraisal .kpi-table thead th {
-    padding: 8px 10px; text-align: left;
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .7px;
-    color: var(--gray-hd); border-bottom: 2px solid var(--border);
-    background: #f9fafb; white-space: nowrap;
-}
-.page-appraisal .kpi-table thead th.th-center { text-align: center; }
-.page-appraisal .kpi-table tbody tr:hover { background: #f9fafb; }
-.page-appraisal .kpi-table td {
-    padding: 7px 6px; border-bottom: 1px solid #f0f0f0;
-    vertical-align: middle;
-}
-.page-appraisal .kpi-table td input, .page-appraisal .kpi-table td select {
-    width: 100%; padding: 6px 8px;
-    border: 1.5px solid var(--border); border-radius: 5px;
-    font-family: var(--sans); font-size: 12.5px; color: var(--ink);
-    background: #fff; outline: none; transition: border-color .15s;
-}
-.page-appraisal .kpi-table td input:focus, .page-appraisal .kpi-table td select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(29,78,216,.09);
-}
-.page-appraisal .kpi-table td.td-rating { width: 60px; text-align: center; }
-.page-appraisal .kpi-table td.td-del  { width: 36px; text-align: center; }
-.page-appraisal .td-seq { width: 36px; text-align: center; font-family: var(--mono); font-size: 11px; color: #9ca3af; }
-
-/* rating stars visual */
-.page-appraisal .rating-select {
-    text-align: center;
-    appearance: none;
-    -webkit-appearance: none;
-    cursor: pointer;
-}
-
-/* comment blocks */
-.page-appraisal .comment-grid {
+.pa-kpi-wrap { padding: 14px 16px; }
+.pa-page .table .pa-c { text-align: center; }
+.pa-page .table .pa-seq { width: 36px; text-align: center; font-size: 11px; color: var(--ink-200); }
+.pa-page .table .pa-del { width: 36px; text-align: center; }
+.pa-col-kpi { min-width: 220px; }
+.pa-col-weight { width: 80px; }
+.pa-col-rate { width: 180px; }
+.pa-col-n { width: 36px; }
+.pa-add-kpi { margin: 0 16px 14px; }
+.pa-comments {
     display: grid; grid-template-columns: 1fr 1fr;
-    gap: 14px; padding: 14px 16px;
-    border-top: 1px solid var(--border); background: #fefefe;
+    gap: 14px; padding: 14px 16px 0;
+    border-top: 1px solid var(--border);
 }
-.page-appraisal .comment-block label {
-    font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .6px;
-    color: var(--gray-hd); margin-bottom: 5px; display: block;
-}
-.page-appraisal .comment-block textarea {
-    width: 100%; padding: 8px 10px;
-    border: 1.5px solid var(--border); border-radius: 6px;
-    font-family: var(--sans); font-size: 12.5px; resize: vertical;
-    outline: none; transition: border-color .15s;
-}
-.page-appraisal .comment-block textarea:focus { border-color: var(--accent); }
-
-/* del btn */
-.page-appraisal .btn-del-row {
-    background: none; border: none; color: #d1d5db;
-    cursor: pointer; padding: 4px 7px; border-radius: 5px;
-    font-size: 14px; transition: all .12s;
-}
-.page-appraisal .btn-del-row:hover { color: var(--danger); background: #fee2e2; }
-
-/* add row btn */
-.page-appraisal .btn-add-kpi {
-    display: inline-flex; align-items: center; gap: 6px;
-    margin: 0 16px 14px;
-    padding: 7px 14px; background: var(--accent-lt);
-    color: var(--accent); border: 1.5px dashed var(--accent);
-    border-radius: 6px; font-size: 12px; font-weight: 600;
-    cursor: pointer; transition: background .15s;
-}
-.page-appraisal .btn-add-kpi:hover { background: #bfdbfe; }
-
-/* add KRA btn */
-.page-appraisal .btn-add-kra {
+.pa-label-note { font-size: 10px; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.pa-add-kra {
     display: flex; align-items: center; justify-content: center;
     gap: 8px; width: 100%; padding: 14px;
-    background: #f9fafb; border: 2px dashed var(--border);
-    border-radius: 10px; font-size: 14px; font-weight: 600;
-    color: var(--gray-hd); cursor: pointer; transition: all .15s;
-    margin-bottom: 20px;
+    background: var(--surface-hover); border: 2px dashed var(--ink-100);
+    border-radius: var(--radius-lg); font: inherit; font-size: 14px; font-weight: 600;
+    color: var(--ink-300); cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
 }
-.page-appraisal .btn-add-kra:hover { background: var(--accent-lt); border-color: var(--accent); color: var(--accent); }
+.pa-add-kra:hover { background: var(--brand-50); border-color: var(--brand-500); color: var(--brand-600); }
+.pa-form-actions { justify-content: flex-end; }
 
-/* actions bar */
-.page-appraisal .form-actions {
-    display: flex; gap: 12px; justify-content: flex-end;
-    flex-wrap: wrap; padding: 20px;
-    background: #f9fafb; border-top: 1px solid var(--border);
-    border-radius: 0 0 10px 10px;
-}
-
-/* info strip */
-.page-appraisal .info-strip {
-    display: flex; align-items: center; gap: 10px;
-    padding: 11px 16px; background: var(--accent-lt);
-    border-radius: 8px; font-size: 13px; color: #ff9800;
-    margin-bottom: 18px;
-}
+/* Preview modal (opened by toggling .open) */
+.pa-modal.open { display: block; }
+.pa-modal-card { max-width: 900px; }
+.pa-modal-foot { margin: 0; padding: 14px 24px; border-top: 1px solid var(--ink-50); }
 
 /* -----------------------------------------------
-   PRINT / GENERATED TABLE
+   PRINT TEMPLATE (preview + print). Print output keeps its own
+   paper styling (Arial, grey rules) by design.
 ----------------------------------------------- */
-.page-appraisal #printArea { display: none; }
+#printArea { display: none; }
 
 @media print {
     body * { visibility: hidden; }
@@ -297,138 +115,109 @@ $current_year = date('Y');
     #printArea { display: block !important; position: fixed; top: 0; left: 0; width: 100%; }
 }
 
-/* Print preview modal */
-.page-appraisal .modal-overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.55); z-index: 9000;
-    align-items: flex-start; justify-content: center;
-    padding: 30px 20px; overflow-y: auto;
-}
-.page-appraisal .modal-overlay.open { display: flex; }
-.page-appraisal .modal-box {
-    background: #fff; border-radius: 10px;
-    width: 100%; max-width: 900px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.3);
-}
-.page-appraisal .modal-head {
-    padding: 16px 20px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-}
-.page-appraisal .modal-head h3 { font-size: 16px; font-weight: 700; }
-.page-appraisal .modal-body { padding: 20px; }
-.page-appraisal .modal-foot {
-    padding: 14px 20px; border-top: 1px solid var(--border);
-    display: flex; gap: 10px; justify-content: flex-end;
-}
-
-/* -- Appraisal print table -- */
-.page-appraisal .ap-table {
+.pa-print .ap-table {
     width: 100%; border-collapse: collapse;
     font-family: Arial, sans-serif; font-size: 11px;
 }
-.page-appraisal .ap-table td, .page-appraisal .ap-table th {
+.pa-print .ap-table td, .pa-print .ap-table th {
     border: 1px solid #999;
     padding: 4px 6px;
     vertical-align: top;
 }
-.page-appraisal .ap-table .ap-header-info td { border: none; padding: 3px 6px; }
-.page-appraisal .ap-kra-title {
+.pa-print .ap-table .ap-header-info td { border: none; padding: 3px 6px; }
+.pa-print .ap-kra-title {
     background: #1e3a5f; color: #fff;
     font-weight: 700; font-size: 11.5px;
 }
-.page-appraisal .ap-section-heading {
+.pa-print .ap-section-heading {
     background: #bdd7ee; font-weight: 700;
     font-size: 11px; text-align: center;
 }
-.page-appraisal .ap-rating-cell { text-align: center; width: 30px; }
-.page-appraisal .ap-label { font-weight: 600; background: #f2f2f2; }
-.page-appraisal .ap-comment-label { font-weight: 700; font-size: 10px; color: #333; }
+.pa-print .ap-rating-cell { text-align: center; width: 30px; }
+.pa-print .ap-label { font-weight: 600; background: #f2f2f2; }
+.pa-print .ap-comment-label { font-weight: 700; font-size: 10px; color: #333; }
 
 @media (max-width: 768px) {
-    .page-appraisal .col-2, .page-appraisal .col-3, .page-appraisal .col-4 { grid-template-columns: 1fr 1fr; }
-    .page-appraisal .kra-meta { grid-template-columns: 1fr; }
-    .page-appraisal .comment-grid { grid-template-columns: 1fr; }
-    .page-appraisal .hero { flex-direction: column; }
+    .pa-grid-3 { grid-template-columns: 1fr 1fr; }
+    .pa-kra-meta, .pa-comments { grid-template-columns: 1fr; }
 }
 </style>
 
-<div class="page-appraisal">
-
-<!-- -- Page -- -->
-<div class="hero">
+<div class="page-stack pa-page">
+<div class="page-hero">
     <div>
-        <h2><i class="fas fa-clipboard-check"></i> &nbsp;Performance Appraisal</h2>
-        <p>Complete your self-assessment against Key Result Areas (KRAs)</p>
+        <h1><i class="fas fa-clipboard-check" aria-hidden="true"></i> Performance Appraisal</h1>
+        <p>Complete your self-assessment against Key Result Areas (KRAs).</p>
     </div>
-    <div class="hero-btns">
-        <button type="button" class="btn btn-print" onclick="generatePreview()">
-            <i class="fas fa-eye"></i> Preview &amp; Print
+    <div class="hero-actions">
+        <a href="my-kpis" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+        <button type="button" class="btn btn-primary" onclick="generatePreview()">
+            <i class="fas fa-eye" aria-hidden="true"></i> Preview &amp; Print
         </button>
-        <a href="my-kpis" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Back</a>
     </div>
 </div>
 
-<form method="POST" action="includes/appraisal-process.php" id="appraisalForm">
+<form method="POST" action="includes/appraisal-process.php" id="appraisalForm" class="page-stack">
 <input type="hidden" name="action" value="create_appraisal">
 
 <!-- -- Personal Information -- -->
 <div class="card">
-    <div class="card-head">
-        <h4><i class="fas fa-user"></i> Personal &amp; Appraisal Information</h4>
+    <div class="card-header">
+        <h3><i class="fas fa-user" aria-hidden="true"></i> Personal &amp; Appraisal Information</h3>
     </div>
     <div class="card-body">
-        <div class="info-strip">
-            <i class="fas fa-info-circle"></i>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
             Your profile and supervisor details are pre-filled. Complete the appraisal period and discussion date.
         </div>
 
-        <div class="field-grid col-3" style="margin-bottom: 16px;">
-            <div class="field">
+        <div class="pa-grid-3">
+            <div class="form-group">
                 <label>Name (Last, First, MI)</label>
-                <input type="text" name="full_name"
+                <input type="text" name="full_name" class="form-control"
                        value="<?php echo htmlspecialchars($profile['full_name'] ?? ''); ?>" readonly>
             </div>
-            <div class="field">
+            <div class="form-group">
                 <label>Department</label>
-                <input type="text" name="department"
+                <input type="text" name="department" class="form-control"
                        value="<?php echo htmlspecialchars(($profile['department_name'] ?? '')); ?>" readonly>
             </div>
-            <div class="field">
-                <label>Appraisal Period <span class="req">*</span></label>
-                <div class="period-row">
+            <div class="form-group">
+                <label>Appraisal Period <span class="required-mark">*</span></label>
+                <div class="pa-period">
                     <span>From</span>
-                    <input type="date" name="period_from" style="flex:1"
+                    <input type="date" name="period_from" class="form-control"
                            value="<?php echo $current_year; ?>-01-01" required>
                     <span>To</span>
-                    <input type="date" name="period_to"   style="flex:1"
+                    <input type="date" name="period_to"   class="form-control"
                            value="<?php echo $current_year; ?>-12-31" required>
                 </div>
             </div>
         </div>
 
-        <div class="field-grid col-3">
-            <div class="field">
+        <div class="pa-grid-3">
+            <div class="form-group">
                 <label>Job Title</label>
-                <input type="text" name="job_title"
+                <input type="text" name="job_title" class="form-control"
                        value="<?php echo htmlspecialchars($profile['job_title'] ?? ''); ?>" readonly>
             </div>
-            <div class="field">
+            <div class="form-group">
                 <label>Supervisor</label>
-                <input type="text" name="supervisor_name"
+                <input type="text" name="supervisor_name" class="form-control"
                        value="<?php echo htmlspecialchars($profile['supervisor_name'] ?? 'No supervisor assigned'); ?>" readonly>
                 <input type="hidden" name="supervisor_id" value="<?php echo $profile['supervisor_id'] ?? ''; ?>">
-                <div class="hint">
+                <div class="cell-muted">
                     <?php if (empty($profile['supervisor_name'])): ?>
-                        <span style="color:var(--danger)"><i class="fas fa-exclamation-triangle"></i>
-                        No supervisor assigned — contact HR.</span>
+                        <span class="pa-warn"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                        No supervisor assigned &mdash; contact HR.</span>
                     <?php else: ?>
                         Assigned from your employee profile.
                     <?php endif; ?>
                 </div>
             </div>
-            <div class="field">
-                <label>Discussion Date <span class="req">*</span></label>
-                <input type="date" name="discussion_date" required>
+            <div class="form-group">
+                <label>Discussion Date <span class="required-mark">*</span></label>
+                <input type="date" name="discussion_date" class="form-control" required>
             </div>
         </div>
     </div>
@@ -436,13 +225,13 @@ $current_year = date('Y');
 
 <!-- -- KRA Builder -- -->
 <div class="card">
-    <div class="card-head">
-        <h4><i class="fas fa-bullseye"></i> Assessment against Key Result Areas</h4>
-        <span style="font-size:12px;color:var(--gray-hd);">Add KRAs and their KPIs below</span>
+    <div class="card-header">
+        <h3><i class="fas fa-bullseye" aria-hidden="true"></i> Assessment against Key Result Areas</h3>
+        <span class="pa-head-note">Add KRAs and their KPIs below</span>
     </div>
-    <div class="card-body" style="padding-bottom: 0;">
-        <div class="info-strip">
-            <i class="fas fa-lightbulb"></i>
+    <div class="card-body">
+        <div class="alert alert-info pa-flush">
+            <i class="fas fa-lightbulb" aria-hidden="true"></i>
             For each KRA, add KPI indicators. Rate yourself (1-5) per KPI. Your supervisor will complete Manager Rating after review.
         </div>
     </div>
@@ -452,50 +241,49 @@ $current_year = date('Y');
 <div id="kraContainer"></div>
 
 <!-- Add KRA btn -->
-<button type="button" class="btn-add-kra" id="btnAddKra">
-    <i class="fas fa-plus-circle"></i> Add Key Result Area (KRA)
+<button type="button" class="pa-add-kra" id="btnAddKra">
+    <i class="fas fa-plus-circle" aria-hidden="true"></i> Add Key Result Area (KRA)
 </button>
 
 <!-- -- Submit -- -->
 <div class="card">
-    <div class="form-actions">
-        <button type="submit" name="save_draft" class="btn btn-outline">
-            <i class="fas fa-save"></i> Save Draft
-        </button>
-        <button type="submit" name="submit_appraisal" class="btn btn-success">
-            <i class="fas fa-paper-plane"></i> Submit for Review
-        </button>
-        <a href="my-kpis" class="btn btn-danger"><i class="fas fa-times"></i> Cancel</a>
+    <div class="card-body">
+        <div class="actions pa-form-actions">
+            <button type="submit" name="save_draft" class="btn btn-secondary">
+                <i class="fas fa-save" aria-hidden="true"></i> Save Draft
+            </button>
+            <button type="submit" name="submit_appraisal" class="btn btn-primary">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i> Submit for Review
+            </button>
+            <a href="my-kpis" class="btn btn-danger"><i class="fas fa-times" aria-hidden="true"></i> Cancel</a>
+        </div>
     </div>
 </div>
 
 </form>
+</div><!-- /.page-stack -->
 
 <!-- ------------------------------------------
      PREVIEW MODAL
 ------------------------------------------ -->
-<div class="modal-overlay" id="previewModal">
-    <div class="modal-box">
+<div class="modal pa-modal" id="previewModal">
+    <div class="modal-card pa-modal-card">
         <div class="modal-head">
-            <h3><i class="fas fa-print"></i> &nbsp;Appraisal Preview</h3>
-            <button type="button" class="btn btn-outline btn-sm" onclick="closeModal()">
-                <i class="fas fa-times"></i> Close
-            </button>
+            <h3><i class="fas fa-print" aria-hidden="true"></i> Appraisal Preview</h3>
+            <button type="button" class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
         </div>
-        <div class="modal-body" id="modalBody"></div>
-        <div class="modal-foot">
-            <button type="button" class="btn btn-print" onclick="doPrint()">
-                <i class="fas fa-print"></i> Print / Save PDF
+        <div class="modal-body pa-print" id="modalBody"></div>
+        <div class="modal-actions pa-modal-foot">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
+            <button type="button" class="btn btn-primary" onclick="doPrint()">
+                <i class="fas fa-print" aria-hidden="true"></i> Print / Save PDF
             </button>
-            <button type="button" class="btn btn-outline" onclick="closeModal()">Close</button>
         </div>
     </div>
 </div>
 
 <!-- hidden print area -->
-<div id="printArea"></div>
-
-</div><!-- /.page-appraisal -->
+<div id="printArea" class="pa-print"></div>
 
 <?php include 'includes/footer.php'; ?>
 
@@ -526,33 +314,33 @@ function addKra() {
 
     div.innerHTML = `
     <!-- KRA header bar -->
-    <div class="kra-header">
+    <div class="pa-kra-header">
         <span class="kra-num">KRA ${kid}</span>
-        <input type="text" name="kra[${kid}][title]"
+        <input type="text" name="kra[${kid}][title]" class="form-control"
                placeholder="e.g., Key Result Area 1: Internet Management"
                required>
         <button type="button" class="btn btn-danger btn-sm"
-                onclick="removeKra(${kid})" style="flex-shrink:0;">
+                onclick="removeKra(${kid})">
             <i class="fas fa-trash"></i>
         </button>
     </div>
 
     <!-- KRA-level meta -->
-    <div class="kra-meta">
-        <div class="field">
+    <div class="pa-kra-meta">
+        <div class="form-group">
             <label>KRA Weight (%)</label>
-            <input type="number" name="kra[${kid}][weight]" min="0" max="100" step="0.1"
+            <input type="number" name="kra[${kid}][weight]" class="form-control" min="0" max="100" step="0.1"
                    placeholder="e.g., 30" oninput="updateTotalWeight()">
         </div>
-        <div class="field">
+        <div class="form-group">
             <label>KRA Rating (Computed)</label>
-            <input type="text" name="kra[${kid}][kra_rating]" readonly placeholder="Auto-calculated"
+            <input type="text" name="kra[${kid}][kra_rating]" class="form-control" readonly placeholder="Auto-calculated"
                    id="kraRating${kid}"
                    title="Average of KPI employee ratings x weight">
         </div>
-        <div class="field">
+        <div class="form-group">
             <label>Agreed Rating (Overall)</label>
-            <select name="kra[${kid}][agreed_rating]">
+            <select name="kra[${kid}][agreed_rating]" class="form-control">
                 <option value="">Select Agreed Rate</option>
                 ${[1,2,3,4,5].map(n=>`<option value="${n}">${n}</option>`).join('')}
             </select>
@@ -560,43 +348,43 @@ function addKra() {
     </div>
 
     <!-- KPI rows -->
-    <div class="kpi-table-wrap">
-        <table class="kpi-table" id="kpiTable${kid}">
+    <div class="pa-kpi-wrap table-responsive">
+        <table class="table kpi-table" id="kpiTable${kid}">
             <thead>
                 <tr>
-                    <th class="td-seq">#</th>
-                    <th style="min-width:220px">KPI Indicator <span style="color:var(--danger)">*</span></th>
-                    <th style="width:80px">Weight (%)</th>
-                    <th class="th-center" colspan="5" style="width:180px">Employee Rating (1-5)</th>
-                    <th class="th-center" colspan="5" style="width:180px">Manager Rating (1-5)</th>
-                    <th class="th-center" colspan="5" style="width:180px">Agreed Rating (1-5)</th>
-                    <th class="td-del"></th>
+                    <th class="pa-seq">#</th>
+                    <th class="pa-col-kpi">KPI Indicator <span class="required-mark">*</span></th>
+                    <th class="pa-col-weight">Weight (%)</th>
+                    <th class="pa-c pa-col-rate" colspan="5">Employee Rating (1-5)</th>
+                    <th class="pa-c pa-col-rate" colspan="5">Manager Rating (1-5)</th>
+                    <th class="pa-c pa-col-rate" colspan="5">Agreed Rating (1-5)</th>
+                    <th class="pa-del"></th>
                 </tr>
                 <tr>
                     <th></th><th></th><th></th>
-                    ${[1,2,3,4,5].map(n=>`<th class="th-center" style="width:36px">${n}</th>`).join('')}
-                    ${[1,2,3,4,5].map(n=>`<th class="th-center" style="width:36px">${n}</th>`).join('')}
-                    ${[1,2,3,4,5].map(n=>`<th class="th-center" style="width:36px">${n}</th>`).join('')}
+                    ${[1,2,3,4,5].map(n=>`<th class="pa-c pa-col-n">${n}</th>`).join('')}
+                    ${[1,2,3,4,5].map(n=>`<th class="pa-c pa-col-n">${n}</th>`).join('')}
+                    ${[1,2,3,4,5].map(n=>`<th class="pa-c pa-col-n">${n}</th>`).join('')}
                     <th></th>
                 </tr>
             </thead>
             <tbody id="kpiBody${kid}"></tbody>
         </table>
     </div>
-    <button type="button" class="btn-add-kpi" onclick="addKpi(${kid})">
+    <button type="button" class="btn btn-soft btn-sm pa-add-kpi" onclick="addKpi(${kid})">
         <i class="fas fa-plus"></i> Add KPI
     </button>
 
     <!-- Comments -->
-    <div class="comment-grid">
-        <div class="comment-block">
-            <label>Employee Comments <span style="font-size:10px;font-weight:400">(specific examples)</span></label>
-            <textarea name="kra[${kid}][emp_comments]" rows="3"
+    <div class="pa-comments">
+        <div class="form-group">
+            <label>Employee Comments <span class="pa-label-note">(specific examples)</span></label>
+            <textarea name="kra[${kid}][emp_comments]" class="form-control" rows="3"
                       placeholder="Describe specific examples of your performance..."></textarea>
         </div>
-        <div class="comment-block">
-            <label>Manager Comments <span style="font-size:10px;font-weight:400">(specific examples)</span></label>
-            <textarea name="kra[${kid}][mgr_comments]" rows="3"
+        <div class="form-group">
+            <label>Manager Comments <span class="pa-label-note">(specific examples)</span></label>
+            <textarea name="kra[${kid}][mgr_comments]" class="form-control" rows="3"
                       placeholder="Supervisor will complete this section.."></textarea>
         </div>
     </div>
@@ -634,9 +422,9 @@ function addKpi(kid) {
     // Simpler: single select per rating column
     function ratingSelect(fname, disabled) {
         return `
-            <td class="td-rating" colspan="5">
-                <select name="${fname}" class="rating-select"
-                        ${disabled ? 'disabled style="background:#f3f4f6;color:#9ca3af"' : ''}
+            <td class="pa-c" colspan="5">
+                <select name="${fname}" class="form-control rating-select"
+                        ${disabled ? 'disabled' : ''}
                         onchange="calcKraRating(${kid})">
                     <option value="">Select Rate</option>
                     ${[1,2,3,4,5].map(n=>`<option value="${n}">${n}</option>`).join('')}
@@ -645,17 +433,17 @@ function addKpi(kid) {
     }
 
     tr.innerHTML = `
-        <td class="td-seq kpi-seq"></td>
-        <td><input type="text" name="kra[${kid}][kpi][${pid}][title]"
+        <td class="pa-seq kpi-seq"></td>
+        <td><input type="text" name="kra[${kid}][kpi][${pid}][title]" class="form-control"
                    placeholder="e.g., KPI 1: Ensure Network Works Seamlessly" required></td>
-        <td><input type="number" name="kra[${kid}][kpi][${pid}][weight]"
+        <td><input type="number" name="kra[${kid}][kpi][${pid}][weight]" class="form-control"
                    min="0" max="100" step="0.1" placeholder="10"
                    oninput="calcKraRating(${kid})"></td>
         ${ratingSelect(`kra[${kid}][kpi][${pid}][emp_rating]`, false)}
         ${ratingSelect(`kra[${kid}][kpi][${pid}][mgr_rating]`, true)}
         ${ratingSelect(`kra[${kid}][kpi][${pid}][agreed_rating]`, false)}
-        <td class="td-del">
-            <button type="button" class="btn-del-row" onclick="removeKpi(this, ${kid})">
+        <td class="pa-del">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="removeKpi(this, ${kid})" aria-label="Remove KPI">
                 <i class="fas fa-times"></i>
             </button>
         </td>
@@ -832,7 +620,7 @@ function generatePreview() {
             function ratingCells(chosen, bg) {
                 return [1,2,3,4,5].map(n => `
                     <td class="ap-rating-cell" style="background:${bg}">
-                        ${parseInt(chosen) === n ? '?' : ''}
+                        ${parseInt(chosen) === n ? '\u2713' : ''}
                     </td>`).join('');
             }
 

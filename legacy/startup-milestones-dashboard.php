@@ -474,9 +474,9 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
 }
 </style>
 
-<div class="milestones-wrap">
-    <div class="milestones-hero">
-        <div class="milestones-hero-text">
+<div class="milestones-wrap page-stack">
+    <div class="page-hero">
+        <div>
             <h1><i class="fas fa-rocket"></i> Startup Milestones Dashboard</h1>
             <p>Track startup milestones, field-team visits, submitted reports, scores, recommendations, and uploaded files.</p>
         </div>
@@ -487,14 +487,14 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
             </a>
 
             <?php if ($hasFieldVisits): ?>
-                <a href="startup-field-visits" class="btn btn-gray">
+                <a href="startup-field-visits" class="btn">
                     <i class="fas fa-clipboard-check"></i> Field Visits
                 </a>
             <?php endif; ?>
         </div>
     </div>
 
-    <div class="milestones-stats">
+    <div class="stats-grid reports-stats milestones-stats">
         <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fas fa-flag"></i></div>
             <div class="stat-info">
@@ -641,7 +641,7 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
                     <button class="btn btn-dark" type="submit">
                         <i class="fas fa-filter"></i> Filter
                     </button>
-                    <a href="startup-milestones-dashboard" class="btn btn-gray">
+                    <a href="startup-milestones-dashboard" class="btn">
                         <i class="fas fa-times"></i> Clear
                     </a>
                 </div>
@@ -783,7 +783,7 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
                                                         <i class="fas fa-download"></i> Download
                                                     </a>
                                                 <?php else: ?>
-                                                    <span style="color:#94a3b8;font-size:12px;">No file</span>
+                                                    <span style="color:var(--ink-200);font-size:12px;">No file</span>
                                                 <?php endif; ?>
                                             </td>
 
@@ -1047,7 +1047,7 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
         <div class="modal-body">
             <div class="soft-box" style="margin-bottom:16px;">
                 <h3 id="fr_startup_name" style="margin:0 0 6px;"></h3>
-                <div style="color:#64748b;font-size:13px;">
+                <div style="color:var(--ink-300);font-size:13px;">
                     <strong id="fr_visit_code"></strong>
                     |
                     Application #<span id="fr_application_id"></span>
@@ -1112,19 +1112,19 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
             <div style="display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:14px;">
                 <div class="soft-box">
                     <strong>Observations</strong>
-                    <p id="fr_observations" style="margin:8px 0 0;color:#64748b;"></p>
+                    <p id="fr_observations" style="margin:8px 0 0;color:var(--ink-300);"></p>
                 </div>
                 <div class="soft-box">
                     <strong>Risks</strong>
-                    <p id="fr_risks" style="margin:8px 0 0;color:#64748b;"></p>
+                    <p id="fr_risks" style="margin:8px 0 0;color:var(--ink-300);"></p>
                 </div>
                 <div class="soft-box">
                     <strong>Support Needed</strong>
-                    <p id="fr_support_needed" style="margin:8px 0 0;color:#64748b;"></p>
+                    <p id="fr_support_needed" style="margin:8px 0 0;color:var(--ink-300);"></p>
                 </div>
                 <div class="soft-box">
                     <strong>Next Steps</strong>
-                    <p id="fr_next_steps" style="margin:8px 0 0;color:#64748b;"></p>
+                    <p id="fr_next_steps" style="margin:8px 0 0;color:var(--ink-300);"></p>
                 </div>
             </div>
 
@@ -1153,7 +1153,7 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
         <div class="modal-body">
             <div class="soft-box" style="margin-bottom:16px;">
                 <h3 id="ev_startup_name" style="margin:0 0 6px;"></h3>
-                <div style="color:#64748b;font-size:13px;">
+                <div style="color:var(--ink-300);font-size:13px;">
                     Milestone: <strong id="ev_milestone_title"></strong>
                 </div>
             </div>
@@ -1286,7 +1286,7 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
         if (report.report_file) {
             setHtml('fr_report_file', '<a href="' + escHtml(report.report_file) + '" class="btn btn-sm btn-soft" download><i class="fas fa-download"></i> Download ' + escHtml(report.report_original_name || 'Uploaded Report') + '</a>');
         } else {
-            setHtml('fr_report_file', '<span style="color:#94a3b8;">No file uploaded</span>');
+            setHtml('fr_report_file', '<span style="color:var(--ink-200);">No file uploaded</span>');
         }
 
         const scoreRows = [
@@ -1358,7 +1358,7 @@ $basePageUrl = 'startup-milestones-dashboard' . ($baseQueryString ? '?' . $baseQ
         if (fileCell) {
             fileCell.innerHTML = evidence.evidence_file
                 ? '<a href="' + escHtml(evidence.evidence_file) + '" class="btn btn-sm btn-soft" download><i class="fas fa-download"></i> Download ' + escHtml(evidence.original_file_name || 'Evidence File') + '</a>'
-                : '<span style="color:#94a3b8;">No file</span>';
+                : '<span style="color:var(--ink-200);">No file</span>';
         }
 
         setValue('ev_review_status', evidence.review_status || 'Pending');

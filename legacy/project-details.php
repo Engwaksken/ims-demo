@@ -103,7 +103,7 @@ $duration = $start_date->diff($end_date);
 
 /* -- Helpers ---------------------------------------------------------- */
 $status_badge = [
-    'Ongoing'   => 'badge badge-ongoing',
+    'Ongoing'   => 'badge badge-in-progress',
     'Completed' => 'badge badge-completed',
     'Pending'   => 'badge badge-pending',
     'Cancelled' => 'badge badge-cancelled',
@@ -143,103 +143,103 @@ $doc_icons = [
 <link rel="stylesheet" href="css/assets.css">
 <link rel="stylesheet" href="css/projects.css">
 
-<div class="projects-wrap">
+<div class="page-stack">
 
-    <!-- -- Detail Hero ------------------------------------------------- -->
-    <div class="detail-hero">
+    <!-- -- Hero ---------------------------------------------------------- -->
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-project-diagram" aria-hidden="true"></i> <?= h($project['project_name']) ?></h1>
+            <p>
+                <i class="fas fa-tag" aria-hidden="true"></i> <?= h($project['project_code']) ?>
+                &nbsp;&middot;&nbsp;
+                <span class="<?= $status_badge[$project['status']] ?? 'badge badge-returned' ?>"><?= h($project['status']) ?></span>
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a href="projects" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+            </a>
+            <button type="button" onclick="window.print()" class="btn">
+                <i class="fas fa-print" aria-hidden="true"></i> Print
+            </button>
+        </div>
+    </div>
 
-        <div class="detail-hero-top">
-            <div>
-                <div class="detail-hero-title"><?= h($project['project_name']) ?></div>
-                <div class="detail-hero-code">
-                    <i class="fas fa-tag"></i><?= h($project['project_code']) ?>
+    <!-- -- Overview ------------------------------------------------------ -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-circle-info" aria-hidden="true"></i> Overview</h3>
+        </div>
+        <div class="card-body">
+            <div class="pj-facts">
+                <div class="pj-fact">
+                    <div class="pj-fact-label"><i class="fas fa-hand-holding-usd" aria-hidden="true"></i> Donor</div>
+                    <div class="pj-fact-value"><?= h($project['donor_name'] ?? 'N/A') ?></div>
+                </div>
+                <div class="pj-fact">
+                    <div class="pj-fact-label"><i class="fas fa-dollar-sign" aria-hidden="true"></i> Budget</div>
+                    <div class="pj-fact-value"><?= format_currency($project['budget'], $project['currency']) ?></div>
+                </div>
+                <div class="pj-fact">
+                    <div class="pj-fact-label"><i class="fas fa-calendar-alt" aria-hidden="true"></i> Duration</div>
+                    <div class="pj-fact-value">
+                        <?= $duration->y > 0 ? $duration->y . 'yr ' : '' ?><?= $duration->m ?>mo
+                    </div>
+                </div>
+                <div class="pj-fact">
+                    <div class="pj-fact-label"><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Scope</div>
+                    <div class="pj-fact-value"><?= h($project['geographic_scope'] ?? 'N/A') ?></div>
                 </div>
             </div>
-            <div class="detail-hero-actions">
-                <span class="<?= $status_badge[$project['status']] ?? 'badge badge-returned' ?>" style="font-size:12px;padding:6px 14px;">
-                    <?= h($project['status']) ?>
-                </span>
-                <a href="projects" class="btn btn-primary">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-                <button onclick="window.print()" class="btn btn-primary" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);">
-                    <i class="fas fa-print"></i> Print
-                </button>
+
+            <!-- Timeline progress bar -->
+            <div class="pj-timeline">
+                <div class="pj-timeline-meta">
+                    <div>
+                        <span class="pj-timeline-label"><i class="fas fa-clock" aria-hidden="true"></i> Timeline</span>
+                        <span class="pj-timeline-dates">
+                            <?= date('d M Y', strtotime($project['start_date'])) ?>
+                            &rarr;
+                            <?= date('d M Y', strtotime($project['end_date'])) ?>
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        <span class="pj-timeline-value"><?= number_format($time_progress, 1) ?>%</span>
+                        <span class="pj-timeline-remaining">
+                            <?php if ($today < $end_date):
+                                echo $today->diff($end_date)->days . ' days remaining';
+                            else: ?>project ended<?php endif; ?>
+                        </span>
+                    </div>
+                </div>
+                <div class="ach-track">
+                    <div class="ach-fill pj-timeline-fill" style="width:<?= $time_progress ?>%;"></div>
+                </div>
             </div>
         </div>
-
-        <!-- Key tiles -->
-        <div class="detail-hero-tiles">
-            <div class="detail-tile">
-                <div class="detail-tile-label"><i class="fas fa-hand-holding-usd"></i> Donor</div>
-                <div class="detail-tile-value"><?= h($project['donor_name'] ?? 'N/A') ?></div>
-            </div>
-            <div class="detail-tile">
-                <div class="detail-tile-label"><i class="fas fa-dollar-sign"></i> Budget</div>
-                <div class="detail-tile-value"><?= format_currency($project['budget'], $project['currency']) ?></div>
-            </div>
-            <div class="detail-tile">
-                <div class="detail-tile-label"><i class="fas fa-calendar-alt"></i> Duration</div>
-                <div class="detail-tile-value">
-                    <?= $duration->y > 0 ? $duration->y . 'yr ' : '' ?><?= $duration->m ?>mo
-                </div>
-            </div>
-            <div class="detail-tile">
-                <div class="detail-tile-label"><i class="fas fa-map-marker-alt"></i> Scope</div>
-                <div class="detail-tile-value"><?= h($project['geographic_scope'] ?? 'N/A') ?></div>
-            </div>
-        </div>
-
-        <!-- Timeline progress bar -->
-        <div class="progress-wrap">
-            <div class="progress-meta">
-                <div>
-                    <span class="prog-label">
-                        <i class="fas fa-clock"></i> Timeline
-                    </span>
-                    <span style="font-size:11px;color:rgba(255,255,255,.55);margin-left:10px;">
-                        <?= date('d M Y', strtotime($project['start_date'])) ?>
-                        &rarr;
-                        <?= date('d M Y', strtotime($project['end_date'])) ?>
-                    </span>
-                </div>
-                <div style="text-align:right;">
-                    <span class="prog-value"><?= number_format($time_progress, 1) ?>%</span>
-                    <span class="prog-remaining" style="margin-left:8px;">
-                        <?php if ($today < $end_date):
-                            echo $today->diff($end_date)->days . ' days remaining';
-                        else: ?>project ended<?php endif; ?>
-                    </span>
-                </div>
-            </div>
-            <div class="progress-track">
-                <div class="progress-fill" style="width:<?= $time_progress ?>%;"></div>
-            </div>
-        </div>
-
-    </div><!-- /.detail-hero -->
+    </div>
 
     <!-- -- Performance Stats ------------------------------------------- -->
-    <div class="projects-stats">
+    <div class="stats-grid reports-stats">
         <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fas fa-users"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Active / Total Participants</div>
-                <div class="stat-value"><?= $active_beneficiaries ?><span style="font-size:16px;color:var(--ink-200);font-weight:500;"> / <?= $total_beneficiaries ?></span></div>
+                <div class="stat-value"><?= $active_beneficiaries ?> <span class="stat-sub">/ <?= $total_beneficiaries ?></span></div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon bg-green"><i class="fas fa-chart-line"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Indicators Achieved</div>
-                <div class="stat-value"><?= $achieved_indicators ?><span style="font-size:16px;color:var(--ink-200);font-weight:500;"> / <?= $total_indicators ?></span></div>
+                <div class="stat-value"><?= $achieved_indicators ?> <span class="stat-sub">/ <?= $total_indicators ?></span></div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon bg-amber"><i class="fas fa-tasks"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Milestones Completed</div>
-                <div class="stat-value"><?= $completed_milestones ?><span style="font-size:16px;color:var(--ink-200);font-weight:500;"> / <?= $total_milestones ?></span></div>
+                <div class="stat-value"><?= $completed_milestones ?> <span class="stat-sub">/ <?= $total_milestones ?></span></div>
             </div>
         </div>
         <div class="stat-card">
@@ -254,15 +254,15 @@ $doc_icons = [
     <!-- -- Description & Objectives ----------------------------------- -->
     <div class="detail-grid-2">
 
-        <div class="info-panel">
-            <div class="info-panel-head">
-                <h3><i class="fas fa-align-left"></i> Description</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-align-left" aria-hidden="true"></i> Description</h3>
             </div>
-            <div class="info-panel-body">
+            <div class="card-body">
                 <?php if ($project['description']): ?>
                     <p class="prose-text"><?= nl2br(h($project['description'])) ?></p>
                 <?php else: ?>
-                    <p class="prose-empty">No description available.</p>
+                    <div class="empty-state"><i class="fas fa-align-left" aria-hidden="true"></i><p>No description available.</p></div>
                 <?php endif; ?>
 
                 <?php if ($project['value_chain']): ?>
@@ -274,15 +274,15 @@ $doc_icons = [
             </div>
         </div>
 
-        <div class="info-panel">
-            <div class="info-panel-head">
-                <h3><i class="fas fa-bullseye"></i> Objectives</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-bullseye" aria-hidden="true"></i> Objectives</h3>
             </div>
-            <div class="info-panel-body">
+            <div class="card-body">
                 <?php if ($project['objectives']): ?>
                     <div class="prose-text"><?= nl2br(h($project['objectives'])) ?></div>
                 <?php else: ?>
-                    <p class="prose-empty">No objectives specified.</p>
+                    <div class="empty-state"><i class="fas fa-bullseye" aria-hidden="true"></i><p>No objectives specified.</p></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -293,12 +293,12 @@ $doc_icons = [
     <div class="detail-grid-2">
 
         <!-- Donor -->
-        <div class="info-panel">
-            <div class="info-panel-head">
-                <h3><i class="fas fa-hand-holding-usd"></i> Donor Information</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-hand-holding-usd" aria-hidden="true"></i> Donor Information</h3>
             </div>
-            <div class="info-panel-body">
-                <div style="font-size:15px;font-weight:800;color:var(--ink-700);margin-bottom:14px;">
+            <div class="card-body">
+                <div class="pj-donor-name">
                     <?= h($project['donor_name'] ?? 'N/A') ?>
                 </div>
                 <div class="donor-contact-list">
@@ -330,29 +330,29 @@ $doc_icons = [
                         </div>
                     <?php endif; ?>
                     <?php if (!$project['donor_email'] && !$project['donor_phone'] && !$project['donor_website']): ?>
-                        <p class="prose-empty">No contact details on record.</p>
+                        <div class="empty-state"><i class="fas fa-address-card" aria-hidden="true"></i><p>No contact details on record.</p></div>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
 
         <!-- Partners -->
-        <div class="info-panel">
-            <div class="info-panel-head">
-                <h3><i class="fas fa-handshake"></i> Project Partners</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-handshake" aria-hidden="true"></i> Project Partners</h3>
                 <span class="badge badge-available"><?= count($partners) ?></span>
             </div>
-            <div class="info-panel-body">
+            <div class="card-body">
                 <?php if (empty($partners)): ?>
-                    <p class="prose-empty">No partners assigned to this project.</p>
+                    <div class="empty-state"><i class="fas fa-handshake" aria-hidden="true"></i><p>No partners assigned to this project.</p></div>
                 <?php else: ?>
                     <?php foreach ($partners as $p): ?>
                         <div class="partner-card">
                             <div class="partner-avatar"><i class="fas fa-building"></i></div>
-                            <div style="flex:1;min-width:0;">
+                            <div class="partner-body">
                                 <div class="partner-name"><?= h($p['partner_name']) ?></div>
                                 <div class="partner-meta">
-                                    <span class="badge badge-assigned" style="font-size:9px;"><?= h($p['partner_type']) ?></span>
+                                    <span class="badge badge-assigned"><?= h($p['partner_type']) ?></span>
                                     <?php if ($p['role']): ?>
                                         <span class="partner-role"><i class="fas fa-user-tag"></i> <?= h($p['role']) ?></span>
                                     <?php endif; ?>
@@ -367,24 +367,24 @@ $doc_icons = [
     </div>
 
     <!-- -- Indicators -------------------------------------------------- -->
-    <div class="info-panel">
-        <div class="info-panel-head">
-            <h3><i class="fas fa-chart-line"></i> Project Indicators</h3>
-            <div style="display:flex;gap:8px;align-items:center;">
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Project Indicators</h3>
+            <div class="actions">
                 <span class="badge badge-available"><?= $total_indicators ?> total</span>
                 <?php if (ims_allowed('indicators.add_link', ['Administrator', 'MEAL Lead'], 'See the Add indicator button on program/project pages')): ?>
                     <a href="indicators?project=<?= $project_id ?>" class="btn btn-sm btn-soft">
                         <i class="fas fa-plus"></i> Add
                     </a>
                 <?php endif; ?>
-                <a href="indicators?project=<?= $project_id ?>" class="btn btn-sm btn-gray">
+                <a href="indicators?project=<?= $project_id ?>" class="btn btn-sm btn-secondary">
                     View All
                 </a>
             </div>
         </div>
-        <div class="info-panel-body">
+        <div class="card-body">
             <?php if (empty($indicators)): ?>
-                <p class="prose-empty" style="text-align:center;padding:20px 0;">No indicators defined yet.</p>
+                <div class="empty-state"><i class="fas fa-chart-line" aria-hidden="true"></i><p>No indicators defined yet.</p></div>
             <?php else: ?>
 
                 <!-- Overall achievement bar -->
@@ -439,16 +439,16 @@ $doc_icons = [
     <div class="detail-grid-2">
 
         <!-- Milestones -->
-        <div class="info-panel">
-            <div class="info-panel-head">
-                <h3><i class="fas fa-tasks"></i> Milestones</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-tasks" aria-hidden="true"></i> Milestones</h3>
                 <span class="badge badge-<?= $milestone_completion >= 100 ? 'available' : 'pending' ?>">
                     <?= number_format($milestone_completion, 0) ?>% done
                 </span>
             </div>
-            <div class="info-panel-body">
+            <div class="card-body">
                 <?php if (empty($milestones)): ?>
-                    <p class="prose-empty">No milestones defined.</p>
+                    <div class="empty-state"><i class="fas fa-tasks" aria-hidden="true"></i><p>No milestones defined.</p></div>
                 <?php else: ?>
                     <?php foreach (array_slice($milestones, 0, 5) as $ms):
                         $mc = $ms_class[$ms['status']] ?? 'ms-pending';
@@ -460,7 +460,7 @@ $doc_icons = [
                                 <div class="milestone-dates">
                                     Due: <?= date('d M Y', strtotime($ms['due_date'])) ?>
                                     <?php if ($ms['completion_date']): ?>
-                                        &nbsp;·&nbsp; Completed: <?= date('d M Y', strtotime($ms['completion_date'])) ?>
+                                        &nbsp;Â·&nbsp; Completed: <?= date('d M Y', strtotime($ms['completion_date'])) ?>
                                     <?php endif; ?>
                                 </div>
                                 <?php if ($ms['progress_percentage'] > 0): ?>
@@ -473,7 +473,7 @@ $doc_icons = [
                         </div>
                     <?php endforeach; ?>
                     <?php if (count($milestones) > 5): ?>
-                        <p class="note" style="text-align:center;margin-top:12px;">
+                        <p class="note text-center pj-more-note">
                             Showing 5 of <?= count($milestones) ?> milestones
                         </p>
                     <?php endif; ?>
@@ -482,14 +482,14 @@ $doc_icons = [
         </div>
 
         <!-- Beneficiaries -->
-        <div class="info-panel">
-            <div class="info-panel-head">
-                <h3><i class="fas fa-users"></i> Recent Participants</h3>
-                <a href="participants?project=<?= $project_id ?>" class="btn btn-sm btn-gray">View All</a>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-users" aria-hidden="true"></i> Recent Participants</h3>
+                <a href="participants?project=<?= $project_id ?>" class="btn btn-sm btn-secondary">View All</a>
             </div>
-            <div class="info-panel-body">
+            <div class="card-body">
                 <?php if (empty($beneficiaries)): ?>
-                    <p class="prose-empty">No participants enrolled yet.</p>
+                    <div class="empty-state"><i class="fas fa-users" aria-hidden="true"></i><p>No participants enrolled yet.</p></div>
                 <?php else: ?>
                     <?php foreach ($beneficiaries as $b):
                         $initials = strtoupper(substr($b['first_name'], 0, 1) . substr($b['last_name'], 0, 1));
@@ -499,7 +499,7 @@ $doc_icons = [
                             <div class="beneficiary-info">
                                 <div class="beneficiary-name"><?= h($b['first_name'] . ' ' . $b['last_name']) ?></div>
                                 <div class="beneficiary-meta">
-                                    <?= h($b['participation_type']) ?> &nbsp;·&nbsp;
+                                    <?= h($b['participation_type']) ?> &nbsp;Â·&nbsp;
                                     Enrolled <?= date('M Y', strtotime($b['enrollment_date'])) ?>
                                 </div>
                             </div>
@@ -515,14 +515,14 @@ $doc_icons = [
     </div>
 
     <!-- -- Documents --------------------------------------------------- -->
-    <div class="info-panel">
-        <div class="info-panel-head">
-            <h3><i class="fas fa-folder-open"></i> Project Documents</h3>
-            <a href="documents?project=<?= $project_id ?>" class="btn btn-sm btn-gray">View All</a>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-folder-open" aria-hidden="true"></i> Project Documents</h3>
+            <a href="documents?project=<?= $project_id ?>" class="btn btn-sm btn-secondary">View All</a>
         </div>
-        <div class="info-panel-body">
+        <div class="card-body">
             <?php if (empty($documents)): ?>
-                <p class="prose-empty" style="text-align:center;padding:20px 0;">No documents uploaded yet.</p>
+                <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No documents uploaded yet.</p></div>
             <?php else: ?>
                 <div class="doc-grid">
                     <?php foreach ($documents as $doc):
@@ -549,16 +549,16 @@ $doc_icons = [
 
     <!-- -- Progress Updates -------------------------------------------- -->
     <?php if (!empty($progress_updates)): ?>
-        <div class="info-panel">
-            <div class="info-panel-head">
-                <h3><i class="fas fa-file-alt"></i> Recent Progress Updates</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-file-alt" aria-hidden="true"></i> Recent Progress Updates</h3>
             </div>
-            <div class="info-panel-body">
+            <div class="card-body">
                 <?php foreach ($progress_updates as $upd): ?>
                     <div class="update-card">
                         <div class="update-period"><?= h($upd['reporting_period']) ?></div>
                         <div class="update-date">
-                            <i class="fas fa-calendar-alt" style="margin-right:5px;opacity:.5;"></i>
+                            <i class="fas fa-calendar-alt pj-muted-icon" aria-hidden="true"></i>
                             <?= date('d M Y', strtotime($upd['update_date'])) ?>
                         </div>
 
@@ -585,6 +585,6 @@ $doc_icons = [
         </div>
     <?php endif; ?>
 
-</div><!-- /.projects-wrap -->
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>

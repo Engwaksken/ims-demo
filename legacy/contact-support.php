@@ -22,12 +22,12 @@ $application = null;
 
 if ($app_id > 0) {
     // Fetch application details
-    $app_query = "SELECT a.*, p.opportunity_title 
+    $app_query = "SELECT a.*, p.opportunity_title
                   FROM applications a
                   LEFT JOIN application_opportunities p ON a.opportunity_id = p.opportunity_id
                   WHERE a.application_id = $app_id AND a.submitted_by = $user_id";
     $app_result = $conn->query($app_query);
-    
+
     if ($app_result && $app_result->num_rows > 0) {
         $application = $app_result->fetch_assoc();
     }
@@ -35,202 +35,82 @@ if ($app_id > 0) {
 ?>
 
 <style>
-.support-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
-
-.support-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.support-content {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 30px;
-}
-
-.form-card {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.form-card h3 {
-    color: #2c3e50;
-    margin-bottom: 25px;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #ecf0f1;
-}
-
-.form-card h3 i {
-    color: #ff6b35;
-}
-
-.contact-info-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
-
-.contact-info-card h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 18px;
-}
-
-.contact-method {
-    display: flex;
-    align-items: start;
-    gap: 15px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    margin-bottom: 15px;
-}
-
-.contact-icon {
-    font-size: 24px;
-    color: #ff6b35;
-    width: 40px;
-    text-align: center;
-}
-
-.contact-details h4 {
-    color: #2c3e50;
-    margin-bottom: 5px;
-    font-size: 16px;
-}
-
-.contact-details p {
-    color: #7f8c8d;
-    margin: 0;
-    font-size: 14px;
-}
-
-.faq-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.faq-item {
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #ecf0f1;
-}
-
-.faq-item:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.faq-question {
-    color: #2c3e50;
-    font-weight: 600;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: start;
-    gap: 10px;
-}
-
-.faq-question i {
-    color: #ff6b35;
-    margin-top: 3px;
-}
-
-.faq-answer {
-    color: #7f8c8d;
-    line-height: 1.6;
-    margin-left: 25px;
-}
-
-.alert-info-custom {
-    background: #d1ecf1;
-    border-left: 4px solid #17a2b8;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 25px;
-    color: #0c5460;
-}
-
-.char-counter {
-    font-size: 12px;
-    color: #7f8c8d;
-    float: right;
-    margin-top: 5px;
-}
-
-@media (max-width: 968px) {
-    .support-content {
-        grid-template-columns: 1fr;
-    }
-}
+/* Contact support: form + sidebar grid, contact methods and the FAQ list. */
+.cs-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
+.cs-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.cs-method { display: flex; align-items: flex-start; gap: 15px; padding: 15px; background: var(--surface-hover); border-radius: var(--radius-md); margin-bottom: 15px; }
+.cs-method:last-child { margin-bottom: 0; }
+.cs-method-icon { font-size: 24px; color: var(--brand-500); width: 40px; text-align: center; }
+.cs-method h4 { color: var(--ink-700); margin: 0 0 5px; font-size: 16px; }
+.cs-method p { color: var(--ink-300); margin: 0; font-size: 14px; }
+.cs-hours { font-size: 14px; color: var(--ink-700); line-height: 1.8; }
+.cs-faq-item { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--ink-50); }
+.cs-faq-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.cs-faq-q { color: var(--ink-700); font-weight: 600; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 10px; }
+.cs-faq-q i { color: var(--brand-500); margin-top: 3px; }
+.cs-faq-a { color: var(--ink-300); line-height: 1.6; margin-left: 25px; }
+.cs-char-counter { font-size: 12px; color: var(--ink-300); float: right; margin-top: 5px; }
+.cs-char-counter.is-near-limit { color: var(--red-fg); }
+.cs-form-actions { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 30px; }
+@media (max-width: 968px) { .cs-grid { grid-template-columns: 1fr; } }
 </style>
 
-<!-- Header -->
-<div class="support-header">
-    <h1><i class="fas fa-headset"></i> Contact Support</h1>
-    <p style="margin: 0; opacity: 0.9;">
-        We're here to help! Get in touch with our support team
-    </p>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-headset" aria-hidden="true"></i> Contact Support</h1>
+        <p>We're here to help! Get in touch with our support team.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="<?php echo $app_id ? 'view-my-application?id='.$app_id : 'dashboard'; ?>" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+    </div>
 </div>
 
-<div class="support-content">
+<div class="cs-grid">
     <!-- Main Form -->
-    <div>
+    <div class="cs-col">
         <?php if ($application): ?>
-        <div class="alert-info-custom">
-            <i class="fas fa-info-circle"></i>
-            <strong>Inquiry regarding:</strong> Application #<?php echo htmlspecialchars($application['application_id']); ?>
-            <br>
-            <small>Program: <?php echo htmlspecialchars($application['opportunity_title']); ?></small>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
+            <div>
+                <strong>Inquiry regarding:</strong> Application #<?php echo htmlspecialchars($application['application_id']); ?>
+                <br>
+                <small>Program: <?php echo htmlspecialchars($application['opportunity_title']); ?></small>
+            </div>
         </div>
         <?php endif; ?>
-        
-        <div class="form-card">
-            <h3><i class="fas fa-envelope"></i> Send us a Message</h3>
-            
+
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-envelope" aria-hidden="true"></i> Send us a Message</h3></div>
+            <div class="card-body">
+
             <form method="POST" action="process-support" id="supportForm" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="submit">
                 <?php if ($app_id): ?>
                 <input type="hidden" name="application_id" value="<?php echo $app_id; ?>">
                 <?php endif; ?>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="full_name" class="required">Full Name</label>
-                        <input type="text" id="full_name" name="full_name" class="form-control" 
+                        <input type="text" id="full_name" name="full_name" class="form-control"
                                value="<?php echo htmlspecialchars($user['full_name']); ?>" readonly>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="email" class="required">Email Address</label>
-                        <input type="email" id="email" name="email" class="form-control" 
+                        <input type="email" id="email" name="email" class="form-control"
                                value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="phone_number">Phone Number</label>
-                    <input type="tel" id="phone_number" name="phone_number" class="form-control" 
+                    <input type="tel" id="phone_number" name="phone_number" class="form-control"
                            placeholder="+256 700 000 000"
                            value="<?php echo htmlspecialchars($user['phone_number'] ?? ''); ?>">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="inquiry_type" class="required">Inquiry Type</label>
                     <select id="inquiry_type" name="inquiry_type" class="form-control" required>
@@ -245,181 +125,184 @@ if ($app_id > 0) {
                         <option value="Other">Other</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="subject" class="required">Subject</label>
-                    <input type="text" id="subject" name="subject" class="form-control" 
+                    <input type="text" id="subject" name="subject" class="form-control"
                            placeholder="Brief description of your inquiry" required
                            maxlength="200">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="message" class="required">Message</label>
                     <textarea id="message" name="message" class="form-control" rows="8" required
                               placeholder="Please provide as much detail as possible about your inquiry..."
                               maxlength="2000" onkeyup="updateCharCount('message', 2000)"></textarea>
-                    <span class="char-counter" id="message_counter">0 / 2000</span>
+                    <span class="cs-char-counter" id="message_counter">0 / 2000</span>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="attachment">Attachment (Optional)</label>
-                    <input type="file" id="attachment" name="attachment" class="form-control" 
+                    <input type="file" id="attachment" name="attachment" class="form-control"
                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                    <small style="color: #7f8c8d;">
+                    <small class="cell-muted">
                         Accepted formats: PDF, JPG, PNG, DOC, DOCX (Max 5MB)
                     </small>
                 </div>
-                
+
                 <div class="form-group">
                     <label>
-                        <input type="checkbox" name="urgent" value="1"> 
+                        <input type="checkbox" name="urgent" value="1">
                         Mark as urgent
                     </label>
                 </div>
-                
-                <div style="display: flex; gap: 15px; margin-top: 30px;">
+
+                <div class="cs-form-actions">
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="fas fa-paper-plane"></i> Send Message
                     </button>
-                    <a href="<?php echo $app_id ? 'view-my-application?id='.$app_id : 'dashboard'; ?>" 
+                    <a href="<?php echo $app_id ? 'view-my-application?id='.$app_id : 'dashboard'; ?>"
                        class="btn btn-secondary btn-lg">
                         <i class="fas fa-times"></i> Cancel
                     </a>
                 </div>
             </form>
+            </div>
         </div>
     </div>
-    
+
     <!-- Sidebar -->
-    <div>
+    <div class="cs-col">
         <!-- Contact Information -->
-        <div class="contact-info-card">
-            <h3><i class="fas fa-info-circle"></i> Contact Information</h3>
-            
-            <div class="contact-method">
-                <div class="contact-icon">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-info-circle" aria-hidden="true"></i> Contact Information</h3></div>
+            <div class="card-body">
+
+            <div class="cs-method">
+                <div class="cs-method-icon">
                     <i class="fas fa-envelope"></i>
                 </div>
-                <div class="contact-details">
+                <div class="cs-method-body">
                     <h4>Email Support</h4>
                     <p><a href="mailto:info@hivecolab.org">info@hivecolab.org</a></p>
-                    <small style="color: #7f8c8d;">Response within 24 hours</small>
+                    <small class="cell-muted">Response within 24 hours</small>
                 </div>
             </div>
-            
-            <div class="contact-method">
-                <div class="contact-icon">
+
+            <div class="cs-method">
+                <div class="cs-method-icon">
                     <i class="fas fa-phone"></i>
                 </div>
-                <div class="contact-details">
+                <div class="cs-method-body">
                     <h4>Phone Support</h4>
                     <p><a href="tel:+256392177978">+256 39 2177978</a></p>
-                    <small style="color: #7f8c8d;">Mon-Fri, 9:00 AM - 5:00 PM</small>
+                    <small class="cell-muted">Mon-Fri, 9:00 AM - 5:00 PM</small>
                 </div>
             </div>
-            
-            <div class="contact-method">
-                <div class="contact-icon">
+
+            <div class="cs-method">
+                <div class="cs-method-icon">
                     <i class="fas fa-map-marker-alt"></i>
                 </div>
-                <div class="contact-details">
+                <div class="cs-method-body">
                     <h4>Visit Us</h4>
                     <p>Hive Colab<br>
                     Kampala, Uganda</p>
-                    <small style="color: #7f8c8d;">By appointment only</small>
+                    <small class="cell-muted">By appointment only</small>
                 </div>
             </div>
-            
-            <div class="contact-method">
-                <div class="contact-icon">
+
+            <div class="cs-method">
+                <div class="cs-method-icon">
                     <i class="fab fa-twitter"></i>
                 </div>
-                <div class="contact-details">
+                <div class="cs-method-body">
                     <h4>Social Media</h4>
                     <p>@HiveColab</p>
-                    <small style="color: #7f8c8d;">Follow us for updates</small>
+                    <small class="cell-muted">Follow us for updates</small>
                 </div>
             </div>
+            </div>
         </div>
-        
+
         <!-- Office Hours -->
-        <div class="contact-info-card">
-            <h3><i class="fas fa-clock"></i> Office Hours</h3>
-            <div style="font-size: 14px; color: #2c3e50; line-height: 1.8;">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-clock" aria-hidden="true"></i> Office Hours</h3></div>
+            <div class="card-body cs-hours">
                 <strong>Monday - Friday:</strong><br>
                 9:00 AM - 5:00 PM EAT<br><br>
                 <strong>Saturday - Sunday:</strong><br>
                 Closed<br><br>
-                <small style="color: #7f8c8d;">
-                    <i class="fas fa-info-circle"></i> 
+                <small class="cell-muted">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
                     Emergency support available via email
                 </small>
             </div>
         </div>
         </div>
         <!-- FAQ -->
-        <div class="faq-card">
-            <h3 style="color: #2c3e50; margin-bottom: 20px; font-size: 18px;">
-                <i class="fas fa-question-circle" style="color: #ff6b35;"></i> 
-                Frequently Asked Questions
-            </h3>
-            
-            <div class="faq-item">
-                <div class="faq-question">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-question-circle" aria-hidden="true"></i> Frequently Asked Questions</h3></div>
+            <div class="card-body">
+
+            <div class="cs-faq-item">
+                <div class="cs-faq-q">
                     <i class="fas fa-chevron-right"></i>
                     <span>How long does it take to review my application?</span>
                 </div>
-                <div class="faq-answer">
-                    Applications are typically reviewed within 7-14 business days after submission. 
+                <div class="cs-faq-a">
+                    Applications are typically reviewed within 7-14 business days after submission.
                     You'll receive an email notification once your application has been reviewed.
                 </div>
             </div>
-            
-            <div class="faq-item">
-                <div class="faq-question">
+
+            <div class="cs-faq-item">
+                <div class="cs-faq-q">
                     <i class="fas fa-chevron-right"></i>
                     <span>Can I edit my application after submission?</span>
                 </div>
-                <div class="faq-answer">
-                    Yes, you can edit your application while it's in "Pending" status. 
+                <div class="cs-faq-a">
+                    Yes, you can edit your application while it's in "Pending" status.
                     Once it's been reviewed or moved to another status, editing is not allowed.
                 </div>
             </div>
-            
-            <div class="faq-item">
-                <div class="faq-question">
+
+            <div class="cs-faq-item">
+                <div class="cs-faq-q">
                     <i class="fas fa-chevron-right"></i>
                     <span>What happens after I'm shortlisted?</span>
                 </div>
-                <div class="faq-answer">
-                    If you're shortlisted, our team will contact you via email with details 
+                <div class="cs-faq-a">
+                    If you're shortlisted, our team will contact you via email with details
                     about the next steps, which may include an interview or pitch presentation.
                 </div>
             </div>
-            
-            <div class="faq-item">
-                <div class="faq-question">
+
+            <div class="cs-faq-item">
+                <div class="cs-faq-q">
                     <i class="fas fa-chevron-right"></i>
                     <span>Can I apply to multiple programs?</span>
                 </div>
-                <div class="faq-answer">
-                    Yes, you can apply to multiple programs. Each application is reviewed 
+                <div class="cs-faq-a">
+                    Yes, you can apply to multiple programs. Each application is reviewed
                     independently based on the specific program's criteria.
                 </div>
             </div>
-            
-            <div class="faq-item">
-                <div class="faq-question">
+
+            <div class="cs-faq-item">
+                <div class="cs-faq-q">
                     <i class="fas fa-chevron-right"></i>
                     <span>How do I reset my password?</span>
                 </div>
-                <div class="faq-answer">
-                    Click on "Forgot Password" on the login page and follow the instructions 
+                <div class="cs-faq-a">
+                    Click on "Forgot Password" on the login page and follow the instructions
                     sent to your registered email address.
                 </div>
             </div>
+            </div>
         </div>
     </div>
+</div><!-- /.page-stack -->
 
 
 <?php include 'includes/footer.php'; ?>
@@ -431,11 +314,11 @@ function updateCharCount(fieldId, maxLength) {
     const counter = document.getElementById(fieldId + '_counter');
     const currentLength = field.value.length;
     counter.textContent = currentLength + ' / ' + maxLength;
-    
+
     if (currentLength > maxLength * 0.9) {
-        counter.style.color = '#E74C3C';
+        counter.classList.add('is-near-limit');
     } else {
-        counter.style.color = '#7f8c8d';
+        counter.classList.remove('is-near-limit');
     }
 }
 
@@ -448,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.getElementById('attachment').addEventListener('change', function() {
     if (this.files && this.files[0]) {
         const fileSize = this.files[0].size / 1024 / 1024; // Size in MB
-        
+
         if (fileSize > 5) {
             alert('File size exceeds 5MB limit. Please choose a smaller file.');
             this.value = '';
@@ -462,25 +345,25 @@ document.getElementById('supportForm').addEventListener('submit', function(e) {
     const message = document.getElementById('message').value.trim();
     const subject = document.getElementById('subject').value.trim();
     const inquiryType = document.getElementById('inquiry_type').value;
-    
+
     if (!inquiryType) {
         alert('Please select an inquiry type.');
         e.preventDefault();
         return false;
     }
-    
+
     if (!subject) {
         alert('Please provide a subject.');
         e.preventDefault();
         return false;
     }
-    
+
     if (!message || message.length < 10) {
         alert('Please provide a detailed message (at least 10 characters).');
         e.preventDefault();
         return false;
     }
-    
+
     return true;
 });
 </script>

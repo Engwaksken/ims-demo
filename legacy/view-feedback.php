@@ -75,380 +75,103 @@ if ($feedback['attachments']) {
 ?>
 
 <style>
-.feedback-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    position: relative;
-    overflow: hidden;
-}
+/* Feedback Details: page-only layout (vf- prefix) */
+.vf-hero-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: var(--fs-base); opacity: .95; }
+.vf-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.vf-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.vf-aside { display: flex; flex-direction: column; gap: 20px; }
 
-.feedback-header h1 {
-    font-size: 28px;
-    margin-bottom: 10px;
-}
+.vf-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.vf-info-item { padding: 15px; background: var(--surface-hover); border: 1px solid var(--ink-50); border-radius: var(--radius-md); }
+.vf-info-item > label { display: block; margin-bottom: 5px; font-size: 11px; font-weight: 700; color: var(--ink-300); text-transform: uppercase; letter-spacing: .05em; }
+.vf-info-item .value { font-size: var(--fs-md); color: var(--ink-700); font-weight: 600; }
 
-.feedback-header .feedback-id {
-    font-size: 14px;
-    opacity: 0.9;
-    font-family: monospace;
-}
+.vf-message { background: var(--surface-hover); padding: 22px; border-radius: var(--radius-md); line-height: 1.8; color: var(--ink-600); font-size: 15px; }
 
-.status-badge-large {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    padding: 12px 24px;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: 600;
+.vf-rating {
+    display: flex; align-items: center; gap: 15px; flex-wrap: wrap;
+    padding: 18px 20px; border-radius: var(--radius-md);
+    background: var(--amber-bg); border: 1px solid var(--amber-border); color: var(--amber-fg);
 }
+.vf-stars { display: flex; gap: 8px; font-size: 32px; color: var(--amber-border); }
+.vf-stars .is-on { color: var(--amber-fg); }
+.vf-rating-text { font-size: var(--fs-lg); font-weight: 700; }
 
-.feedback-content {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 30px;
+.vf-priority-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: currentColor; }
+
+.vf-attachments { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+.vf-attachment {
+    display: block; padding: 20px; text-align: center; text-decoration: none;
+    background: var(--surface-hover); border: 2px solid var(--ink-50); border-radius: var(--radius-md);
+    transition: all .2s;
 }
+.vf-attachment:hover { border-color: var(--brand-400); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.vf-attachment i { font-size: 48px; margin-bottom: 10px; }
+.vf-attachment .filename { font-size: var(--fs-sm); color: var(--ink-700); margin-top: 10px; word-break: break-all; }
+.vf-attachment small { display: block; margin-top: 5px; color: var(--ink-300); }
 
-.main-section {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
+.vf-response-content {
+    background: var(--surface-card); color: var(--ink-600);
+    padding: 18px 20px; border-radius: var(--radius-md); line-height: 1.8; margin-bottom: 15px;
 }
-
-.info-card {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.info-card h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.info-card h3 i {
-    color: #ff6b35;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.info-item {
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.info-item label {
-    font-size: 12px;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.info-item .value {
-    font-size: 16px;
-    color: #2c3e50;
-    font-weight: 600;
-}
-
-.feedback-message {
-    background: #f8f9fa;
-    padding: 25px;
-    border-radius: 12px;
-    line-height: 1.8;
-    color: #2c3e50;
-    font-size: 15px;
-}
-
-.rating-display {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 20px;
-    background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
-    border-radius: 12px;
-    color: white;
-}
-
-.stars-large {
-    display: flex;
-    gap: 8px;
-    font-size: 32px;
-}
-
-.rating-text {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.priority-display {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-}
-
-.priority-display.low {
-    background: #ecf0f1;
-    color: #7f8c8d;
-}
-
-.priority-display.medium {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.priority-display.high {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.priority-display.urgent {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.priority-indicator {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-
-.priority-indicator.low { background: #95A5A6; }
-.priority-indicator.medium { background: #3498DB; }
-.priority-indicator.high { background: #F39C12; }
-.priority-indicator.urgent { background: #E74C3C; }
-
-.attachments-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.attachment-card {
-    background: #f8f9fa;
-    border: 2px solid #ecf0f1;
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-    transition: all 0.3s;
-    cursor: pointer;
-}
-
-.attachment-card:hover {
-    border-color: #ff6b35;
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.attachment-card i {
-    font-size: 48px;
-    color: #ff6b35;
-    margin-bottom: 10px;
-}
-
-.attachment-card .filename {
-    font-size: 13px;
-    color: #2c3e50;
-    margin-top: 10px;
-    word-break: break-all;
-}
-
-.response-section {
-    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-    border-left: 5px solid #2ECC71;
-    padding: 25px;
-    border-radius: 12px;
-}
-
-.response-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 15px;
-    color: #155724;
-}
-
-.response-header i {
-    font-size: 32px;
-}
-
-.response-header h4 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.response-content {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    color: #2c3e50;
-    line-height: 1.8;
-    margin-bottom: 15px;
-}
-
-.response-meta {
-    display: flex;
-    gap: 20px;
-    font-size: 14px;
-    color: #155724;
-}
-
-.feedback-aside {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
-
-.action-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.action-card h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 18px;
-}
-
-.action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-item {
-    position: relative;
-    padding-bottom: 20px;
-}
-
-.timeline-item:last-child {
-    padding-bottom: 0;
-}
-
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 5px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #ff6b35;
-}
-
-.timeline-item::after {
-    content: '';
-    position: absolute;
-    left: -24px;
-    top: 17px;
-    width: 2px;
-    height: calc(100% - 12px);
-    background: #ecf0f1;
-}
-
-.timeline-item:last-child::after {
-    display: none;
-}
-
-.timeline-content {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.timeline-content strong {
-    color: #2c3e50;
-    display: block;
-    margin-bottom: 5px;
-}
-
-.timeline-content small {
-    color: #7f8c8d;
-}
+.vf-response-meta { display: flex; flex-wrap: wrap; gap: 20px; font-size: var(--fs-base); color: var(--green-fg); }
+.vf-response-card .card-header h3 i { color: var(--green-fg); }
+.vf-response-card .card-body { background: var(--green-bg); }
 
 @media (max-width: 968px) {
-    .feedback-content {
-        grid-template-columns: 1fr;
-    }
-    
-    .status-badge-large {
-        position: static;
-        display: inline-block;
-        margin-top: 15px;
-    }
+    .vf-layout { grid-template-columns: 1fr; }
 }
 
 @media print {
-    .feedback-aside, .no-print {
-        display: none !important;
-    }
-    
-    .main-section {
-        width: 100%;
-    }
+    .vf-aside, .no-print { display: none !important; }
+    .vf-main { width: 100%; }
 }
 </style>
 
-<!-- Header -->
-<div class="feedback-header">
-    <h1><i class="fas fa-comment-dots"></i> <?php echo htmlspecialchars($feedback['subject']); ?></h1>
-    <div class="feedback-id">Feedback ID: #<?php echo $feedback['feedback_id']; ?></div>
-    
-    <?php
-    $status_badges = [
-        'New' => 'primary',
-        'In Review' => 'info',
-        'Responded' => 'warning',
-        'Resolved' => 'success',
-        'Closed' => 'secondary'
-    ];
-    $badge = $status_badges[$feedback['feedback_status']] ?? 'secondary';
-    ?>
-    <span class="badge badge-<?php echo $badge; ?> status-badge-large">
-        <?php echo $feedback['feedback_status']; ?>
-    </span>
+<?php
+$status_badges = [
+    'New' => 'info',
+    'In Review' => 'purple',
+    'Responded' => 'warning',
+    'Resolved' => 'success',
+    'Closed' => 'secondary'
+];
+$badge = $status_badges[$feedback['feedback_status']] ?? 'secondary';
+?>
+
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-comment-dots" aria-hidden="true"></i> <?php echo htmlspecialchars($feedback['subject']); ?></h1>
+        <div class="vf-hero-meta">
+            <span>Feedback ID: #<?php echo $feedback['feedback_id']; ?></span>
+            <span class="badge badge-<?php echo $badge; ?>">
+                <?php echo $feedback['feedback_status']; ?>
+            </span>
+        </div>
+    </div>
+    <div class="hero-actions">
+        <a href="my-feedback" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+    </div>
 </div>
 
 <!-- Main Content -->
-<div class="feedback-content">
+<div class="vf-layout">
     <!-- Main Section -->
-    <div class="main-section">
+    <div class="vf-main">
         <!-- Feedback Details -->
-        <div class="info-card">
-            <h3><i class="fas fa-info-circle"></i> Feedback Information</h3>
-            
-            <div class="info-grid">
-                <div class="info-item">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-info-circle" aria-hidden="true"></i> Feedback Information</h3></div>
+            <div class="card-body">
+            <div class="vf-info-grid">
+                <div class="vf-info-item">
                     <label>Type</label>
                     <div class="value">
                         <?php
                         $type_badges = [
                             'General' => 'secondary',
-                            'Facilities' => 'primary',
+                            'Facilities' => 'info',
                             'Services' => 'success',
                             'Events' => 'warning',
                             'Complaint' => 'danger',
@@ -461,8 +184,8 @@ if ($feedback['attachments']) {
                         </span>
                     </div>
                 </div>
-                
-                <div class="info-item">
+
+                <div class="vf-info-item">
                     <label>Status</label>
                     <div class="value">
                         <span class="badge badge-<?php echo $badge; ?>">
@@ -470,144 +193,154 @@ if ($feedback['attachments']) {
                         </span>
                     </div>
                 </div>
-                
-                <div class="info-item">
+
+                <div class="vf-info-item">
                     <label>Priority</label>
                     <div class="value">
                         <?php
                         $priority_class = strtolower($feedback['priority']);
+                        $priority_badges = ['low' => 'secondary', 'medium' => 'info', 'high' => 'warning', 'urgent' => 'danger'];
                         ?>
-                        <div class="priority-display <?php echo $priority_class; ?>">
-                            <span class="priority-indicator <?php echo $priority_class; ?>"></span>
+                        <span class="badge badge-<?php echo $priority_badges[$priority_class] ?? 'secondary'; ?>">
+                            <span class="vf-priority-dot <?php echo $priority_class; ?>"></span>
                             <?php echo $feedback['priority']; ?>
-                        </div>
+                        </span>
                     </div>
                 </div>
-                
-                <div class="info-item">
+
+                <div class="vf-info-item">
                     <label>Submitted</label>
                     <div class="value"><?php echo date('d M Y', strtotime($feedback['created_at'])); ?></div>
-                    <small style="color: #7f8c8d;"><?php echo date('h:i A', strtotime($feedback['created_at'])); ?></small>
+                    <small class="cell-muted"><?php echo date('h:i A', strtotime($feedback['created_at'])); ?></small>
                 </div>
-                
+
                 <?php if ($feedback['is_anonymous']): ?>
-                <div class="info-item">
+                <div class="vf-info-item">
                     <label>Visibility</label>
                     <div class="value">
                         <span class="badge badge-secondary">
-                            <i class="fas fa-user-secret"></i> Anonymous
+                            <i class="fas fa-user-secret" aria-hidden="true"></i> Anonymous
                         </span>
                     </div>
                 </div>
                 <?php endif; ?>
             </div>
+            </div>
         </div>
-        
+
         <!-- Rating -->
         <?php if ($feedback['rating']): ?>
-        <div class="info-card">
-            <h3><i class="fas fa-star"></i> Rating</h3>
-            <div class="rating-display">
-                <div class="stars-large">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-star" aria-hidden="true"></i> Rating</h3></div>
+            <div class="card-body">
+            <div class="vf-rating">
+                <div class="vf-stars" aria-label="Rating <?php echo (int)$feedback['rating']; ?> of 5">
                     <?php for ($i = 1; $i <= 5; $i++): ?>
-                        <i class="fas fa-star" style="color: <?php echo $i <= $feedback['rating'] ? '#fff' : 'rgba(255,255,255,0.3)'; ?>;"></i>
+                        <i class="fas fa-star<?php echo $i <= $feedback['rating'] ? ' is-on' : ''; ?>" aria-hidden="true"></i>
                     <?php endfor; ?>
                 </div>
-                <div class="rating-text">
+                <div class="vf-rating-text">
                     <?php
                     $rating_labels = [1 => 'Poor', 2 => 'Fair', 3 => 'Good', 4 => 'Very Good', 5 => 'Excellent'];
                     echo $rating_labels[$feedback['rating']] ?? $feedback['rating'] . ' stars';
                     ?>
                 </div>
             </div>
-        </div>
-        <?php endif; ?>
-        
-        <!-- Feedback Message -->
-        <div class="info-card">
-            <h3><i class="fas fa-comment"></i> Message</h3>
-            <div class="feedback-message">
-                <?php echo nl2br(htmlspecialchars($feedback['feedback_message'])); ?>
             </div>
         </div>
-        
+        <?php endif; ?>
+
+        <!-- Feedback Message -->
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-comment" aria-hidden="true"></i> Message</h3></div>
+            <div class="card-body">
+            <div class="vf-message">
+                <?php echo nl2br(htmlspecialchars($feedback['feedback_message'])); ?>
+            </div>
+            </div>
+        </div>
+
         <!-- Attachments -->
         <?php if (!empty($attachments)): ?>
-        <div class="info-card">
-            <h3><i class="fas fa-paperclip"></i> Attachments (<?php echo count($attachments); ?>)</h3>
-            <div class="attachments-grid">
-                <?php foreach ($attachments as $index => $attachment): 
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-paperclip" aria-hidden="true"></i> Attachments (<?php echo count($attachments); ?>)</h3></div>
+            <div class="card-body">
+            <div class="vf-attachments">
+                <?php foreach ($attachments as $index => $attachment):
                     $filename = basename($attachment);
                     $extension = strtolower(pathinfo($attachment, PATHINFO_EXTENSION));
-                    
+
                     $icon = 'file';
-                    $color = '#ff6b35';
-                    
+                    $color = 'var(--brand-600)';
+
                     if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
                         $icon = 'file-image';
-                        $color = '#3498DB';
+                        $color = 'var(--blue-fg)';
                     } elseif ($extension == 'pdf') {
                         $icon = 'file-pdf';
-                        $color = '#E74C3C';
+                        $color = 'var(--red-fg)';
                     } elseif (in_array($extension, ['doc', 'docx'])) {
                         $icon = 'file-word';
-                        $color = '#2980B9';
+                        $color = 'var(--blue-fg)';
                     } elseif (in_array($extension, ['xls', 'xlsx'])) {
                         $icon = 'file-excel';
-                        $color = '#27AE60';
+                        $color = 'var(--green-fg)';
                     }
                 ?>
-                    <a href="<?php echo htmlspecialchars(ims_upload_url($attachment)); ?>" target="_blank" class="attachment-card">
-                        <i class="fas fa-<?php echo $icon; ?>" style="color: <?php echo $color; ?>;"></i>
+                    <a href="<?php echo htmlspecialchars(ims_upload_url($attachment)); ?>" target="_blank" class="vf-attachment">
+                        <i class="fas fa-<?php echo $icon; ?>" style="color: <?php echo $color; ?>;" aria-hidden="true"></i>
                         <div class="filename"><?php echo htmlspecialchars($filename); ?></div>
-                        <small style="color: #7f8c8d; display: block; margin-top: 5px;">
+                        <small>
                             <?php echo strtoupper($extension); ?>
                         </small>
                     </a>
                 <?php endforeach; ?>
             </div>
+            </div>
         </div>
         <?php endif; ?>
-        
+
         <!-- Admin Response -->
         <?php if ($feedback['admin_response']): ?>
-        <div class="response-section">
-            <div class="response-header">
-                <i class="fas fa-reply"></i>
-                <h4>Response from Team</h4>
+        <div class="card vf-response-card">
+            <div class="card-header">
+                <h3><i class="fas fa-reply" aria-hidden="true"></i> Response from Team</h3>
             </div>
-            <div class="response-content">
+            <div class="card-body">
+            <div class="vf-response-content">
                 <?php echo nl2br(htmlspecialchars($feedback['admin_response'])); ?>
             </div>
-            <div class="response-meta">
+            <div class="vf-response-meta">
                 <div>
-                    <i class="fas fa-user"></i>
+                    <i class="fas fa-user" aria-hidden="true"></i>
                     <strong><?php echo $feedback['responded_by_name'] ? htmlspecialchars($feedback['responded_by_name']) : 'Team Member'; ?></strong>
                 </div>
                 <div>
-                    <i class="fas fa-clock"></i>
+                    <i class="fas fa-clock" aria-hidden="true"></i>
                     <?php echo date('d M Y, h:i A', strtotime($feedback['responded_at'])); ?>
                 </div>
             </div>
+            </div>
         </div>
         <?php endif; ?>
-        
+
         <!-- Member Information (Admin View) -->
         <?php if ($is_admin && !$feedback['is_anonymous']): ?>
-        <div class="info-card">
-            <h3><i class="fas fa-user"></i> Member Information</h3>
-            <div class="info-grid">
-                <div class="info-item">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-user" aria-hidden="true"></i> Member Information</h3></div>
+            <div class="card-body">
+            <div class="vf-info-grid">
+                <div class="vf-info-item">
                     <label>Member Name</label>
                     <div class="value"><?php echo htmlspecialchars($feedback['member_name']); ?></div>
                 </div>
-                
-                <div class="info-item">
+
+                <div class="vf-info-item">
                     <label>Membership Number</label>
                     <div class="value"><code><?php echo htmlspecialchars($feedback['membership_number']); ?></code></div>
                 </div>
-                
-                <div class="info-item">
+
+                <div class="vf-info-item">
                     <label>Email</label>
                     <div class="value">
                         <a href="mailto:<?php echo htmlspecialchars($feedback['member_email']); ?>">
@@ -616,40 +349,43 @@ if ($feedback['attachments']) {
                     </div>
                 </div>
             </div>
+            </div>
         </div>
         <?php endif; ?>
     </div>
-    <div class="feedback-aside"><!-- right column (was .sidebar, which collided with the app sidebar) -->
-    
-    
+    <div class="vf-aside feedback-aside"><!-- right column (was .sidebar, which collided with the app sidebar) -->
+
+
     </div>
 </div>
 
+</div><!-- /.page-stack -->
+
 <!-- Respond Modal (Admin Only) -->
 <?php if (ims_allowed('feedback.respond', ['Administrator', 'Operations/Admin'], 'Respond to member feedback')): ?>
-<div id="respondModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Respond to Feedback</h3>
-            <span class="close" onclick="closeModal('respondModal')">&times;</span>
+<div id="respondModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="respondModalTitle">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3 id="respondModalTitle"><i class="fas fa-reply" aria-hidden="true"></i> Respond to Feedback</h3>
+            <button type="button" class="modal-close" onclick="closeModal('respondModal')" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="respond-feedback">
                 <input type="hidden" name="action" value="respond">
                 <input type="hidden" name="feedback_id" value="<?php echo $feedback['feedback_id']; ?>">
-                
+
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
                     Your response will be visible to the member and will update the feedback status.
                 </div>
-                
+
                 <div class="form-group">
                     <label for="admin_response" class="required">Response Message</label>
-                    <textarea id="admin_response" name="admin_response" class="form-control" 
-                              rows="6" required 
+                    <textarea id="admin_response" name="admin_response" class="form-control"
+                              rows="6" required
                               placeholder="Thank you for your feedback..."></textarea>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="new_status" class="required">Update Status To</label>
                     <select id="new_status" name="new_status" class="form-control" required>
@@ -658,11 +394,11 @@ if ($feedback['attachments']) {
                         <option value="Closed">Closed</option>
                     </select>
                 </div>
-                
-                <div class="modal-footer">
+
+                <div class="modal-actions">
                     <button type="button" onclick="closeModal('respondModal')" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-paper-plane"></i> Send Response
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i> Send Response
                     </button>
                 </div>
             </form>

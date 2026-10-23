@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
         exit;
     }
 
-    /* Estimated budget = sum of qty × unit price */
+    /* Estimated budget = sum of qty Ã— unit price */
     $total_budget = array_sum(array_map(fn($i) => $i['qty'] * $i['price'], $items));
 
     /* Insert procurement request */
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     </div>
   </div>
   <p style="font-size:11px;color:#9ca3af;text-align:center;margin-top:12px;">
-    Sent by IMS Procurement Module &nbsp;·&nbsp; ' . date('d M Y H:i') . '
+    Sent by IMS Procurement Module &nbsp;Â·&nbsp; ' . date('d M Y H:i') . '
   </p>
 </div>';
 
@@ -310,7 +310,7 @@ $stats = [
     <!-- -- Hero --------------------------------------------------------- -->
     <div class="page-hero">
         <div>
-            <h1><i class="fas fa-cart-shopping" style="margin-right:10px;opacity:.85;"></i>Procurement Requests</h1>
+            <h1><i class="fas fa-cart-shopping"></i> Procurement Requests</h1>
             <p><?= $isManager
                 ? 'Review, approve and manage all procurement requests across the organisation.'
                 : 'Submit multi-item procurement requests for review by the Procurement team.' ?>
@@ -320,11 +320,11 @@ $stats = [
             <button type="button" class="btn btn-primary" onclick="openModal('requestModal')">
                 <i class="fas fa-plus-circle"></i> New Request
             </button>
-            <button type="button" class="btn btn-soft" onclick="openModal('importProcurementModal')">
+            <button type="button" class="btn" onclick="openModal('importProcurementModal')">
                 <i class="fas fa-file-import"></i> Import CSV
             </button>
             <?php if ($isManager): ?>
-                <a href="procurement_categories" class="btn btn-dark">
+                <a href="procurement_categories" class="btn">
                     <i class="fas fa-tags"></i> Categories
                 </a>
             <?php endif; ?>
@@ -449,7 +449,7 @@ $stats = [
                                         <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px;">
                                             <?php foreach (array_slice($items, 0, 4) as $it): ?>
                                                 <span style="font-size:10px;background:var(--ink-50);border:1px solid var(--ink-100);border-radius:4px;padding:2px 7px;color:var(--ink-400);">
-                                                    <?= e($it['item_name']) ?> ×<?= (int)$it['quantity'] ?>
+                                                    <?= e($it['item_name']) ?> Ã—<?= (int)$it['quantity'] ?>
                                                 </span>
                                             <?php endforeach; ?>
                                             <?php if (count($items) > 4): ?>

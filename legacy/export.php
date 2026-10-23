@@ -47,7 +47,7 @@ header('Cache-Control: must-revalidate');
 
 $out = fopen('php://output', 'w');
 
-/* UTF-8 BOM — makes Excel open the file correctly on Windows */
+/* UTF-8 BOM â€” makes Excel open the file correctly on Windows */
 fwrite($out, "\xEF\xBB\xBF");
 
 /* -- Helper: write a row, skipping null ? 'N/A' ---------------------- */
@@ -257,8 +257,8 @@ switch ($type) {
                     ELSE 'General'
                 END AS context_type,
                 CASE
-                    WHEN e.project_id IS NOT NULL THEN CONCAT(p.project_code, ' — ', p.project_name)
-                    WHEN e.program_id IS NOT NULL THEN CONCAT(pr.program_code, ' — ', pr.program_name)
+                    WHEN e.project_id IS NOT NULL THEN CONCAT(p.project_code, ' â€” ', p.project_name)
+                    WHEN e.program_id IS NOT NULL THEN CONCAT(pr.program_code, ' â€” ', pr.program_name)
                     ELSE NULL
                 END AS context_name,
                 (SELECT COUNT(*)     FROM event_attendance ea WHERE ea.event_id = e.event_id)                                         AS registered_count,

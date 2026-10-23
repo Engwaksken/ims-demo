@@ -29,7 +29,7 @@ function tw(string $text, int $limit = 20): string {
     return count($words) <= $limit ? $text : implode(' ', array_slice($words, 0, $limit)) . '...';
 }
 function sc(float $s): string { return $s >= 70 ? 'high'  : ($s >= 40 ? 'mid'    : 'low');   }
-function pc(float $s): string { return $s >= 70 ? 'green' : ($s >= 40 ? 'yellow' : 'red');   }
+function pc(float $s): string { return $s >= 70 ? 'badge-success' : ($s >= 40 ? 'badge-warning' : 'badge-danger'); }
 function pgRange(int $cur, int $total): array {
     $r = [];
     for ($i = max(1,$cur-2); $i <= min($total,$cur+2); $i++) $r[] = $i;
@@ -51,7 +51,7 @@ $activeTab  = max(0, (int)($_GET['tab'] ?? 0));
 $page       = max(1, (int)($_GET['page'] ?? 1));
 
 if ($reviewerId <= 0) {
-    echo '<div class="alert alert-error" style="margin:24px;"><i class="fas fa-exclamation-circle"></i> Invalid reviewer selected.</div>';
+    echo '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Invalid reviewer selected.</div>';
     require_once __DIR__ . '/includes/footer.php';
     exit;
 }
@@ -59,7 +59,7 @@ if ($reviewerId <= 0) {
 /* -- Reviewer -------------------------------------------------- */
 $reviewer = fetchO($conn, "SELECT user_id, full_name, email FROM users WHERE user_id=? LIMIT 1", 'i', [$reviewerId]);
 if (!$reviewer) {
-    echo '<div class="alert alert-error" style="margin:24px;"><i class="fas fa-exclamation-circle"></i> Reviewer not found.</div>';
+    echo '<div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> Reviewer not found.</div>';
     require_once __DIR__ . '/includes/footer.php';
     exit;
 }
@@ -218,16 +218,65 @@ foreach ($reviewTypes as $rt) {
 }
 ?>
 
-<link rel="stylesheet" href="css/assets.css">
-<link rel="stylesheet" href="css/progress_board.css">
 <style>
-/* -- Page-specific: criteria sub-table + tooltip --------------- */
-.criteria-block {
-    background: var(--brand-50);
-    border-top: 1px solid var(--brand-100);
-    padding: 16px 20px 20px;
-}
+/* -- manage_reviewer_scores page-specific layout -- */
+.mrs-tab-nav .badge { padding: 1px 7px; font-size: 10px; }
+.mrs-filters.filters-bar { margin-bottom: 0; }
 
+/* Score tone helpers (text, bar fill and ring stroke) */
+.mrs-tone-high { color: var(--green-fg); }
+.mrs-tone-mid  { color: var(--amber-fg); }
+.mrs-tone-low  { color: var(--red-fg); }
+
+/* Score bar */
+.mrs-bar { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+.mrs-bar.is-sm { min-width: 90px; }
+.mrs-bar-track { flex: 1; height: 6px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; }
+.mrs-bar-fill { height: 100%; border-radius: var(--radius-pill); }
+.mrs-bar-fill.high { background: var(--green-fg); }
+.mrs-bar-fill.mid  { background: var(--amber-fg); }
+.mrs-bar-fill.low  { background: var(--red-fg); }
+.mrs-bar-val { font-size: 12px; font-weight: 700; color: var(--ink-700); white-space: nowrap; }
+.mrs-bar.is-sm .mrs-bar-val { font-size: 11px; }
+.mrs-num { font-size: 12px; font-variant-numeric: tabular-nums; }
+.mrs-earned { margin-top: 3px; font-size: 11px; }
+.mrs-mt-4 { margin-top: 4px; }
+
+/* Tab-level summary strip */
+.mrs-summary { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.mrs-summary-item { display: flex; align-items: center; gap: 8px; }
+.mrs-summary-item i { color: var(--brand-400); font-size: 13px; }
+.mrs-summary-label { font-size: 13px; color: var(--ink-300); }
+.mrs-summary-value { font-size: 15px; color: var(--ink-700); }
+.mrs-summary-ring { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.mrs-ring-track { stroke: var(--ink-100); }
+.mrs-ring-arc.high { stroke: var(--green-fg); }
+.mrs-ring-arc.mid  { stroke: var(--amber-fg); }
+.mrs-ring-arc.low  { stroke: var(--red-fg); }
+.mrs-ring-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-300); }
+.mrs-ring-value { font-size: 18px; font-weight: 800; line-height: 1; }
+
+/* Active filter chip + meta bar */
+.mrs-chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 22px 14px; }
+.mrs-chips .badge a { color: inherit; text-decoration: none; margin-left: 2px; opacity: .7; }
+.mrs-chips .badge a:hover { opacity: 1; }
+.mrs-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 22px;
+    background: var(--ink-50);
+    border-top: 1px solid var(--ink-100);
+    border-bottom: 1px solid var(--ink-100);
+    font-size: 12px;
+    color: var(--ink-400);
+}
+.mrs-meta strong { color: var(--ink-700); }
+
+/* Criteria breakdown sub-table */
+.mrs-breakdown-cell { padding: 0; background: var(--brand-50); }
+.criteria-block { background: var(--brand-50); border-top: 1px solid var(--brand-100); padding: 16px 20px 20px; }
 .criteria-block-title {
     font-size: 11px;
     font-weight: 700;
@@ -239,26 +288,14 @@ foreach ($reviewTypes as $rt) {
     align-items: center;
     gap: 8px;
 }
-
-.criteria-inner {
-    background: var(--surface-card);
-    border: 1px solid var(--ink-100);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-}
-
-.criteria-inner table { min-width: 680px; }
-.criteria-inner thead th { background: var(--ink-50); font-size: 10px; }
+.criteria-inner { background: var(--surface-card); border: 1px solid var(--ink-100); border-radius: var(--radius-md); overflow: hidden; }
+.criteria-inner .table { min-width: 680px; }
+.criteria-inner thead th { font-size: 10px; }
 .criteria-inner tbody td { font-size: 12.5px; padding: 10px 14px; }
+.mrs-comment { max-width: 220px; cursor: help; }
 
 /* Tooltip */
-.tip-cell {
-    position: relative;
-    max-width: 280px;
-    cursor: help;
-    line-height: 1.5;
-}
-
+.tip-cell { position: relative; max-width: 280px; cursor: help; line-height: 1.5; }
 .tip-bubble {
     position: absolute;
     left: 0;
@@ -275,12 +312,11 @@ foreach ($reviewTypes as $rt) {
     opacity: 0;
     visibility: hidden;
     transform: translateY(6px);
-    transition: opacity .16s var(--ease-out), transform .16s var(--ease-out), visibility .16s;
+    transition: opacity .16s, transform .16s, visibility .16s;
     z-index: 200;
     white-space: normal;
     pointer-events: none;
 }
-
 .tip-bubble::before {
     content: '';
     position: absolute;
@@ -289,17 +325,10 @@ foreach ($reviewTypes as $rt) {
     border-bottom-color: var(--ink-900);
     border-top: none;
 }
-
 .tip-cell:hover .tip-bubble { opacity: 1; visibility: visible; transform: translateY(0); }
 
 /* Overview tab: per-type summary cards */
-.type-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 14px;
-    padding: 20px;
-}
-
+.type-summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
 .type-summary-card {
     background: var(--surface-card);
     border: 1.5px solid var(--ink-100);
@@ -312,66 +341,37 @@ foreach ($reviewTypes as $rt) {
     text-decoration: none;
     color: inherit;
 }
+.type-summary-card:hover { border-color: var(--brand-200); box-shadow: var(--shadow-md); }
+.type-summary-card .tc-name { font-size: 14px; font-weight: 800; color: var(--ink-700); }
+.type-summary-card .tc-meta { font-size: 12px; color: var(--ink-300); display: flex; gap: 12px; }
+.type-summary-card .tc-meta i { color: var(--brand-400); margin-right: 4px; }
+.type-summary-card .tc-score { font-size: 22px; font-weight: 800; line-height: 1; }
+.type-summary-card .tc-link { font-size: 11px; color: var(--ink-300); }
 
-.type-summary-card:hover {
-    border-color: var(--brand-300, #fdba74);
-    box-shadow: var(--shadow-md);
-}
-
-.type-summary-card .tc-name {
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--ink-700);
-    letter-spacing: -.01em;
-}
-
-.type-summary-card .tc-meta {
-    font-size: 12px;
-    color: var(--ink-300);
-    display: flex;
-    gap: 12px;
-}
-
-.type-summary-card .tc-score {
-    font-family: var(--font-mono);
-    font-size: 22px;
-    font-weight: 800;
-    line-height: 1;
-}
-
-.type-summary-card .tc-bar-track {
-    height: 6px;
-    background: var(--ink-100);
-    border-radius: 999px;
-    overflow: hidden;
-}
-
-.type-summary-card .tc-bar-fill {
-    height: 100%;
-    border-radius: 999px;
-}
+/* Pagination row */
+.mrs-pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px 22px; border-top: 1px solid var(--ink-50); }
+.mrs-pager .pagination { margin: 0; }
 
 @media (max-width: 640px) {
     .criteria-block { padding: 12px 14px 16px; }
     .type-summary-grid { grid-template-columns: 1fr; }
+    .mrs-summary-ring { margin-left: 0; }
 }
 </style>
 
-<div class="assets-wrap pb-wrap">
+<div class="page-stack">
 
     <!-- -- Page Hero ------------------------------------------------ -->
     <div class="page-hero">
         <div>
-            <h1><i class="fas fa-user-check"></i>
+            <h1><i class="fas fa-user-check" aria-hidden="true"></i>
                 <?= e($reviewer['full_name'] ?: ('User #' . $reviewerId)) ?>
             </h1>
-            <p>Reviewer Score Detail &mdash; <?= e($activeTabName) ?></p>
+            <p>Reviewer Score Detail &mdash; <?= e($activeTabName) ?> &middot; Reviewer #<?= $reviewerId ?> &middot; <?= e($reviewer['email'] ?? '-') ?></p>
         </div>
-        <div class="hero-actions" style="font-size:13px;opacity:.85;line-height:1.8;text-align:right;position:relative;z-index:1;">
-            <div>Reviewer ID: <strong>#<?= $reviewerId ?></strong></div>
-            <div>Email: <strong><?= e($reviewer['email'] ?? '-') ?></strong></div>
-            <a href="progress-board" class="btn btn-primary" style="margin-top:6px;">
-                <i class="fas fa-arrow-left"></i> Back to Report
+        <div class="hero-actions">
+            <a href="progress-board" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Report
             </a>
         </div>
     </div>
@@ -399,42 +399,31 @@ foreach ($reviewTypes as $rt) {
                 <span class="stat-value"><?= $gCrit ?></span>
             </div>
         </div>
-        <!-- Overall avg ring -->
-        <div class="stat-card" style="padding:16px 20px;">
-            <?php
-            $ap    = round($gAvg);
-            $rr    = 28;
-            $circ  = 2 * M_PI * $rr;
-            $dash  = ($ap / 100) * $circ;
-            $rc    = $ap >= 70 ? 'var(--green-fg)' : ($ap >= 40 ? 'var(--amber-fg)' : 'var(--red-fg)');
-            ?>
-            <div class="ring-card">
-                <div class="ring-svg-wrap">
-                    <svg viewBox="0 0 64 64" width="64" height="64">
-                        <circle cx="32" cy="32" r="<?= $rr ?>" fill="none" stroke="var(--ink-100)" stroke-width="6"/>
-                        <circle cx="32" cy="32" r="<?= $rr ?>" fill="none" stroke="<?= $rc ?>" stroke-width="6"
-                                stroke-dasharray="<?= round($dash,2) ?> <?= round($circ,2) ?>"
-                                stroke-linecap="round" transform="rotate(-90 32 32)"/>
-                    </svg>
-                    <div class="ring-pct" style="color:<?= $rc ?>"><?= $ap ?>%</div>
-                </div>
-                <div>
-                    <div class="ring-info-label">Overall Avg</div>
-                    <div class="ring-info-value" style="color:<?= $rc ?>"><?= number_format($gAvg,1) ?>%</div>
-                    <div class="ring-info-sub">all review types</div>
-                </div>
+        <!-- Overall avg -->
+        <?php
+        $ap     = round($gAvg);
+        $apTone = sc((float)$ap);
+        $apIcon = ['high' => 'bg-green', 'mid' => 'bg-amber', 'low' => 'bg-red'][$apTone];
+        ?>
+        <div class="stat-card">
+            <div class="stat-icon <?= $apIcon ?>"><i class="fas fa-percent"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Overall Avg</span>
+                <span class="stat-value mrs-tone-<?= $apTone ?>"><?= number_format($gAvg,1) ?>%</span>
+                <span class="stat-sub">all review types</span>
             </div>
         </div>
     </div>
 
     <!-- -- Tab navigation ------------------------------------------- -->
-    <nav class="tab-nav" role="tablist">
+    <div class="tab-shell">
+    <nav class="tab-nav mrs-tab-nav" role="tablist">
         <!-- Overview tab -->
         <a href="<?= e(tabUrl($reviewerId, 0)) ?>"
            class="tab-btn<?= $activeTab === 0 ? ' active' : '' ?>"
            role="tab" aria-selected="<?= $activeTab === 0 ? 'true' : 'false' ?>">
             <i class="fas fa-gauge-high"></i> Overview
-            <span class="tab-badge"><?= count($reviewTypes) ?></span>
+            <span class="badge badge-secondary"><?= count($reviewTypes) ?></span>
         </a>
 
         <!-- One tab per active review type this reviewer has scored -->
@@ -446,10 +435,11 @@ foreach ($reviewTypes as $rt) {
            class="tab-btn<?= $isActive ? ' active' : '' ?>"
            role="tab" aria-selected="<?= $isActive ? 'true' : 'false' ?>">
             <i class="fas fa-star-half-stroke"></i> <?= e($rt['name']) ?>
-            <span class="tab-badge"><?= (int)$rt['startup_count'] ?></span>
+            <span class="badge badge-secondary"><?= (int)$rt['startup_count'] ?></span>
         </a>
         <?php endforeach; ?>
     </nav>
+    </div>
 
     <!-- --------------------------------------------------------------
          OVERVIEW TAB - summary cards per review type
@@ -462,11 +452,12 @@ foreach ($reviewTypes as $rt) {
         </div>
 
         <?php if (empty($reviewTypes)): ?>
-            <div style="text-align:center;padding:48px;color:var(--ink-200);">
-                <i class="fas fa-inbox" style="display:block;font-size:1.8rem;margin-bottom:10px;opacity:.3;"></i>
-                This reviewer has not submitted any scores yet.
+            <div class="empty-state">
+                <i class="fas fa-inbox" aria-hidden="true"></i>
+                <p>This reviewer has not submitted any scores yet.</p>
             </div>
         <?php else: ?>
+        <div class="panel-body">
         <div class="type-summary-grid">
             <?php foreach ($reviewTypes as $rt):
                 // Per-type avg
@@ -481,23 +472,23 @@ foreach ($reviewTypes as $rt) {
                 $rtCrit  = (int)($rtAvgRow['scored_count'] ?? 0);
                 $fillCls = sc($rtAvg);
                 $scoreCl = pc($rtAvg);
-                $barColor = $rtAvg >= 70 ? 'var(--green-fg)' : ($rtAvg >= 40 ? 'var(--amber-fg)' : 'var(--red-fg)');
             ?>
             <a href="<?= e(tabUrl($reviewerId,(int)$rt['review_type_id'])) ?>" class="type-summary-card">
                 <div class="tc-name"><?= e($rt['name']) ?></div>
                 <div class="tc-meta">
-                    <span><i class="fas fa-building" style="color:var(--brand-400);margin-right:4px;"></i><?= (int)$rt['startup_count'] ?> startup<?= (int)$rt['startup_count'] !== 1 ? 's' : '' ?></span>
-                    <span><i class="fas fa-list-check" style="color:var(--brand-400);margin-right:4px;"></i><?= $rtCrit ?> criteria</span>
+                    <span><i class="fas fa-building"></i><?= (int)$rt['startup_count'] ?> startup<?= (int)$rt['startup_count'] !== 1 ? 's' : '' ?></span>
+                    <span><i class="fas fa-list-check"></i><?= $rtCrit ?> criteria</span>
                 </div>
-                <div class="tc-score" style="color:<?= $barColor ?>"><?= $rtAvg ?>%</div>
-                <div class="tc-bar-track">
-                    <div class="tc-bar-fill score-bar-fill <?= $fillCls ?>" style="width:<?= min(100,$rtAvg) ?>%"></div>
+                <div class="tc-score mrs-tone-<?= $fillCls ?>"><?= $rtAvg ?>%</div>
+                <div class="mrs-bar-track">
+                    <div class="mrs-bar-fill <?= $fillCls ?>" style="width:<?= min(100,$rtAvg) ?>%"></div>
                 </div>
-                <div style="font-size:11px;color:var(--ink-300);font-family:var(--font-mono);">
-                    Click to view detailed scores ?
+                <div class="tc-link">
+                    Click to view detailed scores <i class="fas fa-arrow-right" aria-hidden="true"></i>
                 </div>
             </a>
             <?php endforeach; ?>
+        </div>
         </div>
         <?php endif; ?>
     </div>
@@ -509,17 +500,17 @@ foreach ($reviewTypes as $rt) {
 
     <!-- Tab-level avg mini-stat -->
     <?php if ($activeTab > 0 && !empty($tabSummary)): ?>
-    <div class="panel" style="padding:14px 20px;">
-        <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+    <div class="panel">
+        <div class="panel-body mrs-summary">
             <?php foreach ([
                 ['Startups', (int)($tabSummary['total_startups'] ?? 0), 'fa-building'],
                 ['Review Sets', (int)($tabSummary['total_sets'] ?? 0), 'fa-layer-group'],
                 ['Criteria Scored', (int)($tabSummary['total_criteria'] ?? 0), 'fa-list-check'],
             ] as [$lbl,$val,$icon]): ?>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <i class="fas <?= $icon ?>" style="color:var(--brand-400);font-size:13px;"></i>
-                <span style="font-size:13px;color:var(--ink-300);"><?= $lbl ?>:</span>
-                <strong style="font-size:15px;color:var(--ink-700);"><?= $val ?></strong>
+            <div class="mrs-summary-item">
+                <i class="fas <?= $icon ?>"></i>
+                <span class="mrs-summary-label"><?= $lbl ?>:</span>
+                <strong class="mrs-summary-value"><?= $val ?></strong>
             </div>
             <?php endforeach; ?>
             <!-- Avg score inline ring -->
@@ -527,18 +518,18 @@ foreach ($reviewTypes as $rt) {
             $tap   = round($tabAvg);
             $tcirc = 2 * M_PI * 22;
             $tdash = ($tap / 100) * $tcirc;
-            $tclr  = $tap >= 70 ? 'var(--green-fg)' : ($tap >= 40 ? 'var(--amber-fg)' : 'var(--red-fg)');
+            $ttone = sc((float)$tap);
             ?>
-            <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-                <svg viewBox="0 0 50 50" width="44" height="44">
-                    <circle cx="25" cy="25" r="22" fill="none" stroke="var(--ink-100)" stroke-width="5"/>
-                    <circle cx="25" cy="25" r="22" fill="none" stroke="<?= $tclr ?>" stroke-width="5"
+            <div class="mrs-summary-ring">
+                <svg viewBox="0 0 50 50" width="44" height="44" aria-hidden="true">
+                    <circle class="mrs-ring-track" cx="25" cy="25" r="22" fill="none" stroke-width="5"/>
+                    <circle class="mrs-ring-arc <?= $ttone ?>" cx="25" cy="25" r="22" fill="none" stroke-width="5"
                             stroke-dasharray="<?= round($tdash,2) ?> <?= round($tcirc,2) ?>"
                             stroke-linecap="round" transform="rotate(-90 25 25)"/>
                 </svg>
                 <div>
-                    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-300);">Avg Score</div>
-                    <div style="font-size:18px;font-weight:800;color:<?= $tclr ?>;line-height:1;"><?= number_format($tabAvg,1) ?>%</div>
+                    <div class="mrs-ring-label">Avg Score</div>
+                    <div class="mrs-ring-value mrs-tone-<?= $ttone ?>"><?= number_format($tabAvg,1) ?>%</div>
                 </div>
             </div>
         </div>
@@ -547,24 +538,24 @@ foreach ($reviewTypes as $rt) {
 
     <div class="panel">
         <!-- Toolbar: search -->
-        <div class="pb-toolbar">
-            <form method="GET" class="filters-bar" role="search">
+        <div class="panel-body">
+            <form method="GET" class="filters-bar mrs-filters" role="search">
                 <input type="hidden" name="reviewer_id" value="<?= $reviewerId ?>">
                 <input type="hidden" name="tab" value="<?= $activeTab ?>">
                 <input type="hidden" name="page" value="1">
 
-                <div class="pb-toolbar-search">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="search" name="search" value="<?= e($search) ?>"
+                <div class="search-input-wrap">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input type="search" name="search" value="<?= e($search) ?>" class="form-control"
                            placeholder="Search startup or application ID..." autocomplete="off">
                 </div>
 
-                <button type="submit" class="btn btn-sm btn-dark">
+                <button type="submit" class="btn btn-sm btn-primary">
                     <i class="fas fa-search"></i> Search
                 </button>
 
                 <?php if ($search !== ''): ?>
-                    <a href="<?= e(tabUrl($reviewerId,$activeTab)) ?>" class="btn btn-sm btn-gray">
+                    <a href="<?= e(tabUrl($reviewerId,$activeTab)) ?>" class="btn btn-sm btn-secondary">
                         <i class="fas fa-times"></i> Clear
                     </a>
                 <?php endif; ?>
@@ -573,22 +564,22 @@ foreach ($reviewTypes as $rt) {
 
         <!-- Active filter chip -->
         <?php if ($search !== ''): ?>
-        <div class="active-filters">
-            <span class="filter-chip">
-                <i class="fas fa-search" style="font-size:9px;"></i> "<?= e($search) ?>"
-                <a href="<?= e(tabUrl($reviewerId,$activeTab)) ?>">×</a>
+        <div class="mrs-chips">
+            <span class="badge badge-secondary">
+                <i class="fas fa-search"></i> "<?= e($search) ?>"
+                <a href="<?= e(tabUrl($reviewerId,$activeTab)) ?>">Ã—</a>
             </span>
         </div>
         <?php endif; ?>
 
         <!-- Meta bar -->
-        <div class="pb-meta">
+        <div class="mrs-meta">
             <span><strong><?= $totalRows ?></strong> startup<?= $totalRows !== 1 ? 's' : '' ?><?= $search !== '' ? ' matching "'.e($search).'"' : '' ?> in <em><?= e($activeTabName) ?></em></span>
             <span>Showing <?= $fromRow ?>-<?= $toRow ?> &middot; Page <strong><?= $page ?></strong> of <strong><?= $totalPages ?></strong></span>
         </div>
 
         <!-- Score table -->
-        <div class="table-wrap">
+        <div class="table-responsive">
             <table class="table">
                 <thead>
                 <tr>
@@ -602,9 +593,11 @@ foreach ($reviewTypes as $rt) {
                 </thead>
                 <tbody>
                 <?php if (empty($scoreRows)): ?>
-                    <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--ink-200);">
-                        <i class="fas fa-inbox" style="display:block;font-size:1.8rem;margin-bottom:10px;opacity:.3;"></i>
-                        No scores found<?= $search !== '' ? ' for "'.e($search).'"' : '' ?>.
+                    <tr><td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-inbox" aria-hidden="true"></i>
+                            <p>No scores found<?= $search !== '' ? ' for "'.e($search).'"' : '' ?>.</p>
+                        </div>
                     </td></tr>
                 <?php else: ?>
                     <?php foreach ($scoreRows as $row):
@@ -617,37 +610,37 @@ foreach ($reviewTypes as $rt) {
                     <tr>
                         <td>
                             <strong><?= e($row['startup_name']) ?></strong><br>
-                            <span class="note">App #<?= (int)$row['application_id'] ?></span>
+                            <span class="cell-muted">App #<?= (int)$row['application_id'] ?></span>
                         </td>
-                        <td class="note"><?= e($row['sector'] ?: '-') ?></td>
-                        <td><span class="pill slate"><?= (int)$row['criteria_scored'] ?></span></td>
+                        <td class="cell-muted"><?= e($row['sector'] ?: '-') ?></td>
+                        <td><span class="badge badge-secondary"><?= (int)$row['criteria_scored'] ?></span></td>
                         <td>
-                            <div class="score-bar-wrap">
-                                <div class="score-bar-track">
-                                    <div class="score-bar-fill <?= $fillC ?>" style="width:<?= min(100,$pct) ?>%"></div>
+                            <div class="mrs-bar">
+                                <div class="mrs-bar-track">
+                                    <div class="mrs-bar-fill <?= $fillC ?>" style="width:<?= min(100,$pct) ?>%"></div>
                                 </div>
-                                <span class="score-val"><?= number_format($pct,2) ?>%</span>
+                                <span class="mrs-bar-val"><?= number_format($pct,2) ?>%</span>
                             </div>
-                            <div class="note" style="margin-top:3px;font-family:var(--font-mono);font-size:11px;">
+                            <div class="cell-muted mrs-num mrs-earned">
                                 <?= number_format((float)$row['earned'],2) ?> / <?= number_format((float)$row['max_w'],2) ?>
                             </div>
                         </td>
-                        <td class="note"><?= !empty($row['first_at']) ? date('d M Y H:i', strtotime($row['first_at'])) : '-' ?></td>
-                        <td class="note"><?= !empty($row['last_at'])  ? date('d M Y H:i', strtotime($row['last_at']))  : '-' ?></td>
+                        <td class="cell-muted"><?= !empty($row['first_at']) ? date('d M Y H:i', strtotime($row['first_at'])) : '-' ?></td>
+                        <td class="cell-muted"><?= !empty($row['last_at'])  ? date('d M Y H:i', strtotime($row['last_at']))  : '-' ?></td>
                     </tr>
 
                     <!-- Criteria breakdown row -->
                     <tr>
-                        <td colspan="6" style="padding:0;background:var(--brand-50);">
+                        <td colspan="6" class="mrs-breakdown-cell">
                             <div class="criteria-block">
                                 <div class="criteria-block-title">
                                     <i class="fas fa-table-list"></i>
                                     Criteria breakdown - <?= e($row['startup_name']) ?>
-                                    <span class="pill <?= $pillC ?>"><?= number_format($pct,2) ?>%</span>
+                                    <span class="badge <?= $pillC ?>"><?= number_format($pct,2) ?>%</span>
                                 </div>
 
                                 <div class="criteria-inner">
-                                    <div class="table-wrap">
+                                    <div class="table-responsive">
                                         <table class="table">
                                             <thead>
                                             <tr>
@@ -669,35 +662,35 @@ foreach ($reviewTypes as $rt) {
                                                     $short = tw($full, 18);
                                                 ?>
                                                 <tr>
-                                                    <td class="note"><?= e($cr['category']) ?></td>
+                                                    <td class="cell-muted"><?= e($cr['category']) ?></td>
                                                     <td class="tip-cell">
                                                         <?= e($short) ?>
                                                         <?php if ($full !== ''): ?>
                                                             <div class="tip-bubble"><?= e($full) ?></div>
                                                         <?php endif; ?>
                                                         <?php if (!empty($cr['description'])): ?>
-                                                            <div class="note" style="margin-top:4px;"><?= e($cr['description']) ?></div>
+                                                            <div class="note mrs-mt-4"><?= e($cr['description']) ?></div>
                                                         <?php endif; ?>
                                                     </td>
-                                                    <td style="font-family:var(--font-mono);font-size:12px;"><?= number_format((float)$cr['score'],2) ?></td>
-                                                    <td style="font-family:var(--font-mono);font-size:12px;"><?= number_format((float)$cr['max_score'],2) ?></td>
-                                                    <td style="font-family:var(--font-mono);font-size:12px;"><?= number_format((float)$cr['weight'],2) ?></td>
+                                                    <td class="mrs-num"><?= number_format((float)$cr['score'],2) ?></td>
+                                                    <td class="mrs-num"><?= number_format((float)$cr['max_score'],2) ?></td>
+                                                    <td class="mrs-num"><?= number_format((float)$cr['weight'],2) ?></td>
                                                     <td>
-                                                        <div class="score-bar-wrap" style="min-width:90px;">
-                                                            <div class="score-bar-track">
-                                                                <div class="score-bar-fill <?= $cfc ?>" style="width:<?= min(100,$cp) ?>%"></div>
+                                                        <div class="mrs-bar is-sm">
+                                                            <div class="mrs-bar-track">
+                                                                <div class="mrs-bar-fill <?= $cfc ?>" style="width:<?= min(100,$cp) ?>%"></div>
                                                             </div>
-                                                            <span class="score-val" style="font-size:11px;"><?= number_format($cp,1) ?>%</span>
+                                                            <span class="mrs-bar-val"><?= number_format($cp,1) ?>%</span>
                                                         </div>
                                                     </td>
-                                                    <td class="comment-cell" title="<?= e((string)($cr['comments']??'')) ?>">
+                                                    <td class="mrs-comment" title="<?= e((string)($cr['comments']??'')) ?>">
                                                         <?php $cmtTxt = tw((string)($cr['comments']??''),12); ?>
-                                                        <?= $cmtTxt !== '' ? e($cmtTxt) : '<span class="note">-</span>' ?>
+                                                        <?= $cmtTxt !== '' ? e($cmtTxt) : '<span class="cell-muted">-</span>' ?>
                                                     </td>
                                                 </tr>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
-                                                <tr><td colspan="7" style="text-align:center;padding:16px;color:var(--ink-200);">No criteria breakdown found.</td></tr>
+                                                <tr><td colspan="7" class="text-center cell-muted">No criteria breakdown found.</td></tr>
                                             <?php endif; ?>
                                             </tbody>
                                         </table>
@@ -714,24 +707,24 @@ foreach ($reviewTypes as $rt) {
 
         <!-- Pagination -->
         <?php if ($totalPages > 1): ?>
-        <div class="pb-pagination">
-            <span class="subtle-note">Showing <?= $fromRow ?>-<?= $toRow ?> of <?= $totalRows ?></span>
-            <div class="pg-links">
+        <div class="mrs-pager">
+            <span class="cell-muted">Showing <?= $fromRow ?>-<?= $toRow ?> of <?= $totalRows ?></span>
+            <div class="pagination">
                 <a href="<?= e(pgUrl($reviewerId,$activeTab,$page-1,$search)) ?>"
-                   class="pg-btn <?= $page <= 1 ? 'pg-disabled' : '' ?>">
+                   class="<?= $page <= 1 ? 'disabled' : '' ?>">
                     <i class="fas fa-chevron-left"></i>
                 </a>
                 <?php foreach (pgRange($page,$totalPages) as $pn): ?>
                     <?php if ($pn === '...'): ?>
-                        <span class="pg-ellipsis">...</span>
+                        <span class="disabled">...</span>
                     <?php elseif ($pn === $page): ?>
-                        <span class="pg-btn pg-active"><?= $pn ?></span>
+                        <span class="current"><?= $pn ?></span>
                     <?php else: ?>
-                        <a href="<?= e(pgUrl($reviewerId,$activeTab,(int)$pn,$search)) ?>" class="pg-btn"><?= $pn ?></a>
+                        <a href="<?= e(pgUrl($reviewerId,$activeTab,(int)$pn,$search)) ?>"><?= $pn ?></a>
                     <?php endif; ?>
                 <?php endforeach; ?>
                 <a href="<?= e(pgUrl($reviewerId,$activeTab,$page+1,$search)) ?>"
-                   class="pg-btn <?= $page >= $totalPages ? 'pg-disabled' : '' ?>">
+                   class="<?= $page >= $totalPages ? 'disabled' : '' ?>">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             </div>
@@ -741,6 +734,6 @@ foreach ($reviewTypes as $rt) {
     </div><!-- /.panel -->
     <?php endif; ?>
 
-</div><!-- /.pb-wrap -->
+</div><!-- /.page-stack -->
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

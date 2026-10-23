@@ -4,10 +4,6 @@
  * Requires assets.css (tokens, base, panel, table, badge, modal, forms).
  */
 
-/* -- Stat icon colour variants not in assets.css -------------- */
-.bg-red    { background: var(--red-bg);  color: var(--red-fg);  }
-.bg-purple { background: #f5f3ff;        color: #6d28d9;        }
-
 /* -- Panel head: title + toolbar on same row ------------------ */
 .users-panel-head {
     display: flex;
@@ -62,7 +58,7 @@
     padding: 0 32px 0 32px;
     border: 1.5px solid var(--ink-100);
     border-radius: var(--radius-md);
-    font-family: var(--font-body);
+    font-family: inherit;
     font-size: 13px;
     color: var(--ink-700);
     background: var(--surface-card);
@@ -108,7 +104,7 @@
     padding: 0 30px 0 10px;
     border: 1.5px solid var(--ink-100);
     border-radius: var(--radius-md);
-    font-family: var(--font-body);
+    font-family: inherit;
     font-size: 12px;
     font-weight: 600;
     color: var(--ink-500);
@@ -254,7 +250,7 @@
 
 .u-avatar[data-letter="E"],.u-avatar[data-letter="J"],
 .u-avatar[data-letter="O"],.u-avatar[data-letter="T"],
-.u-avatar[data-letter="Y"] { background: #f5f3ff; color: #6d28d9; }
+.u-avatar[data-letter="Y"] { background: var(--purple-bg); color: var(--purple-fg); }
 
 /* -- User name cell ------------------------------------------- */
 .u-cell      { display: flex; align-items: center; gap: 10px; }
@@ -271,7 +267,7 @@
     padding: 3px 9px;
 }
 .badge-role[data-role="Administrator"] {
-    background: #fef3c7; color: #92400e; border-color: #fde68a;
+    background: var(--amber-bg); color: var(--amber-fg); border-color: var(--amber-border);
 }
 .badge-role[data-role="Procurement Officer"],
 .badge-role[data-role="Accountant"],

@@ -548,34 +548,31 @@ $rp_plural = static function (int $n, string $one, string $many): string {
 };
 ?>
 
-<div class="reports-wrap rp-page">
+<div class="page-stack rp-page">
 
     <!-- ── Hero ───────────────────────────────────────────────────────── -->
-    <header class="reports-hero rp-hero">
-        <div class="reports-hero-text">
-            <p class="rp-hero-eyebrow">
-                <i class="fas fa-clock" aria-hidden="true"></i> Live data &middot; <?= date('d M Y') ?>
-            </p>
-            <h1><i class="fas fa-chart-bar rp-hero-icon" aria-hidden="true"></i>Reports &amp; Analytics</h1>
-            <p>Generate, explore and export organisation-wide reports across programmes, projects and participants.</p>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-chart-bar" aria-hidden="true"></i> Reports &amp; Analytics</h1>
+            <p>Generate, explore and export organisation-wide reports across programmes, projects and participants. Live data as of <?= date('d M Y') ?>.</p>
         </div>
         <div class="hero-actions">
             <!-- PDF export -->
-            <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn rp-hero-btn rp-hero-btn-solid">
+            <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn btn-primary">
                 <i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF
             </a>
             <!-- CSV overview export -->
-            <a href="reports?export=csv&amp;section=overview" class="btn rp-hero-btn">
+            <a href="reports?export=csv&amp;section=overview" class="btn">
                 <i class="fas fa-file-csv" aria-hidden="true"></i> Export CSV
             </a>
-            <button type="button" onclick="window.print()" class="btn rp-hero-btn">
+            <button type="button" onclick="window.print()" class="btn">
                 <i class="fas fa-print" aria-hidden="true"></i> Print
             </button>
         </div>
-    </header>
+    </div>
 
     <!-- ── Summary Stats ──────────────────────────────────────────────── -->
-    <section class="reports-stats" aria-label="Summary totals">
+    <section class="stats-grid reports-stats" aria-label="Summary totals">
         <div class="stat-card">
             <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></div>
             <div class="stat-info">
@@ -607,15 +604,15 @@ $rp_plural = static function (int $n, string $one, string $many): string {
     </section>
 
     <!-- ── Report Controls ────────────────────────────────────────────── -->
-    <section class="rp-builder" aria-labelledby="rpBuilderTitle">
-        <div class="rp-builder-head">
-            <span class="rp-builder-icon bg-primary" aria-hidden="true"><i class="fas fa-sliders"></i></span>
+    <section class="card rp-builder" aria-labelledby="rpBuilderTitle">
+        <div class="card-header">
             <div>
-                <h2 class="rp-section-title" id="rpBuilderTitle">Report builder</h2>
-                <p class="rp-section-sub">Choose a report, time period and output format, then generate.</p>
+                <h3 id="rpBuilderTitle"><i class="fas fa-sliders" aria-hidden="true"></i> Report builder</h3>
+                <span class="cell-muted">Choose a report, time period and output format, then generate.</span>
             </div>
         </div>
-        <div class="controls-bar filters-bar" role="group" aria-labelledby="rpBuilderTitle">
+        <div class="card-body">
+        <div class="filters-bar rp-builder-bar" role="group" aria-labelledby="rpBuilderTitle">
             <div class="form-group grow filters-grow">
                 <label class="form-label" for="reportType">Report Type</label>
                 <select id="reportType" class="form-control">
@@ -647,18 +644,19 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                     <option value="powerbi">Power BI</option>
                 </select>
             </div>
-            <div class="ctrl-actions">
+            <div class="filters-actions">
                 <button type="button" onclick="generateReport()" class="btn btn-primary">
                     <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Generate report
                 </button>
             </div>
+        </div>
         </div>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════
          TABS
          ══════════════════════════════════════════════════════════════════ -->
-    <section class="tab-shell rp-tabs" aria-label="Report views">
+    <section class="tab-shell" aria-label="Report views">
 
         <div class="tab-header" role="tablist" aria-label="Report sections">
             <button type="button" class="tab-btn active" data-tab="overview"     role="tab" id="tabbtn-overview"     aria-controls="tab-overview"     aria-selected="true"><i class="fas fa-th-large" aria-hidden="true"></i> Overview</button>
@@ -677,20 +675,19 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                 <div class="rp-grid">
 
                     <!-- Programs -->
-                    <article class="rp-card" aria-labelledby="rpOvPrograms">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpOvPrograms">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpOvPrograms">Programs Summary</h3>
-                                <p class="rp-card-sub"><?= $rp_plural($total_programs, 'program', 'programs') ?> by status</p>
+                                <h3 id="rpOvPrograms"><i class="fas fa-sitemap" aria-hidden="true"></i> Programs Summary</h3>
+                                <span class="cell-muted"><?= $rp_plural($total_programs, 'program', 'programs') ?> by status</span>
                             </div>
-                            <a href="reports?export=csv&amp;section=programs" class="rp-icon-btn" title="Download CSV" aria-label="Download programs CSV">
+                            <a href="reports?export=csv&amp;section=programs" class="btn btn-sm btn-soft" title="Download CSV" aria-label="Download programs CSV">
                                 <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </header>
-                        <div class="rp-card-body">
+                        </div>
+                        <div class="card-body">
                             <?php if (empty($programs_data)): ?>
-                                <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No programs yet</span></div>
+                                <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No programs yet</p></div>
                             <?php else: ?>
                                 <div class="rp-chart"><canvas id="programsChart" role="img" aria-label="Doughnut chart of programs by status"></canvas></div>
                                 <ul class="rp-list">
@@ -706,25 +703,24 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
 
                     <!-- Projects -->
-                    <article class="rp-card" aria-labelledby="rpOvProjects">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-blue" aria-hidden="true"><i class="fas fa-project-diagram"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpOvProjects">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpOvProjects">Projects Summary</h3>
-                                <p class="rp-card-sub"><?= $rp_plural($total_projects, 'project', 'projects') ?> by status</p>
+                                <h3 id="rpOvProjects"><i class="fas fa-project-diagram" aria-hidden="true"></i> Projects Summary</h3>
+                                <span class="cell-muted"><?= $rp_plural($total_projects, 'project', 'projects') ?> by status</span>
                             </div>
-                            <a href="reports?export=csv&amp;section=projects" class="rp-icon-btn" title="Download CSV" aria-label="Download projects CSV">
+                            <a href="reports?export=csv&amp;section=projects" class="btn btn-sm btn-soft" title="Download CSV" aria-label="Download projects CSV">
                                 <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </header>
-                        <div class="rp-card-body">
+                        </div>
+                        <div class="card-body">
                             <?php if (empty($projects_data)): ?>
-                                <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No projects yet</span></div>
+                                <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No projects yet</p></div>
                             <?php else: ?>
                                 <div class="rp-chart"><canvas id="projectsChart" role="img" aria-label="Doughnut chart of projects by status"></canvas></div>
                                 <ul class="rp-list">
@@ -740,25 +736,24 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
 
                     <!-- Participants by Gender -->
-                    <article class="rp-card" aria-labelledby="rpOvGender">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-green" aria-hidden="true"><i class="fas fa-users"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpOvGender">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpOvGender">Participants by Gender</h3>
-                                <p class="rp-card-sub"><?= $rp_plural($total_beneficiaries, 'participant', 'participants') ?></p>
+                                <h3 id="rpOvGender"><i class="fas fa-users" aria-hidden="true"></i> Participants by Gender</h3>
+                                <span class="cell-muted"><?= $rp_plural($total_beneficiaries, 'participant', 'participants') ?></span>
                             </div>
-                            <a href="reports?export=csv&amp;section=participants" class="rp-icon-btn" title="Download CSV" aria-label="Download participants CSV">
+                            <a href="reports?export=csv&amp;section=participants" class="btn btn-sm btn-soft" title="Download CSV" aria-label="Download participants CSV">
                                 <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </header>
-                        <div class="rp-card-body">
+                        </div>
+                        <div class="card-body">
                             <?php if (empty($gender_data)): ?>
-                                <div class="empty-state rp-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><span>No participant data yet</span></div>
+                                <div class="empty-state"><i class="fas fa-user-slash" aria-hidden="true"></i><p>No participant data yet</p></div>
                             <?php else: ?>
                                 <div class="rp-chart"><canvas id="genderChart" role="img" aria-label="Doughnut chart of participants by gender"></canvas></div>
                                 <ul class="rp-list">
@@ -779,25 +774,24 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
 
                     <!-- Indicators Performance -->
-                    <article class="rp-card" aria-labelledby="rpOvIndicators">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-primary" aria-hidden="true"><i class="fas fa-chart-line"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpOvIndicators">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpOvIndicators">Indicators Performance</h3>
-                                <p class="rp-card-sub"><?= $rp_plural($total_indicators, 'indicator', 'indicators') ?> with a target</p>
+                                <h3 id="rpOvIndicators"><i class="fas fa-chart-line" aria-hidden="true"></i> Indicators Performance</h3>
+                                <span class="cell-muted"><?= $rp_plural($total_indicators, 'indicator', 'indicators') ?> with a target</span>
                             </div>
-                            <a href="reports?export=csv&amp;section=indicators" class="rp-icon-btn" title="Download CSV" aria-label="Download indicators CSV">
+                            <a href="reports?export=csv&amp;section=indicators" class="btn btn-sm btn-soft" title="Download CSV" aria-label="Download indicators CSV">
                                 <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </header>
-                        <div class="rp-card-body">
+                        </div>
+                        <div class="card-body">
                             <?php if ($total_indicators === 0): ?>
-                                <div class="empty-state rp-empty"><i class="fas fa-bullseye" aria-hidden="true"></i><span>No indicators with targets yet</span></div>
+                                <div class="empty-state"><i class="fas fa-bullseye" aria-hidden="true"></i><p>No indicators with targets yet</p></div>
                             <?php else: ?>
                                 <div class="rp-chart rp-chart-bar"><canvas id="indicatorsChart" role="img" aria-label="Bar chart of indicators by achievement level"></canvas></div>
                                 <ul class="rp-list">
@@ -823,25 +817,24 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
 
                     <!-- PWD -->
-                    <article class="rp-card" aria-labelledby="rpOvPwd">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-wheelchair"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpOvPwd">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpOvPwd">PWD Statistics</h3>
-                                <p class="rp-card-sub">Disability inclusion</p>
+                                <h3 id="rpOvPwd"><i class="fas fa-wheelchair" aria-hidden="true"></i> PWD Statistics</h3>
+                                <span class="cell-muted">Disability inclusion</span>
                             </div>
-                            <a href="reports?export=csv&amp;section=pwd" class="rp-icon-btn" title="Download CSV" aria-label="Download PWD statistics CSV">
+                            <a href="reports?export=csv&amp;section=pwd" class="btn btn-sm btn-soft" title="Download CSV" aria-label="Download PWD statistics CSV">
                                 <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </header>
-                        <div class="rp-card-body">
+                        </div>
+                        <div class="card-body">
                             <?php if ($pwd_total === 0): ?>
-                                <div class="empty-state rp-empty"><i class="fas fa-wheelchair" aria-hidden="true"></i><span>No participant data yet</span></div>
+                                <div class="empty-state"><i class="fas fa-wheelchair" aria-hidden="true"></i><p>No participant data yet</p></div>
                             <?php else: ?>
                                 <div class="rp-chart"><canvas id="pwdChart" role="img" aria-label="Doughnut chart of PWD and non-PWD participants"></canvas></div>
                                 <ul class="rp-list">
@@ -865,44 +858,49 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
 
                     <!-- Events -->
-                    <article class="rp-card" aria-labelledby="rpOvEvents">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-purple" aria-hidden="true"><i class="fas fa-calendar-check"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpOvEvents">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpOvEvents">Events Summary</h3>
-                                <p class="rp-card-sub">Hub events and activity</p>
+                                <h3 id="rpOvEvents"><i class="fas fa-calendar-check" aria-hidden="true"></i> Events Summary</h3>
+                                <span class="cell-muted">Hub events and activity</span>
                             </div>
-                            <a href="reports?export=csv&amp;section=events" class="rp-icon-btn" title="Download CSV" aria-label="Download events CSV">
+                            <a href="reports?export=csv&amp;section=events" class="btn btn-sm btn-soft" title="Download CSV" aria-label="Download events CSV">
                                 <i class="fas fa-file-csv" aria-hidden="true"></i>
                             </a>
-                        </header>
-                        <div class="rp-card-body">
-                            <div class="rp-metrics">
-                                <div class="rp-metric rp-metric-purple">
-                                    <span class="rp-metric-value"><?= number_format($events_data['total']) ?></span>
-                                    <span class="rp-metric-label">Total events</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid reports-stats rp-metrics">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-purple" aria-hidden="true"><i class="fas fa-calendar"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">Total events</div>
+                                        <div class="stat-value"><?= number_format($events_data['total']) ?></div>
+                                    </div>
                                 </div>
-                                <div class="rp-metric rp-metric-green">
-                                    <span class="rp-metric-value"><?= number_format($events_data['recent']) ?></span>
-                                    <span class="rp-metric-label">In the last 30 days</span>
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-clock"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">Last 30 days</div>
+                                        <div class="stat-value"><?= number_format($events_data['recent']) ?></div>
+                                    </div>
                                 </div>
                             </div>
                             <?php if ($events_data['total'] === 0): ?>
-                                <p class="rp-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> No events have been recorded yet.</p>
+                                <div class="empty-state"><i class="fas fa-calendar-xmark" aria-hidden="true"></i><p>No events have been recorded yet.</p></div>
                             <?php else: ?>
                                 <div class="rp-meter" aria-hidden="true">
                                     <span class="rp-meter-fill" style="width:<?= min(100, $rp_pct($events_data['recent'], $events_data['total'])) ?>%;"></span>
                                 </div>
-                                <p class="rp-hint"><?= $rp_pct($events_data['recent'], $events_data['total']) ?>% of all events took place in the last 30 days.</p>
+                                <p class="cell-muted"><?= $rp_pct($events_data['recent'], $events_data['total']) ?>% of all events took place in the last 30 days.</p>
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
 
@@ -911,24 +909,23 @@ $rp_plural = static function (int $n, string $one, string $many): string {
 
             <!-- ── PROGRAMS ──────────────────────────────────────────────── -->
             <div class="tab-panel" id="tab-programs" role="tabpanel" aria-labelledby="tabbtn-programs">
-                <section class="rp-card rp-card-wide" aria-labelledby="rpPrograms">
-                    <header class="rp-card-head">
-                        <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></span>
+                <section class="card" aria-labelledby="rpPrograms">
+                    <div class="card-header">
                         <div class="rp-card-titles">
-                            <h3 class="rp-card-title" id="rpPrograms">Programs by Status</h3>
-                            <p class="rp-card-sub"><?= $rp_plural($total_programs, 'program', 'programs') ?> in total</p>
+                            <h3 id="rpPrograms"><i class="fas fa-sitemap" aria-hidden="true"></i> Programs by Status</h3>
+                            <span class="cell-muted"><?= $rp_plural($total_programs, 'program', 'programs') ?> in total</span>
                         </div>
-                        <div class="rp-card-actions">
-                            <a href="reports?export=csv&amp;section=programs" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                        <div class="card-header-actions">
+                            <a href="reports?export=csv&amp;section=programs" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
                             <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
                         </div>
-                    </header>
+                    </div>
                     <?php if (empty($programs_data)): ?>
-                        <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No programs yet</span></div>
+                        <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No programs yet</p></div>
                     <?php else: ?>
-                        <div class="rp-split">
+                        <div class="card-body rp-split">
                             <div class="rp-chart rp-chart-lg"><canvas id="programsChartFull" role="img" aria-label="Doughnut chart of programs by status"></canvas></div>
-                            <div class="table-wrap">
+                            <div class="table-responsive">
                                 <table class="table rp-table">
                                     <caption class="sr-only">Programs by status</caption>
                                     <thead><tr><th scope="col">Status</th><th scope="col" class="rp-num">Count</th><th scope="col">Share</th></tr></thead>
@@ -951,24 +948,23 @@ $rp_plural = static function (int $n, string $one, string $many): string {
 
             <!-- ── PROJECTS ──────────────────────────────────────────────── -->
             <div class="tab-panel" id="tab-projects" role="tabpanel" aria-labelledby="tabbtn-projects">
-                <section class="rp-card rp-card-wide" aria-labelledby="rpProjects">
-                    <header class="rp-card-head">
-                        <span class="report-card-icon bg-blue" aria-hidden="true"><i class="fas fa-project-diagram"></i></span>
+                <section class="card" aria-labelledby="rpProjects">
+                    <div class="card-header">
                         <div class="rp-card-titles">
-                            <h3 class="rp-card-title" id="rpProjects">Projects by Status</h3>
-                            <p class="rp-card-sub"><?= $rp_plural($total_projects, 'project', 'projects') ?> in total</p>
+                            <h3 id="rpProjects"><i class="fas fa-project-diagram" aria-hidden="true"></i> Projects by Status</h3>
+                            <span class="cell-muted"><?= $rp_plural($total_projects, 'project', 'projects') ?> in total</span>
                         </div>
-                        <div class="rp-card-actions">
-                            <a href="reports?export=csv&amp;section=projects" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                        <div class="card-header-actions">
+                            <a href="reports?export=csv&amp;section=projects" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
                             <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
                         </div>
-                    </header>
+                    </div>
                     <?php if (empty($projects_data)): ?>
-                        <div class="empty-state rp-empty"><i class="fas fa-folder-open" aria-hidden="true"></i><span>No projects yet</span></div>
+                        <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No projects yet</p></div>
                     <?php else: ?>
-                        <div class="rp-split">
+                        <div class="card-body rp-split">
                             <div class="rp-chart rp-chart-lg"><canvas id="projectsChartFull" role="img" aria-label="Doughnut chart of projects by status"></canvas></div>
-                            <div class="table-wrap">
+                            <div class="table-responsive">
                                 <table class="table rp-table">
                                     <caption class="sr-only">Projects by status</caption>
                                     <thead><tr><th scope="col">Status</th><th scope="col" class="rp-num">Count</th><th scope="col">Share</th></tr></thead>
@@ -992,18 +988,17 @@ $rp_plural = static function (int $n, string $one, string $many): string {
             <!-- ── PARTICIPANTS ───────────────────────────────────────────── -->
             <div class="tab-panel" id="tab-participants" role="tabpanel" aria-labelledby="tabbtn-participants">
                 <div class="rp-grid rp-grid-2">
-                    <article class="rp-card" aria-labelledby="rpPartGender">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-green" aria-hidden="true"><i class="fas fa-venus-mars"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpPartGender">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpPartGender">By Gender</h3>
-                                <p class="rp-card-sub"><?= $rp_plural($total_beneficiaries, 'participant', 'participants') ?></p>
+                                <h3 id="rpPartGender"><i class="fas fa-venus-mars" aria-hidden="true"></i> By Gender</h3>
+                                <span class="cell-muted"><?= $rp_plural($total_beneficiaries, 'participant', 'participants') ?></span>
                             </div>
-                            <a href="reports?export=csv&amp;section=participants" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
-                        </header>
-                        <div class="rp-card-body">
+                            <a href="reports?export=csv&amp;section=participants" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                        </div>
+                        <div class="card-body">
                             <?php if (empty($gender_data)): ?>
-                                <div class="empty-state rp-empty"><i class="fas fa-user-slash" aria-hidden="true"></i><span>No participant data yet</span></div>
+                                <div class="empty-state"><i class="fas fa-user-slash" aria-hidden="true"></i><p>No participant data yet</p></div>
                             <?php else: ?>
                                 <div class="rp-chart"><canvas id="genderChartFull" role="img" aria-label="Doughnut chart of participants by gender"></canvas></div>
                                 <ul class="rp-list">
@@ -1019,21 +1014,20 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
-                    <article class="rp-card" aria-labelledby="rpPartPwd">
-                        <header class="rp-card-head">
-                            <span class="report-card-icon bg-amber" aria-hidden="true"><i class="fas fa-wheelchair"></i></span>
+                    <article class="card rp-card" aria-labelledby="rpPartPwd">
+                        <div class="card-header">
                             <div class="rp-card-titles">
-                                <h3 class="rp-card-title" id="rpPartPwd">PWD vs Non-PWD</h3>
-                                <p class="rp-card-sub">Disability inclusion</p>
+                                <h3 id="rpPartPwd"><i class="fas fa-wheelchair" aria-hidden="true"></i> PWD vs Non-PWD</h3>
+                                <span class="cell-muted">Disability inclusion</span>
                             </div>
-                            <a href="reports?export=csv&amp;section=pwd" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
-                        </header>
-                        <div class="rp-card-body">
+                            <a href="reports?export=csv&amp;section=pwd" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                        </div>
+                        <div class="card-body">
                             <?php if ($pwd_total === 0): ?>
-                                <div class="empty-state rp-empty"><i class="fas fa-wheelchair" aria-hidden="true"></i><span>No participant data yet</span></div>
+                                <div class="empty-state"><i class="fas fa-wheelchair" aria-hidden="true"></i><p>No participant data yet</p></div>
                             <?php else: ?>
                                 <div class="rp-chart"><canvas id="pwdChartFull" role="img" aria-label="Doughnut chart of PWD and non-PWD participants"></canvas></div>
                                 <ul class="rp-list">
@@ -1057,7 +1051,7 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                             <?php endif; ?>
                         </div>
                         <footer class="rp-card-foot">
-                            <a href="generate-report" class="rp-foot-link">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+                            <a href="generate-report" class="btn btn-sm btn-soft">View full report <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
                         </footer>
                     </article>
                 </div>
@@ -1065,24 +1059,23 @@ $rp_plural = static function (int $n, string $one, string $many): string {
 
             <!-- ── INDICATORS ─────────────────────────────────────────────── -->
             <div class="tab-panel" id="tab-indicators" role="tabpanel" aria-labelledby="tabbtn-indicators">
-                <section class="rp-card rp-card-wide" aria-labelledby="rpIndicators">
-                    <header class="rp-card-head">
-                        <span class="report-card-icon bg-primary" aria-hidden="true"><i class="fas fa-chart-bar"></i></span>
+                <section class="card" aria-labelledby="rpIndicators">
+                    <div class="card-header">
                         <div class="rp-card-titles">
-                            <h3 class="rp-card-title" id="rpIndicators">Indicators Achievement Overview</h3>
-                            <p class="rp-card-sub">Current value against target</p>
+                            <h3 id="rpIndicators"><i class="fas fa-chart-bar" aria-hidden="true"></i> Indicators Achievement Overview</h3>
+                            <span class="cell-muted">Current value against target</span>
                         </div>
-                        <div class="rp-card-actions">
-                            <a href="reports?export=csv&amp;section=indicators" class="btn btn-sm btn-gray"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+                        <div class="card-header-actions">
+                            <a href="reports?export=csv&amp;section=indicators" class="btn btn-sm btn-secondary"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
                             <a href="reports?export=pdf" target="_blank" rel="noopener" class="btn btn-sm btn-soft"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
                         </div>
-                    </header>
+                    </div>
                     <?php if ($total_indicators === 0): ?>
-                        <div class="empty-state rp-empty"><i class="fas fa-bullseye" aria-hidden="true"></i><span>No indicators with targets yet</span></div>
+                        <div class="empty-state"><i class="fas fa-bullseye" aria-hidden="true"></i><p>No indicators with targets yet</p></div>
                     <?php else: ?>
-                        <div class="rp-split">
+                        <div class="card-body rp-split">
                             <div class="rp-chart rp-chart-bar rp-chart-lg"><canvas id="indicatorsChartFull" role="img" aria-label="Bar chart of indicators by achievement level"></canvas></div>
-                            <div class="table-wrap">
+                            <div class="table-responsive">
                                 <table class="table rp-table">
                                     <caption class="sr-only">Indicators by achievement level</caption>
                                     <thead><tr><th scope="col">Achievement</th><th scope="col" class="rp-num">Count</th><th scope="col">Share</th></tr></thead>
@@ -1113,60 +1106,62 @@ $rp_plural = static function (int $n, string $one, string $many): string {
             <!-- ── POWER BI ───────────────────────────────────────────────── -->
             <div class="tab-panel" id="tab-powerbi" role="tabpanel" aria-labelledby="tabbtn-powerbi">
                 <?php if (!empty($powerbi_settings['embed_url'])): ?>
-                    <div class="powerbi-controls">
-                        <h3 class="rp-section-title">
-                            <i class="fas fa-chart-pie rp-pbi-icon" aria-hidden="true"></i> Power BI Live Dashboard
-                        </h3>
-                        <button type="button" onclick="document.getElementById('powerBIFrame').requestFullscreen()" class="btn btn-sm btn-gray">
-                            <i class="fas fa-expand" aria-hidden="true"></i> Fullscreen
-                        </button>
-                    </div>
-                    <div class="powerbi-frame-wrap">
-                        <iframe id="powerBIFrame" title="Power BI dashboard" src="<?= h($powerbi_settings['embed_url']) ?>" allowfullscreen></iframe>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie" aria-hidden="true"></i> Power BI Live Dashboard</h3>
+                            <button type="button" onclick="document.getElementById('powerBIFrame').requestFullscreen()" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-expand" aria-hidden="true"></i> Fullscreen
+                            </button>
+                        </div>
+                        <div class="rp-pbi-frame">
+                            <iframe id="powerBIFrame" title="Power BI dashboard" src="<?= h($powerbi_settings['embed_url']) ?>" allowfullscreen></iframe>
+                        </div>
                     </div>
                 <?php else: ?>
-                    <div class="powerbi-unconfigured">
-                        <div class="powerbi-icon-wrap" aria-hidden="true"><i class="fas fa-chart-pie"></i></div>
-                        <h3>Power BI Not Configured</h3>
-                        <p>Connect your Power BI workspace to visualise real-time analytics.</p>
-                        <?php if (ims_allowed('reports.configure_powerbi', ['Administrator'], 'See the Configure Power BI link')): ?>
-                            <a href="/settings?tab=powerbi" class="btn btn-dark"><i class="fas fa-cog" aria-hidden="true"></i> Configure Power BI</a>
-                        <?php endif; ?>
+                    <div class="card">
+                        <div class="empty-state">
+                            <i class="fas fa-chart-pie" aria-hidden="true"></i>
+                            <h4>Power BI Not Configured</h4>
+                            <p>Connect your Power BI workspace to visualise real-time analytics.</p>
+                            <?php if (ims_allowed('reports.configure_powerbi', ['Administrator'], 'See the Configure Power BI link')): ?>
+                                <a href="/settings?tab=powerbi" class="btn btn-primary"><i class="fas fa-cog" aria-hidden="true"></i> Configure Power BI</a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 <?php endif; ?>
             </div>
 
             <!-- ── EXPORTS ────────────────────────────────────────────────── -->
             <div class="tab-panel" id="tab-exports" role="tabpanel" aria-labelledby="tabbtn-exports">
-                <div class="rp-callout">
+                <div class="alert alert-info" data-persist>
                     <i class="fas fa-circle-info" aria-hidden="true"></i>
-                    <p>CSV files download immediately. PDF opens in a new tab via Dompdf. Detailed reports open in the browser.</p>
+                    CSV files download immediately. PDF opens in a new tab via Dompdf. Detailed reports open in the browser.
                 </div>
 
                 <h3 class="rp-group-title">Reports</h3>
-                <div class="exports-grid rp-exports">
+                <div class="exports-grid">
                     <!-- PDF exports -->
                     <a href="reports?export=pdf" target="_blank" rel="noopener" class="export-item">
-                        <span class="export-icon pdf" aria-hidden="true"><i class="fas fa-file-pdf"></i></span>
-                        <span class="export-item-body">
-                            <span class="export-item-name">Analytics Overview (PDF)</span>
-                            <span class="export-item-desc">Full overview report rendered via Dompdf</span>
+                        <span class="report-card-icon bg-red" aria-hidden="true"><i class="fas fa-file-pdf"></i></span>
+                        <span class="rp-export-body">
+                            <strong>Analytics Overview (PDF)</strong>
+                            <span class="cell-muted">Full overview report rendered via Dompdf</span>
                         </span>
-                        <span class="rp-export-tag rp-tag-pdf">PDF</span>
+                        <span class="badge badge-danger">PDF</span>
                     </a>
                     <!-- Detailed web reports -->
                     <a href="generate-report" class="export-item">
-                        <span class="export-icon web" aria-hidden="true"><i class="fas fa-globe"></i></span>
-                        <span class="export-item-body">
-                            <span class="export-item-name">Custom Report Builder</span>
-                            <span class="export-item-desc">Build detailed reports with filters</span>
+                        <span class="report-card-icon bg-blue" aria-hidden="true"><i class="fas fa-globe"></i></span>
+                        <span class="rp-export-body">
+                            <strong>Custom Report Builder</strong>
+                            <span class="cell-muted">Build detailed reports with filters</span>
                         </span>
-                        <span class="rp-export-tag rp-tag-web">Web</span>
+                        <span class="badge badge-info">Web</span>
                     </a>
                 </div>
 
                 <h3 class="rp-group-title">Data exports</h3>
-                <div class="exports-grid rp-exports">
+                <div class="exports-grid">
                     <!-- CSV exports -->
                     <?php
                     $csv_exports = [
@@ -1181,12 +1176,12 @@ $rp_plural = static function (int $n, string $one, string $many): string {
                     foreach ($csv_exports as [$sec, $ico, $name, $desc]):
                     ?>
                         <a href="reports?export=csv&amp;section=<?= $sec ?>" class="export-item">
-                            <span class="export-icon excel" aria-hidden="true"><i class="fas <?= $ico ?>"></i></span>
-                            <span class="export-item-body">
-                                <span class="export-item-name"><?= $name ?></span>
-                                <span class="export-item-desc"><?= $desc ?></span>
+                            <span class="report-card-icon bg-green" aria-hidden="true"><i class="fas <?= $ico ?>"></i></span>
+                            <span class="rp-export-body">
+                                <strong><?= $name ?></strong>
+                                <span class="cell-muted"><?= $desc ?></span>
                             </span>
-                            <span class="rp-export-tag rp-tag-csv"><i class="fas fa-download" aria-hidden="true"></i><span class="sr-only">Download</span></span>
+                            <span class="badge badge-secondary"><i class="fas fa-download" aria-hidden="true"></i><span class="sr-only">Download</span></span>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -1195,7 +1190,7 @@ $rp_plural = static function (int $n, string $one, string $many): string {
         </div><!-- /.tab-panels -->
     </section><!-- /.tab-shell -->
 
-</div><!-- /.reports-wrap -->
+</div><!-- /.page-stack -->
 
 <script>
 (function(){

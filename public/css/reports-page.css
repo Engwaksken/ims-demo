@@ -1,21 +1,11 @@
 /* ==========================================================================
    Reports & Analytics page (legacy/reports.php)
-   Page-specific presentation only. Loaded after css/reports.css and relies on
-   the design tokens defined in style.css / reports.css (:root).
-   All selectors are scoped to .rp-page or use the rp- prefix so nothing leaks
-   into other pages.
+   Layout unique to this page only. Hero, cards, stat cards, buttons, badges,
+   tables, tabs, alerts and empty states come from style.css / reports.css.
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   1. Page shell
-   -------------------------------------------------------------------------- */
-.rp-page :focus-visible {
-  outline: 2px solid var(--brand-600);
-  outline-offset: 2px;
-  box-shadow: var(--focus-ring, 0 0 0 3px rgba(249,115,22,.35));
-}
-
-/* Chart colour key: same order and alpha as the Chart.js palette (BG[]). */
+/* Chart colour key: same order and alpha as the Chart.js palette (BG[] in
+   reports.php), so the legend swatches match the chart segments. */
 .rp-c-0 { background: rgba(21,128,61,.75); }
 .rp-c-1 { background: rgba(29,78,216,.75); }
 .rp-c-2 { background: rgba(180,83,9,.75); }
@@ -24,171 +14,10 @@
 .rp-c-5 { background: rgba(124,58,237,.75); }
 .rp-c-6 { background: rgba(249,115,22,.75); }
 
-/* --------------------------------------------------------------------------
-   2. Hero (matches .page-hero used on other pages)
-   -------------------------------------------------------------------------- */
-.rp-page .rp-hero {
-  background: linear-gradient(135deg, var(--brand-700) 0%, var(--brand-500) 55%, var(--brand-400) 100%);
-  box-shadow: 0 16px 40px rgba(234, 88, 12, .28);
-  padding: 32px 36px;
-  align-items: flex-end;
-}
+/* Report builder: the filters bar sits inside a card body. */
+.rp-builder-bar { margin-bottom: 0; }
 
-.rp-page .rp-hero::before,
-.rp-page .rp-hero::after {
-  background: var(--ink-0);
-  opacity: .10;
-}
-
-.rp-page .rp-hero h1 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--ink-0);
-  line-height: 1.2;
-}
-
-.rp-hero-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  background: rgba(255,255,255,.18);
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.rp-page .rp-hero p { opacity: .92; max-width: 520px; line-height: 1.55; }
-
-.rp-page .rp-hero .rp-hero-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 12px;
-  padding: 4px 12px;
-  border-radius: var(--radius-pill, 999px);
-  background: rgba(0,0,0,.14);
-  font-size: var(--fs-xs, 12px);
-  font-weight: 700;
-  letter-spacing: .03em;
-  opacity: 1;
-}
-
-.rp-hero-btn {
-  min-height: 42px;
-  background: rgba(255,255,255,.14);
-  color: var(--ink-0);
-  border: 1px solid rgba(255,255,255,.35);
-  box-shadow: none;
-}
-
-.rp-hero-btn:hover { background: rgba(255,255,255,.24); opacity: 1; }
-
-.rp-hero-btn.rp-hero-btn-solid {
-  background: var(--ink-0);
-  color: var(--brand-700);
-  border-color: var(--ink-0);
-  box-shadow: 0 6px 16px rgba(124, 45, 18, .22);
-}
-
-.rp-hero-btn.rp-hero-btn-solid:hover { background: var(--brand-50); }
-
-.rp-page .rp-hero .btn:focus-visible {
-  outline: 2px solid var(--ink-0);
-  outline-offset: 2px;
-  box-shadow: none;
-}
-
-/* --------------------------------------------------------------------------
-   3. Summary stats
-   -------------------------------------------------------------------------- */
-.rp-page .reports-stats .stat-card { min-width: 0; }
-
-/* --------------------------------------------------------------------------
-   4. Report builder (filters)
-   -------------------------------------------------------------------------- */
-.rp-builder {
-  background: var(--surface-card);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(0,0,0,.04);
-  padding: 20px 22px 22px;
-}
-
-.rp-builder-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--ink-50);
-}
-
-.rp-builder-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  display: grid;
-  place-items: center;
-  font-size: 16px;
-  flex-shrink: 0;
-}
-
-.rp-section-title {
-  margin: 0;
-  font-size: var(--fs-md, 16px);
-  font-weight: 800;
-  letter-spacing: -.2px;
-  color: var(--ink-700);
-  line-height: 1.3;
-}
-
-.rp-section-sub {
-  margin: 2px 0 0;
-  font-size: var(--fs-sm, 13px);
-  color: var(--ink-300);
-}
-
-/* The bar sits inside the builder card, so drop its own card chrome. */
-.rp-builder .controls-bar {
-  background: none;
-  box-shadow: none;
-  border: 0;
-  border-radius: 0;
-  padding: 3px;
-  margin: 0;
-}
-
-.rp-builder .filters-bar .form-control,
-.rp-builder .filters-bar .btn { min-height: 44px; }
-
-.rp-builder .form-label { color: var(--ink-400); }
-
-/* --------------------------------------------------------------------------
-   5. Tabs
-   -------------------------------------------------------------------------- */
-.rp-tabs .tab-header { padding: 0 14px; }
-
-.rp-tabs .tab-btn {
-  min-height: 48px;
-  padding: 12px 14px;
-  color: var(--ink-400);
-  border-radius: 0;
-}
-
-.rp-tabs .tab-btn:hover { color: var(--ink-700); background: var(--surface-hover); }
-.rp-tabs .tab-btn.active { color: var(--brand-700); }
-.rp-tabs .tab-btn:focus-visible { outline-offset: -3px; box-shadow: none; }
-
-.rp-tabs .tab-panels {
-  padding: 24px;
-  background: var(--surface-page);
-}
-
-/* --------------------------------------------------------------------------
-   6. Report cards
-   -------------------------------------------------------------------------- */
+/* Overview grid */
 .rp-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -197,109 +26,14 @@
 
 .rp-grid.rp-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-.rp-card {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: var(--surface-card);
-  border: 1px solid var(--ink-50);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  transition: box-shadow .2s var(--ease-out), border-color .2s var(--ease-out);
-}
-
-.rp-card:hover { box-shadow: var(--shadow-md); border-color: var(--ink-100); }
-
-.rp-card-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--ink-50);
-}
-
-.rp-card-head .report-card-icon {
-  width: 40px;
-  height: 40px;
-}
-
+.rp-card { display: flex; flex-direction: column; min-width: 0; }
+.rp-card > .card-body { flex: 1 1 auto; }
 .rp-card-titles { flex: 1 1 0; min-width: 0; }
 
-.rp-card-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: -.2px;
-  color: var(--ink-700);
-  line-height: 1.3;
-}
-
-.rp-card-sub {
-  margin: 2px 0 0;
-  font-size: var(--fs-xs, 12px);
-  color: var(--ink-300);
-  line-height: 1.4;
-}
-
-.rp-card-head > .btn,
-.rp-card-actions .btn { min-height: 40px; flex-shrink: 0; }
-
-.rp-card-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-/* Square icon button (CSV download on overview cards). */
-.rp-icon-btn {
-  flex-shrink: 0;
-  display: inline-grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--ink-100);
-  background: var(--surface-card);
-  color: var(--ink-400);
-  font-size: 16px;
-  text-decoration: none;
-  transition: background .15s, color .15s, border-color .15s;
-}
-
-.rp-icon-btn:hover {
-  background: var(--green-bg);
-  border-color: var(--green-border);
-  color: var(--green-fg);
-}
-
-.rp-card-body {
-  flex: 1 1 auto;
-  padding: 18px;
-}
-
 .rp-card-foot {
+  padding: var(--space-3) 22px;
   border-top: 1px solid var(--ink-50);
 }
-
-.rp-foot-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 46px;
-  padding: 0 18px;
-  font-size: var(--fs-sm, 13px);
-  font-weight: 700;
-  color: var(--brand-700);
-  text-decoration: none;
-  transition: background .15s;
-}
-
-.rp-foot-link i { transition: transform .15s var(--ease-out); }
-.rp-foot-link:hover { background: var(--brand-50); }
-.rp-foot-link:hover i { transform: translateX(3px); }
-.rp-foot-link:focus-visible { outline-offset: -2px; }
 
 /* Charts */
 .rp-chart {
@@ -313,11 +47,7 @@
 .rp-chart canvas { display: block; }
 
 /* Breakdown list (doubles as the chart legend) */
-.rp-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+.rp-list { list-style: none; margin: 0; padding: 0; }
 
 .rp-row {
   display: flex;
@@ -325,7 +55,7 @@
   gap: 10px;
   padding: 9px 0;
   border-bottom: 1px solid var(--ink-50);
-  font-size: var(--fs-sm, 13px);
+  font-size: var(--fs-sm);
 }
 
 .rp-row:last-child { border-bottom: 0; }
@@ -338,11 +68,7 @@
   flex-shrink: 0;
 }
 
-.rp-row-label {
-  flex: 1 1 auto;
-  min-width: 0;
-  color: var(--ink-500);
-}
+.rp-row-label { flex: 1 1 auto; min-width: 0; color: var(--ink-500); }
 
 .rp-row-value {
   font-weight: 800;
@@ -353,7 +79,7 @@
 .rp-row-pct {
   min-width: 52px;
   text-align: right;
-  font-size: var(--fs-xs, 12px);
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink-300);
   font-variant-numeric: tabular-nums;
@@ -365,49 +91,18 @@
   border-top: 2px solid var(--ink-50);
 }
 
-.rp-row-total .rp-row-label { font-weight: 800; color: var(--ink-700); text-transform: none; }
+.rp-row-total .rp-row-label { font-weight: 800; color: var(--ink-700); }
 .rp-accent { color: var(--amber-fg); }
 
-/* Events metrics */
-.rp-metrics {
-  display: grid;
+/* Events: two stat cards side by side inside the card, then a meter. */
+.stats-grid.reports-stats.rp-metrics {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
   margin-bottom: 18px;
-}
-
-.rp-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px;
-  border-radius: var(--radius-lg);
-  border: 1px solid transparent;
-}
-
-.rp-metric-purple { background: var(--purple-bg); border-color: var(--purple-border); }
-.rp-metric-green  { background: var(--green-bg);  border-color: var(--green-border); }
-
-.rp-metric-value {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.rp-metric-purple .rp-metric-value { color: var(--purple-fg); }
-.rp-metric-green  .rp-metric-value { color: var(--green-fg); }
-
-.rp-metric-label {
-  font-size: var(--fs-xs, 12px);
-  font-weight: 700;
-  color: var(--ink-400);
 }
 
 .rp-meter {
   height: 8px;
-  border-radius: var(--radius-pill, 999px);
+  border-radius: var(--radius-pill);
   background: var(--ink-50);
   overflow: hidden;
   margin-bottom: 10px;
@@ -417,148 +112,70 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--green-fg), #22c55e);
+  background: var(--green-fg);
 }
 
-.rp-hint {
-  margin: 0;
-  font-size: var(--fs-xs, 12px);
-  color: var(--ink-300);
-  line-height: 1.5;
-}
-
-/* Empty states */
-.rp-page .rp-empty {
-  padding: 36px 16px;
-  color: var(--ink-200);
-}
-
-.rp-page .rp-empty i {
-  display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--ink-50);
-  font-size: 22px;
-  color: var(--ink-300);
-}
-
-.rp-page .rp-empty span { font-weight: 600; color: var(--ink-400); }
-
-/* --------------------------------------------------------------------------
-   7. Detail tabs: chart + table
-   -------------------------------------------------------------------------- */
+/* Detail tabs: chart beside table */
 .rp-split {
   display: grid;
   grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
   gap: 28px;
   align-items: center;
-  padding: 24px;
 }
 
 .rp-split .rp-chart { margin: 0 auto; max-width: 260px; }
 .rp-split .rp-chart.rp-chart-bar { max-width: none; }
-.rp-split .table-wrap {
-  border: 1px solid var(--ink-50);
-  border-radius: var(--radius-lg);
-}
 
-.rp-page .rp-table { min-width: 0; font-size: var(--fs-sm, 13px); }
-.rp-page .rp-table thead th { background: var(--surface-hover); }
-
-.rp-page .rp-table tbody th,
-.rp-page .rp-table tfoot th {
+/* Row headers in the breakdown tables read as labels, not column headings. */
+.rp-table tbody th,
+.rp-table tfoot th {
   text-align: left;
-  background: transparent;
-  font-size: var(--fs-sm, 13px);
+  text-transform: none;
   letter-spacing: 0;
-  text-transform: none;
-  font-weight: 600;
-  color: var(--ink-600);
   white-space: nowrap;
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--ink-50);
 }
 
-.rp-page .rp-table tbody th .rp-dot { margin-right: 10px; vertical-align: 0; }
+.rp-table tbody th .rp-dot { margin-right: 10px; }
+.rp-table tfoot th,
+.rp-table tfoot td { font-weight: 800; border-top: 2px solid var(--ink-50); }
 
-.rp-page .rp-table tfoot th,
-.rp-page .rp-table tfoot td {
-  background: var(--surface-hover);
-  font-weight: 800;
-  color: var(--ink-700);
-  text-transform: none;
-  border-top: 2px solid var(--ink-50);
-  border-bottom: 0;
-  padding: 13px 16px;
-}
-
-.rp-page .rp-table .rp-num {
+.rp-table .rp-num {
   text-align: right;
-  font-weight: 800;
-  color: var(--ink-700);
   font-variant-numeric: tabular-nums;
   width: 1%;
   white-space: nowrap;
 }
 
-.rp-share {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.rp-share { display: flex; align-items: center; gap: 10px; }
 
 .rp-bar {
   flex: 1 1 auto;
   max-width: 220px;
   min-width: 48px;
   height: 8px;
-  border-radius: var(--radius-pill, 999px);
+  border-radius: var(--radius-pill);
   background: var(--ink-50);
   overflow: hidden;
 }
 
-.rp-bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-}
+.rp-bar-fill { display: block; height: 100%; border-radius: inherit; }
 
 .rp-share-pct {
   min-width: 46px;
-  font-size: var(--fs-xs, 12px);
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--ink-400);
   font-variant-numeric: tabular-nums;
 }
 
-/* --------------------------------------------------------------------------
-   8. Power BI
-   -------------------------------------------------------------------------- */
-.rp-page .powerbi-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-}
-
-.rp-pbi-icon { color: var(--blue-fg); margin-right: 6px; }
-
-.rp-page .powerbi-frame-wrap {
+/* Power BI embed */
+.rp-pbi-frame {
   position: relative;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  border: 1px solid var(--ink-100);
-  background: var(--surface-card);
-  box-shadow: var(--shadow-sm);
   aspect-ratio: 16 / 10;
   min-height: 420px;
 }
 
-.rp-page .powerbi-frame-wrap iframe {
+.rp-pbi-frame iframe {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -566,231 +183,52 @@
   border: 0;
 }
 
-.rp-page .powerbi-unconfigured {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
-  padding: 48px 24px;
-  background: var(--surface-card);
-  border: 1.5px dashed var(--ink-100);
-  border-radius: var(--radius-xl);
-}
-
-.rp-page .powerbi-icon-wrap {
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--blue-bg);
-  color: var(--blue-fg);
-  font-size: 30px;
-  margin-bottom: 6px;
-}
-
-.rp-page .powerbi-unconfigured h3 {
-  margin: 0;
-  font-size: var(--fs-lg, 18px);
-  font-weight: 800;
-  color: var(--ink-700);
-}
-
-.rp-page .powerbi-unconfigured p {
-  margin: 0 0 8px;
-  max-width: 420px;
-  font-size: var(--fs-base, 14px);
-  color: var(--ink-400);
-}
-
-.rp-page .powerbi-unconfigured .btn { min-height: 44px; }
-
-/* --------------------------------------------------------------------------
-   9. Exports
-   -------------------------------------------------------------------------- */
-.rp-callout {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 18px;
-  margin-bottom: 22px;
-  background: var(--blue-bg);
-  border: 1px solid var(--blue-border);
-  border-radius: var(--radius-lg);
-  color: #1e3a8a;
-}
-
-.rp-callout i { margin-top: 3px; color: var(--blue-fg); }
-.rp-callout p { margin: 0; font-size: var(--fs-sm, 13px); line-height: 1.6; }
-
+/* Exports */
 .rp-group-title {
-  margin: 0 0 12px;
-  font-size: var(--fs-xs, 12px);
+  margin: 22px 0 12px;
+  font-size: var(--fs-xs);
   font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--ink-400);
 }
 
-.rp-exports + .rp-group-title { margin-top: 26px; }
-
-.rp-page .rp-exports {
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 12px;
-}
-
-.rp-page .rp-exports .export-item {
-  min-height: 72px;
-  padding: 14px 16px;
-  background: var(--surface-card);
-  border: 1px solid var(--ink-100);
-  box-shadow: var(--shadow-sm);
-}
-
-.rp-page .rp-exports .export-item:hover {
-  border-color: var(--brand-400);
-  box-shadow: var(--shadow-md);
-}
-
-.rp-page .export-icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  font-size: 18px;
-  flex-shrink: 0;
-}
-
-.rp-page .export-icon.pdf   { background: var(--red-bg);   color: var(--red-fg); }
-.rp-page .export-icon.excel { background: var(--green-bg); color: var(--green-fg); }
-.rp-page .export-icon.web   { background: var(--blue-bg);  color: var(--blue-fg); }
-
-.rp-page .export-item-body {
+.rp-export-body {
   display: flex;
   flex-direction: column;
   gap: 2px;
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.rp-page .export-item-name {
-  font-size: var(--fs-sm, 13px);
-  font-weight: 800;
   color: var(--ink-700);
 }
 
-.rp-page .export-item-desc {
-  font-size: var(--fs-xs, 12px);
-  font-weight: 500;
-  color: var(--ink-300);
-}
-
-.rp-export-tag {
-  flex-shrink: 0;
-  display: inline-grid;
-  place-items: center;
-  min-width: 32px;
-  height: 26px;
-  padding: 0 8px;
-  border-radius: var(--radius-pill, 999px);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-}
-
-.rp-tag-pdf { background: var(--red-bg);   color: var(--red-fg);   border-color: var(--red-border); }
-.rp-tag-web { background: var(--blue-bg);  color: var(--blue-fg);  border-color: var(--blue-border); }
-.rp-tag-csv { background: var(--ink-50);   color: var(--ink-400);  border-color: var(--ink-100); width: 32px; height: 32px; padding: 0; }
-
-.rp-page .rp-exports .export-item:hover .rp-tag-csv {
-  background: var(--green-bg);
-  color: var(--green-fg);
-  border-color: var(--green-border);
-}
-
-/* --------------------------------------------------------------------------
-   10. Responsive
-   -------------------------------------------------------------------------- */
+/* Responsive */
 @media (max-width: 1200px) {
   .rp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 900px) {
-  .rp-split { grid-template-columns: 1fr; gap: 20px; padding: 20px; }
+  .rp-split { grid-template-columns: 1fr; gap: 20px; }
   .rp-split .rp-chart.rp-chart-bar { max-width: 560px; }
-}
-
-@media (max-width: 768px) {
-  .rp-page .rp-hero { padding: 24px; align-items: flex-start; }
-  .rp-tabs .tab-panels { padding: 18px 16px; }
-  .rp-builder { padding: 18px; }
 }
 
 @media (max-width: 640px) {
   .rp-grid,
   .rp-grid.rp-grid-2 { grid-template-columns: 1fr; gap: 14px; }
-
-  /* reports.css pads both .tab-panels and .tab-panel here; keep one. */
-  .rp-tabs .tab-panels { padding: 14px 12px; }
-  .rp-tabs .tab-panel { padding: 0; }
-  .rp-tabs .tab-header { padding: 0 6px; }
-  .rp-tabs .tab-btn { padding: 12px 12px; font-size: var(--fs-sm, 13px); }
-
-  .rp-page .rp-hero { padding: 22px 20px; }
-  .rp-page .rp-hero h1 { font-size: 22px; }
-  .rp-hero-icon { width: 38px; height: 38px; font-size: 17px; }
-  .rp-page .hero-actions .btn { flex: 1 1 auto; }
-  .rp-page .hero-actions .rp-hero-btn-solid { flex-basis: 100%; }
-
-  .rp-builder-head { margin-bottom: 12px; padding-bottom: 12px; }
-
-  .rp-card-head { flex-wrap: wrap; padding: 14px 16px; }
-  .rp-card-actions { width: 100%; }
-  .rp-card-actions .btn { flex: 1 1 0; }
-  .rp-card-body { padding: 16px; }
-
-  .rp-split { padding: 16px; }
-  .rp-page .rp-table tbody th,
-  .rp-page .rp-table tfoot th,
-  .rp-page .rp-table tfoot td,
-  .rp-page .rp-table td,
-  .rp-page .rp-table th { padding: 11px 10px; }
-  .rp-page .rp-table .rp-bar { display: none; }
-  .rp-page .rp-table tbody th { white-space: normal; }
+  .rp-table .rp-bar { display: none; }
+  .rp-table tbody th { white-space: normal; }
   .rp-share-pct { min-width: 0; }
-
-  .rp-page .rp-exports { grid-template-columns: 1fr; }
-  .rp-page .powerbi-frame-wrap { min-height: 320px; aspect-ratio: auto; }
+  .rp-pbi-frame { min-height: 320px; aspect-ratio: auto; }
 }
 
-@media (max-width: 400px) {
-  .rp-page .reports-stats { grid-template-columns: 1fr; }
-  .rp-metric-value { font-size: 26px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rp-card,
-  .rp-foot-link i,
-  .rp-icon-btn { transition: none; }
-  .rp-foot-link:hover i { transform: none; }
-}
-
-/* --------------------------------------------------------------------------
-   11. Print: show the overview cards cleanly, hide interactive chrome.
-   -------------------------------------------------------------------------- */
+/* Print: show the overview cards cleanly, hide interactive chrome. */
 @media print {
-  .rp-page .hero-actions,
   .rp-builder,
-  .rp-tabs .tab-header,
+  .tab-shell .tab-header,
   .rp-card-foot,
-  .rp-icon-btn,
-  .rp-card-actions { display: none !important; }
+  .card-header .btn,
+  .card-header-actions { display: none !important; }
 
-  .rp-page .rp-hero { box-shadow: none; }
-  .rp-tabs .tab-panels { padding: 0; background: none; }
+  .tab-shell .tab-panels { padding: 0; background: none; }
   .rp-card { box-shadow: none; break-inside: avoid; }
 }

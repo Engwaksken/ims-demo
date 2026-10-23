@@ -90,14 +90,14 @@ if ($applicationId > 0) {
 <link rel="stylesheet" href="css/reports.css">
 <link rel="stylesheet" href="css/milestones.css">
 
-<div class="milestones-wrap">
-    <div class="milestones-hero">
-        <div class="milestones-hero-text">
+<div class="milestones-wrap page-stack">
+    <div class="page-hero">
+        <div>
             <h1><i class="fas fa-upload"></i> Venture Milestone Evidence</h1>
             <p>Upload milestone evidence files for reviewers to view, comment, and score.</p>
         </div>
         <div class="hero-actions">
-            <a href="startup-milestones-dashboard" class="btn btn-gray">
+            <a href="startup-milestones-dashboard" class="btn">
                 <i class="fas fa-chart-line"></i> Dashboard
             </a>
         </div>
@@ -131,7 +131,7 @@ if ($applicationId > 0) {
                         <option value="">Select milestone...</option>
                         <?php foreach ($milestones as $m): ?>
                             <option value="<?php echo (int)$m['milestone_id']; ?>" data-application-id="<?php echo (int)$m['application_id']; ?>">
-                                <?php echo h($m['startup_name']); ?> — <?php echo h($m['milestone_title']); ?> — <?php echo h($m['status']); ?>
+                                <?php echo h($m['startup_name']); ?> â€” <?php echo h($m['milestone_title']); ?> â€” <?php echo h($m['status']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -145,7 +145,7 @@ if ($applicationId > 0) {
                     <div class="form-group">
                         <label for="evidence_file" class="required">Evidence File</label>
                         <input type="file" name="evidence_file" id="evidence_file" class="form-control" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp,.zip">
-                        <small style="color:#64748b;">Allowed: PDF, Word, Excel, PowerPoint, images, ZIP. Max 20MB.</small>
+                        <small style="color:var(--ink-300);">Allowed: PDF, Word, Excel, PowerPoint, images, ZIP. Max 20MB.</small>
                     </div>
                 </div>
 

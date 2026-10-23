@@ -127,7 +127,7 @@ unset($_SESSION['success'], $_SESSION['error']);
         </div>
 
         <div class="hero-actions">
-            <a href="manage_procurement" class="btn btn-primary">
+            <a href="manage_procurement" class="btn">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
         </div>

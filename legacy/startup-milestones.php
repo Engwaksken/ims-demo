@@ -297,20 +297,20 @@ $stats = [
 <link rel="stylesheet" href="css/reports.css">
 <link rel="stylesheet" href="css/milestones.css">
 
-<div class="milestones-wrap">
-    <div class="milestones-hero">
-        <div class="milestones-hero-text">
+<div class="milestones-wrap page-stack">
+    <div class="page-hero">
+        <div>
             <h1><i class="fas fa-rocket"></i> Manage Startup Milestones</h1>
             <p>Create milestones, generate field-visit forms, score visited startups, and upload startup field reports.</p>
         </div>
 
         <div class="hero-actions">
-            <a href="startup-milestones-dashboard" class="btn btn-gray">
+            <a href="startup-milestones-dashboard" class="btn">
                 <i class="fas fa-chart-line"></i> Dashboard
             </a>
 
             <?php if ($hasFieldVisits): ?>
-                <a href="startup-field-visits" class="btn btn-gray">
+                <a href="startup-field-visits" class="btn">
                     <i class="fas fa-clipboard-check"></i> Field Visits
                 </a>
             <?php endif; ?>
@@ -321,7 +321,7 @@ $stats = [
         </div>
     </div>
 
-    <div class="milestones-stats">
+    <div class="stats-grid reports-stats milestones-stats">
         <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fas fa-flag"></i></div>
             <div class="stat-info">
@@ -420,7 +420,7 @@ $stats = [
             <button class="btn btn-dark" type="submit">
                 <i class="fas fa-filter"></i> Filter
             </button>
-            <a href="startup-milestones" class="btn btn-gray">
+            <a href="startup-milestones" class="btn">
                 <i class="fas fa-times"></i> Clear
             </a>
         </div>
@@ -532,7 +532,7 @@ $stats = [
 
                                         <?php if (!empty($milestone['latest_visit_id'])): ?>
                                             <br>
-                                            <a href="startup-field-visits?visit_id=<?php echo (int)$milestone['latest_visit_id']; ?>#score" style="font-size:12px;color:#0f766e;font-weight:700;">
+                                            <a href="startup-field-visits?visit_id=<?php echo (int)$milestone['latest_visit_id']; ?>#score" style="font-size:12px;color:var(--brand-600);font-weight:700;">
                                                 Open latest
                                             </a>
                                         <?php endif; ?>
@@ -542,7 +542,7 @@ $stats = [
                                             <small>Score: <?php echo number_format((float)$milestone['latest_field_score'], 1); ?>/10</small>
                                         <?php endif; ?>
                                     <?php else: ?>
-                                        <span style="color:#94a3b8;font-size:12px;">No form</span>
+                                        <span style="color:var(--ink-200);font-size:12px;">No form</span>
                                     <?php endif; ?>
                                 </td>
 

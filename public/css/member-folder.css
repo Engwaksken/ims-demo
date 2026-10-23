@@ -3,31 +3,13 @@
    adds the folder-specific pieces. */
 
 .mf-page {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .mf-page .page-hero p strong { font-weight: 800; }
 
-.mf-hero-btn {
-  background: rgba(255, 255, 255, .14);
-  color: var(--ink-0);
-  border: 1px solid rgba(255, 255, 255, .35);
-  box-shadow: none;
-}
-.mf-hero-btn:hover { background: rgba(255, 255, 255, .24); color: var(--ink-0); }
-.mf-hero-btn.mf-hero-btn-solid { background: var(--ink-0); color: var(--brand-700); border-color: var(--ink-0); }
-.mf-hero-btn.mf-hero-btn-solid:hover { background: var(--brand-50); color: var(--brand-700); }
-
-.mf-page .stats-grid { margin-bottom: 0; }
-
-.mf-card { margin-bottom: 0; }
-.mf-card .card-header { gap: 12px; flex-wrap: wrap; }
-.mf-card .card-header h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; }
-.mf-card .card-header h3 i { color: var(--brand-500); }
+.mf-card .card-header { flex-wrap: wrap; }
 
 .mf-inline-form { display: inline-flex; margin: 0; }
 .mf-inline-form select { min-width: 110px; }
@@ -129,6 +111,6 @@
   .mf-page { gap: 12px; }
   .page-hero { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .mf-month { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .stat-card, .card { box-shadow: none !important; border: 1px solid #e5e7eb; break-inside: avoid; }
+  .stat-card, .card { box-shadow: none !important; border: 1px solid var(--ink-100); break-inside: avoid; }
   .mf-months { grid-template-columns: repeat(12, minmax(0, 1fr)); }
 }

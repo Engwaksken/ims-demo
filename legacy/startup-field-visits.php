@@ -119,14 +119,14 @@ $scoreFields = [
 <link rel="stylesheet" href="css/reports.css">
 <link rel="stylesheet" href="css/milestones.css">
 
-<div class="milestones-wrap">
-    <div class="milestones-hero">
-        <div class="milestones-hero-text">
+<div class="milestones-wrap page-stack">
+    <div class="page-hero">
+        <div>
             <h1><i class="fas fa-clipboard-check"></i> Startup Field Visits</h1>
             <p>Field teams can score visited startups, upload evidence/report files, and submit field recommendations.</p>
         </div>
         <div class="hero-actions">
-            <a href="startup-milestones" class="btn btn-gray">
+            <a href="startup-milestones" class="btn">
                 <i class="fas fa-arrow-left"></i> Startup Milestones
             </a>
         </div>
@@ -203,7 +203,7 @@ $scoreFields = [
                                                 <i class="fas fa-download"></i> Download
                                             </a>
                                         <?php else: ?>
-                                            <span style="color:#94a3b8;font-size:12px;">No report</span>
+                                            <span style="color:var(--ink-200);font-size:12px;">No report</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -322,7 +322,7 @@ $scoreFields = [
                     <div class="form-group">
                         <label>Upload Startup Field Report</label>
                         <input type="file" name="report_file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip">
-                        <small style="color:#64748b;">Allowed: PDF, Word, Excel, images, ZIP. Max 15MB.</small>
+                        <small style="color:var(--ink-300);">Allowed: PDF, Word, Excel, images, ZIP. Max 15MB.</small>
                     </div>
 
                     <div class="modal-footer">

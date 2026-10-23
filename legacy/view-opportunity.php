@@ -87,12 +87,12 @@ function format_date_value(mixed $value, string $format = 'd M Y'): string
 function app_status_badge(string $status): string
 {
     return match ($status) {
-        'Selected', 'Accepted' => 'badge-app-accepted',
-        'Rejected'             => 'badge-app-rejected',
-        'Shortlisted'          => 'badge-app-shortlisted',
-        'Under Review'         => 'badge-app-review',
-        'Draft'                => 'badge-app-draft',
-        default                => 'badge-app-default',
+        'Selected', 'Accepted' => 'badge-available',
+        'Rejected'             => 'badge-rejected',
+        'Shortlisted'          => 'badge-pending',
+        'Under Review'         => 'badge-purple',
+        'Draft'                => 'badge-returned',
+        default                => 'badge-assigned',
     };
 }
 
@@ -265,13 +265,13 @@ if (!empty($opportunity['sectors_allowed'])) {
 $status = (string)($opportunity['status'] ?? 'Draft');
 
 $badgeMap = [
-    'Published' => 'badge-published',
-    'Draft'     => 'badge-draft',
-    'Closed'    => 'badge-closed',
-    'Completed' => 'badge-completed',
+    'Published' => 'badge-available',
+    'Draft'     => 'badge-pending',
+    'Closed'    => 'badge-returned',
+    'Completed' => 'badge-purple',
 ];
 
-$badgeClass = $badgeMap[$status] ?? 'badge-secondary';
+$badgeClass = $badgeMap[$status] ?? 'badge-returned';
 
 $days_remaining = null;
 
@@ -300,178 +300,155 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 <link rel="stylesheet" href="css/opportunities.css">
 
 <style>
-.vo-layout{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:20px;align-items:start}
-.vo-stack{display:flex;flex-direction:column;gap:20px}
-.vo-info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.vo-info-item{background:var(--ink-50);border-radius:var(--radius-md);padding:14px 16px;border-left:3px solid var(--brand-400)}
-.vo-info-label{font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-300);margin-bottom:4px}
-.vo-info-value{font-size:14px;font-weight:700;color:var(--ink-700);line-height:1.45}
-.vo-section{padding-top:20px;margin-top:20px;border-top:1px solid var(--ink-100)}
-.vo-section:first-child{padding-top:0;margin-top:0;border-top:0}
-.vo-section-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--ink-700);margin-bottom:12px}
-.vo-section-title i{color:var(--brand-500)}
-.vo-rich{font-size:14px;color:var(--ink-400);line-height:1.8}
-.vo-rich p{margin:0 0 12px}
-.vo-rich ul,.vo-rich ol{padding-left:22px;margin:10px 0}
-.vo-rich li{margin:7px 0}
-.vo-rich h2,.vo-rich h3,.vo-rich h4{color:var(--ink-700);margin:18px 0 8px}
-.vo-rich a{color:var(--brand-600);text-decoration:none}
-.vo-rich blockquote{border-left:4px solid var(--brand-300);margin:14px 0;padding:10px 14px;background:var(--brand-50);border-radius:0 8px 8px 0}
-.vo-content-card{border:1px solid var(--ink-100);border-radius:var(--radius-lg);padding:18px;background:#fff;margin-bottom:14px}
-.vo-content-card:last-child{margin-bottom:0}
-.vo-content-card h3{font-size:15px;margin:0 0 10px;color:var(--ink-700)}
-.vo-bullets{padding-left:20px;margin:10px 0 0;color:var(--ink-400);line-height:1.7}
-.vo-bullets li{margin:7px 0}
-.vo-sectors{display:flex;flex-wrap:wrap;gap:8px}
-.vo-sector-tag{display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:700;background:var(--brand-50);color:var(--brand-700);border:1px solid var(--brand-100)}
-.vo-deadline-alert{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:var(--radius-lg);border:1.5px solid;margin-bottom:20px;font-size:13px;font-weight:600}
-.vo-deadline-alert i{font-size:22px}.vo-deadline-alert .vo-dl-body{flex:1;line-height:1.5}.vo-deadline-alert strong{display:block;font-size:14px}
-.vo-deadline-alert.critical{background:var(--red-bg);border-color:var(--red-border);color:var(--red-fg)}
-.vo-deadline-alert.warning{background:var(--amber-bg);border-color:var(--amber-border);color:var(--amber-fg)}
-.vo-deadline-alert.safe{background:var(--green-bg);border-color:var(--green-border);color:var(--green-fg)}
-.vo-capacity{display:flex;flex-direction:column;gap:8px}.vo-capacity-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--ink-400)}.vo-capacity-row strong{color:var(--ink-700)}
-.vo-capacity-track{height:10px;background:var(--ink-100);border-radius:999px;overflow:hidden}.vo-capacity-fill{height:100%;background:linear-gradient(90deg,var(--green-fg),#4ade80);border-radius:999px}.vo-capacity-fill.hot{background:linear-gradient(90deg,var(--amber-fg),#fbbf24)}.vo-capacity-fill.full{background:linear-gradient(90deg,var(--red-fg),#f87171)}
-.vo-timeline{position:relative;padding-left:28px}.vo-timeline::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--ink-100)}.vo-tl-item{position:relative;padding:14px 0 14px 16px}.vo-tl-item::before{content:'';position:absolute;left:-20px;top:18px;width:12px;height:12px;border-radius:50%;background:var(--brand-500);border:3px solid var(--surface-card);box-shadow:0 0 0 2px var(--brand-400)}.vo-tl-title{font-size:13px;font-weight:700;color:var(--ink-700);margin-bottom:3px}.vo-tl-sub{font-size:12px;color:var(--ink-300);line-height:1.55}
-.vo-app-list{list-style:none;padding:0;margin:0}.vo-app-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--ink-50)}.vo-app-item:last-child{border-bottom:0}.vo-app-name{font-size:13.5px;font-weight:700;color:var(--ink-700)}.vo-app-sub{font-size:12px;color:var(--ink-300);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}.vo-app-sub i{color:var(--brand-400)}.vo-app-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.badge-app-accepted{background:var(--green-bg);color:var(--green-fg);border-color:var(--green-border)}.badge-app-rejected{background:var(--red-bg);color:var(--red-fg);border-color:var(--red-border)}.badge-app-shortlisted{background:var(--amber-bg);color:var(--amber-fg);border-color:var(--amber-border)}.badge-app-review{background:var(--purple-bg);color:var(--purple-fg);border-color:var(--purple-border)}.badge-app-draft{background:var(--ink-50);color:var(--ink-400);border-color:var(--ink-100)}.badge-app-default{background:var(--blue-bg);color:var(--blue-fg);border-color:var(--blue-border)}
-.vo-empty{text-align:center;padding:38px 20px;color:var(--ink-300)}.vo-empty i{font-size:34px;opacity:.3;margin-bottom:10px}
-.vo-cohort-box{background:linear-gradient(135deg,var(--brand-50),#fff);border:1px solid var(--brand-100);border-radius:var(--radius-lg);padding:16px}.vo-cohort-name{font-size:15px;font-weight:800;color:var(--ink-700);margin-bottom:8px}.vo-cohort-meta{font-size:12px;color:var(--ink-300);display:flex;gap:12px;flex-wrap:wrap}
-.vo-actionbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
-@media(max-width:1050px){.vo-layout{grid-template-columns:1fr}.vo-sidebar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.vo-sidebar .opp-panel{margin:0}}
-@media(max-width:720px){.vo-sidebar{grid-template-columns:1fr}.vo-app-item{flex-direction:column;align-items:flex-start}.vo-app-actions{align-self:flex-end}}
-@media(max-width:460px){.vo-info-grid{grid-template-columns:1fr}}
-
-.vo-tabs{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-    border-bottom:2px solid var(--ink-100);
-    margin-bottom:18px;
+/* View opportunity: two-column layout, info tiles, rich text, capacity bar,
+   timeline and recent-application list. */
+.vo-layout { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 20px; align-items: start; }
+.vo-stack { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.vo-hero-meta { display: flex; gap: 8px 18px; flex-wrap: wrap; align-items: center; }
+.vo-actionbar { display: flex; gap: 8px; flex-wrap: wrap; }
+.vo-alert-body { flex: 1; line-height: 1.5; }
+.vo-alert-body strong { display: block; font-size: 14px; }
+.vo-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.vo-info-item { background: var(--ink-50); border-radius: var(--radius-md); padding: 14px 16px; border-left: 3px solid var(--brand-400); }
+.vo-info-label { font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-300); margin-bottom: 4px; }
+.vo-info-value { font-size: 14px; font-weight: 700; color: var(--ink-700); line-height: 1.45; }
+.vo-section { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--ink-100); }
+.tab-panel > .vo-section:first-child { padding-top: 0; margin-top: 0; border-top: 0; }
+.vo-section-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--ink-700); margin-bottom: 12px; }
+.vo-section-title i { color: var(--brand-500); }
+.vo-rich { font-size: 14px; color: var(--ink-400); line-height: 1.8; }
+.vo-rich p { margin: 0 0 12px; }
+.vo-rich ul, .vo-rich ol { padding-left: 22px; margin: 10px 0; }
+.vo-rich li { margin: 7px 0; }
+.vo-rich h2, .vo-rich h3, .vo-rich h4 { color: var(--ink-700); margin: 18px 0 8px; }
+.vo-rich a { color: var(--brand-600); text-decoration: none; }
+.vo-rich blockquote { border-left: 4px solid var(--brand-200); margin: 14px 0; padding: 10px 14px; background: var(--brand-50); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.vo-content-card { border: 1px solid var(--ink-100); border-radius: var(--radius-lg); padding: 18px; background: var(--surface-card); margin-bottom: 14px; }
+.vo-content-card:last-child { margin-bottom: 0; }
+.vo-content-card h3 { font-size: 15px; margin: 0 0 10px; color: var(--ink-700); }
+.vo-bullets { padding-left: 20px; margin: 10px 0 0; color: var(--ink-400); line-height: 1.7; }
+.vo-bullets li { margin: 7px 0; }
+.vo-sectors { display: flex; flex-wrap: wrap; gap: 8px; }
+.vo-sector-tag { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--brand-50); color: var(--brand-700); border: 1px solid var(--brand-100); }
+.vo-capacity { display: flex; flex-direction: column; gap: 8px; }
+.vo-capacity-row { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--ink-400); }
+.vo-capacity-row strong { color: var(--ink-700); }
+.vo-capacity-track { height: 10px; background: var(--ink-100); border-radius: 999px; overflow: hidden; }
+.vo-capacity-fill { height: 100%; background: var(--green-fg); border-radius: 999px; }
+.vo-capacity-fill.hot { background: var(--amber-fg); }
+.vo-capacity-fill.full { background: var(--red-fg); }
+.vo-timeline { position: relative; padding-left: 28px; }
+.vo-timeline::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--ink-100); }
+.vo-tl-item { position: relative; padding: 14px 0 14px 16px; }
+.vo-tl-item::before { content: ''; position: absolute; left: -20px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: var(--brand-500); border: 3px solid var(--surface-card); box-shadow: 0 0 0 2px var(--brand-400); }
+.vo-tl-title { font-size: 13px; font-weight: 700; color: var(--ink-700); margin-bottom: 3px; }
+.vo-tl-sub { font-size: 12px; color: var(--ink-300); line-height: 1.55; }
+.vo-list-body { padding-top: 8px; padding-bottom: 8px; }
+.vo-app-list { list-style: none; padding: 0; margin: 0; }
+.vo-app-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--ink-50); }
+.vo-app-item:last-child { border-bottom: 0; }
+.vo-app-name { font-size: 13.5px; font-weight: 700; color: var(--ink-700); }
+.vo-app-sub { font-size: 12px; color: var(--ink-300); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+.vo-app-sub i { color: var(--brand-400); }
+.vo-app-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.vo-cohort-box { background: var(--brand-50); border: 1px solid var(--brand-100); border-radius: var(--radius-lg); padding: 16px; }
+.vo-cohort-name { font-size: 15px; font-weight: 800; color: var(--ink-700); margin-bottom: 8px; }
+.vo-cohort-meta { font-size: 12px; color: var(--ink-300); display: flex; gap: 12px; flex-wrap: wrap; }
+.vo-modal-sm { max-width: 500px; }
+@media (max-width: 1050px) {
+    .vo-layout { grid-template-columns: 1fr; }
+    .vo-sidebar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 }
-.vo-tab-btn{
-    border:0;
-    background:transparent;
-    padding:10px 14px;
-    font-size:12.5px;
-    font-weight:800;
-    color:var(--ink-300);
-    cursor:pointer;
-    border-bottom:3px solid transparent;
-    margin-bottom:-2px;
-    display:inline-flex;
-    align-items:center;
-    gap:7px;
-    white-space:nowrap;
+@media (max-width: 720px) {
+    .vo-sidebar { grid-template-columns: 1fr; }
+    .vo-app-item { flex-direction: column; align-items: flex-start; }
+    .vo-app-actions { align-self: flex-end; }
 }
-.vo-tab-btn:hover{color:var(--ink-600)}
-.vo-tab-btn.active{
-    color:var(--brand-600);
-    border-bottom-color:var(--brand-500);
-}
-.vo-tab-panel{display:none}
-.vo-tab-panel.active{display:block}
-@media(max-width:720px){
-    .vo-tabs{
-        flex-wrap:nowrap;
-        overflow-x:auto;
-        scrollbar-width:none;
-    }
-    .vo-tabs::-webkit-scrollbar{display:none}
-    .vo-tab-btn{flex:0 0 auto}
-}
-
+@media (max-width: 460px) { .vo-info-grid { grid-template-columns: 1fr; } }
 </style>
 
-<div class="opp-hero" style="margin-bottom:20px">
-    <div class="opp-hero-left">
-        <div class="opp-eyebrow">
-            <span class="opp-dot"></span>
-            <?= h($opportunity['opportunity_type']) ?>
-        </div>
+<div class="page-stack">
 
-        <h1 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+<div class="page-hero">
+    <div>
+        <h1>
+            <i class="fas fa-bullhorn" aria-hidden="true"></i>
             <?= h($opportunity['opportunity_title']) ?>
 
             <?php if (!empty($opportunity['is_featured'])): ?>
-                <span class="opp-featured-badge" style="font-size:11px">
-                    <i class="fas fa-star"></i> Featured
-                </span>
+                <span class="badge badge-pending"><i class="fas fa-star" aria-hidden="true"></i> Featured</span>
             <?php endif; ?>
         </h1>
 
-        <p style="display:flex;gap:18px;flex-wrap:wrap;opacity:.86;font-size:13px;margin-top:6px">
+        <p class="vo-hero-meta">
+            <span class="badge <?= h($badgeClass) ?>"><?= h($status) ?></span>
+
+            <span><i class="fas fa-tag" aria-hidden="true"></i> <?= h($opportunity['opportunity_type']) ?></span>
+
             <?php if (!empty($opportunity['cohort_name'])): ?>
-                <span><i class="fas fa-layer-group"></i> <?= h($opportunity['cohort_name']) ?></span>
+                <span><i class="fas fa-layer-group" aria-hidden="true"></i> <?= h($opportunity['cohort_name']) ?></span>
             <?php endif; ?>
 
-            <span><i class="fas fa-calendar"></i> Created <?= h(format_date_value($opportunity['created_at'])) ?></span>
+            <span><i class="fas fa-calendar" aria-hidden="true"></i> Created <?= h(format_date_value($opportunity['created_at'])) ?></span>
 
             <?php if (!empty($opportunity['created_by_name'])): ?>
-                <span><i class="fas fa-user"></i> <?= h($opportunity['created_by_name']) ?></span>
+                <span><i class="fas fa-user" aria-hidden="true"></i> <?= h($opportunity['created_by_name']) ?></span>
             <?php endif; ?>
         </p>
     </div>
 
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;position:relative">
-        <span class="badge <?= h($badgeClass) ?>" style="font-size:13px;padding:7px 18px">
-            <?= h($status) ?>
-        </span>
+    <div class="hero-actions">
+        <a href="application-opportunities" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+        </a>
 
-        <div class="opp-hero-actions" style="justify-content:flex-end">
-            <a href="application-opportunities" class="btn btn-white btn-sm">
-                <i class="fas fa-arrow-left"></i> Back
+        <?php if ($status === 'Published'): ?>
+            <a href="submit-application?opportunity_id=<?= $opportunity_id ?>" target="_blank" class="btn">
+                <i class="fas fa-up-right-from-square" aria-hidden="true"></i> Applicant View
             </a>
+        <?php endif; ?>
 
-            <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>" class="btn btn-white btn-sm">
-                <i class="fas fa-file-alt"></i>
-                Applications
-                <span style="background:rgba(234,88,12,.2);border-radius:999px;padding:1px 8px;font-size:11px">
-                    <?= (int)$stats['total'] ?>
-                </span>
-            </a>
-
-            <?php if ($status === 'Published'): ?>
-                <a href="submit-application?opportunity_id=<?= $opportunity_id ?>" target="_blank" class="btn btn-white btn-sm">
-                    <i class="fas fa-up-right-from-square"></i> Applicant View
-                </a>
-            <?php endif; ?>
-        </div>
+        <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>" class="btn btn-primary">
+            <i class="fas fa-file-alt" aria-hidden="true"></i>
+            Applications
+            <span class="badge badge-light"><?= (int)$stats['total'] ?></span>
+        </a>
     </div>
 </div>
 
-<div class="vo-actionbar">
+<div class="controls-bar vo-actionbar">
     <?php if ($status === 'Draft'): ?>
-        <button type="button" onclick="publishOpportunity(<?= $opportunity_id ?>)" class="btn btn-success btn-sm">
-            <i class="fas fa-check"></i> Publish
+        <button type="button" onclick="publishOpportunity(<?= $opportunity_id ?>)" class="btn btn-primary btn-sm">
+            <i class="fas fa-check" aria-hidden="true"></i> Publish
         </button>
     <?php endif; ?>
 
     <?php if ($status === 'Published'): ?>
         <button type="button" onclick="closeOpportunity(<?= $opportunity_id ?>)" class="btn btn-warning btn-sm">
-            <i class="fas fa-lock"></i> Close Applications
+            <i class="fas fa-lock" aria-hidden="true"></i> Close Applications
         </button>
 
         <button type="button" onclick="openModal('extendDeadlineModal')" class="btn btn-secondary btn-sm">
-            <i class="fas fa-clock"></i> Extend Deadline
+            <i class="fas fa-clock" aria-hidden="true"></i> Extend Deadline
         </button>
     <?php endif; ?>
 
     <?php if ($status === 'Closed'): ?>
-        <button type="button" onclick="reopenOpportunity(<?= $opportunity_id ?>)" class="btn btn-success btn-sm">
-            <i class="fas fa-unlock"></i> Reopen
+        <button type="button" onclick="reopenOpportunity(<?= $opportunity_id ?>)" class="btn btn-primary btn-sm">
+            <i class="fas fa-unlock" aria-hidden="true"></i> Reopen
         </button>
 
         <button type="button" onclick="completeOpportunity(<?= $opportunity_id ?>)" class="btn btn-dark btn-sm">
-            <i class="fas fa-flag-checkered"></i> Mark Completed
+            <i class="fas fa-flag-checkered" aria-hidden="true"></i> Mark Completed
         </button>
     <?php endif; ?>
 
     <a href="edit-opportunity?id=<?= $opportunity_id ?>" class="btn btn-secondary btn-sm">
-        <i class="fas fa-edit"></i> Edit
+        <i class="fas fa-edit" aria-hidden="true"></i> Edit
     </a>
 
     <button type="button" onclick="toggleFeatured(<?= $opportunity_id ?>)" class="btn btn-secondary btn-sm">
-        <i class="fas fa-star"></i>
+        <i class="fas fa-star" aria-hidden="true"></i>
         <?= !empty($opportunity['is_featured']) ? 'Unfeature' : 'Feature' ?>
     </button>
 
@@ -480,7 +457,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
             type="button"
             onclick="confirmDelete('<?= $titleJs ?>','includes/opportunity-process.php?action=delete&id=<?= $opportunity_id ?>&csrf_token=<?= h(csrf_token()) ?>')"
             class="btn btn-danger btn-sm">
-            <i class="fas fa-trash"></i> Delete
+            <i class="fas fa-trash" aria-hidden="true"></i> Delete
         </button>
     <?php endif; ?>
 </div>
@@ -488,17 +465,17 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 <?php if ($status === 'Published' && $days_remaining !== null): ?>
     <?php
     $alertClass = $days_remaining < 0
-        ? 'critical'
-        : ($days_remaining <= 7 ? 'warning' : 'safe');
+        ? 'alert-danger'
+        : ($days_remaining <= 7 ? 'alert-warning' : 'alert-success');
 
     $alertIcon = $days_remaining < 0
         ? 'exclamation-triangle'
         : ($days_remaining <= 7 ? 'exclamation-circle' : 'clock');
     ?>
 
-    <div class="vo-deadline-alert <?= h($alertClass) ?>">
-        <i class="fas fa-<?= h($alertIcon) ?>"></i>
-        <div class="vo-dl-body">
+    <div class="alert <?= h($alertClass) ?>">
+        <i class="fas fa-<?= h($alertIcon) ?>" aria-hidden="true"></i>
+        <div class="vo-alert-body">
             <?php if ($days_remaining < 0): ?>
                 <strong>Deadline Passed</strong>
                 The deadline passed <?= abs($days_remaining) ?> day<?= abs($days_remaining) === 1 ? '' : 's' ?> ago.
@@ -518,7 +495,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 
 <div class="stats-grid reports-stats">
     <div class="stat-card">
-        <div class="stat-icon bg-primary"><i class="fas fa-file-alt"></i></div>
+        <div class="stat-icon bg-primary"><i class="fas fa-file-alt" aria-hidden="true"></i></div>
         <div class="stat-info">
             <span class="stat-label">Total</span>
             <span class="stat-value"><?= (int)$stats['total'] ?></span>
@@ -526,9 +503,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon bg-blue">
-            <i class="fas fa-paper-plane"></i>
-        </div>
+        <div class="stat-icon bg-blue"><i class="fas fa-paper-plane" aria-hidden="true"></i></div>
         <div class="stat-info">
             <span class="stat-label">Submitted</span>
             <span class="stat-value"><?= (int)$stats['Submitted'] ?></span>
@@ -536,7 +511,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon bg-amber"><i class="fas fa-eye"></i></div>
+        <div class="stat-icon bg-amber"><i class="fas fa-eye" aria-hidden="true"></i></div>
         <div class="stat-info">
             <span class="stat-label">Reviewing</span>
             <span class="stat-value"><?= (int)$stats['Under Review'] ?></span>
@@ -544,7 +519,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon bg-purple"><i class="fas fa-star"></i></div>
+        <div class="stat-icon bg-purple"><i class="fas fa-star" aria-hidden="true"></i></div>
         <div class="stat-info">
             <span class="stat-label">Shortlisted</span>
             <span class="stat-value"><?= (int)$stats['Shortlisted'] ?></span>
@@ -552,7 +527,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
         <div class="stat-info">
             <span class="stat-label">Selected</span>
             <span class="stat-value"><?= $selectedCount ?></span>
@@ -560,9 +535,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
     </div>
 
     <div class="stat-card">
-        <div class="stat-icon bg-red">
-            <i class="fas fa-times-circle"></i>
-        </div>
+        <div class="stat-icon bg-red"><i class="fas fa-times-circle" aria-hidden="true"></i></div>
         <div class="stat-info">
             <span class="stat-label">Rejected</span>
             <span class="stat-value"><?= (int)$stats['Rejected'] ?></span>
@@ -573,32 +546,27 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 <div class="vo-layout">
     <div class="vo-stack">
 
-        <div class="opp-panel">
-            <div class="opp-panel-head">
-                <h3><i class="fas fa-info-circle" style="color:var(--brand-500)"></i> Opportunity Information</h3>
+        <div class="tab-shell">
+            <div class="tab-header">
+                <button type="button" class="tab-btn vo-tab-btn active" data-tab="overview">
+                    <i class="fas fa-circle-info" aria-hidden="true"></i> Overview
+                </button>
+                <button type="button" class="tab-btn vo-tab-btn" data-tab="details">
+                    <i class="fas fa-layer-group" aria-hidden="true"></i> Application Details
+                </button>
+                <button type="button" class="tab-btn vo-tab-btn" data-tab="eligibility">
+                    <i class="fas fa-list-check" aria-hidden="true"></i> Eligibility
+                </button>
+                <button type="button" class="tab-btn vo-tab-btn" data-tab="documents">
+                    <i class="fas fa-file-alt" aria-hidden="true"></i> Documents
+                </button>
+                <button type="button" class="tab-btn vo-tab-btn" data-tab="sectors">
+                    <i class="fas fa-industry" aria-hidden="true"></i> Sectors
+                </button>
             </div>
 
-            <div class="opp-panel-body">
-
-                <div class="vo-tabs">
-                    <button type="button" class="vo-tab-btn active" data-tab="overview">
-                        <i class="fas fa-circle-info"></i> Overview
-                    </button>
-                    <button type="button" class="vo-tab-btn" data-tab="details">
-                        <i class="fas fa-layer-group"></i> Application Details
-                    </button>
-                    <button type="button" class="vo-tab-btn" data-tab="eligibility">
-                        <i class="fas fa-list-check"></i> Eligibility
-                    </button>
-                    <button type="button" class="vo-tab-btn" data-tab="documents">
-                        <i class="fas fa-file-alt"></i> Documents
-                    </button>
-                    <button type="button" class="vo-tab-btn" data-tab="sectors">
-                        <i class="fas fa-industry"></i> Sectors
-                    </button>
-                </div>
-
-                <div class="vo-tab-panel active" id="vo-tab-overview">
+            <div class="tab-panels">
+                <div class="tab-panel vo-tab-panel active" id="vo-tab-overview">
                 <div class="vo-info-grid">
                     <div class="vo-info-item">
                         <div class="vo-info-label">Cohort</div>
@@ -640,7 +608,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                         <div class="vo-info-label">Team Size</div>
                         <div class="vo-info-value">
                             <?= max(1, (int)($opportunity['min_team_size'] ?? 1)) ?>
-                            <?= !empty($opportunity['max_team_size']) ? ' – ' . (int)$opportunity['max_team_size'] : '+' ?>
+                            <?= !empty($opportunity['max_team_size']) ? ' &ndash; ' . (int)$opportunity['max_team_size'] : '+' ?>
                             members
                         </div>
                     </div>
@@ -653,7 +621,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 
                 <div class="vo-section">
                     <div class="vo-section-title">
-                        <i class="fas fa-align-left"></i>
+                        <i class="fas fa-align-left" aria-hidden="true"></i>
                         Description
                     </div>
 
@@ -664,11 +632,11 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 
                 </div>
 
-                <div class="vo-tab-panel" id="vo-tab-details">
+                <div class="tab-panel vo-tab-panel" id="vo-tab-details">
                 <?php if ($content_sections !== []): ?>
                     <div class="vo-section">
                         <div class="vo-section-title">
-                            <i class="fas fa-layer-group"></i>
+                            <i class="fas fa-layer-group" aria-hidden="true"></i>
                             Application Details
                         </div>
 
@@ -695,11 +663,11 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                         <?php endforeach; ?>
                     </div>
                 <?php else: ?>
-                    <div class="vo-empty"><i class="fas fa-layer-group"></i><p>No application detail sections have been added.</p></div>
+                    <div class="empty-state"><i class="fas fa-layer-group" aria-hidden="true"></i><p>No application detail sections have been added.</p></div>
                 <?php endif; ?>
                 </div>
 
-                <div class="vo-tab-panel" id="vo-tab-eligibility">
+                <div class="tab-panel vo-tab-panel" id="vo-tab-eligibility">
                 <?php if (
                     !empty($opportunity['eligibility_heading']) ||
                     !empty($opportunity['eligibility_description_html']) ||
@@ -707,7 +675,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                 ): ?>
                     <div class="vo-section">
                         <div class="vo-section-title">
-                            <i class="fas fa-list-check"></i>
+                            <i class="fas fa-list-check" aria-hidden="true"></i>
                             <?= h($opportunity['eligibility_heading'] ?: 'Eligibility Criteria') ?>
                         </div>
 
@@ -726,15 +694,15 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                         <?php endif; ?>
                     </div>
                 <?php else: ?>
-                    <div class="vo-empty"><i class="fas fa-list-check"></i><p>No eligibility criteria have been added.</p></div>
+                    <div class="empty-state"><i class="fas fa-list-check" aria-hidden="true"></i><p>No eligibility criteria have been added.</p></div>
                 <?php endif; ?>
                 </div>
 
-                <div class="vo-tab-panel" id="vo-tab-documents">
+                <div class="tab-panel vo-tab-panel" id="vo-tab-documents">
                 <?php if (!empty($opportunity['required_documents'])): ?>
                     <div class="vo-section">
                         <div class="vo-section-title">
-                            <i class="fas fa-file-alt"></i>
+                            <i class="fas fa-file-alt" aria-hidden="true"></i>
                             <?= h($opportunity['documents_heading'] ?: 'Required Documents') ?>
                         </div>
 
@@ -743,15 +711,15 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                         </div>
                     </div>
                 <?php else: ?>
-                    <div class="vo-empty"><i class="fas fa-file-alt"></i><p>No required documents have been added.</p></div>
+                    <div class="empty-state"><i class="fas fa-file-alt" aria-hidden="true"></i><p>No required documents have been added.</p></div>
                 <?php endif; ?>
                 </div>
 
-                <div class="vo-tab-panel" id="vo-tab-sectors">
+                <div class="tab-panel vo-tab-panel" id="vo-tab-sectors">
                 <?php if ($sectors !== []): ?>
                     <div class="vo-section">
                         <div class="vo-section-title">
-                            <i class="fas fa-industry"></i>
+                            <i class="fas fa-industry" aria-hidden="true"></i>
                             Allowed Sectors
                         </div>
 
@@ -762,24 +730,24 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                         </div>
                     </div>
                 <?php else: ?>
-                    <div class="vo-empty"><i class="fas fa-industry"></i><p>No sector restrictions have been added.</p></div>
+                    <div class="empty-state"><i class="fas fa-industry" aria-hidden="true"></i><p>No sector restrictions have been added.</p></div>
                 <?php endif; ?>
                 </div>
             </div>
         </div>
 
-        <div class="opp-panel">
-            <div class="opp-panel-head">
-                <h3><i class="fas fa-history" style="color:var(--brand-500)"></i> Recent Applications</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-history" aria-hidden="true"></i> Recent Applications</h3>
                 <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>" class="btn btn-primary btn-sm">
                     View All
                 </a>
             </div>
 
-            <div class="opp-panel-body" style="padding-top:8px;padding-bottom:8px">
+            <div class="card-body vo-list-body">
                 <?php if ($recent_apps === []): ?>
-                    <div class="vo-empty">
-                        <i class="fas fa-inbox"></i>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox" aria-hidden="true"></i>
                         <p>No applications have been received yet.</p>
                     </div>
                 <?php else: ?>
@@ -796,13 +764,13 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 
                                     <div class="vo-app-sub">
                                         <?php if (!empty($app['reference_number'])): ?>
-                                            <span><i class="fas fa-hashtag"></i> <?= h($app['reference_number']) ?></span>
+                                            <span><i class="fas fa-hashtag" aria-hidden="true"></i> <?= h($app['reference_number']) ?></span>
                                         <?php endif; ?>
 
-                                        <span><i class="fas fa-tag"></i> <?= h(application_sector_label($app)) ?></span>
+                                        <span><i class="fas fa-tag" aria-hidden="true"></i> <?= h(application_sector_label($app)) ?></span>
 
                                         <?php if (!empty($displayDate)): ?>
-                                            <span><i class="fas fa-calendar"></i> <?= h(format_date_value($displayDate)) ?></span>
+                                            <span><i class="fas fa-calendar" aria-hidden="true"></i> <?= h(format_date_value($displayDate)) ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -813,7 +781,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                                     </span>
 
                                     <a href="view-application?id=<?= (int)$app['application_id'] ?>" class="btn btn-secondary btn-sm">
-                                        <i class="fas fa-eye"></i> View
+                                        <i class="fas fa-eye" aria-hidden="true"></i> View
                                     </a>
                                 </div>
                             </li>
@@ -826,25 +794,25 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
 
     <aside class="vo-stack vo-sidebar">
         <?php if (!empty($opportunity['cohort_name'])): ?>
-            <div class="opp-panel">
-                <div class="opp-panel-head">
-                    <h3><i class="fas fa-layer-group" style="color:var(--brand-500)"></i> Cohort</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-layer-group" aria-hidden="true"></i> Cohort</h3>
                 </div>
-                <div class="opp-panel-body">
+                <div class="card-body">
                     <div class="vo-cohort-box">
                         <div class="vo-cohort-name"><?= h($opportunity['cohort_name']) ?></div>
 
                         <div class="vo-cohort-meta">
                             <?php if (!empty($opportunity['cohort_start_date'])): ?>
-                                <span><i class="fas fa-calendar-plus"></i> <?= h(format_date_value($opportunity['cohort_start_date'])) ?></span>
+                                <span><i class="fas fa-calendar-plus" aria-hidden="true"></i> <?= h(format_date_value($opportunity['cohort_start_date'])) ?></span>
                             <?php endif; ?>
 
                             <?php if (!empty($opportunity['cohort_end_date'])): ?>
-                                <span><i class="fas fa-calendar-check"></i> <?= h(format_date_value($opportunity['cohort_end_date'])) ?></span>
+                                <span><i class="fas fa-calendar-check" aria-hidden="true"></i> <?= h(format_date_value($opportunity['cohort_end_date'])) ?></span>
                             <?php endif; ?>
 
                             <?php if (!empty($opportunity['cohort_status'])): ?>
-                                <span><i class="fas fa-circle"></i> <?= h($opportunity['cohort_status']) ?></span>
+                                <span><i class="fas fa-circle" aria-hidden="true"></i> <?= h($opportunity['cohort_status']) ?></span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -853,12 +821,12 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
         <?php endif; ?>
 
         <?php if (!empty($opportunity['max_applicants'])): ?>
-            <div class="opp-panel">
-                <div class="opp-panel-head">
-                    <h3><i class="fas fa-users" style="color:var(--brand-500)"></i> Capacity</h3>
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-users" aria-hidden="true"></i> Capacity</h3>
                 </div>
 
-                <div class="opp-panel-body">
+                <div class="card-body">
                     <div class="vo-capacity">
                         <div class="vo-capacity-row">
                             <span>Applications received</span>
@@ -897,12 +865,12 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
             </div>
         <?php endif; ?>
 
-        <div class="opp-panel">
-            <div class="opp-panel-head">
-                <h3><i class="fas fa-stream" style="color:var(--brand-500)"></i> Timeline</h3>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-stream" aria-hidden="true"></i> Timeline</h3>
             </div>
 
-            <div class="opp-panel-body">
+            <div class="card-body">
                 <div class="vo-timeline">
                     <div class="vo-tl-item">
                         <div class="vo-tl-title">Created</div>
@@ -947,11 +915,13 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
     </aside>
 </div>
 
+</div><!-- /.page-stack -->
+
 <div id="extendDeadlineModal" class="modal">
-    <div class="modal-card modal-sm" style="max-width:500px">
-        <div class="modal-head">
+    <div class="modal-content vo-modal-sm">
+        <div class="modal-header">
             <h3>
-                <i class="fas fa-clock" style="color:var(--brand-500)"></i>
+                <i class="fas fa-clock" aria-hidden="true"></i>
                 Extend Deadline
             </h3>
 
@@ -969,10 +939,12 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
             <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
 
             <div class="modal-body">
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:var(--radius-md);margin-bottom:16px;font-size:13px;color:var(--blue-fg);font-weight:600">
-                    <i class="fas fa-info-circle"></i>
-                    Current deadline:
-                    <strong><?= h(format_date_value($opportunity['deadline'])) ?></strong>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <span>
+                        Current deadline:
+                        <strong><?= h(format_date_value($opportunity['deadline'])) ?></strong>
+                    </span>
                 </div>
 
                 <div class="form-group">
@@ -984,13 +956,13 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                         class="form-control"
                         min="<?= h(date('Y-m-d', strtotime((string)$opportunity['deadline'] . ' +1 day'))) ?>"
                         required>
-                    <span style="font-size:11px;color:var(--ink-300);margin-top:4px">
+                    <div class="form-hint">
                         Must be after the current deadline.
-                    </span>
+                    </div>
                 </div>
             </div>
 
-            <div class="modal-foot">
+            <div class="modal-footer">
                 <button
                     type="button"
                     onclick="closeModal('extendDeadlineModal')"
@@ -999,7 +971,7 @@ $titleJs = h(addslashes((string)($opportunity['opportunity_title'] ?? '')));
                 </button>
 
                 <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-check"></i> Extend Deadline
+                    <i class="fas fa-check" aria-hidden="true"></i> Extend Deadline
                 </button>
             </div>
         </form>

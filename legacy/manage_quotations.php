@@ -341,11 +341,11 @@ $stmt->close();
         </div>
 
         <div class="hero-actions">
-            <a href="manage_rfq?procurement_id=<?= (int)$rfq['procurement_id'] ?>" class="btn btn-primary">
+            <a href="manage_rfq?procurement_id=<?= (int)$rfq['procurement_id'] ?>" class="btn">
                 <i class="fas fa-arrow-left"></i> Back to RFQ
             </a>
 
-            <button type="button" class="btn btn-dark" onclick="openModal('addQuotationModal')">
+            <button type="button" class="btn btn-primary" onclick="openModal('addQuotationModal')">
                 <i class="fas fa-plus-circle"></i> Add Quotation
             </button>
         </div>

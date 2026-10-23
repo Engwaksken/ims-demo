@@ -158,11 +158,10 @@ $page_title = 'Notifications';
 require_once __DIR__ . '/includes/header.php';
 ?>
 <style>
-.page-notifications .nt-tabs { display:flex; gap:var(--space-2); margin-bottom:var(--space-4); flex-wrap:wrap; }
-.page-notifications .nt-tab { padding:6px 14px; border-radius:999px; border:1px solid var(--ink-100); background:#fff; color:var(--ink-500); text-decoration:none; font-size:var(--fs-sm); font-weight:600; }
-.page-notifications .nt-tab.is-active { background:var(--brand-500); border-color:var(--brand-500); color:#fff; }
-.page-notifications .nt-list { list-style:none; margin:0; padding:0; background:#fff; border:1px solid var(--ink-50); border-radius:var(--radius-md); box-shadow:var(--shadow-sm); overflow:hidden; }
-.page-notifications .nt-item { display:flex; gap:var(--space-3); align-items:flex-start; padding:var(--space-4); border-bottom:1px solid var(--ink-50); }
+/* Notifications: the filter tabs are links, and each row is icon + text + action. */
+.page-notifications .nt-card .tab-btn { text-decoration:none; }
+.page-notifications .nt-list { list-style:none; margin:0; padding:0; }
+.page-notifications .nt-item { display:flex; gap:var(--space-3); align-items:flex-start; padding:var(--space-4) 22px; border-bottom:1px solid var(--ink-50); }
 .page-notifications .nt-item:last-child { border-bottom:0; }
 .page-notifications .nt-item.is-unread { background:var(--brand-50); }
 .page-notifications .nt-icon { flex:0 0 36px; height:36px; border-radius:50%; display:grid; place-items:center; font-size:16px; }
@@ -176,9 +175,8 @@ require_once __DIR__ . '/includes/header.php';
 .page-notifications .nt-meta { margin-top:6px; font-size:var(--fs-xs); color:var(--ink-300); display:flex; gap:var(--space-3); flex-wrap:wrap; }
 .page-notifications .nt-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--brand-500); margin-right:6px; vertical-align:middle; }
 .page-notifications .nt-actions { flex:0 0 auto; }
-.page-notifications .nt-empty { padding:var(--space-8) var(--space-4); text-align:center; color:var(--ink-300); }
-.page-notifications .nt-empty i { font-size:32px; opacity:.35; display:block; margin-bottom:var(--space-2); }
-.page-notifications .pagination span.is-current { padding:8px 12px; border-radius:5px; background:var(--brand-500); color:#fff; border:1px solid var(--brand-500); }
+.page-notifications .pagination { margin:0; padding:var(--space-4); border-top:1px solid var(--ink-50); }
+.page-notifications .pagination span.is-current { padding:8px 12px; border-radius:var(--radius-sm); background:var(--brand-500); color:var(--ink-0); border:1px solid var(--brand-500); }
 .page-notifications .pagination .is-disabled { padding:8px 12px; color:var(--ink-200); }
 @media (max-width: 600px) {
     .page-notifications .nt-item { flex-wrap:wrap; }
@@ -186,21 +184,21 @@ require_once __DIR__ . '/includes/header.php';
 }
 </style>
 
-<div class="page-notifications">
-    <div class="page-heading">
+<div class="page-stack page-notifications">
+    <div class="page-hero">
         <div>
-            <h1>Notifications</h1>
-            <p class="page-subtitle">
+            <h1><i class="fas fa-bell" aria-hidden="true"></i> Notifications</h1>
+            <p>
                 <?= $ntUnread > 0 ? h((string)$ntUnread) . ' unread of ' . h((string)$ntTotalAll) : 'You are all caught up.' ?>
             </p>
         </div>
         <?php if ($ntUnread > 0): ?>
-        <div class="page-actions">
+        <div class="hero-actions">
             <form method="post" action="notifications">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="mark_all_read">
                 <input type="hidden" name="filter" value="<?= h($ntFilter) ?>">
-                <button type="submit" class="btn btn-primary btn-sm">
+                <button type="submit" class="btn btn-primary">
                     <i class="fas fa-check-double" aria-hidden="true"></i> Mark all as read
                 </button>
             </form>
@@ -208,14 +206,19 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
     </div>
 
-    <nav class="nt-tabs" aria-label="Filter notifications">
-        <a class="nt-tab<?= $ntFilter === 'all' ? ' is-active' : '' ?>" href="<?= h(nt_self_url('all', 1)) ?>"
-           <?= $ntFilter === 'all' ? 'aria-current="page"' : '' ?>>All (<?= h((string)$ntTotalAll) ?>)</a>
-        <a class="nt-tab<?= $ntFilter === 'unread' ? ' is-active' : '' ?>" href="<?= h(nt_self_url('unread', 1)) ?>"
-           <?= $ntFilter === 'unread' ? 'aria-current="page"' : '' ?>>Unread (<?= h((string)$ntUnread) ?>)</a>
+    <?php if ($ntError): ?>
+        <div class="alert alert-danger" data-persist>Notifications could not be loaded. Please try again later.</div>
+    <?php endif; ?>
+
+    <div class="card nt-card">
+    <nav class="tab-nav" aria-label="Filter notifications">
+        <a class="tab-btn<?= $ntFilter === 'all' ? ' active' : '' ?>" href="<?= h(nt_self_url('all', 1)) ?>"
+           <?= $ntFilter === 'all' ? 'aria-current="page"' : '' ?>><i class="fas fa-inbox" aria-hidden="true"></i> All (<?= h((string)$ntTotalAll) ?>)</a>
+        <a class="tab-btn<?= $ntFilter === 'unread' ? ' active' : '' ?>" href="<?= h(nt_self_url('unread', 1)) ?>"
+           <?= $ntFilter === 'unread' ? 'aria-current="page"' : '' ?>><i class="fas fa-envelope" aria-hidden="true"></i> Unread (<?= h((string)$ntUnread) ?>)</a>
     </nav>
 
-    <?php if ($ntError): ?>
+<?php if ($ntError): ?>
         <div class="alert alert-danger" data-persist>Notifications could not be loaded. Please try again later.</div>
     <?php elseif (!$ntRows): ?>
         <div class="nt-list">
@@ -291,6 +294,7 @@ require_once __DIR__ . '/includes/header.php';
         </nav>
         <?php endif; ?>
     <?php endif; ?>
-</div><!-- /.page-notifications -->
+    </div><!-- /.card -->
+</div><!-- /.page-stack -->
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

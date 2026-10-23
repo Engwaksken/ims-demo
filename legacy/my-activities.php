@@ -31,18 +31,18 @@ function fmt_date(?string $date): string
     return date('d M Y', strtotime($date));
 }
 
-function status_meta(string $status): array
+function status_label(string $status): string
 {
     $map = [
-        'draft'     => ['Draft', '#64748b', '#f1f5f9'],
-        'submitted' => ['Submitted', '#ff9800', '#dbeafe'],
-        'under_review' => ['Under Review', '#ff9800', '#fef3c7'],
-        'approved'  => ['Approved', '#ff9800', '#dcfce7'],
-        'completed' => ['Completed', '#ff5722', '#dcfce7'],
-        'rejected'  => ['Rejected', '#dc2626', '#fee2e2'],
+        'draft'        => 'Draft',
+        'submitted'    => 'Submitted',
+        'under_review' => 'Under Review',
+        'approved'     => 'Approved',
+        'completed'    => 'Completed',
+        'rejected'     => 'Rejected',
     ];
 
-    return $map[$status] ?? [ucfirst($status), '#64748b', '#f1f5f9'];
+    return $map[$status] ?? ucfirst($status);
 }
 
 /* ----------------------------------------------------------
@@ -174,142 +174,72 @@ $page_title = 'My Activities';
 include 'includes/header.php';
 ?>
 <style>
-:root{
-    --ink:#0f172a;
-    --muted:#64748b;
-    --line:#e2e8f0;
-    --bg:#f8fafc;
-    --card:#ffffff;
-    --green:#ff9800;
-    --blue:#ff9800;
-    --orange:#ea580c;
-    --red:#dc2626;
-    --radius:14px;
-    --shadow:0 10px 30px rgba(15,23,42,.06);
-}
-body{background:var(--bg)}
-.page-wrap{max-width:1180px;margin:0 auto;padding:24px 16px 80px}
-.hero{
-    background:linear-gradient(135deg,#ff5722 0%,#ff9800 100%);
-    color:#fff;border-radius:18px;padding:28px 30px;margin-bottom:20px;
-    display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap
-}
-.hero h1{margin:0 0 8px;font-size:28px;font-weight:800}
-.hero p{margin:0;opacity:.92;font-size:14px}
-.btn{
-    display:inline-flex;align-items:center;gap:8px;
-    padding:10px 16px;border-radius:10px;border:1px solid transparent;
-    text-decoration:none;font-weight:700;font-size:14px;cursor:pointer
-}
-.btn-white{background:#fff;color:#166534}
-.btn-outline{background:#fff;color:#0f172a;border-color:var(--line)}
-.stats{
-    display:grid;grid-template-columns:repeat(4,1fr);
-    gap:14px;margin-bottom:20px
-}
-.stat{
-    background:var(--card);border:1px solid var(--line);border-radius:14px;
-    padding:18px;box-shadow:var(--shadow)
-}
-.stat-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.stat-val{font-size:28px;font-weight:800;color:var(--ink)}
-.toolbar{
-    background:#fff;border:1px solid var(--line);border-radius:14px;
-    padding:14px;box-shadow:var(--shadow);margin-bottom:18px;
-    gap:10px /* layout: .filters-bar (style.css) */
-}
-.toolbar select,.toolbar input[type="text"]{
-    padding:10px 12px;border:1px solid var(--line);border-radius:10px;
-    font-size:14px;background:#fff;min-width:160px
-}
-.toolbar .spacer{flex:1}
-.card{
-    background:#fff;border:1px solid var(--line);border-radius:14px;
-    box-shadow:var(--shadow);overflow:hidden
-}
-.table-wrap{overflow-x:auto}
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{padding:14px 16px;border-bottom:1px solid #eef2f7;text-align:left;vertical-align:middle}
-.table th{font-size:11px;text-transform:uppercase;color:var(--muted);background:#f8fafc;letter-spacing:.04em}
-.table tr:hover td{background:#fcfcfd}
-.badge{
-    display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;
-    font-size:11px;font-weight:700;text-transform:uppercase
-}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.link-btn{
-    display:inline-flex;align-items:center;gap:6px;padding:8px 12px;
-    border:1px solid var(--line);border-radius:10px;background:#fff;
-    text-decoration:none;font-size:13px;font-weight:600;color:#0f172a
-}
-.link-btn.green{color:#166534;border-color:#bbf7d0;background:#f0fdf4}
-.link-btn.orange{color:#9a3412;border-color:#fed7aa;background:#fff7ed}
-.empty{
-    text-align:center;padding:56px 20px;background:#fff;border:1px dashed #cbd5e1;
-    border-radius:18px;color:var(--muted)
-}
-.flash{
-    padding:12px 14px;border-radius:12px;margin-bottom:16px;font-size:14px
-}
-.flash.success{background:#ecfdf5;color:#166534;border:1px solid #bbf7d0}
-.flash.error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
-@media (max-width:900px){
-    .stats{grid-template-columns:repeat(2,1fr)}
-}
+.my-activities-page .filters-card .card-body{padding:14px 16px}
+.my-activities-page .filters-bar{margin-bottom:0}
+.my-activities-page .filters-bar .spacer{flex:1}
+.my-activities-page .plan-title{font-weight:700;color:var(--ink-700)}
+.my-activities-page .table .status-pill{text-transform:none}
 @media (max-width:640px){
-    .stats{grid-template-columns:1fr 1fr}
-    .page-wrap{padding:8px 0 48px}
-    .hero{padding:20px;border-radius:14px}
-    .hero h1{font-size:22px}
-    .toolbar select,.toolbar input[type="text"]{flex:1 1 100%;min-width:0}
-    .toolbar .btn{flex:1 1 auto;justify-content:center}
-    .toolbar .spacer{display:none}
+    .my-activities-page .filters-bar .spacer{display:none}
 }
-.table .status-pill{text-transform:none}
 </style>
 
-<div class="page-wrap">
+<div class="page-stack my-activities-page">
 
-    <div class="hero">
+    <div class="page-hero">
         <div>
-            <h1>My Activity Plans</h1>
+            <h1><i class="fas fa-clipboard-list" aria-hidden="true"></i> My Activity Plans</h1>
             <p>Create, track, edit drafts, and view submitted or approved activity plans.</p>
         </div>
-        <div>
-            <a href="create-activity" class="btn btn-white">+ New Activity Plan</a>
+        <div class="hero-actions">
+            <a href="create-activity" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> New Activity Plan</a>
         </div>
     </div>
 
     <?php if (!empty($_SESSION['activity_success'])): ?>
-        <div class="flash success"><?= h($_SESSION['activity_success']) ?></div>
+        <div class="alert alert-success"><?= h($_SESSION['activity_success']) ?></div>
         <?php unset($_SESSION['activity_success']); ?>
     <?php endif; ?>
 
     <?php if (!empty($_SESSION['activity_error'])): ?>
-        <div class="flash error"><?= h($_SESSION['activity_error']) ?></div>
+        <div class="alert alert-danger"><?= h($_SESSION['activity_error']) ?></div>
         <?php unset($_SESSION['activity_error']); ?>
     <?php endif; ?>
 
-    <div class="stats">
-        <div class="stat">
-            <div class="stat-label">Total Plans</div>
-            <div class="stat-val"><?= $total_plans ?></div>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Total Plans</div>
+                <div class="stat-value"><?= $total_plans ?></div>
+            </div>
         </div>
-        <div class="stat">
-            <div class="stat-label">Drafts</div>
-            <div class="stat-val"><?= $draft_count ?></div>
+        <div class="stat-card">
+            <div class="stat-icon bg-slate"><i class="fas fa-pen" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Drafts</div>
+                <div class="stat-value"><?= $draft_count ?></div>
+            </div>
         </div>
-        <div class="stat">
-            <div class="stat-label">Submitted</div>
-            <div class="stat-val"><?= $submitted_count ?></div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-paper-plane" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Submitted</div>
+                <div class="stat-value"><?= $submitted_count ?></div>
+            </div>
         </div>
-        <div class="stat">
-            <div class="stat-label">Approved</div>
-            <div class="stat-val"><?= $approved_count ?></div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Approved</div>
+                <div class="stat-value"><?= $approved_count ?></div>
+            </div>
         </div>
     </div>
 
-    <form method="GET" class="toolbar filters-bar" aria-label="Filter activity plans">
+    <div class="card filters-card">
+    <div class="card-body">
+    <form method="GET" class="filters-bar" aria-label="Filter activity plans">
         <select name="status" onchange="this.form.submit()" aria-label="Filter by status">
             <option value="">All Statuses</option>
             <option value="draft" <?= $status_filter === 'draft' ? 'selected' : '' ?>>Draft</option>
@@ -330,24 +260,28 @@ body{background:var(--bg)}
 
         <input type="text" name="q" class="filters-grow" value="<?= h($q) ?>" placeholder="Search plan title or category" aria-label="Search plan title or category">
 
-        <button type="submit" class="btn btn-outline">Filter</button>
+        <button type="submit" class="btn btn-secondary">Filter</button>
 
         <div class="spacer"></div>
 
         <?php if ($status_filter !== '' || $year_filter > 0 || $q !== ''): ?>
-            <a href="my-activities" class="btn btn-outline">Clear</a>
+            <a href="my-activities" class="btn btn-secondary">Clear</a>
         <?php endif; ?>
     </form>
+    </div>
+    </div>
 
     <?php if (empty($plans)): ?>
-        <div class="empty">
-            <div style="font-size:36px;margin-bottom:10px;color:#94a3b8;"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
-            <div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:6px;">No activity plans found</div>
-            <div>Start by creating a new activity plan.</div>
+        <div class="card">
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list" aria-hidden="true"></i>
+                <h4>No activity plans found</h4>
+                <p>Start by creating a new activity plan.</p>
+            </div>
         </div>
     <?php else: ?>
         <div class="card">
-            <div class="table-wrap">
+            <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
@@ -365,13 +299,13 @@ body{background:var(--bg)}
                     <tbody>
                     <?php foreach ($plans as $plan): ?>
                         <?php
-                        [$label, $fg, $bg] = status_meta((string)$plan['status']);
+                        $label = status_label((string)$plan['status']);
                         $can_edit = in_array((string)$plan['status'], ['draft', 'rejected'], true);
                         ?>
                         <tr>
                             <td>
-                                <div style="font-weight:700;color:#0f172a;"><?= h($plan['plan_title']) ?></div>
-                                <div style="font-size:12px;color:#64748b;">
+                                <div class="plan-title"><?= h($plan['plan_title']) ?></div>
+                                <div class="cell-muted">
                                     Created: <?= fmt_date($plan['created_at']) ?>
                                 </div>
                             </td>
@@ -388,14 +322,14 @@ body{background:var(--bg)}
                             <td><?= fmt_date($plan['updated_at']) ?></td>
                             <td>
                                 <div class="actions">
-                                    <a href="view-activity?id=<?= (int)$plan['plan_id'] ?>" class="link-btn">View</a>
+                                    <a href="view-activity?id=<?= (int)$plan['plan_id'] ?>" class="btn btn-sm btn-secondary">View</a>
 
                                     <?php if ($can_edit): ?>
-                                        <a href="edit-activity?id=<?= (int)$plan['plan_id'] ?>" class="link-btn orange">Edit</a>
+                                        <a href="edit-activity?id=<?= (int)$plan['plan_id'] ?>" class="btn btn-sm btn-soft">Edit</a>
                                     <?php endif; ?>
 
                                     <?php if ((string)$plan['status'] === 'approved'): ?>
-                                        <a href="view-activity?id=<?= (int)$plan['plan_id'] ?>#weekly" class="link-btn green">Weekly Progress</a>
+                                        <a href="view-activity?id=<?= (int)$plan['plan_id'] ?>#weekly" class="btn btn-sm btn-info">Weekly Progress</a>
                                     <?php endif; ?>
                                 </div>
                             </td>

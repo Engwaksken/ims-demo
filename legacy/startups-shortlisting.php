@@ -638,40 +638,55 @@ function slScoreTier(float $pct, int $reviewCount): string
 
 $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $filter_status !== 'all' || $q !== '' || $per_page !== 10);
 ?>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/startups-shortlisting.css">
 
-<div class="sl-scope">
-    <div class="sl-wrap">
+<?php
+// Page status -> global .status-pill modifier (global has no shortlisted /
+// accepted / reviewed / withdrawn variants, so map to the nearest ones).
+$slPillMap = [
+    'accepted'    => 'approved',
+    'shortlisted' => 'carried-over',
+    'rejected'    => 'rejected',
+    'withdrawn'   => 'draft',
+    'reviewed'    => 'in-progress',
+    'pending'     => 'pending',
+];
+// recommendationClass() -> global badge modifier.
+$slRecBadge = [
+    'accept'    => 'badge-success',
+    'shortlist' => 'badge-purple',
+    'reject'    => 'badge-danger',
+    'nmi'       => 'badge-warning',
+];
+?>
+
+<div class="page-stack sl-page">
 
         <!-- Hero -->
-        <div class="reports-hero sl-hero">
-            <div class="reports-hero-text">
-                <div class="sl-eyebrow"><i class="fas fa-list-check" aria-hidden="true"></i> Evaluation</div>
-                <h1>Shortlisting Panel</h1>
+        <div class="page-hero">
+            <div>
+                <h1><i class="fas fa-list-check" aria-hidden="true"></i> Shortlisting Panel</h1>
                 <p>Review scores by review type, compare applicants, and make shortlisting decisions.</p>
             </div>
             <div class="hero-actions">
-                <a href="manage-reviewers?tab=status" class="btn btn-hero">
+                <a href="manage-reviewers?tab=status" class="btn btn-primary">
                     <i class="fas fa-user-check" aria-hidden="true"></i> Reviewer Status
                 </a>
             </div>
         </div>
 
         <?php if ($success_msg): ?>
-            <div class="sl-alert sl-alert-ok" id="flashAlert" role="status">
+            <div class="alert alert-success" id="flashAlert" role="status">
                 <i class="fas fa-check-circle" aria-hidden="true"></i> <?= h($success_msg) ?>
             </div>
         <?php elseif ($error_msg): ?>
-            <div class="sl-alert sl-alert-err" id="flashAlert" role="alert">
+            <div class="alert alert-danger" id="flashAlert" role="alert">
                 <i class="fas fa-exclamation-circle" aria-hidden="true"></i> <?= h($error_msg) ?>
             </div>
         <?php endif; ?>
 
         <!-- Stats -->
-        <div class="reports-stats sl-stats">
+        <div class="stats-grid reports-stats">
             <div class="stat-card">
                 <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
                 <div class="stat-info">
@@ -703,22 +718,23 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
         </div>
 
         <!-- Filters -->
-        <form method="GET" action="startups-shortlisting" id="filter-form" class="sl-toolbar" role="search" aria-label="Filter applicants">
-            <div class="sl-filter-grid">
-                <div class="sl-field sl-field-search">
-                    <label class="sl-label" for="sl-q">Search</label>
-                    <div class="sl-search">
+        <div class="card">
+            <div class="card-body">
+        <form method="GET" action="startups-shortlisting" id="filter-form" class="filters-bar" role="search" aria-label="Filter applicants">
+                <div class="form-group filters-grow">
+                    <label class="form-label" for="sl-q">Search</label>
+                    <div class="search-input-wrap sl-search">
                         <i class="fas fa-search" aria-hidden="true"></i>
-                        <input type="text" id="sl-q" name="q" placeholder="Search startups..." value="<?= h($q) ?>" class="sl-input sl-search-input">
+                        <input type="text" id="sl-q" name="q" placeholder="Search startups..." value="<?= h($q) ?>" class="form-control">
                         <button type="submit" class="sl-search-btn" aria-label="Search">
                             <i class="fas fa-arrow-right" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="sl-field">
-                    <label class="sl-label" for="sl-opp">Opportunity</label>
-                    <select id="sl-opp" name="opportunity_id" class="sl-select" onchange="this.form.submit()">
+                <div class="form-group">
+                    <label class="form-label" for="sl-opp">Opportunity</label>
+                    <select id="sl-opp" name="opportunity_id" class="form-control" onchange="this.form.submit()">
                         <option value="">All Opportunities</option>
                         <?php foreach ($opportunities as $o): ?>
                             <option value="<?= (int)$o['opportunity_id'] ?>" <?= $filter_opp === (int)$o['opportunity_id'] ? 'selected' : '' ?>>
@@ -728,9 +744,9 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                     </select>
                 </div>
 
-                <div class="sl-field">
-                    <label class="sl-label" for="sl-rt">Review Type</label>
-                    <select id="sl-rt" name="review_type_id" class="sl-select" onchange="this.form.submit()">
+                <div class="form-group">
+                    <label class="form-label" for="sl-rt">Review Type</label>
+                    <select id="sl-rt" name="review_type_id" class="form-control" onchange="this.form.submit()">
                         <option value="">All Review Types</option>
                         <?php foreach ($review_types as $rt): ?>
                             <option value="<?= (int)$rt['review_type_id'] ?>" <?= $filter_review_type === (int)$rt['review_type_id'] ? 'selected' : '' ?>>
@@ -740,9 +756,9 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                     </select>
                 </div>
 
-                <div class="sl-field">
-                    <label class="sl-label" for="sl-status">Status</label>
-                    <select id="sl-status" name="status" class="sl-select" onchange="this.form.submit()">
+                <div class="form-group">
+                    <label class="form-label" for="sl-status">Status</label>
+                    <select id="sl-status" name="status" class="form-control" onchange="this.form.submit()">
                         <option value="all" <?= $filter_status === 'all' ? 'selected' : '' ?>>All Applicants</option>
                         <option value="reviewed" <?= $filter_status === 'reviewed' ? 'selected' : '' ?>>Reviewed</option>
                         <option value="unreviewed" <?= $filter_status === 'unreviewed' ? 'selected' : '' ?>>Not Yet Reviewed</option>
@@ -751,9 +767,9 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                     </select>
                 </div>
 
-                <div class="sl-field">
-                    <label class="sl-label" for="sl-rec">Recommendation</label>
-                    <select id="sl-rec" name="recommendation" class="sl-select" onchange="this.form.submit()">
+                <div class="form-group">
+                    <label class="form-label" for="sl-rec">Recommendation</label>
+                    <select id="sl-rec" name="recommendation" class="form-control" onchange="this.form.submit()">
                         <option value="">All Recommendations</option>
                         <?php foreach (['Accept', 'Shortlist', 'Needs More Info', 'Reject'] as $r): ?>
                             <option value="<?= h($r) ?>" <?= $filter_rec === $r ? 'selected' : '' ?>>
@@ -763,9 +779,9 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                     </select>
                 </div>
 
-                <div class="sl-field">
-                    <label class="sl-label" for="sl-sort">Sort by</label>
-                    <select id="sl-sort" name="sort" class="sl-select" onchange="this.form.submit()">
+                <div class="form-group">
+                    <label class="form-label" for="sl-sort">Sort by</label>
+                    <select id="sl-sort" name="sort" class="form-control" onchange="this.form.submit()">
                         <option value="score_desc" <?= $sort === 'score_desc' ? 'selected' : '' ?>>Highest Score First</option>
                         <option value="score_asc" <?= $sort === 'score_asc' ? 'selected' : '' ?>>Lowest Score First</option>
                         <option value="name_asc" <?= $sort === 'name_asc' ? 'selected' : '' ?>>Name A-Z</option>
@@ -773,16 +789,17 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                     </select>
                 </div>
 
-                <div class="sl-field sl-field-narrow">
-                    <label class="sl-label" for="sl-pp">Show</label>
-                    <select id="sl-pp" name="per_page" class="sl-select" onchange="this.form.submit()">
+                <div class="form-group">
+                    <label class="form-label" for="sl-pp">Show</label>
+                    <select id="sl-pp" name="per_page" class="form-control" onchange="this.form.submit()">
                         <?php foreach ([5, 10, 20, 50] as $pp): ?>
                             <option value="<?= $pp ?>" <?= $per_page === $pp ? 'selected' : '' ?>><?= $pp ?> / page</option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-            </div>
         </form>
+            </div>
+        </div>
 
         <!-- Batch form: fields live here, checkboxes and buttons join it via form="batch-form" -->
         <form method="POST" action="includes/startups-process-shortlisting.php" id="batch-form" hidden>
@@ -794,7 +811,7 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
             <div class="sl-listbar">
                 <div class="sl-listbar-left">
                     <h2 id="sl-list-title">Applications</h2>
-                    <span class="sl-result-count"><?= $total ?> result<?= $total !== 1 ? 's' : '' ?></span>
+                    <span class="badge badge-secondary"><?= $total ?> result<?= $total !== 1 ? 's' : '' ?></span>
                 </div>
                 <div class="sl-listbar-right">
                     <?php if (!empty($applications)): ?>
@@ -813,15 +830,17 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
             </div>
 
             <?php if (empty($applications)): ?>
-                <div class="sl-empty">
-                    <div class="sl-empty-icon"><i class="fas fa-inbox" aria-hidden="true"></i></div>
-                    <h3>No applications match these filters</h3>
-                    <p>Try adjusting your filters above or wait for reviewers to complete their assessments.</p>
-                    <?php if ($has_active_filters): ?>
-                        <a href="startups-shortlisting" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-rotate-left" aria-hidden="true"></i> Reset filters
-                        </a>
-                    <?php endif; ?>
+                <div class="card">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox" aria-hidden="true"></i>
+                        <h4>No applications match these filters</h4>
+                        <p>Try adjusting your filters above or wait for reviewers to complete their assessments.</p>
+                        <?php if ($has_active_filters): ?>
+                            <a href="startups-shortlisting" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-rotate-left" aria-hidden="true"></i> Reset filters
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
             <?php else: ?>
                 <?php foreach ($applications as $app): ?>
@@ -861,13 +880,13 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
 
                             <div class="card-main-meta">
                                 <div class="card-badges">
-                                    <span class="status-pill status-<?= h($status_cls) ?>"><?= h($status_text) ?></span>
-                                    <span class="review-type-badge<?= $rtid > 0 ? '' : ' is-unassigned' ?>">
+                                    <span class="status-pill status-<?= h($slPillMap[$status_cls] ?? 'pending') ?>"><?= h($status_text) ?></span>
+                                    <span class="badge badge-secondary">
                                         <i class="fas fa-layer-group" aria-hidden="true"></i>
                                         <?= h($app['review_type_name']) ?>
                                     </span>
                                     <?php if ($review_n > 0): ?>
-                                        <span class="consensus-badge <?= $con_cls ?>" title="Most common reviewer recommendation">
+                                        <span class="badge <?= $slRecBadge[$con_cls] ?? 'badge-warning' ?>" title="Most common reviewer recommendation">
                                             <i class="fas fa-thumbs-up" aria-hidden="true"></i> Consensus: <?= h($top_rec) ?>
                                         </span>
                                     <?php endif; ?>
@@ -914,16 +933,16 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                             <?php if ($has_tally): ?>
                                 <div class="rec-tally" aria-label="Recommendation tally">
                                     <?php if ((int)$app['accept_count'] > 0): ?>
-                                        <span class="rec-pill accept"><i class="fas fa-check" aria-hidden="true"></i> <?= (int)$app['accept_count'] ?> Accept</span>
+                                        <span class="badge badge-success"><i class="fas fa-check" aria-hidden="true"></i> <?= (int)$app['accept_count'] ?> Accept</span>
                                     <?php endif; ?>
                                     <?php if ((int)$app['shortlist_count'] > 0): ?>
-                                        <span class="rec-pill shortlist"><i class="fas fa-star" aria-hidden="true"></i> <?= (int)$app['shortlist_count'] ?> Shortlist</span>
+                                        <span class="badge badge-purple"><i class="fas fa-star" aria-hidden="true"></i> <?= (int)$app['shortlist_count'] ?> Shortlist</span>
                                     <?php endif; ?>
                                     <?php if ((int)$app['nmi_count'] > 0): ?>
-                                        <span class="rec-pill nmi"><i class="fas fa-circle-info" aria-hidden="true"></i> <?= (int)$app['nmi_count'] ?> Needs Info</span>
+                                        <span class="badge badge-warning"><i class="fas fa-circle-info" aria-hidden="true"></i> <?= (int)$app['nmi_count'] ?> Needs Info</span>
                                     <?php endif; ?>
                                     <?php if ((int)$app['reject_count'] > 0): ?>
-                                        <span class="rec-pill reject"><i class="fas fa-times" aria-hidden="true"></i> <?= (int)$app['reject_count'] ?> Reject</span>
+                                        <span class="badge badge-danger"><i class="fas fa-times" aria-hidden="true"></i> <?= (int)$app['reject_count'] ?> Reject</span>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
@@ -936,7 +955,7 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                             <span class="reviewer-avatar" aria-hidden="true"><?= h(slInitials($rv['reviewer_name'] ?? '')) ?></span>
                                             <span class="reviewer-name"><?= h($rv['reviewer_name']) ?></span>
                                             <span class="rp-score"><?= number_format((float)($rv['overall_score'] ?? 0), 1) ?>%</span>
-                                            <span class="reviewer-rec <?= recommendationClass($rec) ?>"><?= h($rec) ?></span>
+                                            <span class="badge <?= $slRecBadge[recommendationClass($rec)] ?? 'badge-warning' ?>"><?= h($rec) ?></span>
                                         </li>
                                     <?php endforeach; ?>
                                 </ul>
@@ -969,7 +988,7 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                             </div>
 
                             <div class="card-actions-more">
-                                <button type="button" class="btn btn-ghost btn-sm" aria-controls="assign-type-<?= $aid ?>-<?= $rtid ?>" aria-expanded="false" onclick="toggleAssignType('assign-type-<?= $aid ?>-<?= $rtid ?>')">
+                                <button type="button" class="btn btn-secondary btn-sm" aria-controls="assign-type-<?= $aid ?>-<?= $rtid ?>" aria-expanded="false" onclick="toggleAssignType('assign-type-<?= $aid ?>-<?= $rtid ?>')">
                                     <i class="fas fa-layer-group" aria-hidden="true"></i> Assign Review Type
                                 </button>
 
@@ -989,9 +1008,9 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                 <input type="hidden" name="application_id" value="<?= $aid ?>">
                                 <input type="hidden" name="redirect_filters" value="<?= $redirect_filters ?>">
 
-                                <div class="assign-field">
-                                    <label class="field-label" for="assign-select-<?= $cardKey ?>">Assign Review Type</label>
-                                    <select name="review_type_id" id="assign-select-<?= $cardKey ?>" class="sl-select" required>
+                                <div class="form-group assign-field">
+                                    <label class="form-label" for="assign-select-<?= $cardKey ?>">Assign Review Type</label>
+                                    <select name="review_type_id" id="assign-select-<?= $cardKey ?>" class="form-control" required>
                                         <option value="">Select review type</option>
                                         <?php foreach ($review_types as $rt): ?>
                                             <option value="<?= (int)$rt['review_type_id'] ?>" <?= $rtid === (int)$rt['review_type_id'] ? 'selected' : '' ?>>
@@ -1008,7 +1027,7 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                         </div>
 
                         <div class="card-tabs-wrap">
-                            <div class="tab-strip" role="tablist" aria-label="<?= h($app['startup_name']) ?> details">
+                            <div class="tab-nav" role="tablist" aria-label="<?= h($app['startup_name']) ?> details">
                                 <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-status-<?= $aid ?>-<?= $rtid ?>" onclick="switchTab(this, 'tab-status-<?= $aid ?>-<?= $rtid ?>')">
                                     <i class="fas fa-sliders-h" aria-hidden="true"></i>
                                     <span>Status &amp; Reminder</span>
@@ -1036,6 +1055,7 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                 </button>
                             </div>
 
+                            <div class="tab-panels">
                             <div class="tab-panel active" id="tab-status-<?= $aid ?>-<?= $rtid ?>" role="tabpanel">
                                 <form method="POST" action="includes/startups-process-shortlisting.php" onsubmit="return confirmStatus(this)">
                                     <input type="hidden" name="action" value="update_status">
@@ -1044,9 +1064,9 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                     <input type="hidden" name="redirect_filters" value="<?= $redirect_filters ?>">
 
                                     <div class="tab-status-grid">
-                                        <div class="sl-field">
-                                            <label class="field-label" for="status-<?= $cardKey ?>">Application Status</label>
-                                            <select name="new_status" id="status-<?= $cardKey ?>" class="sl-select">
+                                        <div class="form-group">
+                                            <label class="form-label" for="status-<?= $cardKey ?>">Application Status</label>
+                                            <select name="new_status" id="status-<?= $cardKey ?>" class="form-control">
                                                 <?php foreach (['Pending', 'Shortlisted', 'Accepted', 'Rejected', 'Withdrawn'] as $s): ?>
                                                     <option value="<?= h($s) ?>" <?= strcasecmp(trim((string)($app['status'] ?? '')), $s) === 0 ? 'selected' : '' ?>>
                                                         <?= h($s) ?>
@@ -1055,21 +1075,21 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                             </select>
                                         </div>
 
-                                        <div class="sl-field">
-                                            <label class="field-label" for="reminder-<?= $cardKey ?>">Follow-up Reminder</label>
-                                            <input type="date" name="reminder_date" id="reminder-<?= $cardKey ?>" class="sl-input" value="<?= h($app['reminder_date'] ?? '') ?>" min="<?= date('Y-m-d') ?>">
+                                        <div class="form-group">
+                                            <label class="form-label" for="reminder-<?= $cardKey ?>">Follow-up Reminder</label>
+                                            <input type="date" name="reminder_date" id="reminder-<?= $cardKey ?>" class="form-control" value="<?= h($app['reminder_date'] ?? '') ?>" min="<?= date('Y-m-d') ?>">
                                         </div>
 
-                                        <div class="sl-field sl-field-notes">
-                                            <label class="field-label" for="decision-note-<?= $cardKey ?>">Decision Note</label>
-                                            <textarea name="reviewer_notes" id="decision-note-<?= $cardKey ?>" class="sl-textarea" placeholder="Add a decision note or reason (optional)..." rows="2"><?= h($app['reviewer_notes'] ?? '') ?></textarea>
+                                        <div class="form-group sl-field-notes">
+                                            <label class="form-label" for="decision-note-<?= $cardKey ?>">Decision Note</label>
+                                            <textarea name="reviewer_notes" id="decision-note-<?= $cardKey ?>" class="form-control" placeholder="Add a decision note or reason (optional)..." rows="2"><?= h($app['reviewer_notes'] ?? '') ?></textarea>
                                         </div>
                                     </div>
 
                                     <div class="tab-footer">
                                         <div>
                                             <?php if ($has_notes): ?>
-                                                <button type="button" class="notes-toggle-btn" aria-controls="notes-<?= $entryKey ?>" aria-expanded="false" onclick="toggleNotes('<?= $entryKey ?>', this)">
+                                                <button type="button" class="btn btn-info btn-sm notes-toggle-btn" aria-controls="notes-<?= $entryKey ?>" aria-expanded="false" onclick="toggleNotes('<?= $entryKey ?>', this)">
                                                     <i class="fas fa-comments" aria-hidden="true"></i>
                                                     Reviewer Notes
                                                     <span class="note-count">(<?= $notes_count ?>)</span>
@@ -1110,17 +1130,17 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
 
                             <div class="tab-panel" id="tab-criteria-<?= $aid ?>-<?= $rtid ?>" role="tabpanel">
                                 <?php if ($rtid <= 0): ?>
-                                    <div class="sl-empty sl-empty-small">
+                                    <div class="empty-state">
                                         <i class="fas fa-layer-group" aria-hidden="true"></i>
                                         <p>This applicant has not been assigned or reviewed under any review type yet.</p>
                                     </div>
                                 <?php elseif (empty($criteria)): ?>
-                                    <div class="sl-empty sl-empty-small">
+                                    <div class="empty-state">
                                         <i class="fas fa-list" aria-hidden="true"></i>
                                         <p>No criteria scores found for this review type.</p>
                                     </div>
                                 <?php else: ?>
-                                    <div class="table-wrap">
+                                    <div class="table-responsive">
                                         <table class="table criteria-table table-stack">
                                             <thead>
                                                 <tr>
@@ -1171,13 +1191,13 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                     <div><dt>Email</dt><dd><?= h($app['email'] ?? '-') ?></dd></div>
                                     <div><dt>Phone</dt><dd><?= h($app['phone'] ?? '-') ?></dd></div>
                                     <div><dt>Submitted At</dt><dd><?= !empty($app['submitted_at']) ? date('d M Y', strtotime($app['submitted_at'])) : '-' ?></dd></div>
-                                    <div><dt>Current Status</dt><dd><span class="status-pill status-<?= h($status_cls) ?>"><?= h($status_text) ?></span></dd></div>
+                                    <div><dt>Current Status</dt><dd><span class="status-pill status-<?= h($slPillMap[$status_cls] ?? 'pending') ?>"><?= h($status_text) ?></span></dd></div>
                                 </dl>
                             </div>
 
                             <div class="tab-panel" id="tab-history-<?= $aid ?>-<?= $rtid ?>" role="tabpanel">
                                 <?php if (empty($historyRows)): ?>
-                                    <div class="sl-empty sl-empty-small">
+                                    <div class="empty-state">
                                         <i class="fas fa-clock-rotate-left" aria-hidden="true"></i>
                                         <p>No decision history found for this application stage yet.</p>
                                     </div>
@@ -1211,11 +1231,11 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                                     <div class="history-body">
                                                         <div class="history-status-line">
                                                             <?php if ($prevStatus !== '' && strcasecmp($prevStatus, $newStatus) !== 0): ?>
-                                                                <span class="status-pill history-badge status-<?= h(normalizeStatus($prevStatus)) ?>"><?= h(prettyStatus($prevStatus)) ?></span>
+                                                                <span class="status-pill status-<?= h($slPillMap[normalizeStatus($prevStatus)] ?? 'pending') ?>"><?= h(prettyStatus($prevStatus)) ?></span>
                                                                 <span class="history-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i><span class="sr-only">changed to</span></span>
                                                             <?php endif; ?>
 
-                                                            <span class="status-pill history-badge status-<?= h(normalizeStatus($newStatus)) ?>"><?= h(prettyStatus($newStatus)) ?></span>
+                                                            <span class="status-pill status-<?= h($slPillMap[normalizeStatus($newStatus)] ?? 'pending') ?>"><?= h(prettyStatus($newStatus)) ?></span>
                                                         </div>
 
                                                         <?php if (!empty($hr['reminder_date'])): ?>
@@ -1234,6 +1254,7 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                                     </ol>
                                 <?php endif; ?>
                             </div>
+                            </div><!-- /.tab-panels -->
                         </div>
                     </article>
                 <?php endforeach; ?>
@@ -1280,16 +1301,15 @@ $has_active_filters = ($filter_opp || $filter_review_type || $filter_rec || $fil
                 <button type="submit" form="batch-form" name="batch_status" value="Accepted" class="btn btn-green btn-sm">
                     <i class="fas fa-check-circle" aria-hidden="true"></i> Accept
                 </button>
-                <button type="submit" form="batch-form" name="batch_status" value="Rejected" class="btn btn-red btn-sm">
+                <button type="submit" form="batch-form" name="batch_status" value="Rejected" class="btn btn-danger btn-sm">
                     <i class="fas fa-times-circle" aria-hidden="true"></i> Reject
                 </button>
-                <button type="submit" form="batch-form" name="batch_status" value="Pending" class="btn btn-sm batch-reset-btn">
+                <button type="submit" form="batch-form" name="batch_status" value="Pending" class="btn btn-secondary btn-sm batch-reset-btn">
                     <i class="fas fa-undo" aria-hidden="true"></i> Reset
                 </button>
             </div>
         </div>
-    </div>
-</div>
+</div><!-- /.page-stack -->
 
 <script>
 function toggleAll(master) {

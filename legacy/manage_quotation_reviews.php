@@ -406,12 +406,12 @@ $stmt->close();
         </div>
 
         <div class="hero-actions">
-            <a href="manage_quotations?rfq_id=<?= (int)$rfq_id ?>" class="btn btn-primary">
+            <a href="manage_quotations?rfq_id=<?= (int)$rfq_id ?>" class="btn">
                 <i class="fas fa-arrow-left"></i> Back to Quotations
             </a>
 
             <?php if ($canInviteReviewers): ?>
-                <button class="btn btn-dark" onclick="openModal('inviteReviewerModal')">
+                <button class="btn btn-primary" onclick="openModal('inviteReviewerModal')">
                     <i class="fas fa-user-plus"></i> Invite Reviewer
                 </button>
             <?php endif; ?>
@@ -502,7 +502,7 @@ $stmt->close();
                 </div>
             </div>
         <?php elseif (!empty($quotations)): ?>
-            <div class="alert" style="background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;padding:.75rem 1rem;border-radius:6px;margin-bottom:1rem;font-size:.875rem;">
+            <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i> No reviews submitted yet - the top scorer will appear automatically once reviewers submit scores.
             </div>
         <?php endif; ?>

@@ -65,194 +65,121 @@ if ($is_admin) {
 ?>
 
 <style>
-.bookings-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
+/* Space bookings calendar: toolbar, legend and list-view rows. */
+.vsb-filters { margin-bottom: 0; }
 
-.bookings-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.filter-section {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    margin-bottom: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.filter-section h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 18px;
-}
-
-.calendar-container {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-}
-
-.calendar-header {
+.vsb-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #ecf0f1;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--ink-100);
 }
 
-.calendar-nav {
+.vsb-nav,
+.vsb-toggle {
     display: flex;
-    gap: 10px;
+    gap: var(--space-2);
     align-items: center;
 }
 
-.calendar-nav button {
-    padding: 8px 16px;
-    background: #ff6b35;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.calendar-nav button:hover {
-    background: #ff9800;
-}
-
-.month-display {
-    font-size: 24px;
-    font-weight: 600;
-    color: #2c3e50;
-}
-
-.view-toggle {
-    display: flex;
-    gap: 10px;
-}
-
-.view-toggle button {
-    padding: 8px 16px;
-    background: white;
-    color: #ff6b35;
-    border: 1px solid #ff6b35;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.view-toggle button.active {
-    background: #ff6b35;
-    color: white;
+.vsb-month {
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    color: var(--ink-900);
 }
 
 #calendar {
     min-height: 600px;
 }
 
-.legend {
+.vsb-legend {
     display: flex;
-    gap: 20px;
+    gap: var(--space-5);
     flex-wrap: wrap;
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #ecf0f1;
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--ink-100);
 }
 
-.legend-item {
+.vsb-legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: var(--space-2);
+    font-size: var(--fs-sm);
+    color: var(--ink-500);
 }
 
-.legend-color {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
+.vsb-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-sm);
 }
+
+.vsb-swatch.is-pending   { background: var(--amber-fg); }
+.vsb-swatch.is-confirmed { background: var(--green-fg); }
+.vsb-swatch.is-cancelled { background: var(--red-fg); }
+.vsb-swatch.is-completed { background: var(--blue-fg); }
 
 .list-view {
     display: none;
 }
 
-.list-view.active {
-    display: block;
-}
-
+.list-view.active,
 .calendar-view.active {
     display: block;
 }
 
-.booking-card {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 15px;
-    border-left: 4px solid #ff6b35;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
+.vsb-booking {
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+    border: 1px solid var(--ink-100);
+    border-left: 4px solid var(--brand-500);
+    border-radius: var(--radius-md);
+    background: var(--surface-card);
 }
 
-.booking-card:hover {
-    transform: translateX(5px);
-}
+.vsb-booking.pending   { border-left-color: var(--amber-fg); }
+.vsb-booking.confirmed { border-left-color: var(--green-fg); }
+.vsb-booking.cancelled { border-left-color: var(--red-fg); opacity: 0.7; }
+.vsb-booking.completed { border-left-color: var(--blue-fg); }
 
-.booking-card.pending {
-    border-left-color: #F39C12;
-}
-
-.booking-card.confirmed {
-    border-left-color: #2ECC71;
-}
-
-.booking-card.cancelled {
-    border-left-color: #E74C3C;
-    opacity: 0.7;
-}
-
-.booking-card.completed {
-    border-left-color: #3498DB;
-}
-
-.booking-header {
+.vsb-booking-head {
     display: flex;
     justify-content: space-between;
-    align-items: start;
-    margin-bottom: 15px;
+    align-items: flex-start;
+    gap: var(--space-3);
 }
 
-.booking-title {
-    font-size: 18px;
+.vsb-booking-title {
+    font-size: var(--fs-lg);
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--ink-900);
 }
 
-.booking-details {
+.vsb-booking-details {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
 }
 
-.detail-item {
-    font-size: 14px;
-    color: #7f8c8d;
+.vsb-detail {
+    font-size: var(--fs-sm);
+    color: var(--ink-300);
 }
 
-.detail-item strong {
-    color: #2c3e50;
+.vsb-detail strong {
     display: block;
     margin-bottom: 3px;
+    color: var(--ink-900);
+}
+
+.vsb-booking-actions {
+    margin-top: var(--space-3);
 }
 
 .fc-event {
@@ -263,34 +190,18 @@ if ($is_admin) {
     opacity: 0.8;
 }
 
-.error-message {
-    background: #fee;
-    border: 1px solid #fcc;
-    color: #c33;
-    padding: 15px;
-    border-radius: 6px;
-    margin: 20px 0;
-}
-
-.loading-message {
-    text-align: center;
-    padding: 40px;
-    color: #7f8c8d;
-}
-
 @media (max-width: 768px) {
-    .calendar-header {
+    .vsb-toolbar {
         flex-direction: column;
-        gap: 15px;
+        align-items: stretch;
     }
-    
-    .calendar-nav,
-    .view-toggle {
-        width: 100%;
+
+    .vsb-nav,
+    .vsb-toggle {
         justify-content: space-between;
     }
-    
-    .booking-details {
+
+    .vsb-booking-details {
         grid-template-columns: 1fr;
     }
 }
@@ -298,12 +209,32 @@ if ($is_admin) {
 
 <!-- FullCalendar v6 injects its own CSS from index.global.min.js (there is no separate CSS file; the old link 404'd). -->
 
-<!-- Header -->
-<div class="bookings-header">
-    <h1><i class="fas fa-calendar-alt"></i> Space Bookings Calendar</h1>
-    <p style="margin: 0; opacity: 0.9;">
-        View and manage space bookings across all facilities
-    </p>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-calendar-alt" aria-hidden="true"></i> Space Bookings Calendar</h1>
+        <p>View and manage space bookings across all facilities.</p>
+    </div>
+    <?php if ($is_member || $is_admin): ?>
+    <div class="hero-actions">
+        <?php if ($is_member): ?>
+            <a href="my-bookings" class="btn">
+                <i class="fas fa-list" aria-hidden="true"></i> My Bookings
+            </a>
+            <a href="book-space" class="btn btn-primary">
+                <i class="fas fa-plus" aria-hidden="true"></i> Book a Space
+            </a>
+        <?php endif; ?>
+        <?php if ($is_admin): ?>
+            <a href="manage-space" class="btn">
+                <i class="fas fa-door-open" aria-hidden="true"></i> Manage Spaces
+            </a>
+            <a href="hub-operations?tab=bookings" class="btn btn-primary">
+                <i class="fas fa-cog" aria-hidden="true"></i> Manage Bookings
+            </a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Statistics (Admin Only) -->
@@ -316,7 +247,7 @@ if ($is_admin) {
             <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-green"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -324,7 +255,7 @@ if ($is_admin) {
             <span class="stat-value"><?php echo $stats['today']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -332,7 +263,7 @@ if ($is_admin) {
             <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-purple"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -344,23 +275,26 @@ if ($is_admin) {
 <?php endif; ?>
 
 <!-- Filters -->
-<div class="filter-section">
-    <h3><i class="fas fa-filter"></i> Filter Bookings</h3>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-filter" aria-hidden="true"></i> Filter Bookings</h3>
+    </div>
+    <div class="card-body">
     <form method="GET" action="">
-        <div class="filters-bar" role="search" aria-label="Filter bookings" style="margin-bottom:0;">
+        <div class="filters-bar vsb-filters" role="search" aria-label="Filter bookings">
             <div class="form-group">
                 <label for="space">Space</label>
                 <select name="space" id="space" class="form-control">
                     <option value="">All Spaces</option>
                     <?php foreach ($spaces as $space): ?>
-                        <option value="<?php echo htmlspecialchars($space['space_name']); ?>" 
+                        <option value="<?php echo htmlspecialchars($space['space_name']); ?>"
                                 <?php echo $filter_space == $space['space_name'] ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($space['space_name']); ?> (<?php echo htmlspecialchars($space['space_type']); ?>)
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            
+
             <div class="form-group">
                 <label for="status">Status</label>
                 <select name="status" id="status" class="form-control">
@@ -371,97 +305,79 @@ if ($is_admin) {
                     <option value="Completed" <?php echo $filter_status == 'Completed' ? 'selected' : ''; ?>>Completed</option>
                 </select>
             </div>
-            
+
             <div class="filters-actions">
-                <button type="submit" class="btn btn-info">
-                    <i class="fas fa-search"></i> Filter
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search" aria-hidden="true"></i> Filter
                 </button>
                 <a href="view-space-bookings" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Clear
+                    <i class="fas fa-times" aria-hidden="true"></i> Clear
                 </a>
             </div>
         </div>
     </form>
+    </div>
 </div>
 
 <!-- Calendar Container -->
-<div class="calendar-container">
-    <div class="calendar-header">
-        <div class="calendar-nav">
-            <button id="prevBtn">
-                <i class="fas fa-chevron-left"></i> Previous
+<div class="card">
+    <div class="card-body">
+    <div class="vsb-toolbar">
+        <div class="vsb-nav">
+            <button type="button" class="btn btn-secondary btn-sm" id="prevBtn">
+                <i class="fas fa-chevron-left" aria-hidden="true"></i> Previous
             </button>
-            <button id="todayBtn">Today</button>
-            <button id="nextBtn">
-                Next <i class="fas fa-chevron-right"></i>
+            <button type="button" class="btn btn-secondary btn-sm" id="todayBtn">Today</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="nextBtn">
+                Next <i class="fas fa-chevron-right" aria-hidden="true"></i>
             </button>
         </div>
-        
-        <div class="month-display" id="monthDisplay"></div>
-        
-        <div class="view-toggle">
-            <button class="active" id="calendarViewBtn" onclick="switchView('calendar')">
-                <i class="fas fa-calendar"></i> Calendar
+
+        <div class="vsb-month" id="monthDisplay"></div>
+
+        <div class="vsb-toggle">
+            <button type="button" class="tab-btn active" id="calendarViewBtn" onclick="switchView('calendar')">
+                <i class="fas fa-calendar" aria-hidden="true"></i> Calendar
             </button>
-            <button id="listViewBtn" onclick="switchView('list')">
-                <i class="fas fa-list"></i> List
+            <button type="button" class="tab-btn" id="listViewBtn" onclick="switchView('list')">
+                <i class="fas fa-list" aria-hidden="true"></i> List
             </button>
         </div>
     </div>
-    
+
     <!-- Calendar View -->
     <div class="calendar-view active">
         <div id="calendar"></div>
-        
+
         <!-- Legend -->
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color" style="background: #F39C12;"></div>
+        <div class="vsb-legend">
+            <div class="vsb-legend-item">
+                <span class="vsb-swatch is-pending"></span>
                 <span>Pending</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #2ECC71;"></div>
+            <div class="vsb-legend-item">
+                <span class="vsb-swatch is-confirmed"></span>
                 <span>Confirmed</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #E74C3C;"></div>
+            <div class="vsb-legend-item">
+                <span class="vsb-swatch is-cancelled"></span>
                 <span>Cancelled</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #3498DB;"></div>
+            <div class="vsb-legend-item">
+                <span class="vsb-swatch is-completed"></span>
                 <span>Completed</span>
             </div>
         </div>
     </div>
-    
+
     <!-- List View -->
     <div class="list-view" id="listView">
         <!-- Will be populated dynamically -->
     </div>
+    </div>
 </div>
 
-<!-- Quick Actions -->
-<?php if ($is_member): ?>
-<div style="text-align: center; margin-top: 30px;">
-    <a href="book-space" class="btn btn-success btn-lg">
-        <i class="fas fa-plus"></i> Book a Space
-    </a>
-    <a href="my-bookings" class="btn btn-info btn-lg">
-        <i class="fas fa-list"></i> My Bookings
-    </a>
-</div>
-<?php endif; ?>
-
-<?php if ($is_admin): ?>
-<div style="text-align: center; margin-top: 30px;">
-    <a href="hub-operations?tab=bookings" class="btn btn-primary btn-lg">
-        <i class="fas fa-cog"></i> Manage Bookings
-    </a>
-    <a href="manage-space" class="btn btn-info btn-lg">
-        <i class="fas fa-door-open"></i> Manage Spaces
-    </a>
-</div>
-<?php endif; ?>
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 
@@ -472,6 +388,9 @@ if ($is_admin) {
 let calendar;
 const filterSpace = <?php echo json_encode((string)$filter_space, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 const filterStatus = <?php echo json_encode((string)$filter_status, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+// Status colours for calendar events come from the design tokens.
+const vsbToken = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 // Debug function
 function logDebug(message, data) {
@@ -534,11 +453,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     const events = data.map(booking => {
                         // Set color based on status
-                        let color = '#ff6b35';
-                        if (booking.booking_status === 'Pending') color = '#F39C12';
-                        else if (booking.booking_status === 'Confirmed') color = '#2ECC71';
-                        else if (booking.booking_status === 'Cancelled') color = '#E74C3C';
-                        else if (booking.booking_status === 'Completed') color = '#3498DB';
+                        let color = vsbToken('--brand-500');
+                        if (booking.booking_status === 'Pending') color = vsbToken('--amber-fg');
+                        else if (booking.booking_status === 'Confirmed') color = vsbToken('--green-fg');
+                        else if (booking.booking_status === 'Cancelled') color = vsbToken('--red-fg');
+                        else if (booking.booking_status === 'Completed') color = vsbToken('--blue-fg');
                         
                         // Create event title
                         const timeStr = booking.start_time ? booking.start_time.substring(0, 5) : '00:00';
@@ -570,18 +489,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Show user-friendly error message
                     const calendarEl = document.getElementById('calendar');
                     calendarEl.innerHTML = `
-                        <div class="error-message">
-                            <h4><i class="fas fa-exclamation-triangle"></i> Error Loading Bookings</h4>
-                            <p><strong>Error:</strong> ${error.message}</p>
-                            <p>Please check:</p>
-                            <ul>
-                                <li>The file <code>includes/get-bookings.php</code> exists</li>
-                                <li>Database connection is working</li>
-                                <li>You have proper permissions</li>
-                            </ul>
-                            <button onclick="location.reload()" class="btn btn-primary" style="margin-top: 10px;">
-                                <i class="fas fa-sync"></i> Retry
-                            </button>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                            <div>
+                                <strong>Error Loading Bookings</strong>
+                                <p><strong>Error:</strong> ${error.message}</p>
+                                <p>Please check:</p>
+                                <ul>
+                                    <li>The file <code>includes/get-bookings.php</code> exists</li>
+                                    <li>Database connection is working</li>
+                                    <li>You have proper permissions</li>
+                                </ul>
+                                <button type="button" onclick="location.reload()" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-sync" aria-hidden="true"></i> Retry
+                                </button>
+                            </div>
                         </div>
                     `;
                     
@@ -651,7 +573,7 @@ function switchView(view) {
 
 function loadListView() {
     const listView = document.getElementById('listView');
-    listView.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin fa-2x"></i><p style="margin-top: 20px;">Loading bookings...</p></div>';
+    listView.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i><p>Loading bookings...</p></div>';
     
     const params = new URLSearchParams({
         list: '1',
@@ -688,9 +610,8 @@ function loadListView() {
             
             if (data.length === 0) {
                 listView.innerHTML = `
-                    <div style="text-align: center; padding: 60px; color: #7f8c8d;">
-                        <i class="fas fa-inbox" style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;"></i>
-                        <h3>No bookings found</h3>
+                    <div class="empty-state">
+                        <i class="fas fa-inbox" aria-hidden="true"></i>
                         <p>No bookings match your filter criteria.</p>
                     </div>
                 `;
@@ -718,36 +639,36 @@ function loadListView() {
                 const endTime = booking.end_time ? booking.end_time.substring(0, 5) : '00:00';
                 
                 html += `
-                    <div class="booking-card ${statusClass}">
-                        <div class="booking-header">
-                            <div class="booking-title">
+                    <div class="vsb-booking ${statusClass}">
+                        <div class="vsb-booking-head">
+                            <div class="vsb-booking-title">
                                 <i class="fas fa-door-open"></i> ${booking.space_name || 'Unknown Space'}
                             </div>
                             <span class="badge badge-${statusBadge}">${booking.booking_status}</span>
                         </div>
-                        <div class="booking-details">
-                            <div class="detail-item">
+                        <div class="vsb-booking-details">
+                            <div class="vsb-detail">
                                 <strong><i class="fas fa-calendar"></i> Date</strong>
                                 ${dateFormatted}
                             </div>
-                            <div class="detail-item">
+                            <div class="vsb-detail">
                                 <strong><i class="fas fa-clock"></i> Time</strong>
                                 ${startTime} - ${endTime}
                             </div>
-                            <div class="detail-item">
+                            <div class="vsb-detail">
                                 <strong><i class="fas fa-user"></i> Member</strong>
                                 ${booking.member_name || 'N/A'}
                             </div>
-                            <div class="detail-item">
+                            <div class="vsb-detail">
                                 <strong><i class="fas fa-users"></i> Attendees</strong>
                                 ${booking.expected_attendees || 0} people
                             </div>
-                            <div class="detail-item">
+                            <div class="vsb-detail">
                                 <strong><i class="fas fa-money-bill"></i> Amount</strong>
                                 UGX ${parseFloat(booking.booking_amount || 0).toLocaleString()}
                             </div>
                         </div>
-                        <div style="margin-top: 15px;">
+                        <div class="vsb-booking-actions">
                             <a href="view-booking?id=${booking.booking_id}" class="btn btn-info btn-sm">
                                 <i class="fas fa-eye"></i> View Details
                             </a>
@@ -761,12 +682,15 @@ function loadListView() {
         .catch(error => {
             console.error('Error loading list view:', error);
             listView.innerHTML = `
-                <div class="error-message">
-                    <h4><i class="fas fa-exclamation-triangle"></i> Error Loading Bookings</h4>
-                    <p><strong>Error:</strong> ${error.message}</p>
-                    <button onclick="loadListView()" class="btn btn-primary" style="margin-top: 10px;">
-                        <i class="fas fa-sync"></i> Retry
-                    </button>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <div>
+                        <strong>Error Loading Bookings</strong>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <button type="button" onclick="loadListView()" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sync" aria-hidden="true"></i> Retry
+                        </button>
+                    </div>
                 </div>
             `;
         });

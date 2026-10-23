@@ -54,162 +54,65 @@ while ($row = $result->fetch_assoc()) {
 ?>
 
 <style>
-.feedback-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
+/* Submit Feedback: page-only layout (sf- prefix) */
+.sf-section { margin-bottom: 22px; }
+.sf-section > label { font-weight: 600; color: var(--ink-700); margin-bottom: 8px; display: block; }
+.sf-hint { display: block; margin-top: 5px; font-size: var(--fs-xs); color: var(--ink-300); }
+.sf-section > label.sf-check { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 500; }
+.sf-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
 
-.feedback-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.feedback-form {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-}
-
-.feedback-form h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 24px;
-}
-
-.form-section {
-    margin-bottom: 25px;
-}
-
-.form-section label {
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 8px;
-    display: block;
-}
-
-.rating-stars {
-    display: flex;
-    gap: 10px;
-    font-size: 32px;
-    cursor: pointer;
-}
-
-.rating-stars i {
-    color: #ddd;
-    transition: color 0.2s;
-}
-
+/* Rating stars (JS toggles .active and sets inline hover colour) */
+.rating-stars { display: flex; gap: 10px; font-size: 32px; cursor: pointer; }
+.rating-stars i { color: var(--ink-100); transition: color .2s; }
 .rating-stars i.active,
-.rating-stars i:hover {
-    color: #F39C12;
-}
+.rating-stars i:hover { color: var(--amber-fg); }
 
-.feedback-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 15px;
-    border-left: 4px solid #ff6b35;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+/* Feedback type picker (JS toggles .type-card.selected) */
+.sf-types { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+.sf-types .type-card {
+    text-align: center; padding: 20px;
+    border: 2px solid var(--ink-50); border-radius: var(--radius-md);
+    background: var(--surface-card); cursor: pointer; transition: all .2s;
 }
+.sf-types .type-card:hover { border-color: var(--brand-400); background: var(--surface-hover); }
+.sf-types .type-card.selected { border-color: var(--brand-600); background: var(--brand-600); color: var(--ink-0); }
+.sf-types .type-card i { font-size: 32px; margin-bottom: 10px; }
+.sf-types .type-card h4 { font-size: var(--fs-base); margin: 0; }
 
-.feedback-card.suggestion {
-    border-left-color: #3498DB;
+/* Recent feedback list */
+.sf-recent { display: flex; flex-direction: column; gap: 15px; }
+.sf-item {
+    padding: 18px 20px; border: 1px solid var(--ink-50); border-left: 4px solid var(--brand-500);
+    border-radius: var(--radius-md); background: var(--surface-card);
 }
-
-.feedback-card.complaint {
-    border-left-color: #E74C3C;
-}
-
-.feedback-card.general {
-    border-left-color: #95A5A6;
-}
-
-.feedback-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.feedback-meta {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-    margin-top: 10px;
-    font-size: 13px;
-    color: #7f8c8d;
-}
-
-.feedback-response {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 15px;
-    border-left: 3px solid #2ECC71;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: #7f8c8d;
-}
-
-.empty-state i {
-    font-size: 48px;
-    margin-bottom: 15px;
-    color: #bdc3c7;
-}
-
-.feedback-types {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.type-card {
-    text-align: center;
-    padding: 20px;
-    border: 2px solid #ecf0f1;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.type-card:hover {
-    border-color: #ff6b35;
-    background: #f8f9fa;
-}
-
-.type-card.selected {
-    border-color: #ff6b35;
-    background: #ff6b35;
-    color: white;
-}
-
-.type-card i {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.type-card h4 {
-    font-size: 14px;
-    margin: 0;
-}
+.sf-item.suggestion { border-left-color: var(--blue-fg); }
+.sf-item.complaint  { border-left-color: var(--red-fg); }
+.sf-item.general    { border-left-color: var(--slate-fg); }
+.sf-item-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+.sf-item-head h4 { margin: 0 0 5px; color: var(--ink-700); }
+.sf-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+.sf-rating { color: var(--ink-100); }
+.sf-rating .is-on { color: var(--amber-fg); }
+.sf-message { color: var(--ink-400); margin: 10px 0; }
+.sf-response { margin: 15px 0 0; }
+.sf-response p { margin: 5px 0 0; }
+.sf-response small { display: block; margin-top: 4px; opacity: .85; }
+.sf-meta { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 10px; font-size: var(--fs-sm); color: var(--ink-300); }
+.sf-meta a { color: var(--brand-600); text-decoration: none; }
+.sf-meta a:hover { text-decoration: underline; }
+.sf-view-all { text-align: center; margin-top: 20px; }
 </style>
 
-<!-- Header -->
-<div class="feedback-header">
-    <h1><i class="fas fa-comment-dots"></i> Submit Feedback</h1>
-    <p style="margin: 0; opacity: 0.9;">We value your opinion. Help us improve our services</p>
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-comment-dots" aria-hidden="true"></i> Submit Feedback</h1>
+        <p>We value your opinion. Help us improve our services.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="my-feedback" class="btn"><i class="fas fa-list" aria-hidden="true"></i> My Feedback</a>
+    </div>
 </div>
 
 <!-- Statistics -->
@@ -221,7 +124,7 @@ while ($row = $result->fetch_assoc()) {
             <span class="stat-value"><?php echo $stats['total']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-amber"><i class="fas fa-clock" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -229,7 +132,7 @@ while ($row = $result->fetch_assoc()) {
             <span class="stat-value"><?php echo $stats['pending']; ?></span>
         </div>
     </div>
-    
+
     <div class="stat-card">
         <div class="stat-icon bg-green"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
         <div class="stat-info">
@@ -240,61 +143,63 @@ while ($row = $result->fetch_assoc()) {
 </div>
 
 <!-- Feedback Form -->
-<div class="feedback-form">
-    <h3><i class="fas fa-edit"></i> Share Your Feedback</h3>
-    
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-edit" aria-hidden="true"></i> Share Your Feedback</h3>
+    </div>
+    <div class="card-body">
     <form method="POST" action="includes/process-feedback.php" enctype="multipart/form-data" id="feedbackForm">
         <input type="hidden" name="member_id" value="<?php echo $member_id; ?>">
-        
+
         <!-- Feedback Type -->
-        <div class="form-section">
+        <div class="sf-section">
             <label class="required">Feedback Type</label>
-            <div class="feedback-types" id="feedbackTypes">
+            <div class="sf-types" id="feedbackTypes">
                 <div class="type-card" data-type="General">
-                    <i class="fas fa-comment"></i>
+                    <i class="fas fa-comment" aria-hidden="true"></i>
                     <h4>General</h4>
                 </div>
                 <div class="type-card" data-type="Facilities">
-                    <i class="fas fa-building"></i>
+                    <i class="fas fa-building" aria-hidden="true"></i>
                     <h4>Facilities</h4>
                 </div>
                 <div class="type-card" data-type="Services">
-                    <i class="fas fa-concierge-bell"></i>
+                    <i class="fas fa-concierge-bell" aria-hidden="true"></i>
                     <h4>Services</h4>
                 </div>
                 <div class="type-card" data-type="Events">
-                    <i class="fas fa-calendar-alt"></i>
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
                     <h4>Events</h4>
                 </div>
                 <div class="type-card" data-type="Complaint">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
                     <h4>Complaint</h4>
                 </div>
                 <div class="type-card" data-type="Suggestion">
-                    <i class="fas fa-lightbulb"></i>
+                    <i class="fas fa-lightbulb" aria-hidden="true"></i>
                     <h4>Suggestion</h4>
                 </div>
             </div>
             <input type="hidden" name="feedback_type" id="feedbackType" required>
         </div>
-        
+
         <!-- Subject -->
-        <div class="form-section">
+        <div class="sf-section">
             <label for="subject" class="required">Subject</label>
-            <input type="text" id="subject" name="subject" class="form-control" 
+            <input type="text" id="subject" name="subject" class="form-control"
                    placeholder="Brief description of your feedback" required maxlength="200">
         </div>
-        
+
         <!-- Message -->
-        <div class="form-section">
+        <div class="sf-section">
             <label for="feedback_message" class="required">Your Feedback</label>
-            <textarea id="feedback_message" name="feedback_message" class="form-control" rows="6" 
+            <textarea id="feedback_message" name="feedback_message" class="form-control" rows="6"
                       placeholder="Please provide detailed feedback..." required></textarea>
-            <small style="color: #7f8c8d;">Minimum 10 characters</small>
+            <small class="sf-hint">Minimum 10 characters</small>
         </div>
-        
+
         <!-- Rating -->
-        <div class="form-section">
+        <div class="sf-section">
             <label>Rate Your Experience (Optional)</label>
             <div class="rating-stars" id="ratingStars">
                 <i class="fas fa-star" data-rating="1"></i>
@@ -304,13 +209,13 @@ while ($row = $result->fetch_assoc()) {
                 <i class="fas fa-star" data-rating="5"></i>
             </div>
             <input type="hidden" name="rating" id="rating" value="0">
-            <small style="color: #7f8c8d; display: block; margin-top: 5px;">
+            <small class="sf-hint">
                 <span id="ratingText">Click to rate</span>
             </small>
         </div>
-        
+
         <!-- Priority (Auto-set based on type, but allow override) -->
-        <div class="form-section">
+        <div class="sf-section">
             <label for="priority">Priority Level</label>
             <select id="priority" name="priority" class="form-control">
                 <option value="Low">Low - General feedback or suggestion</option>
@@ -319,66 +224,68 @@ while ($row = $result->fetch_assoc()) {
                 <option value="Urgent">Urgent - Requires immediate attention</option>
             </select>
         </div>
-        
+
         <!-- Attachments -->
-        <div class="form-section">
+        <div class="sf-section">
             <label for="attachments">Attachments (Optional)</label>
-            <input type="file" id="attachments" name="attachments[]" class="form-control" 
+            <input type="file" id="attachments" name="attachments[]" class="form-control"
                    accept="image/*,.pdf,.doc,.docx" multiple>
-            <small style="color: #7f8c8d;">
+            <small class="sf-hint">
                 You can attach images or documents (Max 5MB per file, up to 5 files)
             </small>
         </div>
-        
+
         <!-- Anonymous Option -->
-        <div class="form-section">
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+        <div class="sf-section">
+            <label class="sf-check">
                 <input type="checkbox" name="is_anonymous" id="is_anonymous" value="1">
                 <span>Submit anonymously (Your identity will not be shown to staff)</span>
             </label>
         </div>
-        
+
         <!-- Submit Button -->
-        <div style="display: flex; gap: 10px; margin-top: 30px;">
-            <button type="submit" name="submit_feedback" class="btn btn-primary btn-lg">
-                <i class="fas fa-paper-plane"></i> Submit Feedback
+        <div class="sf-actions">
+            <button type="submit" name="submit_feedback" class="btn btn-primary">
+                <i class="fas fa-paper-plane" aria-hidden="true"></i> Submit Feedback
             </button>
-            <button type="reset" class="btn btn-secondary btn-lg" onclick="resetForm()">
-                <i class="fas fa-redo"></i> Reset
+            <button type="reset" class="btn btn-secondary" onclick="resetForm()">
+                <i class="fas fa-redo" aria-hidden="true"></i> Reset
             </button>
         </div>
     </form>
+    </div>
 </div>
 
 <!-- Recent Feedback -->
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-history"></i> Your Recent Feedback</h3>
+        <h3><i class="fas fa-history" aria-hidden="true"></i> Your Recent Feedback</h3>
     </div>
     <div class="card-body">
         <?php if (empty($recent_feedback)): ?>
             <div class="empty-state">
-                <i class="fas fa-inbox"></i>
+                <i class="fas fa-inbox" aria-hidden="true"></i>
                 <p>You haven't submitted any feedback yet</p>
             </div>
         <?php else: ?>
-            <?php foreach ($recent_feedback as $feedback): 
+            <div class="sf-recent">
+            <?php foreach ($recent_feedback as $feedback):
                 $type_class = strtolower($feedback['feedback_type']);
             ?>
-                <div class="feedback-card <?php echo $type_class; ?>">
-                    <div class="feedback-header-row">
+                <div class="sf-item <?php echo $type_class; ?>">
+                    <div class="sf-item-head">
                         <div>
-                            <h4 style="margin: 0 0 5px 0; color: #2c3e50;">
+                            <h4>
                                 <?php echo htmlspecialchars($feedback['subject']); ?>
                             </h4>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <span class="badge badge-primary">
+                            <div class="sf-badges">
+                                <span class="badge badge-info">
                                     <?php echo $feedback['feedback_type']; ?>
                                 </span>
                                 <?php
                                 $status_badges = [
-                                    'New' => 'primary',
-                                    'In Review' => 'info',
+                                    'New' => 'info',
+                                    'In Review' => 'purple',
                                     'Responded' => 'warning',
                                     'Resolved' => 'success',
                                     'Closed' => 'secondary'
@@ -406,64 +313,68 @@ while ($row = $result->fetch_assoc()) {
                         </div>
                         <div>
                             <?php if ($feedback['rating']): ?>
-                                <div style="color: #F39C12;">
+                                <div class="sf-rating" aria-label="Rating <?php echo (int)$feedback['rating']; ?> of 5">
                                     <?php for ($i = 1; $i <= 5; $i++): ?>
-                                        <i class="fas fa-star" style="color: <?php echo $i <= $feedback['rating'] ? '#F39C12' : '#ddd'; ?>;"></i>
+                                        <i class="fas fa-star<?php echo $i <= $feedback['rating'] ? ' is-on' : ''; ?>" aria-hidden="true"></i>
                                     <?php endfor; ?>
                                 </div>
                             <?php endif; ?>
                         </div>
                     </div>
-                    
-                    <p style="color: #555; margin: 10px 0;">
+
+                    <p class="sf-message">
                         <?php echo nl2br(htmlspecialchars(substr($feedback['feedback_message'], 0, 200))); ?>
                         <?php if (strlen($feedback['feedback_message']) > 200): ?>
                             <a href="view-feedback?id=<?php echo $feedback['feedback_id']; ?>">Read more...</a>
                         <?php endif; ?>
                     </p>
-                    
+
                     <?php if ($feedback['admin_response']): ?>
-                        <div class="feedback-response">
-                            <strong style="color: #2c3e50;">
-                                <i class="fas fa-reply"></i> Response:
-                            </strong>
-                            <p style="margin: 5px 0 0 0; color: #555;">
-                                <?php echo nl2br(htmlspecialchars($feedback['admin_response'])); ?>
-                            </p>
-                            <?php if ($feedback['responded_at']): ?>
-                                <small style="color: #7f8c8d;">
-                                    Responded on <?php echo date('d M Y, h:i A', strtotime($feedback['responded_at'])); ?>
-                                </small>
-                            <?php endif; ?>
+                        <div class="alert alert-success sf-response">
+                            <div>
+                                <strong>
+                                    <i class="fas fa-reply" aria-hidden="true"></i> Response:
+                                </strong>
+                                <p>
+                                    <?php echo nl2br(htmlspecialchars($feedback['admin_response'])); ?>
+                                </p>
+                                <?php if ($feedback['responded_at']): ?>
+                                    <small>
+                                        Responded on <?php echo date('d M Y, h:i A', strtotime($feedback['responded_at'])); ?>
+                                    </small>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     <?php endif; ?>
-                    
-                    <div class="feedback-meta">
+
+                    <div class="sf-meta">
                         <span>
-                            <i class="fas fa-calendar"></i>
+                            <i class="fas fa-calendar" aria-hidden="true"></i>
                             <?php echo date('d M Y, h:i A', strtotime($feedback['created_at'])); ?>
                         </span>
                         <?php if ($feedback['is_anonymous']): ?>
                             <span>
-                                <i class="fas fa-user-secret"></i> Anonymous
+                                <i class="fas fa-user-secret" aria-hidden="true"></i> Anonymous
                             </span>
                         <?php endif; ?>
-                        <a href="view-feedback?id=<?php echo $feedback['feedback_id']; ?>" 
-                           style="color: #ff6b35; text-decoration: none;">
-                            <i class="fas fa-eye"></i> View Details
+                        <a href="view-feedback?id=<?php echo $feedback['feedback_id']; ?>">
+                            <i class="fas fa-eye" aria-hidden="true"></i> View Details
                         </a>
                     </div>
                 </div>
             <?php endforeach; ?>
-            
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="my-feedback" class="btn btn-info">
-                    <i class="fas fa-list"></i> View All Feedback
+            </div>
+
+            <div class="sf-view-all">
+                <a href="my-feedback" class="btn btn-secondary">
+                    <i class="fas fa-list" aria-hidden="true"></i> View All Feedback
                 </a>
             </div>
         <?php endif; ?>
     </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 
@@ -532,9 +443,9 @@ stars.forEach(star => {
         const rating = this.dataset.rating;
         stars.forEach(s => {
             if (s.dataset.rating <= rating) {
-                s.style.color = '#F39C12';
+                s.style.color = 'var(--amber-fg)';
             } else {
-                s.style.color = '#ddd';
+                s.style.color = 'var(--ink-100)';
             }
         });
     });
@@ -545,9 +456,9 @@ document.querySelector('.rating-stars').addEventListener('mouseleave', function(
     const currentRating = ratingInput.value;
     stars.forEach(s => {
         if (s.dataset.rating <= currentRating) {
-            s.style.color = '#F39C12';
+            s.style.color = 'var(--amber-fg)';
         } else {
-            s.style.color = '#ddd';
+            s.style.color = 'var(--ink-100)';
         }
     });
 });

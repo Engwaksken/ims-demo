@@ -106,196 +106,38 @@ while ($row = $years_result->fetch_assoc()) {
 ?>
 
 <style>
-.payment-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-}
-
-.payment-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.filter-bar {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-.filter-bar > .filters-bar {
-    margin-bottom: 0;
-}
-
-.payment-table {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.payment-table table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.payment-table thead {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-}
-
-.payment-table thead th {
-    padding: 15px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.payment-table tbody td {
-    padding: 15px;
-    border-bottom: 1px solid #ecf0f1;
-    font-size: 14px;
-}
-
-.payment-table tbody tr:hover {
-    background: #f8f9fa;
-}
-
-.payment-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.invoice-number {
-    font-family: monospace;
-    font-weight: 600;
-    color: #ff6b35;
-}
-
-.amount-cell {
-    font-size: 16px;
-    font-weight: 700;
-}
-
-.amount-paid {
-    color: #2ECC71;
-}
-
-.amount-pending {
-    color: #F39C12;
-}
-
-.amount-cancelled {
-    color: #E74C3C;
-    text-decoration: line-through;
-}
-
-.pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    margin-top: 30px;
-    flex-wrap: wrap;
-}
-
-.pagination a,
-.pagination span {
-    padding: 8px 12px;
-    border: 1px solid #ecf0f1;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #2c3e50;
-    transition: all 0.3s;
-}
-
-.pagination a:hover {
-    background: #ff6b35;
-    color: white;
-    border-color: #ff6b35;
-}
-
-.pagination .active {
-    background: #ff6b35;
-    color: white;
-    border-color: #ff6b35;
-}
-
-.pagination .disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.summary-box {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
-}
-
-.summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-}
-
-.summary-item {
-    text-align: center;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.summary-item .value {
-    font-size: 28px;
-    font-weight: 700;
-    color: #2c3e50;
-    margin-bottom: 5px;
-}
-
-.summary-item .label {
-    font-size: 14px;
-    color: #7f8c8d;
-}
-
-.export-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 25px;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-}
-
-.empty-state i {
-    font-size: 64px;
-    color: #bdc3c7;
-    margin-bottom: 20px;
-}
-
-@media (max-width: 768px) {
-    .payment-table {
-        overflow-x: auto;
-    }
-    
-    .summary-grid {
-        grid-template-columns: 1fr;
-    }
-}
+/* Payment History: amount/status colouring, row actions and pager label. */
+.ph-filters .filters-bar { margin-bottom: 0; }
+.ph-invoice { font-weight: 600; color: var(--brand-600); }
+.ph-amount { font-size: 15px; font-weight: 700; }
+.ph-amount.is-paid { color: var(--green-fg); }
+.ph-amount.is-pending { color: var(--amber-fg); }
+.ph-amount.is-cancelled { color: var(--red-fg); text-decoration: line-through; }
+.ph-paid-date { color: var(--green-fg); }
+.ph-actions { display: flex; gap: 5px; }
+.ph-page-info { margin-left: 10px; align-self: center; }
 </style>
 
-<!-- Header -->
-<div class="payment-header">
-    <h1><i class="fas fa-history"></i> Payment History</h1>
-    <p style="margin: 0; opacity: 0.9;">Complete record of your subscription payments</p>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-history" aria-hidden="true"></i> Payment History</h1>
+        <p>Complete record of your subscription payments.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="my-subscription" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Subscription
+        </a>
+        <a href="export?member_id=<?php echo $member_id; ?>&format=csv" class="btn">
+            <i class="fas fa-file-csv" aria-hidden="true"></i> Export to CSV
+        </a>
+        <a href="export?member_id=<?php echo $member_id; ?>&format=excel" class="btn">
+            <i class="fas fa-file-excel" aria-hidden="true"></i> Export to Excel
+        </a>
+        <a href="export?member_id=<?php echo $member_id; ?>&format=pdf" class="btn btn-primary">
+            <i class="fas fa-file-pdf" aria-hidden="true"></i> Export to PDF
+        </a>
+    </div>
 </div>
 
 <!-- Statistics -->
@@ -333,24 +175,10 @@ while ($row = $years_result->fetch_assoc()) {
     </div>
 </div>
 
-<!-- Export Buttons -->
-<div class="export-buttons">
-    <a href="export?member_id=<?php echo $member_id; ?>&format=pdf" class="btn btn-danger">
-        <i class="fas fa-file-pdf"></i> Export to PDF
-    </a>
-    <a href="export?member_id=<?php echo $member_id; ?>&format=excel" class="btn btn-success">
-        <i class="fas fa-file-excel"></i> Export to Excel
-    </a>
-    <a href="export?member_id=<?php echo $member_id; ?>&format=csv" class="btn btn-info">
-        <i class="fas fa-file-csv"></i> Export to CSV
-    </a>
-    <a href="my-subscription" class="btn btn-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Subscription
-    </a>
-</div>
-
 <!-- Filter Bar -->
-<form method="GET" action="" class="filter-bar">
+<div class="card ph-filters">
+    <div class="card-body">
+<form method="GET" action="">
     <div class="filters-bar" role="search" aria-label="Filter payments">
         <div class="form-group">
             <label for="status">Payment Status</label>
@@ -417,15 +245,17 @@ while ($row = $years_result->fetch_assoc()) {
         </div>
     </div>
 </form>
+    </div>
+</div>
 
 <!-- Payment Table -->
 <?php if (empty($payments)): ?>
     <div class="card">
         <div class="card-body">
             <div class="empty-state">
-                <i class="fas fa-receipt"></i>
+                <i class="fas fa-receipt" aria-hidden="true"></i>
                 <h3>No payment records found</h3>
-                <p style="color: #7f8c8d; margin-bottom: 20px;">
+                <p>
                     <?php if ($filter_status || $filter_plan || $filter_year || $filter_month): ?>
                         No payments match your filter criteria.
                     <?php else: ?>
@@ -439,8 +269,11 @@ while ($row = $years_result->fetch_assoc()) {
         </div>
     </div>
 <?php else: ?>
-    <div class="payment-table">
-        <table>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-list" aria-hidden="true"></i> Payments (<?php echo $total_records; ?>)</h3></div>
+        <div class="card-body">
+    <div class="table-responsive">
+        <table class="table">
             <thead>
                 <tr>
                     <th>Invoice #</th>
@@ -457,40 +290,38 @@ while ($row = $years_result->fetch_assoc()) {
                 <?php foreach ($payments as $payment): ?>
                 <tr>
                     <td>
-                        <span class="invoice-number"><?php echo htmlspecialchars($payment['invoice_number']); ?></span>
+                        <span class="ph-invoice"><?php echo htmlspecialchars($payment['invoice_number']); ?></span>
                     </td>
                     <td>
-                        <span class="badge badge-primary">
+                        <span class="badge badge-info">
                             <?php echo htmlspecialchars($payment['subscription_plan']); ?>
                         </span>
                     </td>
                     <td>
-                        <div style="font-size: 13px;">
-                            <?php echo date('d M', strtotime($payment['payment_period_start'])); ?> - 
-                            <?php echo date('d M Y', strtotime($payment['payment_period_end'])); ?>
-                        </div>
+                        <?php echo date('d M', strtotime($payment['payment_period_start'])); ?> -
+                        <?php echo date('d M Y', strtotime($payment['payment_period_end'])); ?>
                     </td>
                     <td>
                         <?php
-                        $amount_class = 'amount-paid';
+                        $amount_class = 'is-paid';
                         if ($payment['payment_status'] == 'Pending' || $payment['payment_status'] == 'Overdue') {
-                            $amount_class = 'amount-pending';
+                            $amount_class = 'is-pending';
                         } elseif ($payment['payment_status'] == 'Cancelled') {
-                            $amount_class = 'amount-cancelled';
+                            $amount_class = 'is-cancelled';
                         }
                         ?>
-                        <div class="amount-cell <?php echo $amount_class; ?>">
+                        <div class="ph-amount <?php echo $amount_class; ?>">
                             <?php echo format_currency($payment['amount']); ?>
                         </div>
                     </td>
                     <td>
                         <?php if ($payment['payment_date']): ?>
-                            <div style="color: #2ECC71;">
+                            <div class="ph-paid-date">
                                 <i class="fas fa-check-circle"></i>
                                 <?php echo date('d M Y', strtotime($payment['payment_date'])); ?>
                             </div>
                         <?php else: ?>
-                            <div style="color: #7f8c8d;">
+                            <div class="cell-muted">
                                 <i class="fas fa-minus-circle"></i>
                                 Not paid
                             </div>
@@ -500,7 +331,7 @@ while ($row = $years_result->fetch_assoc()) {
                         <?php if ($payment['payment_method']): ?>
                             <?php echo htmlspecialchars($payment['payment_method']); ?>
                         <?php else: ?>
-                            <span style="color: #7f8c8d;">-</span>
+                            <span class="cell-muted">-</span>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -519,7 +350,7 @@ while ($row = $years_result->fetch_assoc()) {
                         </span>
                     </td>
                     <td>
-                        <div style="display: flex; gap: 5px;">
+                        <div class="ph-actions">
                             <a href="view-payment?id=<?php echo $payment['payment_id']; ?>" 
                                class="btn btn-info btn-sm" title="View Details">
                                 <i class="fas fa-eye"></i>
@@ -591,11 +422,15 @@ while ($row = $years_result->fetch_assoc()) {
             </a>
         <?php endif; ?>
         
-        <span style="margin-left: 10px; color: #7f8c8d;">
+        <span class="cell-muted ph-page-info">
             Page <?php echo $page; ?> of <?php echo $total_pages; ?>
         </span>
     </div>
     <?php endif; ?>
+        </div>
+    </div>
 <?php endif; ?>
+
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>

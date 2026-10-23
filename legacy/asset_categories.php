@@ -278,11 +278,11 @@ unset($_SESSION['success'], $_SESSION['error']);
         </div>
 
         <div class="hero-actions">
-            <a href="manage_assets" class="btn btn-primary">
+            <a href="manage_assets" class="btn">
                 <i class="fas fa-boxes-stacked"></i> Manage Assets
             </a>
 
-            <button type="button" class="btn btn-dark" onclick="openModal('addCategoryModal')">
+            <button type="button" class="btn btn-primary" onclick="openModal('addCategoryModal')">
                 <i class="fas fa-plus-circle"></i> Add Category
             </button>
         </div>

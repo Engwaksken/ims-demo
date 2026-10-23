@@ -67,383 +67,338 @@ if ($employee['date_of_birth']) {
 ?>
 
 <style>
-.profile-card {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    overflow: hidden;
-    margin-bottom: 20px;
-}
-
-.profile-header {
-    background: linear-gradient(135deg, #2c3e50, #FF5722);
-    color: white;
-    padding: 40px 30px;
-    text-align: center;
-}
-
-.profile-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    background: white;
-    color: var(--primary-color);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 48px;
-    font-weight: bold;
-    margin-bottom: 15px;
-    border: 5px solid rgba(255,255,255,0.3);
-}
-
-.profile-section {
-    padding: 25px 30px;
-    border-bottom: 1px solid #ecf0f1;
-}
-
-.profile-section:last-child {
-    border-bottom: none;
-}
-
-.profile-section h4 {
-    color: var(--primary-color);
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #ecf0f1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.info-grid {
+/* Employee profile view (pv-) */
+.pv-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    gap: 16px;
 }
 
-.info-item {
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 5px;
-    border-left: 3px solid var(--primary-color);
+.pv-grid + .pv-item,
+.pv-grid + .pv-full { margin-top: 16px; }
+
+.pv-item {
+    padding: 14px 16px;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--brand-500);
+    border-radius: var(--radius-sm);
 }
 
-.info-label {
-    font-size: 12px;
-    color: #7f8c8d;
+.pv-label {
+    font-size: 11px;
+    color: var(--ink-300);
     text-transform: uppercase;
-    font-weight: 600;
+    letter-spacing: .06em;
+    font-weight: 700;
     margin-bottom: 5px;
 }
 
-.info-value {
+.pv-value {
     font-size: 15px;
-    color: #2c3e50;
+    color: var(--ink-700);
     font-weight: 500;
+    overflow-wrap: anywhere;
 }
 
-.document-list {
+.pv-ok { color: var(--green-fg); }
+.pv-bad { color: var(--red-fg); }
+
+.pv-docs {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
 }
 
-.document-card {
+.pv-doc {
     display: flex;
     align-items: center;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
-    transition: all 0.3s ease;
+    gap: 14px;
+    padding: 14px;
+    background: var(--surface-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color .2s, box-shadow .2s, transform .2s;
 }
 
-.document-card:hover {
-    background: #e8f4f8;
-    border-color: var(--primary-color);
+.pv-doc:hover {
+    border-color: var(--brand-200);
+    box-shadow: var(--shadow-md);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.document-icon {
-    width: 50px;
-    height: 50px;
-    background: var(--primary-color);
-    color: white;
-    border-radius: 8px;
+.pv-doc-icon {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    background: var(--brand-50);
+    color: var(--brand-600);
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    margin-right: 15px;
+    font-size: 20px;
 }
 
-.document-info {
-    flex: 1;
-}
+.pv-doc-info { flex: 1; min-width: 0; }
+.pv-doc-name { font-weight: 600; color: var(--ink-700); margin-bottom: 3px; }
+.pv-doc-size { font-size: 12px; color: var(--ink-300); }
+.pv-doc-link { color: var(--brand-600); }
 
-.document-name {
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 3px;
-}
-
-.document-size {
-    font-size: 12px;
-    color: #7f8c8d;
-}
-
-.signature-box {
-    background: #f8f9fa;
+.pv-signature {
+    margin-top: 16px;
+    background: var(--surface-hover);
     padding: 20px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     text-align: center;
-    border: 2px dashed #bdc3c7;
+    border: 2px dashed var(--ink-100);
 }
 
-.signature-img {
+.pv-signature .pv-label { margin-bottom: 14px; }
+
+.pv-signature-img {
     max-width: 300px;
     max-height: 100px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     padding: 10px;
-    background: white;
-    border-radius: 5px;
+    background: var(--surface-card);
+    border-radius: var(--radius-sm);
 }
 
-.status-badge-xl {
-    font-size: 16px;
-    padding: 10px 20px;
-    border-radius: 25px;
-    font-weight: 600;
-}
+.pv-signature-date { margin-top: 14px; }
 
-.quick-actions {
+.pv-icon-ok { color: var(--green-fg); }
+.pv-icon-bad { color: var(--red-fg); }
+
+.pv-meta {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
     flex-wrap: wrap;
+    gap: 15px;
+    font-size: 13px;
+    color: var(--ink-300);
 }
 
 @media print {
     .no-print {
         display: none !important;
     }
-    
-    .profile-card {
+
+    .page-stack .card {
         box-shadow: none;
         page-break-inside: avoid;
     }
 }
 </style>
 
-<!-- Action Bar -->
-<div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;" class="no-print">
+<div class="page-stack">
+<div class="page-hero">
     <div>
+        <h1><i class="fas fa-id-badge" aria-hidden="true"></i> <?php echo htmlspecialchars($employee['full_name']); ?></h1>
+        <p>
+            <?php echo htmlspecialchars($employee['job_title']); ?> &middot;
+            <?php echo htmlspecialchars($employee['department_name']); ?> &middot;
+            <?php echo htmlspecialchars($employee['contract_type']); ?>
+            <span class="badge badge-<?php
+                echo $employee['status'] == 'Approved' ? 'success' :
+                    ($employee['status'] == 'Submitted' ? 'info' : 'warning');
+            ?>">
+                <?php echo $employee['status']; ?>
+            </span>
+        </p>
+    </div>
+    <div class="hero-actions no-print">
         <?php if ($employee['status'] == 'Draft' || $employee['status'] == 'Rejected'): ?>
-            <a href="my-profile" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Edit Profile
+            <a href="my-profile" class="btn">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit Profile
             </a>
         <?php endif; ?>
-    </div>
-    <div class="quick-actions">
-        <button onclick="window.print()" class="btn btn-info">
-            <i class="fas fa-print"></i> Print
+        <button type="button" onclick="window.print()" class="btn">
+            <i class="fas fa-print" aria-hidden="true"></i> Print
         </button>
-        <button onclick="downloadPDF()" class="btn btn-primary">
-            <i class="fas fa-download"></i> Download PDF
+        <button type="button" onclick="shareProfile()" class="btn">
+            <i class="fas fa-share" aria-hidden="true"></i> Share
         </button>
-        <button onclick="shareProfile()" class="btn btn-secondary">
-            <i class="fas fa-share"></i> Share
+        <button type="button" onclick="downloadPDF()" class="btn btn-primary">
+            <i class="fas fa-download" aria-hidden="true"></i> Download PDF
         </button>
     </div>
 </div>
 
-<!-- Profile Card -->
-<div class="profile-card">
-    <!-- Profile Header -->
-    <div class="profile-header">
-        <!--<div class="profile-avatar">
-            <?php echo strtoupper(substr($employee['full_name'], 0, 1)); ?>
-        </div> -->
-        <h2 style="margin: 0 0 5px 0;"><?php echo htmlspecialchars($employee['full_name']); ?></h2>
-        <p style="margin: 0; font-size: 18px; opacity: 0.9;"><?php echo htmlspecialchars($employee['job_title']); ?></p>
-        <p style="margin: 5px 0 0 0; opacity: 0.8;">
-            <?php echo htmlspecialchars($employee['department_name']); ?> -  
-            <?php echo htmlspecialchars($employee['contract_type']); ?>
-        </p>
-        <div style="margin-top: 15px;">
-            <span class="badge status-badge-xl badge-<?php 
-                echo $employee['status'] == 'Approved' ? 'success' : 
-                    ($employee['status'] == 'Submitted' ? 'info' : 'warning'); 
-            ?>">
-                <?php echo $employee['status']; ?>
-            </span>
+<!-- Quick Info -->
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-primary"><i class="fas fa-calendar-check" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Start Date</span>
+            <span class="stat-value"><?php echo date('d M Y', strtotime($employee['start_date'])); ?></span>
         </div>
     </div>
-    
-    <!-- Quick Info -->
-    <div class="profile-section" style="background: #f8f9fa;">
-        <div class="info-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-            <div style="text-align: center;">
-                <i class="fas fa-calendar-check" style="font-size: 24px; color: var(--primary-color); margin-bottom: 5px;"></i>
-                <div class="info-label">Start Date</div>
-                <div class="info-value"><?php echo date('d M Y', strtotime($employee['start_date'])); ?></div>
-            </div>
-            <div style="text-align: center;">
-                <i class="fas fa-briefcase" style="font-size: 24px; color: var(--primary-color); margin-bottom: 5px;"></i>
-                <div class="info-label">Tenure</div>
-                <div class="info-value"><?php echo $tenure_text; ?></div>
-            </div>
-            <div style="text-align: center;">
-                <i class="fas fa-envelope" style="font-size: 24px; color: var(--primary-color); margin-bottom: 5px;"></i>
-                <div class="info-label">Company Email</div>
-                <div class="info-value" style="font-size: 13px;"><?php echo htmlspecialchars($employee['company_email']); ?></div>
-            </div>
-            <div style="text-align: center;">
-                <i class="fas fa-phone" style="font-size: 24px; color: var(--primary-color); margin-bottom: 5px;"></i>
-                <div class="info-label">Phone</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['phone']); ?></div>
-            </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-briefcase" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Tenure</span>
+            <span class="stat-value"><?php echo $tenure_text; ?></span>
         </div>
     </div>
-    
-    <!-- Personal Information -->
-    <div class="profile-section">
-        <h4><i class="fas fa-user"></i> Personal Information</h4>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Contract Type</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['contract_type']); ?></div>
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fas fa-envelope" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Company Email</span>
+            <span class="stat-sub"><?php echo htmlspecialchars($employee['company_email']); ?></span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-purple"><i class="fas fa-phone" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Phone</span>
+            <span class="stat-sub"><?php echo htmlspecialchars($employee['phone']); ?></span>
+        </div>
+    </div>
+</div>
+
+<!-- Personal Information -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-user" aria-hidden="true"></i> Personal Information</h3></div>
+    <div class="card-body">
+        <div class="pv-grid">
+            <div class="pv-item">
+                <div class="pv-label">Contract Type</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['contract_type']); ?></div>
             </div>
-            <div class="info-item">
-                <div class="info-label">Gender</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['gender']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Gender</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['gender']); ?></div>
             </div>
             <?php if ($employee['date_of_birth']): ?>
-            <div class="info-item">
-                <div class="info-label">Date of Birth</div>
-                <div class="info-value"><?php echo date('d M Y', strtotime($employee['date_of_birth'])); ?> (<?php echo $age; ?>)</div>
+            <div class="pv-item">
+                <div class="pv-label">Date of Birth</div>
+                <div class="pv-value"><?php echo date('d M Y', strtotime($employee['date_of_birth'])); ?> (<?php echo $age; ?>)</div>
             </div>
             <?php endif; ?>
             <?php if ($employee['nationality']): ?>
-            <div class="info-item">
-                <div class="info-label">Nationality</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['nationality']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Nationality</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['nationality']); ?></div>
             </div>
             <?php endif; ?>
-            <div class="info-item">
-                <div class="info-label">Department</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['department_name']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Department</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['department_name']); ?></div>
             </div>
             <?php if ($employee['location']): ?>
-            <div class="info-item">
-                <div class="info-label">Location</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['location']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Location</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['location']); ?></div>
             </div>
             <?php endif; ?>
         </div>
-        
+
         <?php if ($employee['contract_end_date']): ?>
-        <div style="margin-top: 20px;">
-            <div class="info-item">
-                <div class="info-label">Contract Period</div>
-                <div class="info-value">
-                    <?php echo date('d M Y', strtotime($employee['start_date'])); ?> to 
-                    <?php echo date('d M Y', strtotime($employee['contract_end_date'])); ?>
-                    <?php
-                    $end = new DateTime($employee['contract_end_date']);
-                    $remaining = $today->diff($end);
-                    if ($end > $today) {
-                        echo ' <span style="color: #27AE60;">(' . $remaining->days . ' days remaining)</span>';
-                    } else {
-                        echo ' <span style="color: #E74C3C;">(Contract ended)</span>';
-                    }
-                    ?>
-                </div>
+        <div class="pv-item">
+            <div class="pv-label">Contract Period</div>
+            <div class="pv-value">
+                <?php echo date('d M Y', strtotime($employee['start_date'])); ?> to
+                <?php echo date('d M Y', strtotime($employee['contract_end_date'])); ?>
+                <?php
+                $end = new DateTime($employee['contract_end_date']);
+                $remaining = $today->diff($end);
+                if ($end > $today) {
+                    echo ' <span class="pv-ok">(' . $remaining->days . ' days remaining)</span>';
+                } else {
+                    echo ' <span class="pv-bad">(Contract ended)</span>';
+                }
+                ?>
             </div>
         </div>
         <?php endif; ?>
     </div>
-    
-    <!-- Supervisor/Manager -->
-    <div class="profile-section">
-        <h4><i class="fas fa-user-tie"></i> Reporting To</h4>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Supervisor/Manager</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['supervisor_name']); ?></div>
+</div>
+
+<!-- Supervisor/Manager -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-user-tie" aria-hidden="true"></i> Reporting To</h3></div>
+    <div class="card-body">
+        <div class="pv-grid">
+            <div class="pv-item">
+                <div class="pv-label">Supervisor/Manager</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['supervisor_name']); ?></div>
             </div>
             <?php if ($employee['supervisor_email']): ?>
-            <div class="info-item">
-                <div class="info-label">Supervisor Email</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['supervisor_email']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Supervisor Email</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['supervisor_email']); ?></div>
             </div>
             <?php endif; ?>
             <?php if ($employee['supervisor_phone']): ?>
-            <div class="info-item">
-                <div class="info-label">Supervisor Phone</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['supervisor_phone']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Supervisor Phone</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['supervisor_phone']); ?></div>
             </div>
             <?php endif; ?>
         </div>
     </div>
-    
-    <!-- Contact Information -->
-    <div class="profile-section">
-        <h4><i class="fas fa-address-book"></i> Contact Information</h4>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Company Email</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['company_email']); ?></div>
+</div>
+
+<!-- Contact Information -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-address-book" aria-hidden="true"></i> Contact Information</h3></div>
+    <div class="card-body">
+        <div class="pv-grid">
+            <div class="pv-item">
+                <div class="pv-label">Company Email</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['company_email']); ?></div>
             </div>
             <?php if ($employee['personal_email']): ?>
-            <div class="info-item">
-                <div class="info-label">Personal Email</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['personal_email']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Personal Email</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['personal_email']); ?></div>
             </div>
             <?php endif; ?>
-            <div class="info-item">
-                <div class="info-label">Phone Number</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['phone']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Phone Number</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['phone']); ?></div>
             </div>
             <?php if ($employee['location']): ?>
-            <div class="info-item">
-                <div class="info-label">Location</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['location']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Location</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['location']); ?></div>
             </div>
             <?php endif; ?>
         </div>
-        
+
         <?php if ($employee['residence_address']): ?>
-        <div style="margin-top: 20px;">
-            <div class="info-item">
-                <div class="info-label">Residence Address</div>
-                <div class="info-value"><?php echo nl2br(htmlspecialchars($employee['residence_address'])); ?></div>
-            </div>
+        <div class="pv-item">
+            <div class="pv-label">Residence Address</div>
+            <div class="pv-value"><?php echo nl2br(htmlspecialchars($employee['residence_address'])); ?></div>
         </div>
         <?php endif; ?>
     </div>
-    
-    <!-- Emergency Contact -->
-    <div class="profile-section">
-        <h4><i class="fas fa-phone-alt"></i> Emergency Contact</h4>
-        <div class="info-grid">
+</div>
+
+<!-- Emergency Contact -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-phone-alt" aria-hidden="true"></i> Emergency Contact</h3></div>
+    <div class="card-body">
+        <div class="pv-grid">
             <?php if ($employee['next_of_kin_name']): ?>
-            <div class="info-item">
-                <div class="info-label">Next of Kin Name</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['next_of_kin_name']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Next of Kin Name</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['next_of_kin_name']); ?></div>
             </div>
             <?php endif; ?>
             <?php if ($employee['next_of_kin_relationship']): ?>
-            <div class="info-item">
-                <div class="info-label">Relationship</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['next_of_kin_relationship']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Relationship</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['next_of_kin_relationship']); ?></div>
             </div>
             <?php endif; ?>
-            <div class="info-item">
-                <div class="info-label">Dependants</div>
-                <div class="info-value">
-                    <?php 
+            <div class="pv-item">
+                <div class="pv-label">Dependants</div>
+                <div class="pv-value">
+                    <?php
                     if ($employee['has_dependants'] == 'Yes') {
                         echo $employee['number_of_dependants'] . ' dependant' . ($employee['number_of_dependants'] > 1 ? 's' : '');
                     } else {
@@ -454,45 +409,47 @@ if ($employee['date_of_birth']) {
             </div>
         </div>
     </div>
-    
-    <!-- Official Details -->
-    <div class="profile-section">
-        <h4><i class="fas fa-id-card"></i> Official Details</h4>
-        <div class="info-grid">
+</div>
+
+<!-- Official Details -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-id-card" aria-hidden="true"></i> Official Details</h3></div>
+    <div class="card-body">
+        <div class="pv-grid">
             <?php if ($employee['nin']): ?>
-            <div class="info-item">
-                <div class="info-label">National ID Number (NIN)</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['nin']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">National ID Number (NIN)</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['nin']); ?></div>
             </div>
             <?php endif; ?>
             <?php if ($employee['ura_tin_number']): ?>
-            <div class="info-item">
-                <div class="info-label">URA TIN Number</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['ura_tin_number']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">URA TIN Number</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['ura_tin_number']); ?></div>
             </div>
             <?php endif; ?>
             <?php if ($employee['nssf_number']): ?>
-            <div class="info-item">
-                <div class="info-label">NSSF Number</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['nssf_number']); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">NSSF Number</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['nssf_number']); ?></div>
             </div>
             <?php endif; ?>
         </div>
-        
+
         <?php if ($employee['bank_details']): ?>
-        <div style="margin-top: 20px;">
-            <div class="info-item">
-                <div class="info-label">Bank Details</div>
-                <div class="info-value"><?php echo nl2br(htmlspecialchars($employee['bank_details'])); ?></div>
-            </div>
+        <div class="pv-item">
+            <div class="pv-label">Bank Details</div>
+            <div class="pv-value"><?php echo nl2br(htmlspecialchars($employee['bank_details'])); ?></div>
         </div>
         <?php endif; ?>
     </div>
-    
-    <!-- Documents -->
-    <div class="profile-section">
-        <h4><i class="fas fa-folder-open"></i> Documents</h4>
-        <div class="document-list">
+</div>
+
+<!-- Documents -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-folder-open" aria-hidden="true"></i> Documents</h3></div>
+    <div class="card-body">
+        <div class="pv-docs">
             <?php
             $documents = [
                 ['path' => $employee['academic_documents_path'], 'name' => 'Academic Documents', 'icon' => 'graduation-cap'],
@@ -504,95 +461,101 @@ if ($employee['date_of_birth']) {
                 ['path' => $employee['residence_map_path'], 'name' => 'Residence Map', 'icon' => 'map-marked-alt'],
                 ['path' => $employee['signed_contract_path'], 'name' => 'Signed Contract', 'icon' => 'file-contract']
             ];
-            
+
             foreach ($documents as $doc):
                 if ($doc['path']):
                     $file_size = file_exists($doc['path']) ? filesize($doc['path']) : 0;
                     $file_size_mb = number_format($file_size / 1048576, 2);
             ?>
-                <a href="<?php echo htmlspecialchars(ims_upload_url($doc['path'])); ?>" target="_blank" class="document-card" style="text-decoration: none; color: inherit;">
-                    <div class="document-icon">
-                        <i class="fas fa-<?php echo $doc['icon']; ?>"></i>
+                <a href="<?php echo htmlspecialchars(ims_upload_url($doc['path'])); ?>" target="_blank" class="pv-doc">
+                    <div class="pv-doc-icon">
+                        <i class="fas fa-<?php echo $doc['icon']; ?>" aria-hidden="true"></i>
                     </div>
-                    <div class="document-info">
-                        <div class="document-name"><?php echo $doc['name']; ?></div>
-                        <div class="document-size"><?php echo $file_size_mb; ?> MB</div>
+                    <div class="pv-doc-info">
+                        <div class="pv-doc-name"><?php echo $doc['name']; ?></div>
+                        <div class="pv-doc-size"><?php echo $file_size_mb; ?> MB</div>
                     </div>
-                    <i class="fas fa-external-link-alt" style="color: var(--primary-color);"></i>
+                    <i class="fas fa-external-link-alt pv-doc-link" aria-hidden="true"></i>
                 </a>
-            <?php 
+            <?php
                 endif;
-            endforeach; 
+            endforeach;
             ?>
         </div>
     </div>
-    
-    <!-- Certification -->
-    <div class="profile-section">
-        <h4><i class="fas fa-signature"></i> Certification</h4>
-        
+</div>
+
+<!-- Certification -->
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-signature" aria-hidden="true"></i> Certification</h3></div>
+    <div class="card-body">
         <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i>
+            <i class="fas fa-info-circle" aria-hidden="true"></i>
             The employee has certified that all information provided is true and accurate to the best of their knowledge.
         </div>
-        
+
         <?php if ($employee['signature_path']): ?>
-        <div class="signature-box">
-            <div class="info-label" style="margin-bottom: 15px;">Employee Signature</div>
-            <img src="<?php echo htmlspecialchars(ims_upload_url($employee['signature_path'])); ?>" alt="Signature" class="signature-img">
-            <div style="margin-top: 15px;">
+        <div class="pv-signature">
+            <div class="pv-label">Employee Signature</div>
+            <img src="<?php echo htmlspecialchars(ims_upload_url($employee['signature_path'])); ?>" alt="Signature" class="pv-signature-img">
+            <div class="pv-signature-date">
                 <small><strong>Date:</strong> <?php echo date('d M Y', strtotime($employee['form_completion_date'])); ?></small>
             </div>
         </div>
         <?php endif; ?>
     </div>
-    
-    <!-- Approval Information -->
-    <?php if ($employee['status'] == 'Approved'): ?>
-    <div class="profile-section" style="background: #e8f5e9;">
-        <h4 style="color: #27AE60;"><i class="fas fa-check-circle"></i> Approval Information</h4>
-        <div class="info-grid">
-            <div class="info-item" style="background: white;">
-                <div class="info-label">Approved By</div>
-                <div class="info-value"><?php echo htmlspecialchars($employee['approved_by_name']); ?></div>
+</div>
+
+<!-- Approval Information -->
+<?php if ($employee['status'] == 'Approved'): ?>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-check-circle pv-icon-ok" aria-hidden="true"></i> Approval Information</h3></div>
+    <div class="card-body">
+        <div class="pv-grid">
+            <div class="pv-item">
+                <div class="pv-label">Approved By</div>
+                <div class="pv-value"><?php echo htmlspecialchars($employee['approved_by_name']); ?></div>
             </div>
-            <div class="info-item" style="background: white;">
-                <div class="info-label">Approval Date</div>
-                <div class="info-value"><?php echo date('d M Y, H:i', strtotime($employee['approved_at'])); ?></div>
+            <div class="pv-item">
+                <div class="pv-label">Approval Date</div>
+                <div class="pv-value"><?php echo date('d M Y, H:i', strtotime($employee['approved_at'])); ?></div>
             </div>
-            <div class="info-item" style="background: white;">
-                <div class="info-label">Profile Status</div>
-                <div class="info-value"><span class="badge badge-success">Approved</span></div>
+            <div class="pv-item">
+                <div class="pv-label">Profile Status</div>
+                <div class="pv-value"><span class="badge badge-success">Approved</span></div>
             </div>
         </div>
     </div>
-    <?php elseif ($employee['status'] == 'Rejected'): ?>
-    <div class="profile-section" style="background: #ffebee;">
-        <h4 style="color: #E74C3C;"><i class="fas fa-times-circle"></i> Rejection Information</h4>
+</div>
+<?php elseif ($employee['status'] == 'Rejected'): ?>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-times-circle pv-icon-bad" aria-hidden="true"></i> Rejection Information</h3></div>
+    <div class="card-body">
         <div class="alert alert-danger">
             <strong>Rejection Reason:</strong><br>
             <?php echo nl2br(htmlspecialchars($employee['rejection_reason'] ?? 'Not specified')); ?>
         </div>
     </div>
-    <?php endif; ?>
-    
-    <!-- Metadata -->
-    <div class="profile-section" style="background: #f8f9fa; font-size: 13px; color: #7f8c8d;">
-        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-            <div>
-                <strong>Profile Created:</strong> <?php echo date('d M Y, H:i', strtotime($employee['created_at'])); ?>
-            </div>
-            <div>
-                <strong>Last Updated:</strong> <?php echo date('d M Y, H:i', strtotime($employee['updated_at'])); ?>
-            </div>
-            <?php if ($employee['submitted_at']): ?>
-            <div>
-                <strong>Submitted:</strong> <?php echo date('d M Y, H:i', strtotime($employee['submitted_at'])); ?>
-            </div>
-            <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<!-- Metadata -->
+<div class="card">
+    <div class="card-body pv-meta">
+        <div>
+            <strong>Profile Created:</strong> <?php echo date('d M Y, H:i', strtotime($employee['created_at'])); ?>
         </div>
+        <div>
+            <strong>Last Updated:</strong> <?php echo date('d M Y, H:i', strtotime($employee['updated_at'])); ?>
+        </div>
+        <?php if ($employee['submitted_at']): ?>
+        <div>
+            <strong>Submitted:</strong> <?php echo date('d M Y, H:i', strtotime($employee['submitted_at'])); ?>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
+</div><!-- /.page-stack -->
 
 <script>
 function downloadPDF() {

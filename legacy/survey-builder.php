@@ -56,33 +56,33 @@ $type_labels = [
 <link rel="stylesheet" href="css/assets.css">
 <link rel="stylesheet" href="css/survey.css">
 
-<div class="surveys-wrap">
+<div class="surveys-wrap page-stack">
 
     <!-- -- Page Hero ---------------------------------------------------- -->
-    <div class="builder-hero">
-        <div class="builder-hero-text">
-            <h1><i class="fas fa-tools" style="margin-right:10px;opacity:.9;"></i>Survey Builder</h1>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-tools" aria-hidden="true"></i> Survey Builder</h1>
             <p>Add, arrange and manage questions for this survey.</p>
         </div>
         <div class="hero-actions">
-            <a href="surveys" class="btn btn-primary">
-                <i class="fas fa-arrow-left"></i> Back to Surveys
+            <a href="surveys" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Surveys
             </a>
         </div>
     </div>
 
     <!-- -- Flash Messages ----------------------------------------------- -->
     <?php if ($success): ?>
-        <div class="alert alert-success alert-dismissible" role="alert">
+        <div class="alert alert-success" role="alert">
             <span><i class="fas fa-check-circle" style="margin-right:8px;"></i><?= h($success) ?></span>
-            <button class="alert-dismiss-btn" onclick="this.closest('.alert').remove()" aria-label="Dismiss">&times;</button>
+            <button class="alert-close" onclick="this.closest('.alert').remove()" aria-label="Dismiss">&times;</button>
         </div>
     <?php endif; ?>
 
     <?php if ($error): ?>
-        <div class="alert alert-error alert-dismissible" role="alert">
+        <div class="alert alert-danger" role="alert">
             <span><i class="fas fa-exclamation-circle" style="margin-right:8px;"></i><?= h($error) ?></span>
-            <button class="alert-dismiss-btn" onclick="this.closest('.alert').remove()" aria-label="Dismiss">&times;</button>
+            <button class="alert-close" onclick="this.closest('.alert').remove()" aria-label="Dismiss">&times;</button>
         </div>
     <?php endif; ?>
 
@@ -176,11 +176,9 @@ $type_labels = [
 
             <?php if (empty($questions)): ?>
                 <div class="panel-body">
-                    <div class="empty-state" style="padding:40px 20px;">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-question"></i>
-                        </div>
-                        <h3>No questions yet</h3>
+                    <div class="empty-state">
+                        <i class="fas fa-question-circle" aria-hidden="true"></i>
+                        <h4>No questions yet</h4>
                         <p>Use the form on the left to add your first question.</p>
                     </div>
                 </div>
@@ -313,7 +311,7 @@ $type_labels = [
         toast.lastChild  = undefined;
         toast.innerHTML  = ok
             ? '<i class="fas fa-check-circle"></i> Order saved'
-            : '<i class="fas fa-exclamation-circle" style="color:#fca5a5"></i> Failed to save order';
+            : '<i class="fas fa-exclamation-circle" style="color:var(--red-border)"></i> Failed to save order';
         toast.classList.add('show');
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);

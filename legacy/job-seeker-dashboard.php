@@ -17,5 +17,13 @@ require_once 'includes/header.php';
 
 $user_id = (int)$_SESSION['user_id'];
 ?>
+<div class="page-stack">
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-briefcase" aria-hidden="true"></i> Job Seeker Dashboard</h1>
+            <p>Your overview as a job seeker.</p>
+        </div>
+    </div>
+</div>
 
 <?php require_once 'includes/footer.php'; ?>

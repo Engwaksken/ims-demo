@@ -137,48 +137,54 @@ if ($project_info) {
 }
 ?>
 
-<!-- Project/Program Context Banner -->
-<?php if ($project_info || $program_info): ?>
-<div class="card" style="background: linear-gradient(135deg, <?php echo $program_info ? '#E67E22' : 'var(--primary-color)'; ?>, <?php echo $program_info ? '#D35400' : '#3498DB'; ?>); color: white; margin-bottom: 20px;">
-    <div class="card-body" style="padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                    <?php if ($program_info): ?>
-                        <span class="badge" style="background: white; color: #E67E22; font-size: 14px; padding: 8px 12px;">
-                            <i class="fas fa-sitemap"></i> PROGRAM
-                        </span>
-                    <?php else: ?>
-                        <span class="badge" style="background: white; color: var(--primary-color); font-size: 14px; padding: 8px 12px;">
-                            <i class="fas fa-project-diagram"></i> PROJECT
-                        </span>
-                    <?php endif; ?>
-                </div>
-                <h2 style="margin: 0; color: white;">
-                    <?php echo htmlspecialchars($project_info ? $project_info['project_code'] : $program_info['program_code']); ?>
-                </h2>
-                <p style="margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">
-                    <?php echo htmlspecialchars($project_info ? $project_info['project_name'] : $program_info['program_name']); ?>
-                </p>
-            </div>
-            <div>
-                <a href="participants" class="btn" style="background: white; color: <?php echo $program_info ? '#E67E22' : 'var(--primary-color)'; ?>;">
-                    <i class="fas fa-users"></i> View All Participants
-                </a>
-                <?php if ($project_info): ?>
-                    <a href="project-details?id=<?php echo $filter_project_id; ?>" class="btn" style="background: rgba(255,255,255,0.2); color: white;">
-                        <i class="fas fa-arrow-left"></i> Back to Project
-                    </a>
-                <?php else: ?>
-                    <a href="program-details?id=<?php echo $filter_program_id; ?>" class="btn" style="background: rgba(255,255,255,0.2); color: white;">
-                        <i class="fas fa-arrow-left"></i> Back to Program
-                    </a>
-                <?php endif; ?>
-            </div>
-        </div>
+<!-- Page header -->
+<div class="page-stack">
+
+<div class="page-hero">
+    <div>
+        <?php if ($project_info || $program_info): ?>
+            <h1>
+                <i class="fas <?php echo $program_info ? 'fa-sitemap' : 'fa-project-diagram'; ?>" aria-hidden="true"></i>
+                <?php echo htmlspecialchars($project_info ? $project_info['project_code'] : $program_info['program_code']); ?> Participants
+            </h1>
+            <p>
+                <?php echo $program_info ? 'Program' : 'Project'; ?>:
+                <?php echo htmlspecialchars($project_info ? $project_info['project_name'] : $program_info['program_name']); ?>
+            </p>
+        <?php else: ?>
+            <h1><i class="fas fa-users" aria-hidden="true"></i> Participants</h1>
+            <p>Register, import and manage participants across programs and projects.</p>
+        <?php endif; ?>
+    </div>
+    <div class="hero-actions">
+        <?php if ($project_info): ?>
+            <a href="project-details?id=<?php echo $filter_project_id; ?>" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Project
+            </a>
+        <?php elseif ($program_info): ?>
+            <a href="program-details?id=<?php echo $filter_program_id; ?>" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Program
+            </a>
+        <?php endif; ?>
+        <?php if ($project_info || $program_info): ?>
+            <a href="participants" class="btn">
+                <i class="fas fa-users" aria-hidden="true"></i> View All Participants
+            </a>
+        <?php endif; ?>
+        <button type="button" onclick="window.location.href='download-participants-template<?php echo $context_query ? "?$context_query" : ""; ?>'" class="btn">
+            <i class="fas fa-download" aria-hidden="true"></i> Download Template
+        </button>
+        <button type="button" onclick="openModal('uploadCsvModal')" class="btn">
+            <i class="fas fa-upload" aria-hidden="true"></i> Upload CSV
+        </button>
+        <button type="button" onclick="exportToCSV('beneficiariesTable', 'participants')" class="btn">
+            <i class="fas fa-file-export" aria-hidden="true"></i> Export
+        </button>
+        <button type="button" onclick="openModal('addBeneficiaryModal')" class="btn btn-primary">
+            <i class="fas fa-user-plus" aria-hidden="true"></i> Add Participant
+        </button>
     </div>
 </div>
-<?php endif; ?>
 
 <!-- Statistics -->
 <?php
@@ -221,23 +227,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
 
 <div class="card">
     <div class="card-header">
-        <h3><i class="fas fa-users"></i> Participants Management</h3>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="openModal('addBeneficiaryModal')" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Add Participant
-            </button>
-            <div class="btn-group">
-                <button onclick="window.location.href='download-participants-template<?php echo $context_query ? "?$context_query" : ""; ?>'" class="btn btn-info">
-                    <i class="fas fa-download"></i> Download Template
-                </button>
-                <button onclick="openModal('uploadCsvModal')" class="btn btn-info">
-                    <i class="fas fa-upload"></i> Upload CSV
-                </button>
-            </div>
-            <button onclick="exportToCSV('beneficiariesTable', 'participants')" class="btn btn-success">
-                <i class="fas fa-download"></i> Export
-            </button>
-        </div>
+        <h3><i class="fas fa-users" aria-hidden="true"></i> Participants Management</h3>
     </div>
     
     <div class="card-body">
@@ -273,8 +263,8 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 </select>
             </div>
             
-            <div class="filters-actions">
-                <button type="submit" class="btn btn-info">
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
                     <i class="fas fa-filter"></i> Filter
                 </button>
                 <a href="<?php echo $context_query ? "participants?$context_query" : "participants"; ?>" class="btn btn-secondary">
@@ -285,7 +275,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
         
         <!-- Beneficiaries Table -->
         <div class="table-responsive">
-            <table class="data-table" id="beneficiariesTable">
+            <table class="table data-table" id="beneficiariesTable">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -303,32 +293,32 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 <tbody>
                     <?php if (empty($beneficiaries)): ?>
                         <tr>
-                            <td colspan="10" class="text-center" style="padding: 40px;">
+                            <td colspan="10">
+                                <div class="empty-state">
                                 <?php if ($project_info || $program_info): ?>
-                                    <i class="fas fa-users" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3; color: #7f8c8d;"></i>
-                                    <h4>No participants found for this <?php echo $project_info ? 'project' : 'program'; ?>.</h4>
-                                    <p style="color: #7f8c8d;">Start adding participants to this <?php echo $project_info ? 'project' : 'program'; ?></p>
-                                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                                        <button onclick="openModal('addBeneficiaryModal')" class="btn btn-primary">
+                                    <i class="fas fa-users" aria-hidden="true"></i>
+                                    <p>No participants found for this <?php echo $project_info ? 'project' : 'program'; ?>. Start adding participants to this <?php echo $project_info ? 'project' : 'program'; ?>.</p>
+                                    <div class="actions">
+                                        <button type="button" onclick="openModal('addBeneficiaryModal')" class="btn btn-primary">
                                             <i class="fas fa-user-plus"></i> Add First Participant
                                         </button>
-                                        <button onclick="window.location.href='download-participants-template?<?php echo $context_query; ?>'" class="btn btn-info">
+                                        <button type="button" onclick="window.location.href='download-participants-template?<?php echo $context_query; ?>'" class="btn btn-secondary">
                                             <i class="fas fa-download"></i> Download CSV Template
                                         </button>
                                     </div>
                                 <?php else: ?>
-                                    <i class="fas fa-users" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3; color: #7f8c8d;"></i>
-                                    <h4>No Participants found</h4>
-                                    <p style="color: #7f8c8d;">Start by adding participants individually or import from CSV</p>
-                                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-                                        <button onclick="openModal('addBeneficiaryModal')" class="btn btn-primary">
+                                    <i class="fas fa-users" aria-hidden="true"></i>
+                                    <p>No participants found. Start by adding participants individually or import from CSV.</p>
+                                    <div class="actions">
+                                        <button type="button" onclick="openModal('addBeneficiaryModal')" class="btn btn-primary">
                                             <i class="fas fa-user-plus"></i> Add Participant
                                         </button>
-                                        <button onclick="window.location.href='download-participants-template'" class="btn btn-info">
+                                        <button type="button" onclick="window.location.href='download-participants-template'" class="btn btn-secondary">
                                             <i class="fas fa-download"></i> Download CSV Template
                                         </button>
                                     </div>
                                 <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                     <?php else: ?>
@@ -340,9 +330,9 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                                 </td>
                                 <td>
                                     <?php if ($beneficiary['gender'] == 'Male'): ?>
-                                        <i class="fas fa-male" style="color: #3498DB;"></i> Male
+                                        <i class="fas fa-male pt-c-male" aria-hidden="true"></i> Male
                                     <?php elseif ($beneficiary['gender'] == 'Female'): ?>
-                                        <i class="fas fa-female" style="color: #E91E63;"></i> Female
+                                        <i class="fas fa-female pt-c-female" aria-hidden="true"></i> Female
                                     <?php else: ?>
                                         <?php echo $beneficiary['gender']; ?>
                                     <?php endif; ?>
@@ -371,7 +361,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge" style="background: #E67E22; color: white;">
+                                    <span class="badge badge-warning">
                                         <?php echo $beneficiary['program_count']; ?>
                                     </span>
                                 </td>
@@ -407,9 +397,11 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
     </div>
 </div>
 
+</div><!-- /.page-stack -->
+
 <!-- Upload CSV Modal -->
 <div id="uploadCsvModal" class="modal">
-    <div class="modal-content" style="max-width: 700px;">
+    <div class="modal-content pt-modal-md">
         <div class="modal-header">
             <h3><i class="fas fa-upload"></i> Upload Participants CSV</h3>
             <span class="close" onclick="closeModal('uploadCsvModal')">&times;</span>
@@ -430,7 +422,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
             <div class="alert alert-info">
                 <i class="fas fa-info-circle"></i>
                 <strong>Instructions:</strong>
-                <ol style="margin: 10px 0 0 0; padding-left: 20px;">
+                <ol class="pt-list">
                     <li>Download the CSV template using the "Download Template" button</li>
                     <li>Fill in the participants information in the CSV file</li>
                     <li>Delete the sample rows and instructions</li>
@@ -441,7 +433,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
             <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle"></i>
                 <strong>CSV Format Requirements:</strong>
-                <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                <ul class="pt-list">
                     <li><strong>Required fields:</strong> First Name, Last Name, Gender</li>
                     <li><strong>Valid Gender Values:</strong> Male, Female, Other</li>
                     <li><strong>Date Format:</strong> YYYY-MM-DD (e.g., 1990-05-15)</li>
@@ -460,12 +452,12 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 <div class="form-group">
                     <label for="csv_file" class="required">Select CSV File</label>
                     <input type="file" id="csv_file" name="csv_file" class="form-control" accept=".csv" required>
-                    <small style="color: #7f8c8d;">Only CSV files are allowed</small>
+                    <small class="pt-hint">Only CSV files are allowed</small>
                 </div>
                 
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 14px;">CSV Template Columns:</h4>
-                    <div style="font-family: monospace; font-size: 12px; color: #555; line-height: 1.8;">
+                <div class="pt-columns">
+                    <h4>CSV Template Columns:</h4>
+                    <div class="pt-columns-list">
                         1. First Name* (required)<br>
                         2. Last Name* (required)<br>
                         3. Gender* (Male/Female/Other - required)<br>
@@ -484,7 +476,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('uploadCsvModal')" class="btn btn-secondary">Cancel</button>
-                    <button type="submit" name="upload_csv" class="btn btn-success">
+                    <button type="submit" name="upload_csv" class="btn btn-primary">
                         <i class="fas fa-upload"></i> Upload CSV
                     </button>
                 </div>
@@ -495,7 +487,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
 
 <!-- Add Beneficiary Modal -->
 <div id="addBeneficiaryModal" class="modal">
-    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-content pt-modal-lg">
         <div class="modal-header">
             <h3><i class="fas fa-user-plus"></i> Add New Participant</h3>
             <span class="close" onclick="closeModal('addBeneficiaryModal')">&times;</span>
@@ -509,8 +501,8 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 <?php endif; ?>
                 
                 <!-- Link to Project or Program Section -->
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <h4 style="margin: 0 0 15px 0; font-size: 16px; color: #2c3e50;">
+                <div class="pt-box">
+                    <h4 class="pt-box-title">
                         <i class="fas fa-link"></i> Link to Project or Program (Optional)
                     </h4>
                     
@@ -546,14 +538,14 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                         </div>
                     </div>
                     
-                    <div class="alert alert-info" style="margin-top: 10px; margin-bottom: 0;">
+                    <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i>
                         <small>You can select either a project OR a program, not both. Leave both empty if you don't want to link this participant yet.</small>
                     </div>
                 </div>
                 
                 <!-- Personal Information -->
-                <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                <h4 class="pt-section-title">
                     <i class="fas fa-user"></i> Personal Information
                 </h4>
                 
@@ -587,7 +579,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 </div>
                 
                 <!-- Contact Information -->
-                <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                <h4 class="pt-section-title">
                     <i class="fas fa-address-book"></i> Contact Information
                 </h4>
                 
@@ -604,7 +596,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 </div>
                 
                 <!-- Location Information -->
-                <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                <h4 class="pt-section-title">
                     <i class="fas fa-map-marker-alt"></i> Location Information
                 </h4>
                 
@@ -631,7 +623,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 </div>
                 
                 <!-- Education & Occupation -->
-                <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                <h4 class="pt-section-title">
                     <i class="fas fa-graduation-cap"></i> Education & Occupation
                 </h4>
                 
@@ -655,12 +647,12 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                 </div>
                 
                 <!-- Disability Information -->
-                <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                <h4 class="pt-section-title">
                     <i class="fas fa-wheelchair"></i> Disability Information
                 </h4>
                 
                 <div class="form-group">
-                    <label style="display: flex; align-items: center; gap: 10px;">
+                    <label class="pt-check">
                         <input type="checkbox" id="is_pwd" name="is_pwd" onchange="toggleDisabilityType()">
                         <span>Person with Disability (PWD)</span>
                     </label>
@@ -675,7 +667,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                     <button type="button" onclick="closeModal('addBeneficiaryModal')" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Cancel
                     </button>
-                    <button type="submit" name="add_participant" class="btn btn-success">
+                    <button type="submit" name="add_participant" class="btn btn-primary">
                         <i class="fas fa-save"></i> Add Participant
                     </button>
                 </div>
@@ -686,7 +678,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
 
 <!-- Edit Beneficiary Modal -->
 <div id="editBeneficiaryModal" class="modal">
-    <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-content pt-modal-lg">
         <div class="modal-header">
             <h3><i class="fas fa-edit"></i> Edit Participant</h3>
             <span class="close" onclick="closeModal('editBeneficiaryModal')">&times;</span>
@@ -702,27 +694,27 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                     <?php endif; ?>
                     
                     <!-- Current Linkages -->
-                    <div style="background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                        <h4 style="margin: 0 0 10px 0; font-size: 16px; color: #2c3e50;">
+                    <div class="pt-box">
+                        <h4 class="pt-box-title tight">
                             <i class="fas fa-link"></i> Current Linkages
                         </h4>
-                        <div style="display: flex; gap: 20px;">
+                        <div class="pt-linkages">
                             <div>
                                 <strong>Projects:</strong> 
                                 <span class="badge badge-info"><?php echo count($edit_linked_projects); ?></span>
                             </div>
                             <div>
                                 <strong>Programs:</strong>
-                                <span class="badge" style="background: #E67E22; color: white;"><?php echo count($edit_linked_programs); ?></span>
+                                <span class="badge badge-warning"><?php echo count($edit_linked_programs); ?></span>
                             </div>
                         </div>
-                        <small style="color: #7f8c8d; display: block; margin-top: 10px;">
+                        <small class="pt-hint block">
                             <i class="fas fa-info-circle"></i> To modify linkages, please use the participant details page after saving.
                         </small>
                     </div>
                     
                     <!-- Personal Information -->
-                    <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                    <h4 class="pt-section-title">
                         <i class="fas fa-user"></i> Personal Information
                     </h4>
                     
@@ -758,7 +750,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                     </div>
                     
                     <!-- Contact Information -->
-                    <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                    <h4 class="pt-section-title">
                         <i class="fas fa-address-book"></i> Contact Information
                     </h4>
                     
@@ -777,7 +769,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                     </div>
                     
                     <!-- Location Information -->
-                    <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                    <h4 class="pt-section-title">
                         <i class="fas fa-map-marker-alt"></i> Location Information
                     </h4>
                     
@@ -808,7 +800,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                     </div>
                     
                     <!-- Education & Occupation -->
-                    <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                    <h4 class="pt-section-title">
                         <i class="fas fa-graduation-cap"></i> Education & Occupation
                     </h4>
                     
@@ -833,12 +825,12 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                     </div>
                     
                     <!-- Disability Information -->
-                    <h4 style="margin: 20px 0 15px 0; font-size: 16px; color: #2c3e50; border-bottom: 2px solid #3498DB; padding-bottom: 8px;">
+                    <h4 class="pt-section-title">
                         <i class="fas fa-wheelchair"></i> Disability Information
                     </h4>
                     
                     <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 10px;">
+                        <label class="pt-check">
                             <input type="checkbox" id="edit_is_pwd" name="is_pwd" 
                                    <?php echo $edit_beneficiary['is_pwd'] ? 'checked' : ''; ?> 
                                    onchange="toggleEditDisabilityType()">
@@ -856,7 +848,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                         <button type="button" onclick="closeModal('editBeneficiaryModal')" class="btn btn-secondary">
                             <i class="fas fa-times"></i> Cancel
                         </button>
-                        <button type="submit" name="edit_beneficiary" class="btn btn-success">
+                        <button type="submit" name="edit_beneficiary" class="btn btn-primary">
                             <i class="fas fa-save"></i> Update Participant
                         </button>
                     </div>
@@ -868,13 +860,13 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
 
 <!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content pt-modal-sm">
         <div class="modal-header">
-            <h3 style="color: #E74C3C;"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+            <h3 class="pt-danger-title"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Confirm Deletion</h3>
             <span class="close" onclick="closeModal('deleteModal')">&times;</span>
         </div>
         <div class="modal-body">
-            <p style="font-size: 16px; margin-bottom: 20px;">
+            <p class="pt-lead">
                 Are you sure you want to delete <strong id="deleteBeneficiaryName"></strong>?
             </p>
             <div class="alert alert-warning">
@@ -962,41 +954,37 @@ function openDeleteModal(beneficiaryId, beneficiaryName) {
 </script>
 
 <style>
-.btn-group {
-    display: flex;
-    gap: 0;
+/* Participants page: page-only helpers (pt- prefix). Header, cards, stat
+   cards, badges, buttons, tables, alerts and modals are global. */
+.pt-section-title {
+    margin: 20px 0 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--brand-500);
+    color: var(--ink-700);
+    font-size: var(--fs-md);
 }
-.btn-group .btn {
-    border-radius: 0;
-}
-.btn-group .btn:first-child {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-}
-.btn-group .btn:last-child {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-}
+.pt-section-title i,
+.pt-box-title i { margin-right: 8px; color: var(--brand-500); }
 
-/* Section headers styling */
-h4 i {
-    margin-right: 8px;
-    color: #3498DB;
-}
-
-/* Form sections */
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-@media (max-width: 768px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
+.pt-box { margin-bottom: 20px; padding: 15px; border-radius: var(--radius-sm); background: var(--ink-50); }
+.pt-box-title { margin: 0 0 15px; color: var(--ink-700); font-size: var(--fs-md); }
+.pt-box-title.tight { margin-bottom: 10px; }
+.pt-box .alert { margin: 10px 0 0; }
+.pt-linkages { display: flex; gap: 20px; flex-wrap: wrap; }
+.pt-hint { color: var(--ink-300); }
+.pt-hint.block { display: block; margin-top: 10px; }
+.pt-list { margin: 10px 0 0; padding-left: 20px; }
+.pt-columns { margin-top: 15px; padding: 15px; border-radius: var(--radius-sm); background: var(--ink-50); }
+.pt-columns h4 { margin: 0 0 10px; font-size: var(--fs-base); }
+.pt-columns-list { color: var(--ink-500); font-size: var(--fs-xs); line-height: 1.8; }
+.pt-check { display: flex; align-items: center; gap: 10px; }
+.pt-modal-md { max-width: 700px; }
+.pt-modal-lg { max-width: 900px; max-height: 90vh; overflow-y: auto; }
+.pt-modal-sm { max-width: 500px; }
+.pt-danger-title { color: var(--red-fg); }
+.pt-lead { margin-bottom: 20px; font-size: var(--fs-md); }
+.pt-c-male { color: var(--blue-fg); }
+.pt-c-female { color: var(--purple-fg); }
 </style>
 
 <?php include 'includes/footer.php'; ?>

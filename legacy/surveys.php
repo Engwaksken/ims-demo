@@ -33,19 +33,18 @@ if (!function_exists('survey_h')) {
 <link rel="stylesheet" href="css/assets.css">
 <link rel="stylesheet" href="css/survey.css">
 
-<div class="surveys-wrap">
+<div class="surveys-wrap page-stack">
 
     <!-- Page Hero -->
-    <div class="surveys-hero">
-        <div class="surveys-hero-text">
+    <div class="page-hero">
+        <div>
             <h1>
-                <i class="fas fa-poll"></i>
+                <i class="fas fa-poll" aria-hidden="true"></i>
                 Surveys
             </h1>
 
             <p>
-                Build, manage and analyse all your project and programme
-                surveys in one place.
+                Build, manage and analyse your project and programme surveys.
             </p>
         </div>
 
@@ -64,7 +63,7 @@ if (!function_exists('survey_h')) {
     <!-- Success Message -->
     <?php if (!empty($_SESSION['survey_success'])): ?>
         <div
-            class="alert alert-success alert-dismissible"
+            class="alert alert-success"
             role="alert"
         >
             <span>
@@ -75,7 +74,7 @@ if (!function_exists('survey_h')) {
 
             <button
                 type="button"
-                class="alert-dismiss-btn"
+                class="alert-close"
                 onclick="this.closest('.alert').remove()"
                 aria-label="Dismiss message"
             >
@@ -89,7 +88,7 @@ if (!function_exists('survey_h')) {
     <!-- Error Message -->
     <?php if (!empty($_SESSION['survey_error'])): ?>
         <div
-            class="alert alert-error alert-dismissible"
+            class="alert alert-danger"
             role="alert"
         >
             <span>
@@ -100,7 +99,7 @@ if (!function_exists('survey_h')) {
 
             <button
                 type="button"
-                class="alert-dismiss-btn"
+                class="alert-close"
                 onclick="this.closest('.alert').remove()"
                 aria-label="Dismiss message"
             >
@@ -114,12 +113,11 @@ if (!function_exists('survey_h')) {
     <?php if (empty($surveys)): ?>
 
         <!-- Empty State -->
+        <div class="card">
         <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="fas fa-poll"></i>
-            </div>
+            <i class="fas fa-poll" aria-hidden="true"></i>
 
-            <h3>No surveys yet</h3>
+            <h4>No surveys yet</h4>
 
             <p>
                 Create your first survey and link it to a project or
@@ -135,30 +133,32 @@ if (!function_exists('survey_h')) {
                 Create Survey
             </button>
         </div>
+        </div>
 
     <?php else: ?>
 
         <!-- Surveys Table -->
-        <div class="survey-table-panel">
-            <div class="survey-table-header">
+        <div class="card">
+            <div class="card-header">
                 <div>
-                    <h2 class="survey-table-title">
+                    <h3>
+                        <i class="fas fa-list" aria-hidden="true"></i>
                         All Surveys
-                    </h2>
+                    </h3>
 
-                    <p class="survey-table-subtitle">
+                    <p class="cell-muted">
                         Manage your available surveys and access their
                         questions and analytics.
                     </p>
                 </div>
 
-                <span class="survey-table-count">
+                <span class="badge survey-brand-badge">
                     <?= number_format(count($surveys)) ?>
                 </span>
             </div>
 
-            <div class="survey-table-responsive">
-                <table class="survey-table">
+            <div class="table-responsive">
+                <table class="table survey-table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -233,7 +233,7 @@ if (!function_exists('survey_h')) {
 
                                 <td>
                                     <?php if ($surveyType !== ''): ?>
-                                        <span class="survey-type-badge">
+                                        <span class="badge survey-brand-badge">
                                             <i class="fas fa-tag"></i>
 
                                             <?= survey_h($surveyType) ?>
@@ -571,7 +571,7 @@ if (!function_exists('survey_h')) {
                                                     delete
 
                                                     <strong>
-                                                        �<?= survey_h($surveyName) ?>�
+                                                        “<?= survey_h($surveyName) ?>”
                                                     </strong>.
 
                                                     All related questions and

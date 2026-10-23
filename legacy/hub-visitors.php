@@ -76,142 +76,128 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
 ?>
 
 <style>
-/* -- Header --------------------------------------------------------------- */
-.visitors-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 25px 30px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-.visitors-header h1 { font-size: 26px; margin: 0 0 4px; }
-.visitors-header p  { margin: 0; opacity: .9; font-size: 14px; }
-
-/* -- Share-link banner ---------------------------------------------------- */
-.share-banner {
-    background: #fff8f4;
-    border: 1.5px solid #ff9800;
-    border-radius: 12px;
-    padding: 18px 22px;
-    margin-bottom: 25px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-.share-banner .share-icon {
-    width: 48px; height: 48px;
-    background: linear-gradient(135deg,#ff6b35,#ff9800);
-    border-radius: 10px;
+/* Share-link card: icon, explanation, URL box and buttons in one row. */
+.hv-share { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.hv-share-icon {
+    width: 48px; height: 48px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 22px; flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    background: var(--brand-50); color: var(--brand-600); font-size: 22px;
 }
-.share-banner .share-info { flex: 1; min-width: 220px; }
-.share-banner .share-info h4 { margin: 0 0 4px; color: #d84315; font-size: 15px; }
-.share-banner .share-info p  { margin: 0; font-size: 13px; color: #6d4c41; }
-.share-url-box {
+.hv-share-info { flex: 1; min-width: 220px; }
+.hv-share-info h4 { margin: 0 0 4px; font-size: 15px; color: var(--ink-900); }
+.hv-share-info p { margin: 0; font-size: 13px; color: var(--ink-300); }
+.hv-share-url {
     display: flex; align-items: center; gap: 8px;
-    background: white;
-    border: 1px solid #ffcc80;
-    border-radius: 8px;
+    flex: 2; min-width: 0; flex-basis: 260px;
     padding: 8px 14px;
-    flex: 2; min-width: 260px;
+    background: var(--surface-hover);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-md);
 }
-.share-url-box span {
-    flex: 1; font-size: 13px; color: #333;
-    word-break: break-all;
-    user-select: all;
-}
-.share-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.hv-share-url i { color: var(--brand-500); }
+.hv-share-url span { flex: 1; font-size: 13px; color: var(--ink-700); word-break: break-all; user-select: all; }
+.hv-share-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
 
-/* -- Quick-date stats ----------------------------------------------------- */
-.quick-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 15px;
-    margin-bottom: 25px;
-}
-.quick-stat {
-    background: white; padding: 18px 12px;
-    border-radius: 10px; text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
-    border-left: 4px solid var(--primary-color);
-    text-decoration: none; color: inherit;
+/* Quick date tiles: clickable shortcuts that filter the log. */
+.hv-quick { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
+.hv-quick a {
+    display: block; padding: 16px 12px; text-align: center;
+    background: var(--surface-card);
+    border: 1px solid var(--ink-50);
+    border-left: 4px solid var(--brand-500);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    color: inherit; text-decoration: none;
     transition: transform .15s, box-shadow .15s;
 }
-.quick-stat:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,.12); }
-.quick-stat h3 { font-size: 28px; margin-bottom: 6px; color: var(--primary-color); }
-.quick-stat p  { font-size: 12px; color: #7f8c8d; margin: 0; }
-.visitor-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 0 2px;color:#64748b;font-size:13px}
-.visitor-pagination nav{display:flex;gap:6px;align-items:center}
-.visitor-pagination a,.visitor-pagination span{display:inline-flex;min-width:36px;height:36px;align-items:center;justify-content:center;padding:0 10px;border:1px solid #dbe3ec;border-radius:8px;background:#fff;color:#334155;text-decoration:none;font-weight:700}
-.visitor-pagination .current{background:var(--primary-color);border-color:var(--primary-color);color:#fff}
-.visitor-section-tabs{display:flex;gap:8px;border-bottom:1px solid #e2e8f0;margin:22px 0 16px;overflow-x:auto}
-.visitor-section-tabs button{border:0;border-bottom:3px solid transparent;background:transparent;padding:11px 16px;color:#64748b;font-weight:700;white-space:nowrap;cursor:pointer}
-.visitor-section-tabs button.active{color:var(--primary-color);border-bottom-color:var(--primary-color)}
-.visitor-section-panel{display:none}.visitor-section-panel.active{display:block}
+.hv-quick a:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.hv-quick strong { display: block; font-size: 26px; margin-bottom: 4px; color: var(--brand-600); }
+.hv-quick span { font-size: 12px; color: var(--ink-300); }
 
-/* -- Misc ----------------------------------------------------------------- */
-.filter-bar { background:#f8f9fa; padding:18px; border-radius:12px; margin-bottom:20px; }
-.filter-bar > .filters-bar { margin-bottom:0; }
-.visitor-badge { display:inline-flex; align-items:center; gap:6px; background:#f8f9fa; padding:4px 10px; border-radius:6px; font-size:13px; }
-.check-in-badge { background:#d4edda; color:#155724; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600; }
+.hv-filters { margin-bottom: 20px; }
+.hv-contact { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.hv-contact + .hv-contact { margin-top: 5px; }
 
-/* -- QR Modal ------------------------------------------------------------- */
-#qrModal .modal-content { max-width: 420px; text-align: center; }
+/* Pagination row under the log table. */
+.hv-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 0 2px; color: var(--ink-300); font-size: 13px; }
+.hv-pagination nav { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.hv-pagination nav a,
+.hv-pagination nav span {
+    display: inline-flex; min-width: 36px; height: 36px; padding: 0 10px;
+    align-items: center; justify-content: center;
+    border: 1px solid var(--ink-100); border-radius: var(--radius-md);
+    background: var(--surface-card); color: var(--ink-500);
+    text-decoration: none; font-weight: 700;
+}
+.hv-pagination nav .current { background: var(--brand-500); border-color: var(--brand-500); color: var(--ink-0); }
+
+/* Analytics charts. */
+.hv-chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px; }
+.hv-chart-grid h4, .hv-chart-wide h4 { margin: 0 0 15px; }
+.hv-chart-wide { margin-top: 30px; }
+.hv-chart { max-height: 300px; }
+.hv-chart-sm { max-height: 250px; }
+
+/* QR modal. */
+#qrModal .modal-content { max-width: 440px; }
+.hv-qr-body { text-align: center; padding: 30px 20px; }
+.hv-qr-intro { color: var(--ink-400); margin-bottom: 20px; font-size: 14px; }
 #qrCanvas { margin: 20px auto; display: block; }
-.qr-url-text { font-size:12px; color:#666; word-break:break-all; margin-top:8px; }
-
-/* -- Analytics ------------------------------------------------------------ */
-.analytics-section { background:white; border-radius:12px; padding:25px; margin-top:25px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+.qr-url-text { font-size: 12px; color: var(--ink-300); word-break: break-all; margin-top: 8px; }
+.hv-qr-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+#addVisitorModal .modal-content { max-width: 700px; }
 </style>
 
-<!-- -- Page Header ----------------------------------------------------------- -->
-<div class="visitors-header">
+<div class="page-stack">
+<div class="page-hero">
     <div>
-        <h1><i class="fas fa-user-friends"></i> Hub Visitors Log</h1>
-        <p>Track and manage daily visitors to the hub</p>
+        <h1><i class="fas fa-user-friends" aria-hidden="true"></i> Hub Visitors Log</h1>
+        <p>Track and manage daily visitors to the hub.</p>
     </div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button onclick="openModal('qrModal')" class="btn" style="background:white;color:#ff6b35;font-weight:600;">
-            <i class="fas fa-qrcode"></i> Show QR Code
+    <div class="hero-actions">
+        <button onclick="copyRegisterLink()" class="btn">
+            <i class="fas fa-link" aria-hidden="true"></i> Copy Visitor Link
         </button>
-        <button onclick="copyRegisterLink()" class="btn" style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.5);">
-            <i class="fas fa-link"></i> Copy Visitor Link
+        <button onclick="openModal('qrModal')" class="btn">
+            <i class="fas fa-qrcode" aria-hidden="true"></i> Show QR Code
+        </button>
+        <button onclick="window.location.href='export?type=hub_visitors'" class="btn">
+            <i class="fas fa-download" aria-hidden="true"></i> Export
+        </button>
+        <button onclick="openModal('addVisitorModal')" class="btn btn-primary">
+            <i class="fas fa-plus" aria-hidden="true"></i> Log Visitor
         </button>
     </div>
 </div>
 
-<!-- -- Shareable Registration Banner ---------------------------------------- -->
-<div class="share-banner">
-    <div class="share-icon"><i class="fas fa-paper-plane"></i></div>
-    <div class="share-info">
-        <h4>Visitor Self-Registration Link</h4>
-        <p>Share this link or QR code with visitors so they can log themselves in.</p>
-    </div>
-    <div class="share-url-box">
-        <i class="fas fa-globe" style="color:#ff9800;"></i>
-        <span id="registerUrl"><?php echo htmlspecialchars($register_url); ?></span>
-    </div>
-    <div class="share-actions">
-        <button onclick="copyRegisterLink()" class="btn btn-warning btn-sm" title="Copy link">
-            <i class="fas fa-copy"></i> Copy
-        </button>
-        <button onclick="openModal('qrModal')" class="btn btn-primary btn-sm" title="QR Code">
-            <i class="fas fa-qrcode"></i> QR
-        </button>
-        <a href="<?php echo htmlspecialchars($register_url); ?>" target="_blank" class="btn btn-secondary btn-sm" title="Preview">
-            <i class="fas fa-external-link-alt"></i>
-        </a>
+<!-- Shareable registration link -->
+<div class="card">
+    <div class="card-body hv-share">
+        <div class="hv-share-icon"><i class="fas fa-paper-plane" aria-hidden="true"></i></div>
+        <div class="hv-share-info">
+            <h4>Visitor Self-Registration Link</h4>
+            <p>Share this link or QR code with visitors so they can log themselves in.</p>
+        </div>
+        <div class="hv-share-url">
+            <i class="fas fa-globe" aria-hidden="true"></i>
+            <span id="registerUrl"><?php echo htmlspecialchars($register_url); ?></span>
+        </div>
+        <div class="hv-share-actions">
+            <button onclick="copyRegisterLink()" class="btn btn-soft btn-sm" title="Copy link">
+                <i class="fas fa-copy" aria-hidden="true"></i> Copy
+            </button>
+            <button onclick="openModal('qrModal')" class="btn btn-soft btn-sm" title="QR Code">
+                <i class="fas fa-qrcode" aria-hidden="true"></i> QR
+            </button>
+            <a href="<?php echo htmlspecialchars($register_url); ?>" target="_blank" class="btn btn-secondary btn-sm" title="Preview">
+                <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+            </a>
+        </div>
     </div>
 </div>
 
-<!-- -- Stats Cards ----------------------------------------------------------- -->
+<!-- Stats Cards -->
 <div class="stats-grid reports-stats">
     <div class="stat-card">
         <div class="stat-icon bg-blue"><i class="fas fa-user-clock" aria-hidden="true"></i></div>
@@ -257,32 +243,16 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
     </div>
 </div>
 
-<div class="visitor-section-tabs" role="tablist" aria-label="Visitor sections">
-    <button type="button" class="active" data-visitor-tab="log" role="tab" aria-selected="true"><i class="fas fa-list"></i> Visitors Log</button>
-    <button type="button" data-visitor-tab="analytics" role="tab" aria-selected="false"><i class="fas fa-chart-bar"></i> Analytics</button>
+<div class="tab-shell">
+<div class="tab-nav" role="tablist" aria-label="Visitor sections">
+    <button type="button" class="tab-btn active" data-visitor-tab="log" role="tab" aria-selected="true"><i class="fas fa-list" aria-hidden="true"></i> Visitors Log</button>
+    <button type="button" class="tab-btn" data-visitor-tab="analytics" role="tab" aria-selected="false"><i class="fas fa-chart-bar" aria-hidden="true"></i> Analytics</button>
 </div>
 
-<section class="visitor-section-panel active" data-visitor-panel="log" role="tabpanel">
-<!-- -- Main Table Card ------------------------------------------------------- -->
-<div class="card">
-    <div class="card-header">
-        <h3><i class="fas fa-list"></i> Visitors Log</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button onclick="openModal('addVisitorModal')" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Log Visitor
-            </button>
-            <button onclick="openModal('qrModal')" class="btn btn-warning">
-                <i class="fas fa-qrcode"></i> Share Form
-            </button>
-            <button onclick="window.location.href='export?type=hub_visitors'" class="btn btn-success">
-                <i class="fas fa-download"></i> Export
-            </button>
-        </div>
-    </div>
-
-    <div class="card-body">
+<div class="tab-panels">
+<section class="tab-panel active" data-visitor-panel="log" role="tabpanel">
         <!-- Filter Bar -->
-        <form method="GET" action="" class="filter-bar">
+        <form method="GET" action="" class="hv-filters">
             <div class="filters-bar">
                 <div class="form-group filters-grow">
                     <input type="text" name="search" class="form-control"
@@ -308,31 +278,31 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                     </select>
                 </div>
                 <div class="filters-actions">
-                    <button type="submit" class="btn btn-info"><i class="fas fa-filter"></i> Filter</button>
-                    <a href="hub-visitors" class="btn btn-secondary"><i class="fas fa-times"></i> Clear</a>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
+                    <a href="hub-visitors" class="btn btn-secondary"><i class="fas fa-times" aria-hidden="true"></i> Clear</a>
                 </div>
             </div>
         </form>
 
         <!-- Quick Date Tiles -->
-        <div class="quick-stats">
-            <a href="?date=<?php echo date('Y-m-d'); ?>" class="quick-stat">
-                <h3><?php echo $stats['today']; ?></h3><p>Today</p>
+        <div class="hv-quick">
+            <a href="?date=<?php echo date('Y-m-d'); ?>">
+                <strong><?php echo $stats['today']; ?></strong><span>Today</span>
             </a>
-            <a href="?date=<?php echo date('Y-m-d', strtotime('yesterday')); ?>" class="quick-stat">
-                <h3><?php echo $yesterday; ?></h3><p>Yesterday</p>
+            <a href="?date=<?php echo date('Y-m-d', strtotime('yesterday')); ?>">
+                <strong><?php echo $yesterday; ?></strong><span>Yesterday</span>
             </a>
-            <a href="?month=<?php echo date('Y-m'); ?>" class="quick-stat">
-                <h3><?php echo $stats['this_month']; ?></h3><p>This Month</p>
+            <a href="?month=<?php echo date('Y-m'); ?>">
+                <strong><?php echo $stats['this_month']; ?></strong><span>This Month</span>
             </a>
-            <a href="?month=<?php echo date('Y-m', strtotime('last month')); ?>" class="quick-stat">
-                <h3><?php echo $last_month; ?></h3><p>Last Month</p>
+            <a href="?month=<?php echo date('Y-m', strtotime('last month')); ?>">
+                <strong><?php echo $last_month; ?></strong><span>Last Month</span>
             </a>
         </div>
 
         <!-- Visitors Table -->
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table table-stack">
                 <thead>
                     <tr>
                         <th>Visitor</th>
@@ -349,14 +319,16 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                 <tbody>
                 <?php if (empty($visitors)): ?>
                     <tr>
-                        <td colspan="9" class="text-center" style="padding:60px;">
-                            <i class="fas fa-inbox" style="font-size:48px;color:#bdc3c7;margin-bottom:15px;display:block;"></i>
-                            <p style="color:#7f8c8d;font-size:16px;">No visitors found</p>
-                            <?php if ($filter_date || $filter_purpose || $filter_month || $search): ?>
-                                <a href="hub-visitors" class="btn btn-primary">
-                                    <i class="fas fa-times"></i> Clear Filters
-                                </a>
-                            <?php endif; ?>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox" aria-hidden="true"></i>
+                                <p>No visitors found</p>
+                                <?php if ($filter_date || $filter_purpose || $filter_month || $search): ?>
+                                    <a href="hub-visitors" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-times" aria-hidden="true"></i> Clear Filters
+                                    </a>
+                                <?php endif; ?>
+                            </div>
                         </td>
                     </tr>
                 <?php else: ?>
@@ -364,78 +336,78 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                     $purpose_badges = [
                         'Meeting'      => 'info',
                         'Event'        => 'success',
-                        'Co-working'   => 'primary',
+                        'Co-working'   => 'info',
                         'Training'     => 'warning',
                         'Consultation' => 'purple',
                         'Tour'         => 'secondary',
-                        'Interview'    => 'orange',
+                        'Interview'    => 'warning',
                         'Other'        => 'secondary'
                     ];
                     foreach ($visitors as $v): ?>
                     <tr>
-                        <td>
+                        <td data-label="Visitor">
                             <strong><?php echo htmlspecialchars($v['visitor_name']); ?></strong>
                             <?php if ($v['is_member']): ?>
-                                <br><span class="badge badge-success" style="font-size:11px;">Member</span>
+                                <br><span class="badge badge-success">Member</span>
                             <?php endif; ?>
                             <?php if ($v['is_first_time']): ?>
-                                <br><span class="badge badge-info" style="font-size:11px;">First Visit</span>
+                                <br><span class="badge badge-info">First Visit</span>
                             <?php endif; ?>
                             <?php if (!empty($v['self_registered'])): ?>
-                                <br><span class="badge badge-secondary" style="font-size:11px;"><i class="fas fa-mobile-alt"></i> Self-registered</span>
+                                <br><span class="badge badge-secondary"><i class="fas fa-mobile-alt" aria-hidden="true"></i> Self-registered</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Contact">
                             <?php if ($v['phone']): ?>
-                                <div class="visitor-badge">
-                                    <i class="fas fa-phone"></i>
+                                <div class="hv-contact">
+                                    <i class="fas fa-phone" aria-hidden="true"></i>
                                     <a href="tel:<?php echo htmlspecialchars($v['phone']); ?>"><?php echo htmlspecialchars($v['phone']); ?></a>
                                 </div>
                             <?php endif; ?>
                             <?php if ($v['email']): ?>
-                                <div class="visitor-badge" style="margin-top:5px;">
-                                    <i class="fas fa-envelope"></i>
+                                <div class="hv-contact">
+                                    <i class="fas fa-envelope" aria-hidden="true"></i>
                                     <a href="mailto:<?php echo htmlspecialchars($v['email']); ?>"><?php echo htmlspecialchars($v['email']); ?></a>
                                 </div>
                             <?php endif; ?>
                         </td>
-                        <td><?php echo htmlspecialchars($v['organization'] ?? 'N/A'); ?></td>
-                        <td>
+                        <td data-label="Organization"><?php echo htmlspecialchars($v['organization'] ?? 'N/A'); ?></td>
+                        <td data-label="Visit Date">
                             <strong><?php echo date('d M Y', strtotime($v['visit_date'])); ?></strong>
-                            <br><small style="color:#7f8c8d;"><?php echo date('l', strtotime($v['visit_date'])); ?></small>
+                            <br><small class="cell-muted"><?php echo date('l', strtotime($v['visit_date'])); ?></small>
                         </td>
-                        <td>
+                        <td data-label="Time">
                             <?php if ($v['visit_time']): ?>
-                                <span class="check-in-badge"><i class="fas fa-clock"></i> <?php echo date('h:i A', strtotime($v['visit_time'])); ?></span>
+                                <span class="badge badge-success"><i class="fas fa-clock" aria-hidden="true"></i> <?php echo date('h:i A', strtotime($v['visit_time'])); ?></span>
                             <?php else: ?>
-                                <span style="color:#95a5a6;">-</span>
+                                <span class="cell-muted">-</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Purpose">
                             <?php $badge = $purpose_badges[$v['purpose']] ?? 'secondary'; ?>
                             <span class="badge badge-<?php echo $badge; ?>"><?php echo htmlspecialchars($v['purpose']); ?></span>
                         </td>
-                        <td><?php echo htmlspecialchars($v['host_contact'] ?? 'N/A'); ?></td>
-                        <td>
+                        <td data-label="Host"><?php echo htmlspecialchars($v['host_contact'] ?? 'N/A'); ?></td>
+                        <td data-label="Remarks">
                             <?php if ($v['remarks']): ?>
                                 <span title="<?php echo htmlspecialchars($v['remarks']); ?>">
                                     <?php echo htmlspecialchars(substr($v['remarks'], 0, 40)); ?>
                                     <?php if (strlen($v['remarks']) > 40): ?>...<?php endif; ?>
                                 </span>
                             <?php else: ?>
-                                <span style="color:#95a5a6;">-</span>
+                                <span class="cell-muted">-</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td data-label="Actions">
                             <div class="table-actions">
                                 <a href="?edit=<?php echo $v['visitor_id']; ?>" class="btn btn-warning btn-sm" title="Edit">
-                                    <i class="fas fa-edit"></i>
+                                    <i class="fas fa-edit" aria-hidden="true"></i>
                                 </a>
                                 <?php if (ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')): ?>
                                     <a href="javascript:void(0)"
                                        onclick="confirmDelete(<?= htmlspecialchars(json_encode((string)($v['visitor_name'])), ENT_QUOTES, 'UTF-8') ?>,'includes/hub-visitors-process.php?delete=<?php echo (int)$v['visitor_id']; ?>&csrf_token=<?= h(csrf_token()) ?>')"
                                        class="btn btn-danger btn-sm" title="Delete">
-                                        <i class="fas fa-trash"></i>
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
                                     </a>
                                 <?php endif; ?>
                             </div>
@@ -447,7 +419,7 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
             </table>
         </div>
         <?php if ($visitor_total > $per_page): ?>
-        <div class="visitor-pagination">
+        <div class="hv-pagination">
             <span>Showing <?php echo $offset + 1; ?>–<?php echo min($offset + $per_page, $visitor_total); ?> of <?php echo $visitor_total; ?> visitors</span>
             <nav aria-label="Visitor pages">
                 <?php
@@ -464,45 +436,45 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
             </nav>
         </div>
         <?php endif; ?>
-    </div>
-</div>
 </section>
 
-<!-- -- Analytics ------------------------------------------------------------ -->
-<section class="visitor-section-panel" data-visitor-panel="analytics" role="tabpanel"><div class="analytics-section">
-    <h3 style="margin-bottom:20px;"><i class="fas fa-chart-bar"></i> Visitor Analytics</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;">
+<!-- Analytics -->
+<section class="tab-panel" data-visitor-panel="analytics" role="tabpanel">
+    <div class="hv-chart-grid">
         <div>
-            <h4 style="margin-bottom:15px;">Visit Purposes (This Month)</h4>
-            <canvas id="purposeChart" style="max-height:300px;"></canvas>
+            <h4>Visit Purposes (This Month)</h4>
+            <canvas id="purposeChart" class="hv-chart"></canvas>
         </div>
         <div>
-            <h4 style="margin-bottom:15px;">Daily Visitor Trend (Last 14 Days)</h4>
-            <canvas id="trendChart" style="max-height:300px;"></canvas>
+            <h4>Daily Visitor Trend (Last 14 Days)</h4>
+            <canvas id="trendChart" class="hv-chart"></canvas>
         </div>
     </div>
-    <div style="margin-top:30px;">
-        <h4 style="margin-bottom:15px;">Peak Hours (This Month)</h4>
-        <canvas id="hourlyChart" style="max-height:250px;"></canvas>
+    <div class="hv-chart-wide">
+        <h4>Peak Hours (This Month)</h4>
+        <canvas id="hourlyChart" class="hv-chart-sm"></canvas>
     </div>
-</div>
 </section>
+</div><!-- /.tab-panels -->
+</div><!-- /.tab-shell -->
+
+</div><!-- /.page-stack -->
 
 <!-- -- QR Code Modal --------------------------------------------------------- -->
 <div id="qrModal" class="modal">
-    <div class="modal-content" style="max-width:440px;">
+    <div class="modal-content">
         <div class="modal-header">
             <h3><i class="fas fa-qrcode"></i> Visitor Registration QR Code</h3>
             <span class="close" onclick="closeModal('qrModal')">&times;</span>
         </div>
-        <div class="modal-body" style="text-align:center;padding:30px 20px;">
-            <p style="color:#555;margin-bottom:20px;font-size:14px;">
+        <div class="modal-body hv-qr-body">
+            <p class="hv-qr-intro">
                 Display or print this QR code at your reception desk.<br>
                 Visitors scan it to register themselves instantly.
             </p>
             <canvas id="qrCanvas"></canvas>
             <p class="qr-url-text" id="qrUrlDisplay"></p>
-            <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap;">
+            <div class="hv-qr-actions">
                 <button onclick="copyRegisterLink()" class="btn btn-warning">
                     <i class="fas fa-copy"></i> Copy Link
                 </button>
@@ -522,7 +494,7 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
 
 <!-- -- Add / Edit Visitor Modal ---------------------------------------------- -->
 <div id="addVisitorModal" class="modal">
-    <div class="modal-content" style="max-width:700px;">
+    <div class="modal-content">
         <div class="modal-header">
             <h3><?php echo $edit_visitor ? 'Edit Visitor' : 'Log New Visitor'; ?></h3>
             <span class="close" onclick="closeModal('addVisitorModal')">&times;</span>
@@ -650,14 +622,16 @@ document.querySelectorAll('[data-visitor-tab]').forEach((tab) => tab.addEventLis
 }));
 
 // -- Populate QR when modal opens -----------------------------------------
+const cssToken = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
 (function initQR() {
     document.getElementById('qrUrlDisplay').textContent = REGISTER_URL;
     new QRCode(document.getElementById('qrCanvas'), {
         text       : REGISTER_URL,
         width      : 260,
         height     : 260,
-        colorDark  : '#d84315',
-        colorLight : '#ffffff',
+        colorDark  : cssToken('--brand-700', '#c2410c'),
+        colorLight : cssToken('--ink-0', '#ffffff'),
         correctLevel: QRCode.CorrectLevel.H
     });
 })();
@@ -669,7 +643,7 @@ function copyRegisterLink() {
         const btn = event.target.closest('button');
         const orig = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        btn.style.background = '#2ecc71';
+        btn.style.background = 'var(--green-fg)';
         setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; }, 2000);
     });
 }
@@ -739,7 +713,7 @@ new Chart(document.getElementById('purposeChart'), {
     data: {
         labels: <?php echo json_encode(array_keys($purpose_data)); ?>,
         datasets: [{ data: <?php echo json_encode(array_values($purpose_data)); ?>,
-            backgroundColor: ['#3498DB','#2ECC71','#FF6B35','#F39C12','#9B59B6','#95A5A6','#E74C3C','#1ABC9C'] }]
+            backgroundColor: ['--blue-fg','--green-fg','--brand-500','--amber-fg','--purple-fg','--slate-fg','--red-fg','--teal-fg'].map((t) => cssToken(t)) }]
     },
     options: { responsive:true, plugins:{ legend:{ position:'bottom' } } }
 });
@@ -749,7 +723,7 @@ new Chart(document.getElementById('trendChart'), {
     data: {
         labels: <?php echo json_encode(array_map(fn($d) => date('d M', strtotime($d)), array_keys($daily_trend))); ?>,
         datasets: [{ label:'Daily Visitors', data: <?php echo json_encode(array_values($daily_trend)); ?>,
-            borderColor:'#FF6B35', backgroundColor:'rgba(255,107,53,0.1)', tension:0.4, fill:true }]
+            borderColor: cssToken('--brand-500'), backgroundColor: cssToken('--brand-50'), tension:0.4, fill:true }]
     },
     options: { responsive:true, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }, plugins:{ legend:{ display:false } } }
 });
@@ -759,7 +733,7 @@ new Chart(document.getElementById('hourlyChart'), {
     data: {
         labels: <?php echo json_encode(array_map(fn($h) => date('g A', strtotime("$h:00")), array_keys($hourly_data))); ?>,
         datasets: [{ label:'Visitors', data: <?php echo json_encode(array_values($hourly_data)); ?>,
-            backgroundColor:'#ff6b35' }]
+            backgroundColor: cssToken('--brand-500') }]
     },
     options: { responsive:true, scales:{ y:{ beginAtZero:true, ticks:{ stepSize:1 } } }, plugins:{ legend:{ display:false } } }
 });

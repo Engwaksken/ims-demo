@@ -109,48 +109,31 @@ if (isset($_GET['edit_receipt'])) {
 
 
 <style>
-    .tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #ddd;
-        overflow-x: auto;
-    }
-    .tab {
-        padding: 12px 20px;
-        background: none;
-        border: none;
-        border-bottom: 3px solid transparent;
-        cursor: pointer;
-        font-size: 15px;
-        color: #7f8c8d;
-        transition: all 0.3s;
-        white-space: nowrap;
-    }
-    .tab:hover {
-        color: var(--primary-color);
-    }
-    .tab.active {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
-        font-weight: 600;
-    }
-    .filter-bar {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    .filter-bar > .filters-bar { margin-bottom: 0; }
-    .notification-badge {
-        background: #E74C3C;
-        color: white;
-        border-radius: 10px;
-        padding: 2px 8px;
-        font-size: 11px;
-        margin-left: 5px;
-    }
+/* Hub Operations: page-specific layout only. */
+.ho-tab-count { margin-left: 2px; }
+.ho-row-expiring > td { background: var(--amber-bg); }
+.ho-expiry-note { color: var(--amber-fg); }
+.ho-star { color: var(--ink-100); }
+.ho-star.is-on { color: var(--amber-fg); }
+.ho-subhead { margin: var(--space-7) 0 var(--space-4); }
+.ho-subhead i { color: var(--brand-500); }
+.ho-current-file { margin-bottom: var(--space-2); }
+.ho-chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: var(--space-5); }
+.ho-chart-grid + .ho-chart-grid { margin-top: var(--space-6); }
+.ho-chart-title { margin-bottom: var(--space-3); }
+.ho-chart { max-height: 300px; }
 </style>
+
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-building" aria-hidden="true"></i> Hub Operations</h1>
+        <p>Run the hub day to day: members, space bookings, payment receipts, feedback, notifications and subscriptions.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="hub-visitors" class="btn"><i class="fas fa-user-friends" aria-hidden="true"></i> Hub Visitors</a>
+    </div>
+</div>
 
 <!-- Statistics -->
 <div class="stats-grid reports-stats">
@@ -204,51 +187,49 @@ if (isset($_GET['edit_receipt'])) {
 </div>
 
 <!-- Tabs Navigation -->
-<div class="card">
-    <div class="card-body" style="padding: 0;">
-        <div class="tabs">
-            <button class="tab <?php echo $active_tab == 'members' ? 'active' : ''; ?>" 
+<div class="tab-shell">
+        <div class="tab-nav">
+            <button type="button" class="tab-btn <?php echo $active_tab == 'members' ? 'active' : ''; ?>" 
                     onclick="window.location.href='hub-operations?tab=members'">
                 <i class="fas fa-users"></i> Members
                 <?php if ($stats['expiring_soon'] > 0): ?>
-                    <span class="notification-badge"><?php echo $stats['expiring_soon']; ?></span>
+                    <span class="badge badge-danger ho-tab-count"><?php echo $stats['expiring_soon']; ?></span>
                 <?php endif; ?>
             </button>
-            <button class="tab <?php echo $active_tab == 'bookings' ? 'active' : ''; ?>" 
+            <button type="button" class="tab-btn <?php echo $active_tab == 'bookings' ? 'active' : ''; ?>" 
                     onclick="window.location.href='hub-operations?tab=bookings'">
                 <i class="fas fa-calendar-alt"></i> Bookings
                 <?php if ($stats['pending_bookings'] > 0): ?>
-                    <span class="notification-badge"><?php echo $stats['pending_bookings']; ?></span>
+                    <span class="badge badge-danger ho-tab-count"><?php echo $stats['pending_bookings']; ?></span>
                 <?php endif; ?>
             </button>
-            <button class="tab <?php echo $active_tab == 'receipts' ? 'active' : ''; ?>" 
+            <button type="button" class="tab-btn <?php echo $active_tab == 'receipts' ? 'active' : ''; ?>" 
                     onclick="window.location.href='hub-operations?tab=receipts'">
                 <i class="fas fa-receipt"></i> Receipts
                 <?php if ($stats['pending_receipts'] > 0): ?>
-                    <span class="notification-badge"><?php echo $stats['pending_receipts']; ?></span>
+                    <span class="badge badge-danger ho-tab-count"><?php echo $stats['pending_receipts']; ?></span>
                 <?php endif; ?>
             </button>
-            <button class="tab <?php echo $active_tab == 'feedback' ? 'active' : ''; ?>" 
+            <button type="button" class="tab-btn <?php echo $active_tab == 'feedback' ? 'active' : ''; ?>" 
                     onclick="window.location.href='hub-operations?tab=feedback'">
                 <i class="fas fa-comment-dots"></i> Feedback
                 <?php if ($stats['new_feedback'] > 0): ?>
-                    <span class="notification-badge"><?php echo $stats['new_feedback']; ?></span>
+                    <span class="badge badge-danger ho-tab-count"><?php echo $stats['new_feedback']; ?></span>
                 <?php endif; ?>
             </button>
-            <button class="tab <?php echo $active_tab == 'notifications' ? 'active' : ''; ?>" 
+            <button type="button" class="tab-btn <?php echo $active_tab == 'notifications' ? 'active' : ''; ?>" 
                     onclick="window.location.href='hub-operations?tab=notifications'">
                 <i class="fas fa-bell"></i> Notifications
             </button>
-            <button class="tab <?php echo $active_tab == 'subscriptions' ? 'active' : ''; ?>" 
+            <button type="button" class="tab-btn <?php echo $active_tab == 'subscriptions' ? 'active' : ''; ?>" 
                     onclick="window.location.href='hub-operations?tab=subscriptions'">
                 <i class="fas fa-dollar"></i> Subscriptions
             </button>
-              <!--<button class="tab <?php echo $active_tab == 'analytics' ? 'active' : ''; ?>" 
+              <!--<button class="tab-btn <?php echo $active_tab == 'analytics' ? 'active' : ''; ?>" 
                     onclick="window.location.href='hub-operations?tab=analytics'">
                 <i class="fas fa-chart-bar"></i> Analytics
             </button> -->
         </div>
-    </div>
 </div>
 
 <!-- Members Tab -->
@@ -297,7 +278,7 @@ if (isset($_GET['edit_receipt'])) {
     
     <div class="card-body">
         <!-- Filter Bar -->
-        <form method="GET" action="" class="filter-bar">
+        <form method="GET" action="">
             <input type="hidden" name="tab" value="members">
             <div class="filters-bar">
                 <div class="form-group filters-grow">
@@ -336,7 +317,7 @@ if (isset($_GET['edit_receipt'])) {
         
         <!-- Members Table -->
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -353,7 +334,7 @@ if (isset($_GET['edit_receipt'])) {
                 <tbody>
                     <?php if (empty($members)): ?>
                         <tr>
-                            <td colspan="9" class="text-center">No members found</td>
+                            <td colspan="9"><div class="empty-state"><i class="fas fa-users" aria-hidden="true"></i><p>No members found</p></div></td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($members as $member): 
@@ -364,24 +345,24 @@ if (isset($_GET['edit_receipt'])) {
                             }
                             $expiring_soon = $days_to_expire <= 30 && $days_to_expire > 0;
                         ?>
-                            <tr <?php echo $expiring_soon ? 'style="background-color: #fff3cd;"' : ''; ?>>
+                            <tr<?php echo $expiring_soon ? ' class="ho-row-expiring"' : ''; ?>>
                                 <td>
-                                    <strong><?php echo hub_e($member['full_name'] ?? 'N/A'); ?></strong><br>
-                                    <small style="color: #7f8c8d;">
+                                    <strong><?php echo hub_e($member['full_name'] ?? 'N/A'); ?></strong>
+                                    <small class="cell-muted">
                                         <?php echo hub_e($member['email'] ?? ''); ?>
                                     </small>
                                     <?php if ($member['company_name']): ?>
                                         <br><small><i class="fas fa-building"></i> <?php echo hub_e($member['company_name']); ?></small>
                                     <?php endif; ?>
                                     <?php if ($expiring_soon): ?>
-                                        <br><small style="color: #856404;">
+                                        <small class="cell-muted ho-expiry-note">
                                             <i class="fas fa-exclamation-triangle"></i> Expires in <?php echo round($days_to_expire); ?> days
                                         </small>
                                     <?php endif; ?>
                                 </td>
                                 <td><code><?php echo hub_e($member['membership_number']); ?></code></td>
                                 <td>
-                                    <span class="badge badge-primary">
+                                    <span class="badge badge-purple">
                                         <?php echo hub_e($member['member_type']); ?>
                                     </span>
                                 </td>
@@ -483,7 +464,7 @@ if (isset($_GET['edit_receipt'])) {
     
     <div class="card-body">
         <!-- Filter Bar -->
-        <form method="GET" action="" class="filter-bar">
+        <form method="GET" action="">
             <input type="hidden" name="tab" value="bookings">
             <div class="filters-bar">
                 <div class="form-group">
@@ -522,7 +503,7 @@ if (isset($_GET['edit_receipt'])) {
         
         <!-- Bookings Table -->
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -539,7 +520,7 @@ if (isset($_GET['edit_receipt'])) {
                 <tbody>
                     <?php if (empty($bookings)): ?>
                         <tr>
-                            <td colspan="9" class="text-center">No bookings found</td>
+                            <td colspan="9"><div class="empty-state"><i class="fas fa-calendar-alt" aria-hidden="true"></i><p>No bookings found</p></div></td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($bookings as $booking): ?>
@@ -656,7 +637,7 @@ if (isset($_GET['edit_receipt'])) {
     <div class="card-body">
         <!-- REST OF RECEIPTS TAB CODE -->
         <!-- Filter Bar -->
-        <form method="GET" action="" class="filter-bar">
+        <form method="GET" action="">
             <input type="hidden" name="tab" value="receipts">
             <div class="filters-bar">
                 <div class="form-group">
@@ -689,7 +670,7 @@ if (isset($_GET['edit_receipt'])) {
         
         <!-- Receipts Table -->
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -706,14 +687,14 @@ if (isset($_GET['edit_receipt'])) {
                 <tbody>
                     <?php if (empty($receipts)): ?>
                         <tr>
-                            <td colspan="9" class="text-center">No receipts found</td>
+                            <td colspan="9"><div class="empty-state"><i class="fas fa-receipt" aria-hidden="true"></i><p>No receipts found</p></div></td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($receipts as $receipt): ?>
                             <tr>
                                 <td><strong><?php echo hub_e($receipt['member_name'] ?? 'N/A'); ?></strong></td>
                                 <td>
-                                    <span class="badge badge-primary">
+                                    <span class="badge badge-purple">
                                         <?php echo hub_e($receipt['receipt_type']); ?>
                                     </span>
                                 </td>
@@ -812,7 +793,7 @@ if (isset($_GET['edit_receipt'])) {
     
     <div class="card-body">
         <!-- Filter Bar -->
-        <form method="GET" action="" class="filter-bar">
+        <form method="GET" action="">
             <input type="hidden" name="tab" value="feedback">
             <div class="filters-bar">
                 <div class="form-group">
@@ -849,7 +830,7 @@ if (isset($_GET['edit_receipt'])) {
         
         <!-- Feedback Table -->
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -865,14 +846,14 @@ if (isset($_GET['edit_receipt'])) {
                 <tbody>
                     <?php if (empty($feedbacks)): ?>
                         <tr>
-                            <td colspan="8" class="text-center">No feedback found</td>
+                            <td colspan="8"><div class="empty-state"><i class="fas fa-comment-dots" aria-hidden="true"></i><p>No feedback found</p></div></td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($feedbacks as $feedback): ?>
                             <tr>
                                 <td>
                                     <?php if ($feedback['is_anonymous']): ?>
-                                        <em style="color: #7f8c8d;">Anonymous</em>
+                                        <em class="cell-muted">Anonymous</em>
                                     <?php else: ?>
                                         <strong><?php echo hub_e($feedback['member_name'] ?? 'N/A'); ?></strong>
                                     <?php endif; ?>
@@ -883,18 +864,18 @@ if (isset($_GET['edit_receipt'])) {
                                     </span>
                                 </td>
                                 <td>
-                                    <strong><?php echo hub_e($feedback['subject']); ?></strong><br>
-                                    <small style="color: #7f8c8d;">
+                                    <strong><?php echo hub_e($feedback['subject']); ?></strong>
+                                    <small class="cell-muted">
                                         <?php echo hub_e(substr((string) ($feedback['feedback_message'] ?? ''), 0, 60)); ?>...
                                     </small>
                                 </td>
                                 <td>
                                     <?php if ($feedback['rating']): ?>
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
-                                            <i class="fas fa-star" style="color: <?php echo $i <= $feedback['rating'] ? '#F39C12' : '#ddd'; ?>;"></i>
+                                            <i class="fas fa-star ho-star<?php echo $i <= $feedback['rating'] ? ' is-on' : ''; ?>" aria-hidden="true"></i>
                                         <?php endfor; ?>
                                     <?php else: ?>
-                                        <span style="color: #95a5a6;">N/A</span>
+                                        <span class="cell-muted">N/A</span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
@@ -915,7 +896,7 @@ if (isset($_GET['edit_receipt'])) {
                                 <td>
                                     <?php
                                     $status_badges = [
-                                        'New' => 'primary',
+                                        'New' => 'purple',
                                         'In Review' => 'info',
                                         'Responded' => 'warning',
                                         'Resolved' => 'success',
@@ -1018,9 +999,9 @@ if (isset($_GET['edit_receipt'])) {
         </form>
         
         <!-- Recent Notifications -->
-        <h4 style="margin-top: 40px; margin-bottom: 20px;">Recent Notifications</h4>
+        <h4 class="ho-subhead"><i class="fas fa-history" aria-hidden="true"></i> Recent Notifications</h4>
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="table">
                 <thead>
                     <tr>
                         <th>Type</th>
@@ -1047,12 +1028,12 @@ if (isset($_GET['edit_receipt'])) {
                     if (empty($recent_notifications)):
                     ?>
                         <tr>
-                            <td colspan="5" class="text-center">No notifications sent yet</td>
+                            <td colspan="5"><div class="empty-state"><i class="fas fa-bell" aria-hidden="true"></i><p>No notifications sent yet</p></div></td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($recent_notifications as $notif): ?>
                             <tr>
-                                <td><span class="badge badge-primary"><?php echo hub_e($notif['notification_type']); ?></span></td>
+                                <td><span class="badge badge-purple"><?php echo hub_e($notif['notification_type']); ?></span></td>
                                 <td><?php echo hub_e($notif['title']); ?></td>
                                 <td><?php echo $notif['total']; ?> members</td>
                                 <td><?php echo date('d M Y, h:i A', strtotime($notif['sent_at'])); ?></td>
@@ -1075,44 +1056,46 @@ if (isset($_GET['edit_receipt'])) {
     </div>
     
     <div class="card-body">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+        <div class="ho-chart-grid">
             <!-- Member Types Chart -->
             <div>
-                <h4 style="margin-bottom: 15px;">Member Types Distribution</h4>
-                <canvas id="memberTypesChart" style="max-height: 300px;"></canvas>
+                <h4 class="ho-chart-title">Member Types Distribution</h4>
+                <canvas id="memberTypesChart" class="ho-chart"></canvas>
             </div>
             
             <!-- Subscription Plans Chart -->
             <div>
-                <h4 style="margin-bottom: 15px;">Subscription Plans</h4>
-                <canvas id="subscriptionPlansChart" style="max-height: 300px;"></canvas>
+                <h4 class="ho-chart-title">Subscription Plans</h4>
+                <canvas id="subscriptionPlansChart" class="ho-chart"></canvas>
             </div>
         </div>
         
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-top: 30px;">
+        <div class="ho-chart-grid">
             <!-- Booking Status Chart -->
             <div>
-                <h4 style="margin-bottom: 15px;">Bookings Status</h4>
-                <canvas id="bookingStatusChart" style="max-height: 300px;"></canvas>
+                <h4 class="ho-chart-title">Bookings Status</h4>
+                <canvas id="bookingStatusChart" class="ho-chart"></canvas>
             </div>
             
             <!-- Space Types Chart -->
             <div>
-                <h4 style="margin-bottom: 15px;">Popular Space Types</h4>
-                <canvas id="spaceTypesChart" style="max-height: 300px;"></canvas>
+                <h4 class="ho-chart-title">Popular Space Types</h4>
+                <canvas id="spaceTypesChart" class="ho-chart"></canvas>
             </div>
         </div>
         
         <!-- Revenue Trend -->
-        <div style="margin-top: 40px;">
-            <h4 style="margin-bottom: 15px;">Monthly Revenue Trend</h4>
-            <canvas id="revenueTrendChart" style="max-height: 300px;"></canvas>
+        <div class="ho-chart-grid">
+            <h4 class="ho-chart-title">Monthly Revenue Trend</h4>
+            <canvas id="revenueTrendChart" class="ho-chart"></canvas>
         </div>
     </div>
 </div> 
 
 <script>
 // Fetch data for charts
+const hoToken = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const hoPalette = ['--blue-fg', '--green-fg', '--brand-500', '--amber-fg', '--slate-fg'].map(hoToken);
 <?php
 // Member types
 $member_types = [];
@@ -1162,7 +1145,7 @@ new Chart(memberTypesCtx, {
         labels: <?php echo json_encode(array_keys($member_types)); ?>,
         datasets: [{
             data: <?php echo json_encode(array_values($member_types)); ?>,
-            backgroundColor: ['#3498DB', '#2ECC71', '#FF6B35', '#F39C12', '#95A5A6']
+            backgroundColor: hoPalette
         }]
     },
     options: {
@@ -1184,7 +1167,7 @@ new Chart(subscriptionPlansCtx, {
         labels: <?php echo json_encode(array_keys($subscription_plans)); ?>,
         datasets: [{
             data: <?php echo json_encode(array_values($subscription_plans)); ?>,
-            backgroundColor: ['#3498DB', '#2ECC71', '#FF6B35', '#F39C12', '#95A5A6']
+            backgroundColor: hoPalette
         }]
     },
     options: {
@@ -1207,7 +1190,7 @@ new Chart(bookingStatusCtx, {
         datasets: [{
             label: 'Number of Bookings',
             data: <?php echo json_encode(array_values($booking_status)); ?>,
-            backgroundColor: '#FF6B35'
+            backgroundColor: hoToken('--brand-500')
         }]
     },
     options: {
@@ -1235,7 +1218,7 @@ new Chart(spaceTypesCtx, {
         datasets: [{
             label: 'Number of Bookings',
             data: <?php echo json_encode(array_values($space_types)); ?>,
-            backgroundColor: '#2ECC71'
+            backgroundColor: hoToken('--green-fg')
         }]
     },
     options: {
@@ -1263,8 +1246,8 @@ new Chart(revenueTrendCtx, {
         datasets: [{
             label: 'Monthly Revenue (UGX)',
             data: <?php echo json_encode(array_values($revenue_trend)); ?>,
-            borderColor: '#3498DB',
-            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+            borderColor: hoToken('--blue-fg'),
+            backgroundColor: hoToken('--blue-bg'),
             tension: 0.4,
             fill: true
         }]
@@ -1281,6 +1264,177 @@ new Chart(revenueTrendCtx, {
 });
 </script>
 <?php endif; ?>
+<?php if ($active_tab == 'subscriptions'): 
+    // Fetch subscription payments with filters
+    $filter = "1=1";
+    if (isset($_GET['payment_status'])) {
+        $status = $conn->real_escape_string(sanitize_input($_GET['payment_status']));
+        $filter .= " AND sp.payment_status = '$status'";
+    }
+    if (isset($_GET['subscription_plan'])) {
+        $plan = $conn->real_escape_string(sanitize_input($_GET['subscription_plan']));
+        $filter .= " AND sp.subscription_plan = '$plan'";
+    }
+    
+    // Get subscription for editing
+    $edit_subscription = null;
+    if (isset($_GET['edit_subscription'])) {
+        $payment_id = intval($_GET['edit_subscription']);
+        $result = $conn->query("SELECT sp.*, u.full_name as member_name 
+                               FROM subscription_payments sp 
+                               LEFT JOIN members m ON sp.member_id = m.member_id 
+                               LEFT JOIN users u ON m.user_id = u.user_id 
+                               WHERE sp.payment_id = $payment_id");
+        $edit_subscription = $result->fetch_assoc();
+    }
+    
+    $subscriptions = [];
+    $query = "SELECT sp.*, m.membership_number, u.full_name as member_name 
+              FROM subscription_payments sp 
+              LEFT JOIN members m ON sp.member_id = m.member_id 
+              LEFT JOIN users u ON m.user_id = u.user_id 
+              WHERE $filter 
+              ORDER BY sp.created_at DESC";
+    $result = $conn->query($query);
+    while ($row = $result->fetch_assoc()) {
+        $subscriptions[] = $row;
+    }
+?>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-credit-card"></i> Subscription Payments</h3>
+        <div>
+        <a href="manage-space"  class="btn btn-secondary">
+                <i class="fas fa-building"></i> Manage Spaces
+            </a>
+            <button onclick="openModal('addSubscriptionModal')" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Payment
+            </button>
+            <button onclick="window.location.href='export?type=subscriptions'" class="btn btn-success">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <!-- Filter Bar -->
+        <form method="GET" action="">
+            <input type="hidden" name="tab" value="subscriptions">
+            <div class="filters-bar">
+                <div class="form-group">
+                    <select name="subscription_plan" class="form-control">
+                        <option value="">All Plans</option>
+                        <option value="Daily" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Daily') ? 'selected' : ''; ?>>Daily</option>
+                        <option value="Weekly" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Weekly') ? 'selected' : ''; ?>>Weekly</option>
+                        <option value="Monthly" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Monthly') ? 'selected' : ''; ?>>Monthly</option>
+                        <option value="Quarterly" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Quarterly') ? 'selected' : ''; ?>>Quarterly</option>
+                        <option value="Annual" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Annual') ? 'selected' : ''; ?>>Annual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select name="payment_status" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="Pending" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Pending') ? 'selected' : ''; ?>>Pending</option>
+                        <option value="Paid" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Paid') ? 'selected' : ''; ?>>Paid</option>
+                        <option value="Partially Paid" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Partially Paid') ? 'selected' : ''; ?>>Partially Paid</option>
+                        <option value="Overdue" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Overdue') ? 'selected' : ''; ?>>Overdue</option>
+                    </select>
+                </div>
+                <div class="filters-actions">
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    <a href="hub-operations?tab=subscriptions" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Subscriptions Table -->
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Invoice #</th>
+                        <th>Plan</th>
+                        <th>Amount</th>
+                        <th>Period</th>
+                        <th>Payment Date</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($subscriptions)): ?>
+                        <tr>
+                            <td colspan="9"><div class="empty-state"><i class="fas fa-credit-card" aria-hidden="true"></i><p>No subscription payments found</p></div></td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($subscriptions as $sub): ?>
+                            <tr>
+                                <td>
+                                    <strong><?php echo hub_e($sub['member_name'] ?? 'N/A'); ?></strong>
+                                    <small class="cell-muted"><?php echo hub_e($sub['membership_number']); ?></small>
+                                </td>
+                                <td><code><?php echo hub_e($sub['invoice_number']); ?></code></td>
+                                <td>
+                                    <span class="badge badge-purple">
+                                        <?php echo hub_e($sub['subscription_plan']); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo format_currency($sub['amount']); ?></td>
+                                <td>
+                                    <?php echo date('d M', strtotime($sub['payment_period_start'])); ?> - 
+                                    <?php echo date('d M Y', strtotime($sub['payment_period_end'])); ?>
+                                </td>
+                                <td><?php echo $sub['payment_date'] ? date('d M Y', strtotime($sub['payment_date'])) : '-'; ?></td>
+                                <td><?php echo hub_e($sub['payment_method'] ?? '-'); ?></td>
+                                <td>
+                                    <?php
+                                    $status_badges = [
+                                        'Pending' => 'warning',
+                                        'Paid' => 'success',
+                                        'Partially Paid' => 'info',
+                                        'Overdue' => 'danger',
+                                        'Cancelled' => 'secondary'
+                                    ];
+                                    $badge = $status_badges[$sub['payment_status']] ?? 'secondary';
+                                    ?>
+                                    <span class="badge badge-<?php echo $badge; ?>">
+                                        <?php echo $sub['payment_status']; ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a href="?edit_subscription=<?php echo $sub['payment_id']; ?>&tab=subscriptions" 
+                                           class="btn btn-warning btn-sm" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <?php if (ims_allowed('subscriptions.delete', ['Administrator'], 'Delete subscription payments')): ?>
+                                            <a href="javascript:void(0)" 
+                                               onclick="confirmDelete('this payment', 'includes/hub-operations-process.php?delete_subscription=<?php echo $sub['payment_id']; ?>&tab=subscriptions&csrf_token=<?= urlencode(csrf_token()) ?>')" 
+                                               class="btn btn-danger btn-sm" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+</div><!-- /.page-stack -->
+
+<!-- Add Member Modal -->
 <div id="addMemberModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
@@ -1423,173 +1577,6 @@ new Chart(revenueTrendCtx, {
         </div>
     </div>
 </div>
-<?php if ($active_tab == 'subscriptions'): 
-    // Fetch subscription payments with filters
-    $filter = "1=1";
-    if (isset($_GET['payment_status'])) {
-        $status = $conn->real_escape_string(sanitize_input($_GET['payment_status']));
-        $filter .= " AND sp.payment_status = '$status'";
-    }
-    if (isset($_GET['subscription_plan'])) {
-        $plan = $conn->real_escape_string(sanitize_input($_GET['subscription_plan']));
-        $filter .= " AND sp.subscription_plan = '$plan'";
-    }
-    
-    // Get subscription for editing
-    $edit_subscription = null;
-    if (isset($_GET['edit_subscription'])) {
-        $payment_id = intval($_GET['edit_subscription']);
-        $result = $conn->query("SELECT sp.*, u.full_name as member_name 
-                               FROM subscription_payments sp 
-                               LEFT JOIN members m ON sp.member_id = m.member_id 
-                               LEFT JOIN users u ON m.user_id = u.user_id 
-                               WHERE sp.payment_id = $payment_id");
-        $edit_subscription = $result->fetch_assoc();
-    }
-    
-    $subscriptions = [];
-    $query = "SELECT sp.*, m.membership_number, u.full_name as member_name 
-              FROM subscription_payments sp 
-              LEFT JOIN members m ON sp.member_id = m.member_id 
-              LEFT JOIN users u ON m.user_id = u.user_id 
-              WHERE $filter 
-              ORDER BY sp.created_at DESC";
-    $result = $conn->query($query);
-    while ($row = $result->fetch_assoc()) {
-        $subscriptions[] = $row;
-    }
-?>
-<div class="card">
-    <div class="card-header">
-        <h3><i class="fas fa-credit-card"></i> Subscription Payments</h3>
-        <div>
-        <a href="manage-space"  class="btn btn-secondary">
-                <i class="fas fa-building"></i> Manage Spaces
-            </a>
-            <button onclick="openModal('addSubscriptionModal')" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Add Payment
-            </button>
-            <button onclick="window.location.href='export?type=subscriptions'" class="btn btn-success">
-                <i class="fas fa-download"></i> Export
-            </button>
-        </div>
-    </div>
-    
-    <div class="card-body">
-        <!-- Filter Bar -->
-        <form method="GET" action="" class="filter-bar">
-            <input type="hidden" name="tab" value="subscriptions">
-            <div class="filters-bar">
-                <div class="form-group">
-                    <select name="subscription_plan" class="form-control">
-                        <option value="">All Plans</option>
-                        <option value="Daily" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Daily') ? 'selected' : ''; ?>>Daily</option>
-                        <option value="Weekly" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Weekly') ? 'selected' : ''; ?>>Weekly</option>
-                        <option value="Monthly" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Monthly') ? 'selected' : ''; ?>>Monthly</option>
-                        <option value="Quarterly" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Quarterly') ? 'selected' : ''; ?>>Quarterly</option>
-                        <option value="Annual" <?php echo (isset($_GET['subscription_plan']) && $_GET['subscription_plan'] == 'Annual') ? 'selected' : ''; ?>>Annual</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <select name="payment_status" class="form-control">
-                        <option value="">All Status</option>
-                        <option value="Pending" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Pending') ? 'selected' : ''; ?>>Pending</option>
-                        <option value="Paid" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Paid') ? 'selected' : ''; ?>>Paid</option>
-                        <option value="Partially Paid" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Partially Paid') ? 'selected' : ''; ?>>Partially Paid</option>
-                        <option value="Overdue" <?php echo (isset($_GET['payment_status']) && $_GET['payment_status'] == 'Overdue') ? 'selected' : ''; ?>>Overdue</option>
-                    </select>
-                </div>
-                <div class="filters-actions">
-                    <button type="submit" class="btn btn-info">
-                        <i class="fas fa-filter"></i> Filter
-                    </button>
-                    <a href="hub-operations?tab=subscriptions" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                </div>
-            </div>
-        </form>
-        
-        <!-- Subscriptions Table -->
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Member</th>
-                        <th>Invoice #</th>
-                        <th>Plan</th>
-                        <th>Amount</th>
-                        <th>Period</th>
-                        <th>Payment Date</th>
-                        <th>Method</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($subscriptions)): ?>
-                        <tr>
-                            <td colspan="9" class="text-center">No subscription payments found</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($subscriptions as $sub): ?>
-                            <tr>
-                                <td>
-                                    <strong><?php echo hub_e($sub['member_name'] ?? 'N/A'); ?></strong><br>
-                                    <small style="color: #7f8c8d;"><?php echo hub_e($sub['membership_number']); ?></small>
-                                </td>
-                                <td><code><?php echo hub_e($sub['invoice_number']); ?></code></td>
-                                <td>
-                                    <span class="badge badge-primary">
-                                        <?php echo hub_e($sub['subscription_plan']); ?>
-                                    </span>
-                                </td>
-                                <td><?php echo format_currency($sub['amount']); ?></td>
-                                <td>
-                                    <?php echo date('d M', strtotime($sub['payment_period_start'])); ?> - 
-                                    <?php echo date('d M Y', strtotime($sub['payment_period_end'])); ?>
-                                </td>
-                                <td><?php echo $sub['payment_date'] ? date('d M Y', strtotime($sub['payment_date'])) : '-'; ?></td>
-                                <td><?php echo hub_e($sub['payment_method'] ?? '-'); ?></td>
-                                <td>
-                                    <?php
-                                    $status_badges = [
-                                        'Pending' => 'warning',
-                                        'Paid' => 'success',
-                                        'Partially Paid' => 'info',
-                                        'Overdue' => 'danger',
-                                        'Cancelled' => 'secondary'
-                                    ];
-                                    $badge = $status_badges[$sub['payment_status']] ?? 'secondary';
-                                    ?>
-                                    <span class="badge badge-<?php echo $badge; ?>">
-                                        <?php echo $sub['payment_status']; ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="table-actions">
-                                        <a href="?edit_subscription=<?php echo $sub['payment_id']; ?>&tab=subscriptions" 
-                                           class="btn btn-warning btn-sm" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <?php if (ims_allowed('subscriptions.delete', ['Administrator'], 'Delete subscription payments')): ?>
-                                            <a href="javascript:void(0)" 
-                                               onclick="confirmDelete('this payment', 'includes/hub-operations-process.php?delete_subscription=<?php echo $sub['payment_id']; ?>&tab=subscriptions&csrf_token=<?= urlencode(csrf_token()) ?>')" 
-                                               class="btn btn-danger btn-sm" title="Delete">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
 
 <!-- Add Subscription Payment Modal -->
 <div id="addSubscriptionModal" class="modal">
@@ -1804,8 +1791,8 @@ new Chart(revenueTrendCtx, {
                 <div class="form-group">
                     <label for="receipt_file">Receipt File (PDF/Image)</label>
                     <?php if ($edit_receipt && $edit_receipt['receipt_file_path']): ?>
-                        <div style="margin-bottom: 10px;">
-                            <small style="color: #7f8c8d;">
+                        <div class="ho-current-file">
+                            <small class="cell-muted">
                                 Current file: 
                                 <a href="<?php echo hub_e(ims_upload_url($edit_receipt['receipt_file_path'])); ?>" target="_blank">
                                     View current receipt
@@ -1815,7 +1802,7 @@ new Chart(revenueTrendCtx, {
                     <?php endif; ?>
                     <input type="file" id="receipt_file" name="receipt_file" class="form-control" 
                            accept=".pdf,.jpg,.jpeg,.png,.gif">
-                    <small style="color: #7f8c8d;">Upload a scanned copy or photo of the receipt (optional)</small>
+                    <small class="cell-muted">Upload a scanned copy or photo of the receipt (optional)</small>
                 </div>
                 
                 <div class="form-group">
@@ -1825,7 +1812,7 @@ new Chart(revenueTrendCtx, {
                         <option value="Verified" <?php echo ($edit_receipt && $edit_receipt['verification_status'] == 'Verified') ? 'selected' : ''; ?>>Verified</option>
                         <option value="Rejected" <?php echo ($edit_receipt && $edit_receipt['verification_status'] == 'Rejected') ? 'selected' : ''; ?>>Rejected</option>
                     </select>
-                    <small style="color: #7f8c8d;">Select "Verified" if you're creating a verified receipt</small>
+                    <small class="cell-muted">Select "Verified" if you're creating a verified receipt</small>
                 </div>
                 
                 <div class="form-group">

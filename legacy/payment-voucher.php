@@ -1107,169 +1107,152 @@ if ($dataStmt) {
     $dataStmt->close();
 }
 ?>
-<!-- Bootstrap 5.3.3, scoped to .page-payment-voucher so it does not restyle the app layout -->
+<!-- Bootstrap 5.3.3, scoped to .page-payment-voucher so it does not restyle the app layout (used by the modals below) -->
 <link rel="stylesheet" href="css/payment-voucher-bootstrap.css">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-.page-payment-voucher{
-    --pv-primary:#f97316;
-    --pv-primary-dark:#c2540a;
-    --pv-primary-light:#fff7ed;
-    --pv-ring:rgba(249,115,22,.18);
-    --pv-border:#e5e7eb;
-    --pv-text:#111827;
-    --pv-muted:#6b7280;
-    --pv-success:#16a34a;
-    --pv-danger:#dc2626;
-    --pv-radius:14px;
-    --pv-shadow:0 1px 3px rgba(0,0,0,.08);
+/* Payment Vouchers: selection bar, currency chips, pager and the Bootstrap modals. */
+.pv-search { margin-bottom: 0; }
+.pv-selection-bar { display: none; padding: 12px 16px; margin-bottom: 14px; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--brand-50); border: 1px solid var(--brand-200); border-radius: var(--radius-lg); }
+.pv-selection-bar.active { display: flex; }
+.pv-selection-summary { font-size: 13px; font-weight: 600; }
+.pv-selection-summary span { display: inline-grid; place-items: center; min-width: 27px; height: 27px; padding: 0 7px; border-radius: var(--radius-pill); background: var(--brand-500); color: var(--ink-0); margin-right: 7px; }
+.pv-selection-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pv-table tbody tr.row-selected td { background: var(--brand-50); }
+.pv-table .voucher-check,
+.pv-table .select-all-check { width: 17px; height: 17px; accent-color: var(--brand-500); cursor: pointer; }
+.pv-vno { font-size: 12px; font-weight: 600; }
+.pv-cur { display: inline-flex; padding: 3px 9px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; }
+.pv-cur.badge-ugx { background: var(--blue-bg); color: var(--blue-fg); }
+.pv-cur.badge-usd { background: var(--green-bg); color: var(--green-fg); }
+.pv-cur.badge-eur { background: var(--amber-bg); color: var(--amber-fg); }
+.pv-cur.badge-kes { background: var(--purple-bg); color: var(--purple-fg); }
+.pv-cur.badge-gbp { background: var(--red-bg); color: var(--red-fg); }
+.pv-cur.badge-tzs { background: var(--brand-50); color: var(--brand-700); }
+.pv-row-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+.pv-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pv-pager-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pv-pager-left .form-control { width: auto; }
+.pv-pager .pagination { margin-top: 0; flex-wrap: wrap; }
+.pv-pager .pagination a.disabled { opacity: .35; pointer-events: none; }
+
+/* Bootstrap modals (scoped stylesheet above). */
+.page-payment-voucher .btn-orange { background: var(--brand-500); border-color: var(--brand-500); color: var(--ink-0); font-weight: 600; }
+.page-payment-voucher .btn-orange:hover { background: var(--brand-700); border-color: var(--brand-700); color: var(--ink-0); }
+.page-payment-voucher .modal-content { border-radius: var(--radius-xl); border: 0; box-shadow: var(--shadow-xl); }
+.page-payment-voucher .modal-header { border-bottom: 1px solid var(--ink-100); }
+.page-payment-voucher .modal-title { font-size: 16px; font-weight: 700; }
+.page-payment-voucher .modal .form-label { font-size: 11px; text-transform: uppercase; font-weight: 700; color: var(--ink-400); }
+.page-payment-voucher .modal .form-control,
+.page-payment-voucher .modal .form-select { font-size: 13px; border: 1.5px solid var(--ink-100); }
+.page-payment-voucher .modal .form-control:focus,
+.page-payment-voucher .modal .form-select:focus { border-color: var(--brand-500); box-shadow: var(--focus-ring); }
+.page-payment-voucher .pv-logo-box { min-height: 150px; display: grid; place-items: center; }
+.page-payment-voucher .pv-logo-img { max-width: 240px; max-height: 120px; object-fit: contain; }
+.page-payment-voucher .items-wrap { overflow-x: auto; }
+.page-payment-voucher .items-table { width: 100%; min-width: 650px; border-collapse: collapse; }
+.page-payment-voucher .items-table th { font-size: 10px; text-transform: uppercase; background: var(--ink-50); padding: 8px; }
+.page-payment-voucher .items-table td { padding: 5px; }
+.page-payment-voucher .it-input { width: 100%; border: 1px solid var(--ink-100); border-radius: var(--radius-sm); padding: 7px; font-size: 12px; }
+.page-payment-voucher .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; margin-bottom: 18px; }
+.page-payment-voucher .dk { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--ink-400); }
+.page-payment-voucher .dv { font-size: 13px; font-weight: 500; margin-top: 3px; }
+.page-payment-voucher .section-title { font-size: 11px; text-transform: uppercase; color: var(--ink-400); font-weight: 700; margin: 17px 0 9px; }
+@media (max-width: 576px) {
+    .page-payment-voucher .detail-grid { grid-template-columns: 1fr; }
 }
-.page-payment-voucher{font-family:"DM Sans",sans-serif;background:#f4f4f5;color:var(--pv-text)}
-.page-payment-voucher .pv-header{background:linear-gradient(130deg,#ea580c,#f97316 55%,#fb923c);color:#fff;padding:25px 28px;border-radius:var(--pv-radius);margin-bottom:18px;display:flex;align-items:center;gap:14px}
-.page-payment-voucher .pv-header-icon{width:48px;height:48px;border-radius:10px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:22px}
-.page-payment-voucher .pv-header h1{font-size:21px;margin:0;font-weight:700}
-.page-payment-voucher .pv-header p{font-size:13px;margin:3px 0 0;opacity:.86}
-.page-payment-voucher .toolbar,.page-payment-voucher .selection-bar,.page-payment-voucher .pager-wrap{background:#fff;border:1px solid var(--pv-border);border-radius:var(--pv-radius);box-shadow:var(--pv-shadow)}
-.page-payment-voucher .toolbar{padding:14px 16px;margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.page-payment-voucher .search-wrap{display:flex;gap:8px;flex:1;min-width:280px;margin:0}
-.page-payment-voucher .toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
-.page-payment-voucher .pv-action-btn{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
-.page-payment-voucher .btn-orange{background:var(--pv-primary);border-color:var(--pv-primary);color:#fff;font-weight:600}
-.page-payment-voucher .btn-orange:hover{background:var(--pv-primary-dark);border-color:var(--pv-primary-dark);color:#fff}
-.page-payment-voucher .selection-bar{display:none;padding:12px 16px;margin-bottom:14px;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-color:#fed7aa;background:#fffaf5}
-.page-payment-voucher .selection-bar.active{display:flex}
-.page-payment-voucher .selection-summary{font-size:13px;font-weight:600}
-.page-payment-voucher .selection-summary span{display:inline-grid;place-items:center;min-width:27px;height:27px;padding:0 7px;border-radius:999px;background:var(--pv-primary);color:#fff;margin-right:7px}
-.page-payment-voucher .card-table{background:#fff;border:1px solid var(--pv-border);border-radius:var(--pv-radius);box-shadow:var(--pv-shadow);overflow-x:auto}
-.page-payment-voucher .card-table table{width:100%;min-width:900px;border-collapse:collapse;margin:0}
-.page-payment-voucher .card-table th{padding:11px 13px;background:#fafafa;border-bottom:1px solid var(--pv-border);font-size:11px;text-transform:uppercase;letter-spacing:.45px;color:var(--pv-muted)}
-.page-payment-voucher .card-table td{padding:12px 13px;border-bottom:1px solid #f3f4f6;font-size:13px;vertical-align:middle}
-.page-payment-voucher .card-table tbody tr:hover td,.page-payment-voucher .card-table tbody tr.row-selected td{background:var(--pv-primary-light)}
-.page-payment-voucher .vno{font-family:"DM Mono",monospace;font-size:12px;font-weight:600}
-.page-payment-voucher .cur-badge{display:inline-flex;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700}
-.page-payment-voucher .badge-ugx{background:#eff6ff;color:#1d4ed8}.page-payment-voucher .badge-usd{background:#f0fdf4;color:#15803d}
-.page-payment-voucher .badge-eur{background:#fefce8;color:#a16207}.page-payment-voucher .badge-kes{background:#fdf4ff;color:#7e22ce}
-.page-payment-voucher .badge-gbp{background:#fff1f2;color:#be123c}.page-payment-voucher .badge-tzs{background:#fff7ed;color:#c2410c}
-.page-payment-voucher .row-actions{display:flex;gap:5px;flex-wrap:wrap}
-.page-payment-voucher .voucher-check,.page-payment-voucher .select-all-check{width:17px;height:17px;accent-color:var(--pv-primary);cursor:pointer}
-.page-payment-voucher .empty-state{text-align:center;padding:52px 20px;color:var(--pv-muted)}
-.page-payment-voucher .empty-state i{font-size:34px;opacity:.25;display:block;margin-bottom:10px}
-.page-payment-voucher .pager-wrap{padding:12px 15px;margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.page-payment-voucher .pager-left,.page-payment-voucher .pager-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.page-payment-voucher .pager-info{font-size:12px;color:var(--pv-muted);margin-right:12px}
-.page-payment-voucher .pg-btn{display:inline-flex;align-items:center;justify-content:center;height:34px;min-width:34px;padding:0 9px;border:1px solid var(--pv-border);border-radius:6px;color:var(--pv-text);text-decoration:none;font-size:12px;background:#fff}
-.page-payment-voucher .pg-btn:hover{border-color:var(--pv-primary);color:var(--pv-primary)}
-.page-payment-voucher .pg-btn.active{background:var(--pv-primary);border-color:var(--pv-primary);color:#fff}
-.page-payment-voucher .pg-btn.disabled{opacity:.35;pointer-events:none}
-.page-payment-voucher .modal-content{border-radius:14px;border:0;box-shadow:0 18px 55px rgba(0,0,0,.2)}
-.page-payment-voucher .modal-header{border-bottom:1px solid var(--pv-border)}
-.page-payment-voucher .modal-title{font-size:16px;font-weight:700}
-.page-payment-voucher .modal .form-label{font-size:11px;text-transform:uppercase;font-weight:700;color:var(--pv-muted)}
-.page-payment-voucher .modal .form-control,.page-payment-voucher .modal .form-select{font-size:13px;border:1.5px solid var(--pv-border)}
-.page-payment-voucher .modal .form-control:focus,.page-payment-voucher .modal .form-select:focus{border-color:var(--pv-primary);box-shadow:0 0 0 3px var(--pv-ring)}
-.page-payment-voucher .items-wrap{overflow-x:auto}
-.page-payment-voucher .items-table{width:100%;min-width:650px;border-collapse:collapse}
-.page-payment-voucher .items-table th{font-size:10px;text-transform:uppercase;background:#f8fafc;padding:8px}
-.page-payment-voucher .items-table td{padding:5px}
-.page-payment-voucher .it-input{width:100%;border:1px solid var(--pv-border);border-radius:6px;padding:7px;font-size:12px}
-.page-payment-voucher .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px;margin-bottom:18px}
-.page-payment-voucher .dk{font-size:10px;text-transform:uppercase;font-weight:700;color:var(--pv-muted)}
-.page-payment-voucher .dv{font-size:13px;font-weight:500;margin-top:3px}
-.page-payment-voucher .section-title{font-size:11px;text-transform:uppercase;color:var(--pv-muted);font-weight:700;margin:17px 0 9px}
-@media(max-width:992px){.page-payment-voucher .toolbar,.page-payment-voucher .search-wrap,.page-payment-voucher .toolbar-actions{width:100%}.page-payment-voucher .toolbar-actions{margin-left:0}}
-@media(max-width:576px){.page-payment-voucher .search-wrap,.page-payment-voucher .toolbar-actions{display:grid;grid-template-columns:1fr}.page-payment-voucher .pv-action-btn{width:100%}.page-payment-voucher .detail-grid{grid-template-columns:1fr}}
 </style>
 
-<div class="page-payment-voucher">
-
-<div class="pv-header">
-    <div class="pv-header-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+<div class="page-stack">
+<div class="page-hero">
     <div>
-        <h1>Payment Vouchers</h1>
+        <h1><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Payment Vouchers</h1>
         <p>Create, edit, print, bulk upload, and export selected vouchers to PDF.</p>
+    </div>
+    <div class="hero-actions">
+        <button type="button"
+                class="btn"
+                data-bs-toggle="modal"
+                data-bs-target="#voucherLogoModal"
+                onclick="openVoucherLogoModal()">
+            <i class="fas fa-image" aria-hidden="true"></i> Voucher Logo
+        </button>
+
+        <a href="<?= pvEsc($selfPath) ?>?download_template=1" class="btn">
+            <i class="fas fa-download" aria-hidden="true"></i> CSV Template
+        </a>
+
+        <button type="button" class="btn"
+                data-bs-toggle="modal" data-bs-target="#bulkUploadModal"
+                onclick="openBulkUploadModal()">
+            <i class="fas fa-file-upload" aria-hidden="true"></i> Bulk Upload
+        </button>
+
+        <button type="button" class="btn btn-primary"
+                data-bs-toggle="modal" data-bs-target="#voucherModal"
+                onclick="openCreateModal()">
+            <i class="fas fa-plus" aria-hidden="true"></i> New Voucher
+        </button>
     </div>
 </div>
 
 <?php if ($successMessage !== ''): ?>
-<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i><?= pvEsc($successMessage) ?></div>
+<div class="alert alert-success"><i class="fas fa-check-circle" aria-hidden="true"></i><?= pvEsc($successMessage) ?></div>
 <?php endif; ?>
 
 <?php if ($errorMessage !== ''): ?>
-<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i><?= pvEsc($errorMessage) ?></div>
+<div class="alert alert-danger"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><?= pvEsc($errorMessage) ?></div>
 <?php endif; ?>
 
-<div class="toolbar">
-    <form method="get" action="<?= pvEsc($selfPath) ?>" class="search-wrap filters-bar" role="search">
-        <input type="hidden" name="page" value="1">
-        <input type="hidden" name="per_page" value="<?= $perPage ?>">
-        <input type="text" name="q" class="form-control filters-grow"
-               placeholder="Search voucher number, supplier, or project..."
-               value="<?= pvEsc($query) ?>">
-        <button type="submit" class="btn btn-outline-secondary">
-            <i class="fas fa-search me-1"></i>Search
-        </button>
-        <?php if ($query !== ''): ?>
-        <a href="<?= pvEsc($selfPath) ?>?per_page=<?= $perPage ?>" class="btn btn-outline-secondary">
-            <i class="fas fa-times me-1"></i>Clear
-        </a>
-        <?php endif; ?>
-    </form>
-
-    <div class="toolbar-actions">
-        <button type="button"
-                class="btn btn-outline-secondary pv-action-btn"
-                data-bs-toggle="modal"
-                data-bs-target="#voucherLogoModal"
-                onclick="openVoucherLogoModal()">
-            <i class="fas fa-image"></i>Voucher Logo
-        </button>
-
-        <a href="<?= pvEsc($selfPath) ?>?download_template=1"
-           class="btn btn-outline-secondary pv-action-btn">
-            <i class="fas fa-download"></i>CSV Template
-        </a>
-
-        <button type="button" class="btn btn-outline-secondary pv-action-btn"
-                data-bs-toggle="modal" data-bs-target="#bulkUploadModal"
-                onclick="openBulkUploadModal()">
-            <i class="fas fa-file-upload"></i>Bulk Upload
-        </button>
-
-        <button type="button" class="btn btn-orange pv-action-btn"
-                data-bs-toggle="modal" data-bs-target="#voucherModal"
-                onclick="openCreateModal()">
-            <i class="fas fa-plus"></i>New Voucher
-        </button>
+<div class="card">
+    <div class="card-body">
+        <form method="get" action="<?= pvEsc($selfPath) ?>" class="filters-bar pv-search" role="search" aria-label="Search vouchers">
+            <input type="hidden" name="page" value="1">
+            <input type="hidden" name="per_page" value="<?= $perPage ?>">
+            <input type="text" name="q" class="form-control filters-grow"
+                   placeholder="Search voucher number, supplier, or project..."
+                   value="<?= pvEsc($query) ?>">
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-search" aria-hidden="true"></i> Search
+            </button>
+            <?php if ($query !== ''): ?>
+            <a href="<?= pvEsc($selfPath) ?>?per_page=<?= $perPage ?>" class="btn btn-soft">
+                <i class="fas fa-times" aria-hidden="true"></i> Clear
+            </a>
+            <?php endif; ?>
+        </form>
     </div>
 </div>
 
 <form method="post" action="<?= pvEsc($selfPath) ?>" id="selectedExportForm">
     <input type="hidden" name="action" value="export_selected_pdf">
 
-    <div class="selection-bar" id="selectionBar">
-        <div class="selection-summary">
+    <div class="pv-selection-bar" id="selectionBar">
+        <div class="pv-selection-summary">
             <span id="selectedCount">0</span>
             voucher(s) selected
-            <small class="text-muted ms-2">Maximum 25 per PDF for faster download</small>
+            <small class="cell-muted">Maximum 25 per PDF for faster download</small>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap">
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearVoucherSelection()">
-                <i class="fas fa-times me-1"></i>Clear
+        <div class="pv-selection-actions">
+            <button type="button" class="btn btn-sm btn-soft" onclick="clearVoucherSelection()">
+                <i class="fas fa-times" aria-hidden="true"></i> Clear
             </button>
 
-            <button type="submit" class="btn btn-sm btn-orange" id="exportSelectedBtn" disabled>
-                <i class="fas fa-file-pdf me-1"></i>Export Selected PDF
+            <button type="submit" class="btn btn-sm btn-primary" id="exportSelectedBtn" disabled>
+                <i class="fas fa-file-pdf" aria-hidden="true"></i> Export Selected PDF
             </button>
         </div>
     </div>
 
-    <div class="card-table">
-        <table>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-list" aria-hidden="true"></i> Vouchers</h3></div>
+        <div class="card-body">
+        <div class="table-responsive">
+        <table class="table pv-table">
             <thead>
             <tr>
-                <th style="width:46px;text-align:center">
+                <th class="text-center" style="width:46px">
                     <input type="checkbox" class="select-all-check" id="selectAllVouchers"
                            aria-label="Select all vouchers on this page">
                 </th>
@@ -1287,10 +1270,10 @@ if ($dataStmt) {
                 <tr>
                     <td colspan="8">
                         <div class="empty-state">
-                            <i class="fas fa-file-invoice"></i>
-                            <?= $query !== ''
+                            <i class="fas fa-file-invoice" aria-hidden="true"></i>
+                            <p><?= $query !== ''
                                 ? 'No vouchers match <strong>' . pvEsc($query) . '</strong>.'
-                                : 'No vouchers have been created yet.' ?>
+                                : 'No vouchers have been created yet.' ?></p>
                         </div>
                     </td>
                 </tr>
@@ -1301,28 +1284,28 @@ if ($dataStmt) {
                     $id = (int)$voucher['id'];
                     ?>
                     <tr id="voucherRow<?= $id ?>">
-                        <td style="text-align:center">
+                        <td class="text-center">
                             <input type="checkbox"
                                    class="voucher-check"
                                    name="voucher_ids[]"
                                    value="<?= $id ?>"
                                    aria-label="Select voucher <?= pvEsc($voucher['voucher_no']) ?>">
                         </td>
-                        <td><span class="vno"><?= pvEsc($voucher['voucher_no']) ?></span></td>
+                        <td><span class="pv-vno"><?= pvEsc($voucher['voucher_no']) ?></span></td>
                         <td><?= !empty($voucher['voucher_date'])
                                 ? date('d M Y', strtotime((string)$voucher['voucher_date']))
                                 : '-' ?></td>
                         <td><?= pvEsc($voucher['supplier'] ?? '-') ?></td>
                         <td>
-                            <span class="cur-badge <?= pvCurrencyBadge($currency) ?>">
+                            <span class="pv-cur <?= pvCurrencyBadge($currency) ?>">
                                 <?= pvEsc($currency) ?>
                             </span>
                         </td>
                         <td><?= pvEsc($currency) ?> <?= number_format((float)($voucher['total_amount'] ?? 0), 2) ?></td>
                         <td><?= pvEsc($voucher['project_code'] ?? '-') ?></td>
                         <td>
-                            <div class="row-actions">
-                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                            <div class="pv-row-actions">
+                                <button type="button" class="btn btn-sm btn-soft"
                                         title="View"
                                         data-bs-toggle="modal" data-bs-target="#viewModal"
                                         onclick="viewVoucher(<?= $id ?>)">
@@ -1331,12 +1314,12 @@ if ($dataStmt) {
 
                                 <a href="voucher_print?id=<?= $id ?>"
                                    target="_blank"
-                                   class="btn btn-sm btn-outline-secondary"
+                                   class="btn btn-sm btn-soft"
                                    title="Print">
                                     <i class="fas fa-print"></i>
                                 </a>
 
-                                <button type="button" class="btn btn-sm btn-orange"
+                                <button type="button" class="btn btn-sm btn-primary"
                                         title="Edit"
                                         data-bs-toggle="modal" data-bs-target="#voucherModal"
                                         onclick="editVoucher(<?= $id ?>)">
@@ -1349,6 +1332,8 @@ if ($dataStmt) {
             <?php endif; ?>
             </tbody>
         </table>
+        </div>
+        </div>
     </div>
 </form>
 
@@ -1360,64 +1345,71 @@ $lastWindow = end($window);
 $startRow = $offset + 1;
 $endRow = min($offset + $perPage, $totalRows);
 ?>
-<div class="pager-wrap">
-    <div class="pager-left">
-        <div class="pager-info">
-            Showing <strong><?= $startRow ?>-<?= $endRow ?></strong>
-            of <strong><?= number_format($totalRows) ?></strong>
+<div class="card">
+    <div class="card-body pv-pager">
+        <div class="pv-pager-left">
+            <div class="cell-muted">
+                Showing <strong><?= $startRow ?>-<?= $endRow ?></strong>
+                of <strong><?= number_format($totalRows) ?></strong>
+            </div>
+
+            <select class="form-control"
+                    aria-label="Rows per page"
+                    onchange="changePerPage(this.value)">
+                <?php foreach ($allowedPerPage as $amount): ?>
+                    <option value="<?= $amount ?>" <?= $amount === $perPage ? 'selected' : '' ?>>
+                        <?= $amount ?> rows
+                    </option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
-        <select class="form-select form-select-sm" style="width:auto"
-                onchange="changePerPage(this.value)">
-            <?php foreach ($allowedPerPage as $amount): ?>
-                <option value="<?= $amount ?>" <?= $amount === $perPage ? 'selected' : '' ?>>
-                    <?= $amount ?> rows
-                </option>
+        <div class="pagination">
+            <a class="<?= $currentPage <= 1 ? 'disabled' : '' ?>"
+               href="<?= pvEsc(pvPageUrl($selfPath, 1, $query, $perPage)) ?>">
+                <i class="fas fa-angles-left"></i>
+            </a>
+
+            <a class="<?= $currentPage <= 1 ? 'disabled' : '' ?>"
+               href="<?= pvEsc(pvPageUrl($selfPath, $currentPage - 1, $query, $perPage)) ?>">
+                <i class="fas fa-angle-left"></i>
+            </a>
+
+            <?php if ($firstWindow > 1): ?>
+                <a href="<?= pvEsc(pvPageUrl($selfPath, 1, $query, $perPage)) ?>">1</a>
+            <?php endif; ?>
+
+            <?php foreach ($window as $page): ?>
+                <a class="<?= $page === $currentPage ? 'active' : '' ?>"
+                   href="<?= pvEsc(pvPageUrl($selfPath, $page, $query, $perPage)) ?>">
+                    <?= $page ?>
+                </a>
             <?php endforeach; ?>
-        </select>
-    </div>
 
-    <div class="pager-controls">
-        <a class="pg-btn <?= $currentPage <= 1 ? 'disabled' : '' ?>"
-           href="<?= pvEsc(pvPageUrl($selfPath, 1, $query, $perPage)) ?>">
-            <i class="fas fa-angles-left"></i>
-        </a>
+            <?php if ($lastWindow < $totalPages): ?>
+                <a href="<?= pvEsc(pvPageUrl($selfPath, $totalPages, $query, $perPage)) ?>">
+                    <?= $totalPages ?>
+                </a>
+            <?php endif; ?>
 
-        <a class="pg-btn <?= $currentPage <= 1 ? 'disabled' : '' ?>"
-           href="<?= pvEsc(pvPageUrl($selfPath, $currentPage - 1, $query, $perPage)) ?>">
-            <i class="fas fa-angle-left"></i>
-        </a>
-
-        <?php if ($firstWindow > 1): ?>
-            <a class="pg-btn" href="<?= pvEsc(pvPageUrl($selfPath, 1, $query, $perPage)) ?>">1</a>
-        <?php endif; ?>
-
-        <?php foreach ($window as $page): ?>
-            <a class="pg-btn <?= $page === $currentPage ? 'active' : '' ?>"
-               href="<?= pvEsc(pvPageUrl($selfPath, $page, $query, $perPage)) ?>">
-                <?= $page ?>
+            <a class="<?= $currentPage >= $totalPages ? 'disabled' : '' ?>"
+               href="<?= pvEsc(pvPageUrl($selfPath, $currentPage + 1, $query, $perPage)) ?>">
+                <i class="fas fa-angle-right"></i>
             </a>
-        <?php endforeach; ?>
 
-        <?php if ($lastWindow < $totalPages): ?>
-            <a class="pg-btn" href="<?= pvEsc(pvPageUrl($selfPath, $totalPages, $query, $perPage)) ?>">
-                <?= $totalPages ?>
+            <a class="<?= $currentPage >= $totalPages ? 'disabled' : '' ?>"
+               href="<?= pvEsc(pvPageUrl($selfPath, $totalPages, $query, $perPage)) ?>">
+                <i class="fas fa-angles-right"></i>
             </a>
-        <?php endif; ?>
-
-        <a class="pg-btn <?= $currentPage >= $totalPages ? 'disabled' : '' ?>"
-           href="<?= pvEsc(pvPageUrl($selfPath, $currentPage + 1, $query, $perPage)) ?>">
-            <i class="fas fa-angle-right"></i>
-        </a>
-
-        <a class="pg-btn <?= $currentPage >= $totalPages ? 'disabled' : '' ?>"
-           href="<?= pvEsc(pvPageUrl($selfPath, $totalPages, $query, $perPage)) ?>">
-            <i class="fas fa-angles-right"></i>
-        </a>
+        </div>
     </div>
 </div>
 <?php endif; ?>
 
+</div><!-- /.page-stack -->
+
+<!-- Bootstrap modals stay inside the scoped wrapper so the scoped stylesheet applies to them. -->
+<div class="page-payment-voucher">
 
 <!-- Global voucher logo modal -->
 <div class="modal fade" id="voucherLogoModal" tabindex="-1" aria-hidden="true">
@@ -1433,13 +1425,12 @@ $endRow = min($offset + $perPage, $totalRows);
             <div class="modal-body">
                 <div id="voucherLogoAlert"></div>
 
-                <div class="text-center border rounded p-3 mb-3 bg-light"
-                     style="min-height:150px;display:grid;place-items:center">
+                <div class="text-center border rounded p-3 mb-3 bg-light pv-logo-box">
                     <?php if ($currentVoucherLogoUrl !== ''): ?>
                         <img id="voucherLogoPreview"
                              src="<?= pvEsc($currentVoucherLogoUrl) ?>?v=<?= time() ?>"
                              alt="Voucher logo"
-                             style="max-width:240px;max-height:120px;object-fit:contain">
+                             class="pv-logo-img">
                         <div id="voucherLogoEmpty" class="text-muted" style="display:none">
                             No voucher logo uploaded.
                         </div>
@@ -1447,7 +1438,7 @@ $endRow = min($offset + $perPage, $totalRows);
                         <img id="voucherLogoPreview"
                              src=""
                              alt="Voucher logo"
-                             style="display:none;max-width:240px;max-height:120px;object-fit:contain">
+                             class="pv-logo-img" style="display:none">
                         <div id="voucherLogoEmpty" class="text-muted">
                             <i class="fas fa-image fa-2x d-block mb-2"></i>
                             No voucher logo uploaded.

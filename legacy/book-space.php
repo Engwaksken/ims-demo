@@ -77,119 +77,99 @@ if ($result) {
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js" integrity="sha384-5/vsv56401Wf+RP3yE5/aIKW4wutk4nLY3HjueTXN0rA+DmweMtrYaN6RSjdv31b" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <style>
-.booking-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 25px;
-    border-radius: 12px;
-    margin-bottom: 25px;
-}
-
-.space-grid {
+/* Book a space: space cards, calendar legend, pending-booking rows and
+   the booking overlay. */
+.bs-space-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
+    gap: var(--space-5);
 }
 
-.space-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    transition: all 0.3s;
-    border-left: 5px solid var(--primary-color);
+.bs-space {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-5);
+    background: var(--surface-card);
+    border: 1px solid var(--ink-100);
+    border-left: 5px solid var(--brand-500);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.space-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+.bs-space:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
 }
 
-.space-header {
+.bs-space-head {
     display: flex;
     justify-content: space-between;
-    align-items: start;
-    margin-bottom: 15px;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
 }
 
-.space-header h3 {
-    color: #2c3e50;
-    font-size: 18px;
+.bs-space-head h3 {
     margin: 0;
+    font-size: var(--fs-lg);
+    color: var(--ink-900);
 }
 
-.space-type-badge {
-    background: linear-gradient(135deg, #ff6b35, #ff9800);
-    color: white;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.space-details {
-    margin: 15px 0;
-}
-
-.detail-row {
+.bs-detail-row {
     display: flex;
     justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #ecf0f1;
-    font-size: 14px;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--ink-100);
+    font-size: var(--fs-sm);
 }
 
-.amenities {
-    margin: 15px 0;
-    font-size: 13px;
-    color: #7f8c8d;
+.bs-amenities {
+    margin: var(--space-3) 0 0;
+    font-size: var(--fs-sm);
+    color: var(--ink-300);
 }
 
-.amenities i {
-    color: #27AE60;
+.bs-amenities i {
+    color: var(--green-fg);
     margin-right: 5px;
 }
 
-.booking-calendar {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
+.bs-book-btn {
+    width: 100%;
+    margin-top: auto;
 }
 
-.calendar-legend {
+.bs-space-details {
+    margin: var(--space-3) 0 var(--space-4);
+}
+
+.bs-legend {
     display: flex;
-    gap: 18px;
+    gap: var(--space-4);
     flex-wrap: wrap;
-    margin-bottom: 10px;
-    font-size: 13px;
-    color: #555;
+    margin-bottom: var(--space-3);
+    font-size: var(--fs-sm);
+    color: var(--ink-400);
 }
 
-.calendar-legend span {
+.bs-legend span {
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 
-.legend-dot {
+.bs-legend .bs-dot {
     width: 12px;
     height: 12px;
     border-radius: 50%;
     display: inline-block;
 }
 
-.calendar-hint {
-    background: #eaf6ff;
-    border-left: 4px solid #3498DB;
-    color: #1c5d80;
-    font-size: 13px;
-    padding: 10px 14px;
-    border-radius: 6px;
-    margin-bottom: 15px;
-}
+.bs-dot.is-pending   { background: var(--amber-fg); }
+.bs-dot.is-confirmed { background: var(--green-fg); }
+.bs-dot.is-completed { background: var(--blue-fg); }
+.bs-dot.is-no-show   { background: var(--slate-fg); }
 
 #calendar {
     max-width: 100%;
@@ -199,19 +179,47 @@ if ($result) {
     cursor: pointer;
 }
 
+.bs-pending {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-3);
+    border: 1px solid var(--ink-100);
+    border-left: 5px solid var(--amber-fg);
+    border-radius: var(--radius-md);
+    background: var(--surface-card);
+}
+
+.bs-pending h4 {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 4px;
+    font-size: var(--fs-md);
+    color: var(--ink-900);
+}
+
+.bs-pending-note {
+    margin: var(--space-2) 0 0;
+}
+
+/* Existing bookings on the chosen date (inside the booking overlay). */
 .existing-bookings-panel {
-    background: #fff8f0;
-    border: 1px solid #ffe0c2;
-    border-radius: 8px;
-    padding: 14px 16px;
-    margin-bottom: 18px;
-    font-size: 13px;
+    background: var(--brand-50);
+    border: 1px solid var(--brand-100);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-4);
+    font-size: var(--fs-sm);
 }
 
 .existing-bookings-panel h5 {
-    margin: 0 0 8px 0;
-    color: #ff6b35;
-    font-size: 13px;
+    margin: 0 0 var(--space-2);
+    color: var(--brand-600);
+    font-size: var(--fs-sm);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -220,7 +228,7 @@ if ($result) {
     display: flex;
     justify-content: space-between;
     padding: 5px 0;
-    border-bottom: 1px dashed #f0d9c4;
+    border-bottom: 1px dashed var(--brand-200);
 }
 
 .existing-bookings-panel .slot-row:last-child {
@@ -228,99 +236,87 @@ if ($result) {
 }
 
 .existing-bookings-panel .empty {
-    color: #95a5a6;
+    color: var(--ink-300);
     font-style: italic;
 }
 
-.overlap-warning {
-    background: #fdecea;
-    border: 1px solid #e74c3c;
-    color: #7d1a1a;
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-size: 13px;
-    margin-top: 10px;
+/* Overlap warning: global alert, hidden until JS adds .show. */
+.alert.overlap-warning {
     display: none;
 }
 
-.overlap-warning.show {
-    display: block;
-}
-
-/* Pending bookings section - lets the member fix a mistake (date, time,
-   attendees, purpose, etc.) without needing to cancel and re-book from
-   scratch. */
-.pending-bookings-section {
-    margin-bottom: 30px;
-}
-
-.pending-booking-card {
-    background: white;
-    border-left: 5px solid #F39C12;
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+.alert.overlap-warning.show {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.pending-booking-card .pb-info h4 {
-    margin: 0 0 4px 0;
-    font-size: 16px;
-    color: #2c3e50;
-}
-
-.pending-booking-card .pb-info .pb-meta {
-    font-size: 13px;
-    color: #7f8c8d;
-}
-
-.pending-booking-card .pb-badge {
-    background: #fff3cd;
-    color: #8a6d1a;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-left: 8px;
-}
-
-.no-pending-note {
-    color: #95a5a6;
-    font-style: italic;
-    font-size: 14px;
 }
 
 /* Read-only "space" display used in edit mode, where the space itself
    can't be changed (only its other details can). */
 .space-readonly-box {
-    background: #f8f9fa;
-    border: 1px solid #e5e8eb;
-    border-radius: 8px;
-    padding: 10px 14px;
-    font-size: 14px;
-    color: #2c3e50;
+    background: var(--ink-50);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--fs-sm);
+    color: var(--ink-900);
     margin-bottom: 4px;
 }
 
-.edit-mode-note {
-    background: #fff3cd;
-    border-left: 4px solid #F39C12;
-    color: #8a6d1a;
-    font-size: 13px;
-    padding: 10px 14px;
-    border-radius: 6px;
-    margin-bottom: 18px;
+.bs-space-info {
+    background: var(--ink-50);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-5);
+}
+
+.bs-space-info:empty {
+    display: none;
+}
+
+.bs-space-info h4 {
+    margin: 0 0 var(--space-2);
+}
+
+.bs-space-meta {
+    display: flex;
+    gap: var(--space-5);
+    flex-wrap: wrap;
+    font-size: var(--fs-sm);
+    color: var(--ink-300);
+}
+
+.bs-total {
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    margin: var(--space-5) 0;
+}
+
+.bs-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.bs-total-label {
+    font-size: var(--fs-md);
+    color: var(--ink-900);
+}
+
+.bs-total-value {
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    color: var(--green-fg);
+}
+
+.bs-total small {
+    display: block;
+    margin-top: var(--space-2);
 }
 
 /* ---------------------------------------------------------------
-   BOOKING MODAL - fully self-contained styling/behaviour.
+   BOOKING MODAL - self-contained overlay toggled by .bk-open.
    Scoped with #bkOverlay / .bk-* so this can't be knocked off-center
    or left undimmed by a clashing global ".modal" rule elsewhere in
    the app.
@@ -328,13 +324,13 @@ if ($result) {
 #bkOverlay {
     display: none;
     position: fixed !important;
-    top: 0; left: 0; right: 0; bottom: 0;
+    inset: 0;
     width: 100vw; height: 100vh;
-    background: rgba(20, 20, 20, 0.55);
+    background: color-mix(in srgb, var(--ink-900) 55%, transparent);
     z-index: 9999;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: var(--space-5);
     box-sizing: border-box;
 }
 
@@ -343,13 +339,13 @@ if ($result) {
 }
 
 #bkOverlay .bk-modal {
-    background: #ffffff;
+    background: var(--surface-card);
     width: 100%;
     max-width: 700px;
     max-height: 90vh;
     overflow-y: auto;
-    border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
     animation: bkFadeIn 0.18s ease-out;
 }
 
@@ -362,18 +358,18 @@ if ($result) {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    border-bottom: 1px solid #ecf0f1;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--ink-100);
     position: sticky;
     top: 0;
-    background: #fff;
-    border-radius: 14px 14px 0 0;
+    z-index: 1;
+    background: var(--surface-card);
 }
 
 #bkOverlay .bk-modal-header h3 {
     margin: 0;
-    font-size: 19px;
-    color: #2c3e50;
+    font-size: var(--fs-lg);
+    color: var(--ink-900);
 }
 
 #bkOverlay .bk-close {
@@ -381,50 +377,62 @@ if ($result) {
     border: none;
     font-size: 26px;
     line-height: 1;
-    color: #95a5a6;
+    color: var(--ink-200);
     cursor: pointer;
     padding: 0 4px;
 }
 
 #bkOverlay .bk-close:hover {
-    color: #2c3e50;
+    color: var(--ink-900);
 }
 
 #bkOverlay .bk-modal-body {
-    padding: 24px;
+    padding: var(--space-6);
 }
 
 #bkOverlay .bk-modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
-    padding: 16px 24px;
-    border-top: 1px solid #ecf0f1;
+    gap: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--ink-100);
 }
 </style>
 
-<div class="booking-header">
-    <h1><i class="fas fa-door-open"></i> Book a Space</h1>
-    <p style="margin: 5px 0 0 0; opacity: 0.9;">Select a space and choose your preferred date and time</p>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-door-open" aria-hidden="true"></i> Book a Space</h1>
+        <p>Select a space and choose your preferred date and time.</p>
+    </div>
+    <div class="hero-actions">
+        <a href="my-bookings" class="btn"><i class="fas fa-list" aria-hidden="true"></i> My Bookings</a>
+    </div>
 </div>
 
 <!-- Your Pending Bookings - full inline editing without leaving this page -->
-<div class="pending-bookings-section">
-    <h2 style="margin-bottom: 15px;"><i class="fas fa-hourglass-half"></i> Your Pending Bookings</h2>
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-hourglass-half" aria-hidden="true"></i> Your Pending Bookings</h3>
+    </div>
+    <div class="card-body">
     <?php if (empty($my_pending_bookings)): ?>
-        <p class="no-pending-note">You have no bookings awaiting confirmation right now.</p>
+        <div class="empty-state">
+            <i class="fas fa-calendar-check" aria-hidden="true"></i>
+            <p>You have no bookings awaiting confirmation right now.</p>
+        </div>
     <?php else: ?>
         <?php foreach ($my_pending_bookings as $pb): ?>
-        <div class="pending-booking-card">
-            <div class="pb-info">
+        <div class="bs-pending">
+            <div>
                 <h4>
                     <?php echo htmlspecialchars($pb['space_name']); ?>
-                    <span class="pb-badge">Pending</span>
+                    <span class="status-pill status-pending">Pending</span>
                 </h4>
-                <div class="pb-meta">
-                    <i class="fas fa-calendar"></i> <?php echo date('d M Y', strtotime($pb['booking_date'])); ?>
+                <div class="cell-muted">
+                    <i class="fas fa-calendar" aria-hidden="true"></i> <?php echo date('d M Y', strtotime($pb['booking_date'])); ?>
                     &nbsp;&middot;&nbsp;
-                    <i class="fas fa-clock"></i> <?php echo date('h:i A', strtotime($pb['start_time'])); ?> - <?php echo date('h:i A', strtotime($pb['end_time'])); ?>
+                    <i class="fas fa-clock" aria-hidden="true"></i> <?php echo date('h:i A', strtotime($pb['start_time'])); ?> - <?php echo date('h:i A', strtotime($pb['end_time'])); ?>
                     <?php if ($pb['purpose']): ?>
                         &nbsp;&middot;&nbsp; <?php echo htmlspecialchars($pb['purpose']); ?>
                     <?php endif; ?>
@@ -433,78 +441,98 @@ if ($result) {
             <div>
                 <button type="button" class="btn btn-warning btn-sm"
                         onclick="openEditModal(<?php echo htmlspecialchars(json_encode($pb)); ?>)">
-                    <i class="fas fa-edit"></i> Edit Booking
+                    <i class="fas fa-edit" aria-hidden="true"></i> Edit Booking
                 </button>
             </div>
         </div>
         <?php endforeach; ?>
-        <p class="no-pending-note" style="margin-top: 8px;">
+        <p class="cell-muted bs-pending-note">
             Space and pricing can't be changed once a booking exists. To change space, cancel it from
             <a href="my-bookings">My Bookings</a> and create a new one.
         </p>
     <?php endif; ?>
+    </div>
 </div>
 
 <!-- Calendar View -->
-<div class="booking-calendar">
-    <h3 style="margin-bottom: 15px;"><i class="fas fa-calendar-alt"></i> Booking Calendar</h3>
-    <div class="calendar-hint">
-        <i class="fas fa-info-circle"></i>
-        Click a date to start a booking on that day, or switch to <strong>Week</strong> / <strong>Day</strong> view
-        and click-drag across a time range to pick a start and end time automatically - covering one slot or several.
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-calendar-alt" aria-hidden="true"></i> Booking Calendar</h3>
     </div>
-    <div class="calendar-legend">
-        <span><span class="legend-dot" style="background:#F39C12;"></span> Pending</span>
-        <span><span class="legend-dot" style="background:#27AE60;"></span> Confirmed</span>
-        <span><span class="legend-dot" style="background:#3498DB;"></span> Completed</span>
-        <span><span class="legend-dot" style="background:#95A5A6;"></span> No Show</span>
+    <div class="card-body">
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle" aria-hidden="true"></i>
+        <span>
+            Click a date to start a booking on that day, or switch to <strong>Week</strong> / <strong>Day</strong> view
+            and click-drag across a time range to pick a start and end time automatically - covering one slot or several.
+        </span>
+    </div>
+    <div class="bs-legend">
+        <span><span class="bs-dot is-pending"></span> Pending</span>
+        <span><span class="bs-dot is-confirmed"></span> Confirmed</span>
+        <span><span class="bs-dot is-completed"></span> Completed</span>
+        <span><span class="bs-dot is-no-show"></span> No Show</span>
     </div>
     <div id="calendar"></div>
+    </div>
 </div>
 
 <!-- Available Spaces -->
-<h2 style="margin-bottom: 20px;"><i class="fas fa-list"></i> Available Spaces</h2>
-<div class="space-grid">
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fas fa-list" aria-hidden="true"></i> Available Spaces</h3>
+    </div>
+    <div class="card-body">
+<div class="bs-space-grid">
     <?php foreach ($spaces as $space): ?>
-    <div class="space-card">
-        <div class="space-header">
+    <div class="bs-space">
+        <div class="bs-space-head">
             <h3><?php echo htmlspecialchars($space['space_name']); ?></h3>
-            <span class="space-type-badge"><?php echo htmlspecialchars($space['space_type']); ?></span>
+            <span class="badge badge-warning"><?php echo htmlspecialchars($space['space_type']); ?></span>
         </div>
-        
-        <div class="space-details">
-            <div class="detail-row">
-                <span><i class="fas fa-users"></i> Capacity</span>
+
+        <div class="bs-space-details">
+            <div class="bs-detail-row">
+                <span><i class="fas fa-users" aria-hidden="true"></i> Capacity</span>
                 <strong><?php echo $space['capacity']; ?> people</strong>
             </div>
-            <div class="detail-row">
-                <span><i class="fas fa-clock"></i> Hourly Rate</span>
+            <div class="bs-detail-row">
+                <span><i class="fas fa-clock" aria-hidden="true"></i> Hourly Rate</span>
                 <strong>UGX <?php echo number_format($space['hourly_rate']); ?></strong>
             </div>
-            <div class="detail-row">
-                <span><i class="fas fa-sun"></i> Half Day (4hrs)</span>
+            <div class="bs-detail-row">
+                <span><i class="fas fa-sun" aria-hidden="true"></i> Half Day (4hrs)</span>
                 <strong>UGX <?php echo number_format($space['half_day_rate']); ?></strong>
             </div>
-            <div class="detail-row">
-                <span><i class="fas fa-calendar-day"></i> Full Day (8hrs)</span>
+            <div class="bs-detail-row">
+                <span><i class="fas fa-calendar-day" aria-hidden="true"></i> Full Day (8hrs)</span>
                 <strong>UGX <?php echo number_format($space['full_day_rate']); ?></strong>
             </div>
+            <?php if ($space['amenities']): ?>
+            <div class="bs-amenities">
+                <strong><i class="fas fa-check-circle" aria-hidden="true"></i> Amenities:</strong><br>
+                <?php echo nl2br(htmlspecialchars($space['amenities'])); ?>
+            </div>
+            <?php endif; ?>
         </div>
-        
-        <?php if ($space['amenities']): ?>
-        <div class="amenities">
-            <strong><i class="fas fa-check-circle"></i> Amenities:</strong><br>
-            <?php echo nl2br(htmlspecialchars($space['amenities'])); ?>
-        </div>
-        <?php endif; ?>
-        
-        <button onclick="openBookingModal(<?php echo htmlspecialchars(json_encode($space)); ?>)" 
-                class="btn btn-primary" style="width: 100%; margin-top: 15px;">
-            <i class="fas fa-calendar-plus"></i> Book Now
+
+        <button type="button" onclick="openBookingModal(<?php echo htmlspecialchars(json_encode($space)); ?>)"
+                class="btn btn-primary bs-book-btn">
+            <i class="fas fa-calendar-plus" aria-hidden="true"></i> Book Now
         </button>
     </div>
     <?php endforeach; ?>
 </div>
+<?php if (empty($spaces)): ?>
+    <div class="empty-state">
+        <i class="fas fa-door-closed" aria-hidden="true"></i>
+        <p>No spaces are available for booking right now.</p>
+    </div>
+<?php endif; ?>
+    </div>
+</div>
+
+</div><!-- /.page-stack -->
 
 <!-- Booking Modal - handles BOTH creating a new booking (action=create_booking)
      and fully editing one of the member's own Pending bookings
@@ -528,9 +556,10 @@ if ($result) {
                 <input type="hidden" name="booking_id" id="field_booking_id" disabled>
                 <input type="hidden" name="return_to" value="book-space">
 
-                <div id="editModeNote" class="edit-mode-note" style="display:none;">
-                    <i class="fas fa-info-circle"></i> Saving changes will reset this booking to <strong>Pending</strong>
-                    and it will need to be re-confirmed.
+                <div id="editModeNote" class="alert alert-warning" style="display:none;">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i>
+                    <span>Saving changes will reset this booking to <strong>Pending</strong>
+                    and it will need to be re-confirmed.</span>
                 </div>
 
                 <!-- Space picker - required + enabled when creating from the calendar or
@@ -550,7 +579,7 @@ if ($result) {
 
                 <div class="space-readonly-box" id="spaceReadonlyBox" style="display:none;"></div>
                 
-                <div id="selectedSpaceInfo" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;"></div>
+                <div id="selectedSpaceInfo" class="bs-space-info"></div>
 
                 <!-- Existing bookings for this space on the chosen date - populated via AJAX -->
                 <div class="existing-bookings-panel" id="existingBookingsPanel" style="display:none;">
@@ -588,9 +617,9 @@ if ($result) {
                     </div>
                 </div>
 
-                <div class="overlap-warning" id="overlapWarning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    This time overlaps with an existing booking for this space. Please choose a different time.
+                <div class="alert alert-danger overlap-warning" id="overlapWarning">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                    <span>This time overlaps with an existing booking for this space. Please choose a different time.</span>
                 </div>
 
                 <!-- Editable details - shown and required in BOTH create and edit mode,
@@ -647,18 +676,18 @@ if ($result) {
 
                 <!-- Pricing - CREATE-mode only. Amount is fixed once a booking exists,
                      so this (and booking_type above) is hidden and disabled in edit mode. -->
-                <div id="pricingDisplayBox" style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div id="pricingDisplayBox" class="bs-total">
+                    <div class="bs-total-row">
                         <div>
-                            <strong style="font-size: 16px; color: #2c3e50;">Total Amount:</strong>
+                            <strong class="bs-total-label">Total Amount:</strong>
                         </div>
                         <div>
-                            <span style="font-size: 28px; font-weight: bold; color: #27AE60;" id="totalAmount">
+                            <span class="bs-total-value" id="totalAmount">
                                 UGX 0
                             </span>
                         </div>
                     </div>
-                    <small style="color: #7f8c8d; display: block; margin-top: 8px;">
+                    <small class="cell-muted">
                         <i class="fas fa-info-circle"></i> Payment can be made via Mobile Money, Bank Transfer, or at the Hub
                     </small>
                 </div>
@@ -707,6 +736,20 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         selectable: true,
         selectMirror: true,
+        // Colour events from the design tokens so they match the legend.
+        eventDataTransform: function(ev) {
+            const token = {
+                'Pending': '--amber-fg',
+                'Confirmed': '--green-fg',
+                'Completed': '--blue-fg',
+                'No Show': '--slate-fg'
+            }[ev.extendedProps && ev.extendedProps.status] || '--red-fg';
+            const color = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+            if (color) {
+                ev.color = color;
+            }
+            return ev;
+        },
         events: function(info, successCallback, failureCallback) {
             fetch('get-bookings?start=' + info.startStr + '&end=' + info.endStr)
                 .then(response => response.json())
@@ -926,8 +969,8 @@ function resetModalFields() {
 
 function renderSelectedSpaceInfo(space) {
     document.getElementById('selectedSpaceInfo').innerHTML = `
-        <h4 style="margin-bottom: 10px;">${space.space_name}</h4>
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 14px; color: #7f8c8d;">
+        <h4>${space.space_name}</h4>
+        <div class="bs-space-meta">
             <span><i class="fas fa-tag"></i> ${space.space_type}</span>
             <span><i class="fas fa-users"></i> Capacity: ${space.capacity}</span>
         </div>

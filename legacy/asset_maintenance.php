@@ -48,11 +48,11 @@ $totalPages = $pageData['totalPages'];
         </div>
 
         <div class="hero-actions">
-            <a href="manage_assets" class="btn btn-primary">
+            <a href="manage_assets" class="btn">
                 <i class="fas fa-boxes-stacked"></i> Manage Assets
             </a>
 
-            <button type="button" class="btn btn-dark" onclick="openModal('maintenanceModal')">
+            <button type="button" class="btn btn-primary" onclick="openModal('maintenanceModal')">
                 <i class="fas fa-plus-circle"></i> Add Maintenance
             </button>
         </div>

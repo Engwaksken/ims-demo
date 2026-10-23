@@ -189,13 +189,13 @@ $context_type = 'All';
 if ($program_id) {
     $res = vr_query($conn, "SELECT program_name, program_code FROM programs WHERE id = :program_id LIMIT 1", $vr_params);
     if ($res && $row = $res->fetch_assoc()) {
-        $context_name = h(($row['program_code'] ?? '') . ' — ' . ($row['program_name'] ?? ''));
+        $context_name = h(($row['program_code'] ?? '') . ' â€” ' . ($row['program_name'] ?? ''));
         $context_type = 'Program';
     }
 } elseif ($project_id) {
     $res = vr_query($conn, "SELECT project_name, project_code FROM projects WHERE project_id = :project_id LIMIT 1", $vr_params);
     if ($res && $row = $res->fetch_assoc()) {
-        $context_name = h(($row['project_code'] ?? '') . ' — ' . ($row['project_name'] ?? ''));
+        $context_name = h(($row['project_code'] ?? '') . ' â€” ' . ($row['project_name'] ?? ''));
         $context_type = 'Project';
     }
 }
@@ -708,7 +708,7 @@ td{padding:6px;border-bottom:1px solid #f3f4f6}
 <div class="cover">
     <h1><?= h($report_title) ?></h1>
     <div class="meta-row">
-        <div class="meta-pill">Period: <?= date('d M Y', strtotime($start_date)) ?> — <?= date('d M Y', strtotime($end_date)) ?></div>
+        <div class="meta-pill">Period: <?= date('d M Y', strtotime($start_date)) ?> â€” <?= date('d M Y', strtotime($end_date)) ?></div>
         <div class="meta-pill">Scope: <?= $context_name ?></div>
         <div class="meta-pill">Generated: <?= date('d M Y H:i') ?></div>
         <?php if (!empty($_SESSION['full_name'])): ?>
@@ -970,7 +970,7 @@ switch ($report_type):
 endswitch;
 ?>
 
-<div class="pdf-foot">Confidential · <?= h($report_title) ?> · <?= date('Y') ?></div>
+<div class="pdf-foot">Confidential Â· <?= h($report_title) ?> Â· <?= date('Y') ?></div>
 </body>
 </html>
 <?php
@@ -981,74 +981,54 @@ endif;
 <link rel="stylesheet" href="css/reports.css">
 
 <style>
-.report-wrap{display:flex;flex-direction:column;gap:20px;padding:24px;max-width:1400px;margin:0 auto}
-.report-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,var(--brand-700,#c2410c) 0%,var(--brand-500,#f97316) 55%,var(--brand-400,#fb923c) 100%);color:#fff;border-radius:18px;padding:28px 36px;box-shadow:0 16px 40px rgba(234,88,12,.28)}
-.report-hero-btn{min-height:40px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);box-shadow:none}
-.report-hero-btn:hover{background:rgba(255,255,255,.24);color:#fff}
-.report-hero-btn.solid{background:#fff;color:var(--brand-700,#c2410c);border-color:#fff}
-.report-hero-btn.solid:hover{background:var(--brand-50,#fff4ed);color:var(--brand-700,#c2410c)}
-.report-hero h1{font-size:clamp(18px,2.8vw,26px);font-weight:800;margin-bottom:6px}
-.report-hero p{font-size:13px;opacity:.85}
-.report-hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.meta-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:5px 12px;font-size:11px;font-weight:600;color:#fff}
-.summary-box{background:var(--ink-50,#f8fafc);border:1px solid var(--ink-100,#e5e7eb);border-radius:16px;padding:20px 22px;margin-bottom:18px}
-.summary-box-title{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-400,#64748b);margin-bottom:14px}
-.summary-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px}
-.sum-stat-val{font-size:26px;font-weight:800;line-height:1;color:var(--ink-700,#1f2937)}
-.sum-stat-lbl{font-size:11px;color:var(--ink-300,#94a3b8);margin-top:3px}
-.report-section{background:var(--surface-card,#fff);border:1px solid rgba(0,0,0,.05);border-radius:16px;box-shadow:0 8px 24px rgba(15,23,42,.06);overflow:hidden;margin-bottom:20px}
-.report-section-head{padding:14px 20px;border-bottom:1px solid var(--ink-50,#f1f5f9);display:flex;justify-content:space-between;align-items:center;background:var(--surface-card,#fff)}
-.report-section-head h3{font-size:14px;font-weight:800;color:var(--ink-700,#1f2937);display:flex;align-items:center;gap:8px}
-.report-section-head h3 i{color:var(--brand-500,#f97316)}
-.report-section-body{padding:18px 20px}
-.type-heading{font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-400,#64748b);margin:18px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--ink-50,#f1f5f9)}
-.type-heading:first-child{margin-top:0}
-.table-wrap{width:100%;overflow:auto}
-.table{width:100%;border-collapse:collapse}
-.table th{font-size:11px;text-align:left;color:var(--ink-400,#64748b);background:var(--ink-50,#f8fafc);padding:10px;border-bottom:1px solid var(--ink-100,#e5e7eb)}
-.table td{font-size:13px;color:var(--ink-600,#334155);padding:10px;border-bottom:1px solid var(--ink-50,#f1f5f9)}
-.no-data{display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px 24px;text-align:center;color:var(--ink-300,#94a3b8)}
-.no-data i{font-size:32px}
-.prog-track{height:7px;background:var(--ink-100,#e5e7eb);border-radius:999px;overflow:hidden;margin-top:4px}
-.prog-fill{height:100%;border-radius:999px}
-.prog-fill.high{background:var(--green-fg,#15803d)}
-.prog-fill.mid{background:var(--amber-fg,#b45309)}
-.prog-fill.low{background:var(--red-fg,#b91c1c)}
-.prog-fill.hub-share{background:var(--brand-500,#f97316)}
-@media print{.no-print,.hero-actions{display:none!important}.report-wrap{padding:0}body{background:#fff}}
-@media(max-width:700px){.report-wrap{padding:12px}.report-hero{padding:20px}.summary-stats{grid-template-columns:1fr 1fr}}
+/* view-report.php: layout unique to this page. Components come from reports.css. */
+.vr-stats-auto { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.vr-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.vr-grid-2 + .table-responsive, .vr-grid-2 + .empty-state { margin-top: 18px; }
+.vr-subhead { margin: 0 0 10px; padding-bottom: 7px; border-bottom: 1px solid var(--ink-50); font-size: var(--fs-xs); font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-400); }
+.table-responsive + .vr-subhead { margin-top: 18px; }
+.vr-col-share { width: 40%; }
+.vr-ach-high { color: var(--green-fg); }
+.vr-ach-mid { color: var(--amber-fg); }
+.vr-ach-low { color: var(--red-fg); }
+.vr-track { height: 7px; margin-top: 4px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; }
+.vr-fill { height: 100%; border-radius: var(--radius-pill); }
+.vr-fill.high { background: var(--green-fg); }
+.vr-fill.mid { background: var(--amber-fg); }
+.vr-fill.low { background: var(--red-fg); }
+.vr-fill.hub-share { background: var(--brand-500); }
+.vr-total-row td { background: var(--surface-hover); font-weight: 800; }
+.vr-footer { text-align: center; }
+.vr-footer p { margin: 0 0 14px; font-size: var(--fs-sm); color: var(--ink-300); }
+@media print{.no-print,.hero-actions{display:none!important}body{background:#fff}}
 </style>
 
-<div class="report-wrap">
+<?php
+/* Presentation only: maps an achievement % to a colour class (same thresholds as ach_color()). */
+$vr_ach_cls = static fn(float $pct): string => $pct >= 100 ? 'vr-ach-high' : ($pct >= 50 ? 'vr-ach-mid' : 'vr-ach-low');
+?>
+<div class="page-stack">
 
-    <div class="report-hero">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
-            <div>
-                <h1><?= h($report_title) ?></h1>
-                <p>Hive Colab IMS — Generated <?= date('d M Y H:i') ?></p>
-                <div class="report-hero-meta">
-                    <span class="meta-chip">
-                        <i class="fas fa-calendar-alt"></i>
-                        <?= date('d M Y', strtotime($start_date)) ?> — <?= date('d M Y', strtotime($end_date)) ?>
-                    </span>
-                    <span class="meta-chip">
-                        <i class="fas <?= $context_type === 'Program' ? 'fa-sitemap' : ($context_type === 'Project' ? 'fa-project-diagram' : 'fa-globe') ?>"></i>
-                        <?= $context_name ?>
-                    </span>
-                </div>
-            </div>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-file-alt" aria-hidden="true"></i> <?= h($report_title) ?></h1>
+            <p>
+                <i class="fas fa-calendar-alt" aria-hidden="true"></i> <?= date('d M Y', strtotime($start_date)) ?> &ndash; <?= date('d M Y', strtotime($end_date)) ?>
+                &middot; <i class="fas <?= $context_type === 'Program' ? 'fa-sitemap' : ($context_type === 'Project' ? 'fa-project-diagram' : 'fa-globe') ?>" aria-hidden="true"></i> <?= $context_name ?>
+                &middot; Generated <?= date('d M Y H:i') ?>
+            </p>
+        </div>
 
-            <div class="hero-actions no-print" style="display:flex;gap:8px;flex-wrap:wrap;">
-                <a href="generate-report" class="btn report-hero-btn">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-                <button type="button" onclick="window.print()" class="btn report-hero-btn">
-                    <i class="fas fa-print"></i> Print
-                </button>
-                <a href="report-process.php?type=<?= urlencode($report_type) ?>&start_date=<?= urlencode($start_date) ?>&end_date=<?= urlencode($end_date) ?>&project_id=<?= (int)($project_id ?? 0) ?>&program_id=<?= (int)($program_id ?? 0) ?>&export=pdf" target="_blank" rel="noopener" class="btn report-hero-btn solid">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </a>
-            </div>
+        <div class="hero-actions no-print">
+            <a href="generate-report" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+            </a>
+            <button type="button" onclick="window.print()" class="btn">
+                <i class="fas fa-print" aria-hidden="true"></i> Print
+            </button>
+            <a href="report-process.php?type=<?= urlencode($report_type) ?>&start_date=<?= urlencode($start_date) ?>&end_date=<?= urlencode($end_date) ?>&project_id=<?= (int)($project_id ?? 0) ?>&program_id=<?= (int)($program_id ?? 0) ?>&export=pdf" target="_blank" rel="noopener" class="btn btn-primary">
+                <i class="fas fa-file-pdf" aria-hidden="true"></i> PDF
+            </a>
         </div>
     </div>
 
@@ -1060,26 +1040,36 @@ switch ($report_type):
         $budget = array_sum(array_column($rows, 'budget'));
         $bens = array_sum(array_column($rows, 'beneficiary_count'));
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-info"><span class="stat-label">Total Programs</span><span class="stat-value"><?= number_format(count($rows)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-info"><span class="stat-label">Active</span><span class="stat-value"><?= number_format($active) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue" aria-hidden="true"><i class="fas fa-coins"></i></div>
+            <div class="stat-info"><span class="stat-label">Total Budget</span><span class="stat-value"><?= safe_money($budget) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-purple" aria-hidden="true"><i class="fas fa-users"></i></div>
+            <div class="stat-info"><span class="stat-label">Participants</span><span class="stat-value"><?= number_format($bens) ?></span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-sitemap"></i> Programs Overview</h3>
             <span class="badge badge-available"><?= count($rows) ?> program<?= count($rows) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="report-section-body">
-            <div class="summary-box">
-                <div class="summary-box-title">Summary</div>
-                <div class="summary-stats">
-                    <div><div class="sum-stat-val"><?= number_format(count($rows)) ?></div><div class="sum-stat-lbl">Total Programs</div></div>
-                    <div><div class="sum-stat-val" style="color:var(--green-fg,#15803d);"><?= number_format($active) ?></div><div class="sum-stat-lbl">Active</div></div>
-                    <div><div class="sum-stat-val"><?= safe_money($budget) ?></div><div class="sum-stat-lbl">Total Budget</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($bens) ?></div><div class="sum-stat-lbl">Participants</div></div>
-                </div>
-            </div>
+        <div class="card-body">
 
             <?php if (empty($rows)): ?>
-                <div class="no-data"><i class="fas fa-folder-open"></i><span>No programs found.</span></div>
+                <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No programs found.</p></div>
             <?php else: ?>
-                <div class="table-wrap">
+                <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr><th>Code</th><th>Name</th><th>Donor</th><th>Budget</th><th>Participants</th><th>Indicators</th><th>Achievement</th><th>Status</th></tr>
@@ -1093,7 +1083,7 @@ switch ($report_type):
                                 <td><?= safe_money($r['budget'] ?? 0, $r['currency'] ?? 'UGX') ?></td>
                                 <td><?= number_format((int)($r['beneficiary_count'] ?? 0)) ?></td>
                                 <td><?= number_format((int)($r['indicator_count'] ?? 0)) ?></td>
-                                <td><strong style="color:<?= ach_color($ach) ?>"><?= number_format($ach, 1) ?>%</strong></td>
+                                <td><strong class="<?= $vr_ach_cls($ach) ?>"><?= number_format($ach, 1) ?>%</strong></td>
                                 <td><span class="badge <?= web_badge_cls($r['status'] ?? '') ?>"><?= h($r['status'] ?? 'N/A') ?></span></td>
                             </tr>
                         <?php endforeach; ?>
@@ -1112,26 +1102,36 @@ switch ($report_type):
         $budget = array_sum(array_column($rows, 'budget'));
         $bens = array_sum(array_column($rows, 'beneficiary_count'));
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-blue" aria-hidden="true"><i class="fas fa-project-diagram"></i></div>
+            <div class="stat-info"><span class="stat-label">Total Projects</span><span class="stat-value"><?= number_format(count($rows)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-spinner"></i></div>
+            <div class="stat-info"><span class="stat-label">Ongoing</span><span class="stat-value"><?= number_format($ongoing) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue" aria-hidden="true"><i class="fas fa-coins"></i></div>
+            <div class="stat-info"><span class="stat-label">Total Budget</span><span class="stat-value"><?= safe_money($budget) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-purple" aria-hidden="true"><i class="fas fa-users"></i></div>
+            <div class="stat-info"><span class="stat-label">Participants</span><span class="stat-value"><?= number_format($bens) ?></span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-project-diagram"></i> Projects Overview</h3>
             <span class="badge badge-available"><?= count($rows) ?> project<?= count($rows) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="report-section-body">
-            <div class="summary-box">
-                <div class="summary-box-title">Summary</div>
-                <div class="summary-stats">
-                    <div><div class="sum-stat-val"><?= number_format(count($rows)) ?></div><div class="sum-stat-lbl">Total Projects</div></div>
-                    <div><div class="sum-stat-val" style="color:var(--green-fg,#15803d);"><?= number_format($ongoing) ?></div><div class="sum-stat-lbl">Ongoing</div></div>
-                    <div><div class="sum-stat-val"><?= safe_money($budget) ?></div><div class="sum-stat-lbl">Total Budget</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($bens) ?></div><div class="sum-stat-lbl">Participants</div></div>
-                </div>
-            </div>
+        <div class="card-body">
 
             <?php if (empty($rows)): ?>
-                <div class="no-data"><i class="fas fa-folder-open"></i><span>No projects found.</span></div>
+                <div class="empty-state"><i class="fas fa-folder-open" aria-hidden="true"></i><p>No projects found.</p></div>
             <?php else: ?>
-                <div class="table-wrap">
+                <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr><th>Code</th><th>Name</th><th>Donor</th><th>Budget</th><th>Participants</th><th>Indicators</th><th>Achievement</th><th>Status</th></tr>
@@ -1145,7 +1145,7 @@ switch ($report_type):
                                 <td><?= safe_money($r['budget'] ?? 0, $r['currency'] ?? 'UGX') ?></td>
                                 <td><?= number_format((int)($r['beneficiary_count'] ?? 0)) ?></td>
                                 <td><?= number_format((int)($r['indicator_count'] ?? 0)) ?></td>
-                                <td><strong style="color:<?= ach_color($ach) ?>"><?= number_format($ach, 1) ?>%</strong></td>
+                                <td><strong class="<?= $vr_ach_cls($ach) ?>"><?= number_format($ach, 1) ?>%</strong></td>
                                 <td><span class="badge <?= web_badge_cls($r['status'] ?? '') ?>"><?= h($r['status'] ?? 'N/A') ?></span></td>
                             </tr>
                         <?php endforeach; ?>
@@ -1165,54 +1165,64 @@ switch ($report_type):
         $pwd_pct = ((int)$pwd['total'] > 0) ? round((int)$pwd['pwd'] / (int)$pwd['total'] * 100, 1) : 0;
         $gtotal = array_sum($gender);
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-purple" aria-hidden="true"><i class="fas fa-users"></i></div>
+            <div class="stat-info"><span class="stat-label">Participants</span><span class="stat-value"><?= number_format(count($rows)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-wheelchair"></i></div>
+            <div class="stat-info"><span class="stat-label">PWD</span><span class="stat-value"><?= number_format((int)$pwd['pwd']) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-teal" aria-hidden="true"><i class="fas fa-percent"></i></div>
+            <div class="stat-info"><span class="stat-label">PWD Rate</span><span class="stat-value"><?= $pwd_pct ?>%</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-slate" aria-hidden="true"><i class="fas fa-venus-mars"></i></div>
+            <div class="stat-info"><span class="stat-label">Gender Records</span><span class="stat-value"><?= number_format($gtotal) ?></span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-users"></i> Participants Analysis</h3>
             <span class="badge badge-available"><?= count($rows) ?> participant<?= count($rows) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="report-section-body">
-            <div class="summary-box">
-                <div class="summary-box-title">Summary</div>
-                <div class="summary-stats">
-                    <div><div class="sum-stat-val"><?= number_format(count($rows)) ?></div><div class="sum-stat-lbl">Participants</div></div>
-                    <div><div class="sum-stat-val"><?= number_format((int)$pwd['pwd']) ?></div><div class="sum-stat-lbl">PWD</div></div>
-                    <div><div class="sum-stat-val"><?= $pwd_pct ?>%</div><div class="sum-stat-lbl">PWD Rate</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($gtotal) ?></div><div class="sum-stat-lbl">Gender Records</div></div>
-                </div>
-            </div>
+        <div class="card-body">
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:18px;">
-                <div class="summary-box">
-                    <div class="summary-box-title">Gender Distribution</div>
+            <div class="vr-grid-2">
+                <div>
+                    <div class="vr-subhead">Gender Distribution</div>
                     <?php foreach ($gender as $g => $c): ?>
-                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ink-100,#e5e7eb);">
-                            <span><?= h($g) ?></span>
-                            <strong><?= number_format((int)$c) ?></strong>
+                        <div class="breakdown-row">
+                            <span class="breakdown-label"><?= h($g) ?></span>
+                            <span class="breakdown-value"><?= number_format((int)$c) ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
 
-                <div class="summary-box">
-                    <div class="summary-box-title">PWD Statistics</div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ink-100,#e5e7eb);">
-                        <span>Persons with Disabilities</span>
-                        <strong><?= number_format((int)$pwd['pwd']) ?></strong>
+                <div>
+                    <div class="vr-subhead">PWD Statistics</div>
+                    <div class="breakdown-row">
+                        <span class="breakdown-label">Persons with Disabilities</span>
+                        <span class="breakdown-value"><?= number_format((int)$pwd['pwd']) ?></span>
                     </div>
-                    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ink-100,#e5e7eb);">
-                        <span>Non-PWD</span>
-                        <strong><?= number_format((int)$pwd['total'] - (int)$pwd['pwd']) ?></strong>
+                    <div class="breakdown-row">
+                        <span class="breakdown-label">Non-PWD</span>
+                        <span class="breakdown-value"><?= number_format((int)$pwd['total'] - (int)$pwd['pwd']) ?></span>
                     </div>
-                    <div style="display:flex;justify-content:space-between;padding:8px 0 0;">
+                    <div class="breakdown-row">
                         <strong>Inclusion Rate</strong>
-                        <strong><?= $pwd_pct ?>%</strong>
+                        <span class="breakdown-value"><?= $pwd_pct ?>%</span>
                     </div>
                 </div>
             </div>
 
             <?php if (empty($rows)): ?>
-                <div class="no-data"><i class="fas fa-users"></i><span>No participants found.</span></div>
+                <div class="empty-state"><i class="fas fa-users" aria-hidden="true"></i><p>No participants found.</p></div>
             <?php else: ?>
-                <div class="table-wrap">
+                <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr><th>Name</th><th>Gender</th><th>District</th><th>Context</th><th>Type</th><th>Enrolled</th><th>Status</th></tr>
@@ -1244,26 +1254,36 @@ switch ($report_type):
         $partial = count(array_filter($rows, fn($r) => (float)($r['achievement_pct'] ?? 0) >= 50 && (float)($r['achievement_pct'] ?? 0) < 100));
         $low = count($rows) - $achieved - $partial;
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-info"><span class="stat-label">Total</span><span class="stat-value"><?= number_format(count($rows)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-info"><span class="stat-label">Achieved</span><span class="stat-value"><?= number_format($achieved) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-circle-half-stroke"></i></div>
+            <div class="stat-info"><span class="stat-label">Partial</span><span class="stat-value"><?= number_format($partial) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-red" aria-hidden="true"><i class="fas fa-arrow-trend-down"></i></div>
+            <div class="stat-info"><span class="stat-label">Below Target</span><span class="stat-value"><?= number_format($low) ?></span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-chart-line"></i> Indicator Performance</h3>
             <span class="badge badge-available"><?= count($rows) ?> indicator<?= count($rows) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="report-section-body">
-            <div class="summary-box">
-                <div class="summary-box-title">Summary</div>
-                <div class="summary-stats">
-                    <div><div class="sum-stat-val"><?= number_format(count($rows)) ?></div><div class="sum-stat-lbl">Total</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($achieved) ?></div><div class="sum-stat-lbl">Achieved</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($partial) ?></div><div class="sum-stat-lbl">Partial</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($low) ?></div><div class="sum-stat-lbl">Below Target</div></div>
-                </div>
-            </div>
+        <div class="card-body">
 
             <?php if (empty($rows)): ?>
-                <div class="no-data"><i class="fas fa-chart-line"></i><span>No indicators found.</span></div>
+                <div class="empty-state"><i class="fas fa-chart-line" aria-hidden="true"></i><p>No indicators found.</p></div>
             <?php else: ?>
-                <div class="table-wrap">
+                <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr><th>Context</th><th>Indicator</th><th>Type</th><th>Baseline</th><th>Target</th><th>Current</th><th>Achievement</th></tr>
@@ -1278,9 +1298,9 @@ switch ($report_type):
                                 <td><?= number_format((float)($r['target_value'] ?? 0), 2) ?></td>
                                 <td><?= number_format((float)($r['current_value'] ?? 0), 2) ?></td>
                                 <td>
-                                    <strong style="color:<?= ach_color($pct) ?>"><?= number_format($pct, 1) ?>%</strong>
-                                    <div class="prog-track">
-                                        <div class="prog-fill <?= prog_class($pct) ?>" style="width:<?= min($pct, 100) ?>%;"></div>
+                                    <strong class="<?= $vr_ach_cls($pct) ?>"><?= number_format($pct, 1) ?>%</strong>
+                                    <div class="vr-track">
+                                        <div class="vr-fill <?= prog_class($pct) ?>" style="width:<?= min($pct, 100) ?>%;"></div>
                                     </div>
                                 </td>
                             </tr>
@@ -1300,26 +1320,36 @@ switch ($report_type):
         $att = array_sum(array_column($rows, 'attended'));
         $rate = $reg > 0 ? round($att / $reg * 100, 1) : 0;
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-purple" aria-hidden="true"><i class="fas fa-calendar"></i></div>
+            <div class="stat-info"><span class="stat-label">Events</span><span class="stat-value"><?= number_format(count($rows)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue" aria-hidden="true"><i class="fas fa-user-plus"></i></div>
+            <div class="stat-info"><span class="stat-label">Registered</span><span class="stat-value"><?= number_format($reg) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-green" aria-hidden="true"><i class="fas fa-user-check"></i></div>
+            <div class="stat-info"><span class="stat-label">Attended</span><span class="stat-value"><?= number_format($att) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-teal" aria-hidden="true"><i class="fas fa-percent"></i></div>
+            <div class="stat-info"><span class="stat-label">Attendance Rate</span><span class="stat-value"><?= $rate ?>%</span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-calendar-check"></i> Events & Training</h3>
             <span class="badge badge-available"><?= count($rows) ?> event<?= count($rows) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="report-section-body">
-            <div class="summary-box">
-                <div class="summary-box-title">Summary</div>
-                <div class="summary-stats">
-                    <div><div class="sum-stat-val"><?= number_format(count($rows)) ?></div><div class="sum-stat-lbl">Events</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($reg) ?></div><div class="sum-stat-lbl">Registered</div></div>
-                    <div><div class="sum-stat-val"><?= number_format($att) ?></div><div class="sum-stat-lbl">Attended</div></div>
-                    <div><div class="sum-stat-val"><?= $rate ?>%</div><div class="sum-stat-lbl">Attendance Rate</div></div>
-                </div>
-            </div>
+        <div class="card-body">
 
             <?php if (empty($rows)): ?>
-                <div class="no-data"><i class="fas fa-calendar"></i><span>No events found.</span></div>
+                <div class="empty-state"><i class="fas fa-calendar" aria-hidden="true"></i><p>No events found.</p></div>
             <?php else: ?>
-                <div class="table-wrap">
+                <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr><th>Event</th><th>Type</th><th>Date</th><th>Context</th><th>Registered</th><th>Attended</th><th>Rate</th></tr>
@@ -1333,7 +1363,7 @@ switch ($report_type):
                                 <td><?= h($r['context_code'] ?? 'N/A') ?></td>
                                 <td><?= number_format((int)($r['registered'] ?? 0)) ?></td>
                                 <td><?= number_format((int)($r['attended'] ?? 0)) ?></td>
-                                <td><strong style="color:<?= ach_color($rr) ?>"><?= $rr ?>%</strong></td>
+                                <td><strong class="<?= $vr_ach_cls($rr) ?>"><?= $rr ?>%</strong></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -1380,17 +1410,40 @@ switch ($report_type):
         </div>
     </div>
 
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="stats-grid reports-stats vr-stats-auto">
+        <div class="stat-card">
+            <div class="stat-icon bg-amber" aria-hidden="true"><i class="fas fa-sitemap"></i></div>
+            <div class="stat-info"><span class="stat-label">Programs</span><span class="stat-value"><?= number_format(array_sum($p_sum)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-blue" aria-hidden="true"><i class="fas fa-project-diagram"></i></div>
+            <div class="stat-info"><span class="stat-label">Projects</span><span class="stat-value"><?= number_format(array_sum($pr_sum)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-purple" aria-hidden="true"><i class="fas fa-users"></i></div>
+            <div class="stat-info"><span class="stat-label">Participants</span><span class="stat-value"><?= number_format(array_sum($gender)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-primary" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-info"><span class="stat-label">Indicators</span><span class="stat-value"><?= number_format((int)($ind['total'] ?? 0)) ?></span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-teal" aria-hidden="true"><i class="fas fa-calendar-check"></i></div>
+            <div class="stat-info"><span class="stat-label">Events in Period</span><span class="stat-value"><?= number_format((int)($ev['period'] ?? 0)) ?></span></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-clipboard-list" aria-hidden="true"></i> Visitor Purposes</h3>
         </div>
-        <div class="report-section-body">
+        <div class="card-body">
         <?php if (!$hub_purposes): ?>
-            <div class="no-data"><i class="fas fa-user-slash" aria-hidden="true"></i><span>No visitors recorded in this period.</span></div>
+            <div class="empty-state"><i class="fas fa-user-slash" aria-hidden="true"></i><p>No visitors recorded in this period.</p></div>
         <?php else: ?>
-            <div class="table-wrap">
+            <div class="table-responsive">
                 <table class="table">
-                    <thead><tr><th>Purpose</th><th class="text-nowrap">Visitors</th><th style="width:40%">Share</th></tr></thead>
+                    <thead><tr><th>Purpose</th><th class="text-nowrap">Visitors</th><th class="vr-col-share">Share</th></tr></thead>
                     <tbody>
                     <?php foreach ($hub_purposes as $purpose => $count):
                         $share = $hub_visitors > 0 ? round((int)$count / $hub_visitors * 100, 1) : 0; ?>
@@ -1398,8 +1451,8 @@ switch ($report_type):
                             <td><?= h($purpose) ?></td>
                             <td><?= number_format((int)$count) ?></td>
                             <td>
-                                <span class="cell-muted" style="margin:0"><?= number_format($share, 1) ?>%</span>
-                                <div class="prog-track"><div class="prog-fill hub-share" style="width:<?= min(100, $share) ?>%"></div></div>
+                                <span class="cell-muted"><?= number_format($share, 1) ?>%</span>
+                                <div class="vr-track"><div class="vr-fill hub-share" style="width:<?= min(100, $share) ?>%"></div></div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -1410,18 +1463,18 @@ switch ($report_type):
         </div>
     </div>
 
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-id-card" aria-hidden="true"></i> Memberships</h3>
             <?php if ($hub_revenue > 0): ?>
-                <span class="cell-muted" style="margin:0">Active subscription fees: <strong><?= h(safe_money($hub_revenue)) ?></strong></span>
+                <span class="cell-muted">Active subscription fees: <strong><?= h(safe_money($hub_revenue)) ?></strong></span>
             <?php endif; ?>
         </div>
-        <div class="report-section-body">
+        <div class="card-body">
         <?php if (!$hub_members): ?>
-            <div class="no-data"><i class="fas fa-id-card" aria-hidden="true"></i><span>No memberships overlap this period.</span></div>
+            <div class="empty-state"><i class="fas fa-id-card" aria-hidden="true"></i><p>No memberships overlap this period.</p></div>
         <?php else: ?>
-            <div class="table-wrap">
+            <div class="table-responsive">
                 <table class="table">
                     <thead><tr><th>Member Type</th><th>Status</th><th>Members</th><th>Subscription Fees</th></tr></thead>
                     <tbody>
@@ -1445,16 +1498,16 @@ switch ($report_type):
     case 'donor_report':
         $rows = $data['donors'] ?? [];
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-handshake"></i> Donor Report</h3>
             <span class="badge badge-available"><?= count($rows) ?> donor<?= count($rows) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="report-section-body">
+        <div class="card-body">
             <?php if (empty($rows)): ?>
-                <div class="no-data"><i class="fas fa-handshake"></i><span>No donor data found.</span></div>
+                <div class="empty-state"><i class="fas fa-handshake" aria-hidden="true"></i><p>No donor data found.</p></div>
             <?php else: ?>
-                <div class="table-wrap">
+                <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr><th>Donor</th><th>Email</th><th>Programs</th><th>Projects</th><th>Total Budget</th><th>Participants</th></tr>
@@ -1485,15 +1538,15 @@ switch ($report_type):
     case 'pwd_report':
         $rows = $data['pwd_list'] ?? [];
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-wheelchair"></i> Persons with Disabilities</h3>
             <span class="badge badge-available"><?= count($rows) ?> participant<?= count($rows) !== 1 ? 's' : '' ?></span>
         </div>
-        <div class="report-section-body">
+        <div class="card-body">
             <?php if (!empty($data['pwd_types'])): ?>
-                <div class="type-heading">Disability Types</div>
-                <div class="table-wrap" style="margin-bottom:18px;">
+                <div class="vr-subhead">Disability Types</div>
+                <div class="table-responsive">
                     <table class="table">
                         <thead><tr><th>Type</th><th>Count</th></tr></thead>
                         <tbody>
@@ -1506,9 +1559,9 @@ switch ($report_type):
             <?php endif; ?>
 
             <?php if (empty($rows)): ?>
-                <div class="no-data"><i class="fas fa-wheelchair"></i><span>No PWD participants found.</span></div>
+                <div class="empty-state"><i class="fas fa-wheelchair" aria-hidden="true"></i><p>No PWD participants found.</p></div>
             <?php else: ?>
-                <div class="table-wrap">
+                <div class="table-responsive">
                     <table class="table">
                         <thead>
                         <tr><th>Name</th><th>Gender</th><th>District</th><th>Disability</th><th>Programs</th><th>Projects</th></tr>
@@ -1541,29 +1594,19 @@ switch ($report_type):
         $ind = $data['ind_summary'] ?? [];
         $ev = $data['events_summary'] ?? [];
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="card">
+        <div class="card-header">
             <h3>
                 <i class="fas fa-<?= $report_type === 'annual_report' ? 'file-invoice' : 'calendar-check' ?>"></i>
                 <?= h($report_title) ?>
             </h3>
         </div>
-        <div class="report-section-body">
-            <div class="summary-box">
-                <div class="summary-box-title">Period Overview</div>
-                <div class="summary-stats">
-                    <div><div class="sum-stat-val"><?= number_format(array_sum($p_sum)) ?></div><div class="sum-stat-lbl">Programs</div></div>
-                    <div><div class="sum-stat-val"><?= number_format(array_sum($pr_sum)) ?></div><div class="sum-stat-lbl">Projects</div></div>
-                    <div><div class="sum-stat-val"><?= number_format(array_sum($gender)) ?></div><div class="sum-stat-lbl">Participants</div></div>
-                    <div><div class="sum-stat-val"><?= number_format((int)($ind['total'] ?? 0)) ?></div><div class="sum-stat-lbl">Indicators</div></div>
-                    <div><div class="sum-stat-val"><?= number_format((int)($ev['period'] ?? 0)) ?></div><div class="sum-stat-lbl">Events in Period</div></div>
-                </div>
-            </div>
+        <div class="card-body">
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">
+            <div class="vr-grid-2">
                 <div>
-                    <div class="type-heading">Programs by Status</div>
-                    <div class="table-wrap">
+                    <div class="vr-subhead">Programs by Status</div>
+                    <div class="table-responsive">
                         <table class="table">
                             <thead><tr><th>Status</th><th>Count</th></tr></thead>
                             <tbody>
@@ -1574,8 +1617,8 @@ switch ($report_type):
                         </table>
                     </div>
 
-                    <div class="type-heading" style="margin-top:16px;">Participants by Gender</div>
-                    <div class="table-wrap">
+                    <div class="vr-subhead">Participants by Gender</div>
+                    <div class="table-responsive">
                         <table class="table">
                             <thead><tr><th>Gender</th><th>Count</th></tr></thead>
                             <tbody>
@@ -1588,8 +1631,8 @@ switch ($report_type):
                 </div>
 
                 <div>
-                    <div class="type-heading">Projects by Status</div>
-                    <div class="table-wrap">
+                    <div class="vr-subhead">Projects by Status</div>
+                    <div class="table-responsive">
                         <table class="table">
                             <thead><tr><th>Status</th><th>Count</th></tr></thead>
                             <tbody>
@@ -1600,15 +1643,15 @@ switch ($report_type):
                         </table>
                     </div>
 
-                    <div class="type-heading" style="margin-top:16px;">Indicators Performance</div>
-                    <div class="table-wrap">
+                    <div class="vr-subhead">Indicators Performance</div>
+                    <div class="table-responsive">
                         <table class="table">
                             <thead><tr><th>Category</th><th>Count</th></tr></thead>
                             <tbody>
-                            <tr><td>Achieved (=100%)</td><td><strong style="color:var(--green-fg,#15803d);"><?= number_format((int)($ind['achieved'] ?? 0)) ?></strong></td></tr>
-                            <tr><td>Partial (50–99%)</td><td><strong style="color:var(--amber-fg,#b45309);"><?= number_format((int)($ind['partial'] ?? 0)) ?></strong></td></tr>
-                            <tr><td>Low (&lt;50%)</td><td><strong style="color:var(--red-fg,#b91c1c);"><?= number_format((int)($ind['low'] ?? 0)) ?></strong></td></tr>
-                            <tr style="background:var(--ink-50,#f8fafc);font-weight:800;">
+                            <tr><td>Achieved (=100%)</td><td><strong class="vr-ach-high"><?= number_format((int)($ind['achieved'] ?? 0)) ?></strong></td></tr>
+                            <tr><td>Partial (50â€“99%)</td><td><strong class="vr-ach-mid"><?= number_format((int)($ind['partial'] ?? 0)) ?></strong></td></tr>
+                            <tr><td>Low (&lt;50%)</td><td><strong class="vr-ach-low"><?= number_format((int)($ind['low'] ?? 0)) ?></strong></td></tr>
+                            <tr class="vr-total-row">
                                 <td>Total</td>
                                 <td><?= number_format((int)($ind['total'] ?? 0)) ?></td>
                             </tr>
@@ -1624,12 +1667,12 @@ switch ($report_type):
 
     default:
 ?>
-    <div class="report-section">
-        <div class="report-section-head">
+    <div class="card">
+        <div class="card-header">
             <h3><i class="fas fa-file-alt"></i> Report</h3>
         </div>
-        <div class="report-section-body">
-            <div class="no-data"><i class="fas fa-tools"></i><span>This report type is under development.</span></div>
+        <div class="card-body">
+            <div class="empty-state"><i class="fas fa-tools" aria-hidden="true"></i><p>This report type is under development.</p></div>
         </div>
     </div>
 <?php
@@ -1637,16 +1680,18 @@ switch ($report_type):
 endswitch;
 ?>
 
-    <div class="report-section no-print" style="text-align:center;padding:20px;">
-        <p style="color:var(--ink-300,#94a3b8);font-size:13px;margin-bottom:14px;">
+    <div class="card no-print">
+        <div class="card-body vr-footer">
+        <p>
             Report generated by <?= h($_SESSION['full_name'] ?? 'User') ?> on <?= date('d M Y H:i') ?>
         </p>
 
-        <button onclick="window.print()" class="btn btn-dark">
-            <i class="fas fa-print"></i> Print Report
+        <button onclick="window.print()" class="btn btn-secondary">
+            <i class="fas fa-print" aria-hidden="true"></i> Print Report
         </button>
+        </div>
     </div>
 
-</div>
+</div><!-- /.page-stack -->
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

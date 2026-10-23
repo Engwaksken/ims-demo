@@ -223,7 +223,7 @@ if (!function_exists('doc_ui_initials')) {
     width:44px;height:44px;display:grid;place-items:center;
     flex-shrink:0;border-radius:10px;font-size:19px
 }
-.doc-folder-icon{background:#fff7ed;color:#ea580c}
+.doc-folder-icon{background:var(--brand-50);color:var(--brand-600)}
 .doc-card-main{min-width:0;flex:1}
 .doc-card-name{
     color:var(--ink-700);font-size:12.5px;font-weight:800;
@@ -247,7 +247,7 @@ if (!function_exists('doc_ui_initials')) {
 }
 .doc-folder-count{
     display:inline-flex;align-items:center;gap:4px;
-    margin-top:5px;color:#64748b;font-size:10px;font-weight:700
+    margin-top:5px;color:var(--ink-300);font-size:10px;font-weight:700
 }
 .doc-tabs{
     display:flex;gap:0;overflow-x:auto;margin-bottom:16px;border-bottom:2px solid var(--ink-100)
@@ -571,15 +571,15 @@ if (!function_exists('doc_ui_initials')) {
 
     border-radius: 10px;
 
-    background: #fff7ed;
-    color: #ea580c;
+    background: var(--brand-50);
+    color: var(--brand-600);
 
     font-size: 18px;
 }
 
 .doc-add-new-option.file .doc-add-new-option-icon {
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--blue-bg);
+    color: var(--blue-fg);
 }
 
 .doc-add-new-option-title {
@@ -606,12 +606,12 @@ if (!function_exists('doc_ui_initials')) {
     margin-bottom: 14px;
     padding: 10px 12px;
 
-    border: 1px solid #fed7aa;
-    border-left: 4px solid #f97316;
+    border: 1px solid var(--brand-200);
+    border-left: 4px solid var(--brand-500);
     border-radius: 8px;
 
-    background: #fff7ed;
-    color: #9a3412;
+    background: var(--brand-50);
+    color: var(--brand-700);
 
     font-size: 11px;
     line-height: 1.45;
@@ -619,7 +619,7 @@ if (!function_exists('doc_ui_initials')) {
 
 .doc-add-location i {
     margin-top: 2px;
-    color: #ea580c;
+    color: var(--brand-600);
 }
 
 @media (max-width: 620px) {
@@ -652,7 +652,7 @@ if (!function_exists('doc_ui_initials')) {
     padding: 14px;
     border: 1px solid var(--ink-100);
     border-radius: 10px;
-    background: #fff;
+    background: var(--surface-card);
     cursor: pointer;
 }
 
@@ -668,14 +668,14 @@ if (!function_exists('doc_ui_initials')) {
     place-items: center;
     flex-shrink: 0;
     border-radius: 9px;
-    background: #eff6ff;
-    color: #2563eb;
+    background: var(--blue-bg);
+    color: var(--blue-fg);
     font-size: 18px;
 }
 
 .doc-upload-choice.folder i {
-    background: #fff7ed;
-    color: #ea580c;
+    background: var(--brand-50);
+    color: var(--brand-600);
 }
 
 .doc-hidden-file-input {
@@ -779,7 +779,7 @@ if (!function_exists('doc_ui_initials')) {
 
     border-radius: 16px !important;
 
-    background: #fff !important;
+    background: var(--surface-card) !important;
 
     box-shadow: 0 24px 70px rgba(15, 23, 42, .28) !important;
 
@@ -832,9 +832,9 @@ if (!function_exists('doc_ui_initials')) {
 
     padding: 17px 20px !important;
 
-    border-bottom: 1px solid #e5e7eb !important;
+    border-bottom: 1px solid var(--ink-100) !important;
 
-    background: #fff !important;
+    background: var(--surface-card) !important;
 }
 
 #addNewModal .modal-body,
@@ -855,7 +855,7 @@ if (!function_exists('doc_ui_initials')) {
 
     overflow-y: auto !important;
 
-    background: #fff !important;
+    background: var(--surface-card) !important;
 }
 
 #addNewModal .modal-foot,
@@ -878,9 +878,9 @@ if (!function_exists('doc_ui_initials')) {
 
     padding: 14px 20px !important;
 
-    border-top: 1px solid #e5e7eb !important;
+    border-top: 1px solid var(--ink-100) !important;
 
-    background: #f8fafc !important;
+    background: var(--ink-50) !important;
 }
 
 #addNewModal .modal-head h3,
@@ -900,7 +900,7 @@ if (!function_exists('doc_ui_initials')) {
 
     gap: 8px !important;
 
-    color: #1f2937 !important;
+    color: var(--ink-700) !important;
 
     font-size: 17px !important;
     font-weight: 800 !important;
@@ -929,8 +929,8 @@ if (!function_exists('doc_ui_initials')) {
     border: 0 !important;
     border-radius: 9px !important;
 
-    background: #f3f4f6 !important;
-    color: #64748b !important;
+    background: var(--ink-50) !important;
+    color: var(--ink-300) !important;
 
     font-size: 20px !important;
     line-height: 1 !important;
@@ -948,8 +948,8 @@ if (!function_exists('doc_ui_initials')) {
 #deleteDocumentModal .modal-close:hover,
 #permissionsModal .modal-close:hover,
 #moveModal .modal-close:hover {
-    background: #e5e7eb !important;
-    color: #334155 !important;
+    background: var(--ink-100) !important;
+    color: var(--ink-600) !important;
 }
 
 #addNewModal .doc-add-new-grid {
@@ -1060,18 +1060,17 @@ if (!function_exists('doc_ui_initials')) {
 
 </style>
 
-<div class="opp-hero doc-hero">
-    <div class="opp-hero-left">
-        <div class="opp-eyebrow"><span class="opp-dot" aria-hidden="true"></span> Repository</div>
-        <h1>Documents</h1>
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-folder-open" aria-hidden="true"></i> Documents</h1>
         <p>Organise documents in folders, share access and manage file permissions.</p>
     </div>
 
     <?php if ($canCreateHere): ?>
-        <div class="opp-hero-actions">
+        <div class="hero-actions">
             <button
                 type="button"
-                class="btn btn-white"
+                class="btn btn-primary"
                 onclick="openModal('addNewModal')"
             >
                 <i class="fas fa-plus" aria-hidden="true"></i>
@@ -1849,22 +1848,7 @@ if (!function_exists('doc_ui_initials')) {
             <div class="modal-body">
 
                 <?php if ($autoOpenUpload): ?>
-                    <div
-                        style="
-                            display:flex;
-                            align-items:flex-start;
-                            gap:9px;
-                            margin-bottom:14px;
-                            padding:11px 12px;
-                            border:1px solid #bbf7d0;
-                            border-left:4px solid #16a34a;
-                            border-radius:8px;
-                            background:#f0fdf4;
-                            color:#166534;
-                            font-size:11.5px;
-                            line-height:1.5;
-                        "
-                    >
+                    <div class="alert alert-success" style="margin-bottom:14px;">
                         <i class="fas fa-circle-check" style="margin-top:1px;"></i>
 
                         <div>
@@ -2117,7 +2101,7 @@ if (!function_exists('doc_ui_initials')) {
     <div class="modal-card" style="max-width:680px;">
         <div class="modal-head">
             <h3>
-                <i class="fas fa-folder-open" style="color:#ea580c;"></i>
+                <i class="fas fa-folder-open" style="color:var(--brand-600);"></i>
                 Edit Folder
             </h3>
 
@@ -2572,7 +2556,7 @@ if (!function_exists('doc_ui_initials')) {
     <div class="modal-card" style="max-width:620px;">
         <div class="modal-head">
             <h3>
-                <i class="fas fa-folder-tree" style="color:#ea580c;"></i>
+                <i class="fas fa-folder-tree" style="color:var(--brand-600);"></i>
                 Upload Folder
             </h3>
 

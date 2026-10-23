@@ -1436,877 +1436,124 @@ $canDeleteEvents = ims_allowed('events.delete', ['Administrator', 'Operations/Ad
 
 
 <style>
+/* Events: month calendar grid, filter sizing, CRUD modal form and staff picker. */
+.ev-filters { margin-bottom: 0; }
+.ev-filters > .form-group.filters-grow { flex: 1 1 220px; min-width: 180px; }
 
-.events-page {
-    width: 100%;
-}
+.ev-card-sub { display: block; margin-top: 2px; font-weight: 400; }
 
-
-.events-header {
-
-    display: flex;
-
-    justify-content:
-        space-between;
-
-    align-items: center;
-
-    gap: 16px;
-
-    flex-wrap: wrap;
-
-    padding: 18px 20px;
-
-    margin-bottom: 15px;
-
-    background: #fff;
-
-    border:
-        1px solid #e2e8f0;
-
-    border-left:
-        5px solid #f97316;
-
-    border-radius: 10px;
-}
-
-
-.events-header h1 {
-
-    margin: 0;
-
-    color: #0f172a;
-
-    font-size: 21px;
-}
-
-
-.events-header p {
-
-    margin:
-        5px 0 0;
-
-    color: #64748b;
-
-    font-size: 11px;
-}
-
-
-.google-state {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    padding: 7px 10px;
-
-    border-radius: 20px;
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-    background:
-        <?= $googleConnected
-            ? '#ecfdf5'
-            : '#fff7ed' ?>;
-
-    color:
-        <?= $googleConnected
-            ? '#166534'
-            : '#9a3412' ?>;
-}
-
-
-.events-stats {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            5,
-            minmax(
-                0,
-                1fr
-            )
-        );
-
-    gap: 10px;
-
-    margin-bottom:
-        15px;
-}
-
-
-.event-stat {
-
-    padding:
-        13px;
-
-    background:
-        #fff;
-
-    border:
-        1px solid #e2e8f0;
-
-    border-left:
-        4px solid #2563eb;
-
-    border-radius:
-        8px;
-}
-
-
-.event-stat:nth-child(2) {
-    border-left-color:
-        #16a34a;
-}
-
-
-.event-stat:nth-child(3) {
-    border-left-color:
-        #f97316;
-}
-
-
-.event-stat:nth-child(4) {
-    border-left-color:
-        #4285f4;
-}
-
-
-.event-stat:nth-child(5) {
-    border-left-color:
-        #9333ea;
-}
-
-
-.event-stat small {
-
-    color: #64748b;
-
-    font-size: 9px;
-
-    text-transform:
-        uppercase;
-
-    font-weight: 800;
-}
-
-
-.event-stat strong {
-
-    display: block;
-
-    margin-top:
-        4px;
-
-    color: #0f172a;
-
-    font-size: 20px;
-}
-
-
-.events-tabs {
-
-    display: flex;
-
-    border-bottom:
-        2px solid #e2e8f0;
-
-    margin-bottom:
-        14px;
-}
-
-
-.events-tab {
-
-    padding:
-        11px 15px;
-
-    margin-bottom:
-        -2px;
-
-    border-bottom:
-        2px solid transparent;
-
-    color: #64748b;
-
-    text-decoration:
-        none;
-
-    font-size: 11px;
-
-    font-weight: 800;
-}
-
-
-.events-tab.active {
-
-    color: #ea580c;
-
-    border-bottom-color:
-        #ea580c;
-}
-
-
-/* One-row layout comes from .filters-bar (style.css). */
-.events-filter {
-
-    margin-bottom:
-        14px;
-
-    padding: 12px;
-
-    border:
-        1px solid #e2e8f0;
-
-    border-radius:
-        9px;
-
-    background:
-        #f8fafc;
-}
-
-
-.events-filter > div {
-    flex: 0 1 150px;
-    min-width: 110px;
-}
-
-/* First field is the search box: it takes the spare width. */
-.events-filter > div:first-of-type {
-    flex: 1 1 220px;
-    min-width: 180px;
-}
-
-@media (max-width: 768px) {
-    .events-filter > div {
-        flex: 1 1 calc(50% - 12px);
-        min-width: 0;
-    }
-
-    .events-filter > div:first-of-type {
-        flex-basis: 100%;
-    }
-}
-
-
-.events-filter label {
-
-    display: block;
-
-    margin-bottom:
-        4px;
-
-    color: #64748b;
-
-    font-size: 8px;
-
-    font-weight: 800;
-
-    text-transform:
-        uppercase;
-}
-
-
-.calendar-panel,
-.table-panel {
-
-    background: #fff;
-
-    border:
-        1px solid #e2e8f0;
-
-    border-radius:
-        10px;
-
-    overflow: hidden;
-}
-
-
-.panel-head {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content:
-        space-between;
-
-    gap: 10px;
-
-    padding:
-        13px 15px;
-
-    border-bottom:
-        1px solid #e2e8f0;
-}
-
-
-.panel-head h3 {
-
-    margin: 0;
-
-    font-size:
-        14px;
-}
-
-
-.calendar-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            7,
-            minmax(
-                0,
-                1fr
-            )
-        );
-}
-
-
+.ev-calendar-scroll { overflow-x: auto; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .calendar-weekday {
-
-    padding:
-        8px;
-
-    text-align:
-        center;
-
-    background:
-        #f8fafc;
-
-    border-right:
-        1px solid #e2e8f0;
-
-    border-bottom:
-        1px solid #e2e8f0;
-
-    color:
-        #64748b;
-
-    font-size:
-        9px;
-
-    font-weight:
-        800;
-}
-
-
-.calendar-day {
-
-    min-height:
-        120px;
-
-    padding:
-        7px;
-
-    border-right:
-        1px solid #e2e8f0;
-
-    border-bottom:
-        1px solid #e2e8f0;
-}
-
-
-.calendar-day.other {
-
-    background:
-        #f8fafc;
-}
-
-
-.calendar-day.today {
-
-    box-shadow:
-        inset
-        0
-        0
-        0
-        2px
-        #f97316;
-}
-
-
-.calendar-number {
-
-    margin-bottom:
-        6px;
-
-    color:
-        #475569;
-
-    font-size:
-        10px;
-
-    font-weight:
-        800;
-}
-
-
-.calendar-event {
-
-    display: block;
-
-    width: 100%;
-
-    margin-bottom:
-        4px;
-
-    padding:
-        5px 6px;
-
-    border: 0;
-
-    border-left:
-        3px solid #f97316;
-
-    border-radius:
-        5px;
-
-    background:
-        #fff7ed;
-
-    color:
-        #9a3412;
-
-    text-align:
-        left;
-
-    cursor:
-        pointer;
-
-    font-size:
-        9px;
-}
-
-
-.calendar-event.google {
-
-    background:
-        #eff6ff;
-
-    border-left-color:
-        #4285f4;
-
-    color:
-        #174ea6;
-}
-
-
-.calendar-event strong {
-
-    display:
-        block;
-
-    overflow:
-        hidden;
-
-    white-space:
-        nowrap;
-
-    text-overflow:
-        ellipsis;
-}
-
-
-.events-table-wrap {
-
-    overflow-x:
-        auto;
-}
-
-
-.events-table {
-
-    width: 100%;
-
-    border-collapse:
-        collapse;
-}
-
-
-.events-table th {
-
-    padding:
-        9px;
-
-    background:
-        #f8fafc;
-
-    color:
-        #64748b;
-
-    border-bottom:
-        1px solid #e2e8f0;
-
-    font-size:
-        8px;
-
-    text-align:
-        left;
-
-    text-transform:
-        uppercase;
-}
-
-
-.events-table td {
-
-    padding:
-        9px;
-
-    border-bottom:
-        1px solid #f1f5f9;
-
-    color:
-        #334155;
-
-    font-size:
-        10px;
-
-    vertical-align:
-        top;
-}
-
-
-.source-badge {
-
-    display:
-        inline-flex;
-
-    margin-top:
-        4px;
-
-    padding:
-        3px 6px;
-
-    border-radius:
-        20px;
-
-    font-size:
-        8px;
-
-    font-weight:
-        800;
-
-    background:
-        #fff7ed;
-
-    color:
-        #9a3412;
-}
-
-
-.source-badge.google {
-
-    background:
-        #eff6ff;
-
-    color:
-        #174ea6;
-}
-
-
-.google-error {
-
-    margin-bottom:
-        13px;
-
-    padding:
-        10px 12px;
-
-    border-left:
-        4px solid #dc2626;
-
-    border-radius:
-        7px;
-
-    background:
-        #fef2f2;
-
-    color:
-        #991b1b;
-
-    font-size:
-        10px;
-}
-
-
-.event-modal {
-
-    position:
-        fixed;
-
-    inset: 0;
-
-    z-index:
-        999999;
-
-    display:
-        none;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    padding:
-        20px;
-
-    background:
-        rgba(
-            15,
-            23,
-            42,
-            .55
-        );
-}
-
-
-.event-modal.open {
-
-    display:
-        flex;
-}
-
-
-.event-modal-card {
-
-    width:
-        min(
-            100%,
-            520px
-        );
-
-    max-height:
-        calc(
-            100vh
-            -
-            40px
-        );
-
-    overflow:
-        auto;
-
-    padding:
-        18px;
-
-    border-radius:
-        11px;
-
-    background:
-        #fff;
-}
-
-
-.event-details-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(
-            2,
-            1fr
-        );
-
-    gap:
-        8px;
-}
-
-
-.event-detail {
-
-    padding:
-        9px;
-
-    border:
-        1px solid #e2e8f0;
-
-    border-radius:
-        7px;
-
-    background:
-        #f8fafc;
-}
-
-
-.event-detail small {
-
-    display:
-        block;
-
-    color:
-        #64748b;
-
-    font-size:
-        8px;
-
-    text-transform:
-        uppercase;
-}
-
-
-.event-detail strong {
-
-    font-size:
-        10px;
-
-    color:
-        #0f172a;
-}
-
-
-@media (
-    max-width: 1050px
-) {
-
-    .events-stats {
-
-        grid-template-columns:
-            repeat(
-                3,
-                1fr
-            );
-    }
-}
-
-
-@media (
-    max-width: 750px
-) {
-
-    .calendar-panel {
-
-        overflow-x:
-            auto;
-    }
-
-
-    .calendar-grid {
-
-        min-width:
-            850px;
-    }
-
-
-    .events-stats {
-
-        grid-template-columns:
-            1fr;
-    }
-}
-
-
-
-.events-table-pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    padding: 14px 12px;
-    border-top: 1px solid #e2e8f0;
-    background: #fff;
-}
-
-.events-table-pagination a,
-.events-table-pagination span.page-number {
-    min-width: 32px;
-    height: 32px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 9px;
-    border: 1px solid #e2e8f0;
-    border-radius: 7px;
-    background: #fff;
-    color: #334155;
-    text-decoration: none;
-    font-size: 9px;
+    padding: var(--space-2);
+    text-align: center;
+    background: var(--surface-hover);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    color: var(--ink-300);
+    font-size: var(--fs-xs);
     font-weight: 800;
+    text-transform: uppercase;
 }
-
-.events-table-pagination a:hover,
-.events-table-pagination span.active {
-    background: #f97316;
-    border-color: #f97316;
-    color: #fff;
+.calendar-day {
+    min-height: 120px;
+    padding: 7px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
-
-.events-table-pagination .page-summary {
-    margin-left: 7px;
-    color: #64748b;
-    font-size: 9px;
-    font-weight: 700;
+.calendar-day.other { background: var(--surface-hover); }
+.calendar-day.today { box-shadow: inset 0 0 0 2px var(--brand-500); }
+.calendar-number { margin-bottom: 6px; color: var(--ink-400); font-size: var(--fs-xs); font-weight: 800; }
+.calendar-event {
+    display: block;
+    width: 100%;
+    margin-bottom: 4px;
+    padding: 5px 6px;
+    border: 0;
+    border-left: 3px solid var(--brand-500);
+    border-radius: var(--radius-sm);
+    background: var(--brand-50);
+    color: var(--brand-700);
+    text-align: left;
+    cursor: pointer;
+    font-size: 11px;
 }
+.calendar-event.google { background: var(--blue-bg); border-left-color: var(--blue-fg); color: var(--blue-fg); }
+.calendar-event strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+@media (max-width: 750px) { .calendar-grid { min-width: 850px; } }
 
-.ev-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
-.ev-icon-btn{width:31px;height:31px;display:inline-flex;align-items:center;justify-content:center;padding:0;border-radius:7px;border:1px solid #dbe3ec;background:#fff;color:#475569;text-decoration:none;cursor:pointer}
-.ev-icon-btn.view{background:#f0f9ff;border-color:#bae6fd;color:#0369a1}
-.ev-icon-btn.edit{background:#fff7ed;border-color:#fed7aa;color:#c2410c}
-.ev-icon-btn.delete{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
-.ev-modal{position:fixed;inset:0;z-index:1000000;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto;background:rgba(15,23,42,.62)}
-.ev-modal.open{display:flex}
-.ev-modal-card{width:min(100%,860px);max-height:calc(100vh - 40px);overflow:auto;border-radius:14px;background:#fff;box-shadow:0 30px 80px rgba(15,23,42,.28)}
-.ev-modal-card.small{width:min(100%,520px)}
-.ev-modal-head{position:sticky;top:0;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-bottom:1px solid #e2e8f0;background:#fff}
-.ev-modal-head h3{margin:0;font-size:15px;color:#0f172a}
-.ev-modal-close{width:34px;height:34px;border:0;border-radius:8px;background:#f1f5f9;color:#475569;font-size:20px;cursor:pointer}
-.ev-modal-body{padding:18px}
-.ev-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.ev-form-grid .full{grid-column:1/-1}
-.ev-modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:17px;padding-top:14px;border-top:1px solid #e2e8f0}
-.ev-date-list{display:flex;flex-direction:column;gap:7px}
-.ev-date-row{display:flex;gap:7px;align-items:center}
-.ev-date-row input{flex:1}
-.ev-link-target{display:none}.ev-link-target.open{display:block}
-.ev-danger{padding:11px 12px;border-left:4px solid #dc2626;border-radius:8px;background:#fef2f2;color:#991b1b;font-size:11px}
-body.ev-modal-open{overflow:hidden}
-.ev-staff-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
-.ev-staff-count{font-size:12px;font-weight:600;color:var(--brand-700,#c2410c)}
-.ev-staff-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.ev-staff-chips:empty{display:none}
-.ev-staff-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 6px 4px 10px;border:1px solid var(--brand-200,#ffc89e);border-radius:999px;background:var(--brand-50,#fff4ed);color:#7c2d12;font-size:12px;font-weight:600}
-.ev-staff-chip button{width:20px;height:20px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:14px;line-height:1;cursor:pointer}
-.ev-staff-chip button:hover,.ev-staff-chip button:focus-visible{background:var(--brand-100,#ffe6d0)}
-.ev-staff-tools{display:flex;gap:14px;margin:6px 0}
-.ev-staff-link{border:0;padding:2px 0;background:none;color:var(--brand-700,#c2410c);font-size:12px;font-weight:600;cursor:pointer}
-.ev-staff-link:hover{text-decoration:underline}
-.ev-staff-list{max-height:220px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
-.ev-staff-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;margin:0}
-.ev-staff-item:last-of-type{border-bottom:0}
-.ev-staff-item:hover{background:#f8fafc}
-.ev-staff-item:has(input:checked){background:var(--brand-50,#fff4ed)}
-.ev-staff-item input{width:18px;height:18px;flex:none;accent-color:var(--brand-600,#ea580c)}
-.ev-staff-item[hidden]{display:none}
-.ev-staff-avatar{width:30px;height:30px;flex:none;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--brand-100,#ffe6d0);color:var(--brand-700,#c2410c);font-size:13px;font-weight:700}
-.ev-staff-text{display:flex;flex-direction:column;min-width:0}
-.ev-staff-text strong{font-size:13px;color:#0f172a}
-.ev-staff-text small{font-size:12px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ev-staff-empty{margin:0;padding:12px;font-size:12px;color:#64748b}
-.ev-staff-hint{display:block;margin-top:6px;font-size:12px;color:#64748b}
-@media(max-width:720px){.ev-form-grid{grid-template-columns:1fr}.ev-form-grid .full{grid-column:auto}.ev-staff-list{max-height:180px}}
+.ev-source-badge { margin-top: 4px; }
+.ev-pagination { align-items: center; margin-top: 0; }
+.ev-pagination .ev-page-summary { margin-left: 7px; }
+
+/* CRUD modals use .modal-overlay/.modal-dialog; .ev-modal stays as the JS hook. */
+.ev-modal { z-index: 1000000; }
+.ev-modal form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.ev-modal-actions { display: flex; justify-content: flex-end; gap: var(--space-2); flex-wrap: wrap; margin-top: 17px; padding-top: 14px; border-top: 1px solid var(--border); }
+.ev-modal-details { z-index: 999999; }
+.ev-contents { display: contents; }
+body.ev-modal-open { overflow: hidden; }
+.ev-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.ev-form-grid .full { grid-column: 1 / -1; }
+.ev-add-date { margin-top: 7px; }
+.ev-date-list { display: flex; flex-direction: column; gap: 7px; }
+.ev-date-row { display: flex; gap: 7px; align-items: center; }
+.ev-date-row input { flex: 1; }
+.ev-link-target { display: none; }
+.ev-link-target.open { display: block; }
+.ev-danger-note { margin-top: 5px; }
+
+.ev-details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
+.ev-detail { padding: 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-hover); }
+.ev-detail small { display: block; color: var(--ink-300); font-size: 11px; text-transform: uppercase; }
+.ev-detail strong { font-size: var(--fs-sm); color: var(--ink-900); }
+.ev-details-desc { margin: var(--space-4) 0 0; color: var(--ink-400); font-size: var(--fs-sm); white-space: pre-wrap; }
+.ev-details-links { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+
+.ev-staff-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ev-staff-count { font-size: var(--fs-xs); font-weight: 600; color: var(--brand-700); }
+.ev-staff-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.ev-staff-chips:empty { display: none; }
+.ev-staff-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border: 1px solid var(--brand-200); border-radius: var(--radius-pill); background: var(--brand-50); color: var(--brand-700); font-size: var(--fs-xs); font-weight: 600; }
+.ev-staff-chip button { width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; color: inherit; font-size: 14px; line-height: 1; cursor: pointer; }
+.ev-staff-chip button:hover,
+.ev-staff-chip button:focus-visible { background: var(--brand-100); }
+.ev-staff-tools { display: flex; gap: 14px; margin: 6px 0; }
+.ev-staff-link { border: 0; padding: 2px 0; background: none; color: var(--brand-700); font-size: var(--fs-xs); font-weight: 600; cursor: pointer; }
+.ev-staff-link:hover { text-decoration: underline; }
+.ev-staff-list { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-card); }
+.ev-staff-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--ink-50); cursor: pointer; margin: 0; }
+.ev-staff-item:last-of-type { border-bottom: 0; }
+.ev-staff-item:hover { background: var(--surface-hover); }
+.ev-staff-item:has(input:checked) { background: var(--brand-50); }
+.ev-staff-item input { width: 18px; height: 18px; flex: none; accent-color: var(--brand-600); }
+.ev-staff-item[hidden] { display: none; }
+.ev-staff-avatar { width: 30px; height: 30px; flex: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--brand-100); color: var(--brand-700); font-size: var(--fs-sm); font-weight: 700; }
+.ev-staff-text { display: flex; flex-direction: column; min-width: 0; }
+.ev-staff-text strong { font-size: var(--fs-sm); color: var(--ink-900); }
+.ev-staff-text small { font-size: var(--fs-xs); color: var(--ink-300); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-staff-empty { margin: 0; padding: 12px; font-size: var(--fs-xs); color: var(--ink-300); }
+.ev-staff-hint { display: block; margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-300); }
+
+@media (max-width: 720px) {
+    .ev-form-grid { grid-template-columns: 1fr; }
+    .ev-form-grid .full { grid-column: auto; }
+    .ev-staff-list { max-height: 180px; }
+    .ev-details-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 
-<div class="events-page">
+<div class="page-stack">
 
 
-    <div class="events-header">
+    <div class="page-hero">
 
         <div>
 
             <h1>
 
-                <i class="fas fa-calendar-days"></i>
+                <i class="fas fa-calendar-days" aria-hidden="true"></i>
 
                 Events Management
 
@@ -2321,18 +1568,11 @@ body.ev-modal-open{overflow:hidden}
         </div>
 
 
-        <div
-            style="
-                display:flex;
-                gap:8px;
-                align-items:center;
-                flex-wrap:wrap;
-            "
-        >
+        <div class="hero-actions">
 
-            <span class="google-state">
+            <span class="badge <?= $googleConnected ? 'badge-success' : 'badge-warning' ?>">
 
-                <i class="fab fa-google"></i>
+                <i class="fab fa-google" aria-hidden="true"></i>
 
                 <?= $googleConnected
                     ? 'Google Calendar Connected'
@@ -2347,7 +1587,7 @@ body.ev-modal-open{overflow:hidden}
                 onclick="openAddEventModal()"
             >
 
-                <i class="fas fa-plus"></i>
+                <i class="fas fa-plus" aria-hidden="true"></i>
 
                 Add Event
 
@@ -2362,9 +1602,9 @@ body.ev-modal-open{overflow:hidden}
         $googleFetchError !== ''
     ): ?>
 
-        <div class="google-error">
+        <div class="alert alert-danger">
 
-            <i class="fas fa-triangle-exclamation"></i>
+            <i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
 
             Google Calendar fetch failed:
 
@@ -2377,76 +1617,58 @@ body.ev-modal-open{overflow:hidden}
     <?php endif; ?>
 
 
-    <div class="events-stats">
+    <div class="stats-grid reports-stats">
 
-        <div class="event-stat">
-
-            <small>
-                Events Displayed
-            </small>
-
-            <strong>
-                <?= $statistics['all'] ?>
-            </strong>
-
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-calendar" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Events Displayed</span>
+                <span class="stat-value"><?= $statistics['all'] ?></span>
+            </div>
         </div>
 
 
-        <div class="event-stat">
-
-            <small>
-                Upcoming
-            </small>
-
-            <strong>
-                <?= $statistics['upcoming'] ?>
-            </strong>
-
+        <div class="stat-card">
+            <div class="stat-icon bg-green"><i class="fas fa-calendar-day" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Upcoming</span>
+                <span class="stat-value"><?= $statistics['upcoming'] ?></span>
+            </div>
         </div>
 
 
-        <div class="event-stat">
-
-            <small>
-                IMS Events
-            </small>
-
-            <strong>
-                <?= $statistics['ims'] ?>
-            </strong>
-
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-database" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">IMS Events</span>
+                <span class="stat-value"><?= $statistics['ims'] ?></span>
+            </div>
         </div>
 
 
-        <div class="event-stat">
-
-            <small>
-                Google Only
-            </small>
-
-            <strong>
-                <?= $statistics['google'] ?>
-            </strong>
-
+        <div class="stat-card">
+            <div class="stat-icon bg-teal"><i class="fab fa-google" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Google Only</span>
+                <span class="stat-value"><?= $statistics['google'] ?></span>
+            </div>
         </div>
 
 
-        <div class="event-stat">
-
-            <small>
-                Completed
-            </small>
-
-            <strong>
-                <?= $statistics['completed'] ?>
-            </strong>
-
+        <div class="stat-card">
+            <div class="stat-icon bg-purple"><i class="fas fa-check-circle" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value"><?= $statistics['completed'] ?></span>
+            </div>
         </div>
 
     </div>
 
 
-    <div class="events-tabs">
+    <div class="card">
+
+    <nav class="tab-nav" aria-label="Event views">
 
         <a
             href="?<?= ev_h(
@@ -2458,7 +1680,7 @@ body.ev-modal-open{overflow:hidden}
                 )
             ) ?>"
             class="
-                events-tab
+                tab-btn
                 <?= $activeTab
                     ===
                     'calendar'
@@ -2467,7 +1689,7 @@ body.ev-modal-open{overflow:hidden}
             "
         >
 
-            <i class="fas fa-calendar-alt"></i>
+            <i class="fas fa-calendar-alt" aria-hidden="true"></i>
 
             Calendar
 
@@ -2484,7 +1706,7 @@ body.ev-modal-open{overflow:hidden}
                 )
             ) ?>"
             class="
-                events-tab
+                tab-btn
                 <?= $activeTab
                     ===
                     'table'
@@ -2493,18 +1715,19 @@ body.ev-modal-open{overflow:hidden}
             "
         >
 
-            <i class="fas fa-table-list"></i>
+            <i class="fas fa-table-list" aria-hidden="true"></i>
 
             Table
 
         </a>
 
-    </div>
+    </nav>
 
 
+    <div class="card-body">
     <form
         method="GET"
-        class="events-filter filters-bar"
+        class="filters-bar ev-filters"
         role="search"
         aria-label="Filter events"
     >
@@ -2518,7 +1741,7 @@ body.ev-modal-open{overflow:hidden}
         >
 
 
-        <div>
+        <div class="form-group filters-grow">
 
             <label>
                 Search
@@ -2537,7 +1760,7 @@ body.ev-modal-open{overflow:hidden}
         </div>
 
 
-        <div>
+        <div class="form-group">
 
             <label>
                 Year
@@ -2579,7 +1802,7 @@ body.ev-modal-open{overflow:hidden}
         </div>
 
 
-        <div>
+        <div class="form-group">
 
             <label>
                 Month
@@ -2634,7 +1857,7 @@ body.ev-modal-open{overflow:hidden}
         </div>
 
 
-        <div>
+        <div class="form-group">
 
             <label>
                 Type
@@ -2682,7 +1905,7 @@ body.ev-modal-open{overflow:hidden}
         </div>
 
 
-        <div>
+        <div class="form-group">
 
             <label>
                 Status
@@ -2730,7 +1953,7 @@ body.ev-modal-open{overflow:hidden}
         </div>
 
 
-        <div>
+        <div class="form-group">
 
             <label>
                 Source
@@ -2799,6 +2022,9 @@ body.ev-modal-open{overflow:hidden}
         </button>
 
     </form>
+    </div>
+
+    </div>
 
 
     <?php if (
@@ -2808,16 +2034,16 @@ body.ev-modal-open{overflow:hidden}
     ): ?>
 
 
-        <div class="calendar-panel">
+        <div class="card">
 
 
-            <div class="panel-head">
+            <div class="card-header">
 
                 <div>
 
                     <h3>
 
-                        <i class="fas fa-calendar"></i>
+                        <i class="fas fa-calendar" aria-hidden="true"></i>
 
                         <?php
 
@@ -2849,9 +2075,7 @@ body.ev-modal-open{overflow:hidden}
                     </h3>
 
                     <small
-                        style="
-                            color:#64748b;
-                        "
+                        class="cell-muted ev-card-sub"
                     >
 
                         <?= count(
@@ -2873,21 +2097,18 @@ body.ev-modal-open{overflow:hidden}
                 0
             ): ?>
 
-                <div
-                    style="
-                        padding:30px;
-                        text-align:center;
-                        color:#64748b;
-                    "
-                >
+                <div class="empty-state">
 
-                    Select a month to display the calendar.
+                    <i class="fas fa-calendar-alt" aria-hidden="true"></i>
+
+                    <p>Select a month to display the calendar.</p>
 
                 </div>
 
             <?php else: ?>
 
 
+                <div class="ev-calendar-scroll">
                 <div class="calendar-grid">
 
                     <?php foreach (
@@ -2915,11 +2136,10 @@ body.ev-modal-open{overflow:hidden}
 
                     <div
                         id="calendarDays"
-                        style="
-                            display:contents;
-                        "
+                        class="ev-contents"
                     ></div>
 
+                </div>
                 </div>
 
 
@@ -2931,14 +2151,14 @@ body.ev-modal-open{overflow:hidden}
     <?php else: ?>
 
 
-        <div class="table-panel">
+        <div class="card">
 
 
-            <div class="panel-head">
+            <div class="card-header">
 
                 <h3>
 
-                    <i class="fas fa-table-list"></i>
+                    <i class="fas fa-table-list" aria-hidden="true"></i>
 
                     Hive Events
 
@@ -2958,10 +2178,10 @@ body.ev-modal-open{overflow:hidden}
             </div>
 
 
-            <div class="events-table-wrap">
+            <div class="table-responsive">
 
 
-                <table class="events-table">
+                <table class="table table-stack">
 
 
                     <thead>
@@ -3002,13 +2222,12 @@ body.ev-modal-open{overflow:hidden}
 
                                 <td
                                     colspan="9"
-                                    style="
-                                        padding:30px;
-                                        text-align:center;
-                                    "
                                 >
 
-                                    No events found.
+                                    <div class="empty-state">
+                                        <i class="fas fa-calendar-xmark" aria-hidden="true"></i>
+                                        <p>No events found.</p>
+                                    </div>
 
                                 </td>
 
@@ -3059,12 +2278,13 @@ body.ev-modal-open{overflow:hidden}
 
                                     <span
                                         class="
-                                            source-badge
+                                            badge
+                                            ev-source-badge
                                             <?= $eventSource
                                                 ===
                                                 'google'
-                                                ? 'google'
-                                                : '' ?>
+                                                ? 'badge-info'
+                                                : 'badge-warning' ?>
                                         "
                                     >
 
@@ -3150,12 +2370,16 @@ body.ev-modal-open{overflow:hidden}
 
                                 <td>
 
+                                    <span class="badge badge-status-<?= ev_h(
+                                        str_replace(' ', '', (string)($event['event_status'] ?? ''))
+                                    ) ?>">
                                     <?= ev_h(
                                         $event[
                                             'event_status'
                                         ]
                                         ?? ''
                                     ) ?>
+                                    </span>
 
                                 </td>
 
@@ -3197,7 +2421,7 @@ body.ev-modal-open{overflow:hidden}
                                             rel="noopener"
                                             class="
                                                 btn
-                                                btn-gray
+                                                btn-secondary
                                                 btn-sm
                                             "
                                         >
@@ -3243,10 +2467,10 @@ body.ev-modal-open{overflow:hidden}
 
 
                                 <td>
-                                    <div class="ev-actions">
+                                    <div class="table-actions">
                                         <button
                                             type="button"
-                                            class="ev-icon-btn view"
+                                            class="btn btn-info btn-sm"
                                             title="View event"
                                             onclick='viewEventRow(
                                                 <?= json_encode(
@@ -3275,7 +2499,7 @@ body.ev-modal-open{overflow:hidden}
                                         <?php if ($eventSource === 'ims'): ?>
                                             <button
                                                 type="button"
-                                                class="ev-icon-btn edit"
+                                                class="btn btn-soft btn-sm"
                                                 title="Edit event"
                                                 onclick="openEditEventModal(<?= (int)$event['event_id'] ?>)"
                                             >
@@ -3285,7 +2509,7 @@ body.ev-modal-open{overflow:hidden}
                                             <?php if ($canDeleteEvents): ?>
                                                 <button
                                                     type="button"
-                                                    class="ev-icon-btn delete"
+                                                    class="btn btn-danger btn-sm"
                                                     title="Delete event"
                                                     onclick="openDeleteEventModal(<?= (int)$event['event_id'] ?>)"
                                                 >
@@ -3296,7 +2520,7 @@ body.ev-modal-open{overflow:hidden}
                                             <?php if ($googleConnected): ?>
                                                 <a
                                                     href="includes/google-calendar-sync.php?type=event&id=<?= (int)$event['event_id'] ?>&return=<?= rawurlencode('../events?tab=table') ?>"
-                                                    class="ev-icon-btn"
+                                                    class="btn btn-secondary btn-sm"
                                                     title="Sync Google Calendar"
                                                 >
                                                     <i class="fab fa-google"></i>
@@ -3307,7 +2531,7 @@ body.ev-modal-open{overflow:hidden}
                                                 href="<?= ev_h($event['google_html_link']) ?>"
                                                 target="_blank"
                                                 rel="noopener"
-                                                class="ev-icon-btn"
+                                                class="btn btn-secondary btn-sm"
                                                 title="Open in Google Calendar"
                                             >
                                                 <i class="fab fa-google"></i>
@@ -3332,7 +2556,8 @@ body.ev-modal-open{overflow:hidden}
             </div>
 
             <?php if ($tableTotalPages > 1): ?>
-                <div class="events-table-pagination">
+                <div class="card-body">
+                <div class="pagination ev-pagination">
 
                     <?php if ($tablePage > 1): ?>
                         <a
@@ -3388,7 +2613,8 @@ body.ev-modal-open{overflow:hidden}
                         ): ?>
 
                             <span
-                                class="page-number active"
+                                class="current"
+                                aria-current="page"
                             >
                                 <?= $pageNumber ?>
                             </span>
@@ -3439,7 +2665,7 @@ body.ev-modal-open{overflow:hidden}
 
                     <?php endif; ?>
 
-                    <span class="page-summary">
+                    <span class="cell-muted ev-page-summary">
                         Page
                         <?= $tablePage ?>
                         of
@@ -3452,6 +2678,7 @@ body.ev-modal-open{overflow:hidden}
                     </span>
 
                 </div>
+                </div>
             <?php endif; ?>
 
 
@@ -3461,18 +2688,18 @@ body.ev-modal-open{overflow:hidden}
     <?php endif; ?>
 
 
-</div>
+</div><!-- /.page-stack -->
 
 
 
-<div class="ev-modal" id="addEventModal" aria-hidden="true">
-    <div class="ev-modal-card">
-        <div class="ev-modal-head">
-            <h3><i class="fas fa-calendar-plus"></i> Add Event</h3>
-            <button type="button" class="ev-modal-close" onclick="closeCrudModal('addEventModal')">&times;</button>
+<div class="ev-modal modal-overlay" id="addEventModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-lg">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><i class="fas fa-calendar-plus"></i> Add Event</h3>
+            <button type="button" class="modal-dialog-close" aria-label="Close" onclick="closeCrudModal('addEventModal')">&times;</button>
         </div>
         <form method="POST" action="includes/events-process.php">
-            <div class="ev-modal-body">
+            <div class="modal-dialog-body">
                 
                 <div class="ev-form-grid">
                     <div class="full">
@@ -3494,7 +2721,7 @@ body.ev-modal-open{overflow:hidden}
                     <div class="full">
                         <label class="form-label required">Event Date(s)</label>
                         <div class="ev-date-list" id="addEventDates"></div>
-                        <button type="button" class="btn btn-gray btn-sm" style="margin-top:7px;" onclick="addEventDateRow('addEventDates')">
+                        <button type="button" class="btn btn-secondary btn-sm ev-add-date" onclick="addEventDateRow('addEventDates')">
                             <i class="fas fa-plus"></i> Add another date
                         </button>
                     </div>
@@ -3556,7 +2783,7 @@ body.ev-modal-open{overflow:hidden}
                     </div>
                 </div>
                 <div class="ev-modal-actions">
-                    <button type="button" class="btn btn-gray" onclick="closeCrudModal('addEventModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCrudModal('addEventModal')">Cancel</button>
                     <button type="submit" name="add_event" class="btn btn-primary"><i class="fas fa-save"></i> Save Event</button>
                 </div>
             </div>
@@ -3564,15 +2791,15 @@ body.ev-modal-open{overflow:hidden}
     </div>
 </div>
 
-<div class="ev-modal" id="editEventModal" aria-hidden="true">
-    <div class="ev-modal-card">
-        <div class="ev-modal-head">
-            <h3><i class="fas fa-pen"></i> Edit Event</h3>
-            <button type="button" class="ev-modal-close" onclick="closeCrudModal('editEventModal')">&times;</button>
+<div class="ev-modal modal-overlay" id="editEventModal" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-lg">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><i class="fas fa-pen"></i> Edit Event</h3>
+            <button type="button" class="modal-dialog-close" aria-label="Close" onclick="closeCrudModal('editEventModal')">&times;</button>
         </div>
         <form method="POST" action="includes/events-process.php">
             <input type="hidden" name="event_id" id="editEventId">
-            <div class="ev-modal-body">
+            <div class="modal-dialog-body">
                 
                 <div class="ev-form-grid">
                     <div class="full">
@@ -3594,7 +2821,7 @@ body.ev-modal-open{overflow:hidden}
                     <div class="full">
                         <label class="form-label required">Event Date(s)</label>
                         <div class="ev-date-list" id="editEventDates"></div>
-                        <button type="button" class="btn btn-gray btn-sm" style="margin-top:7px;" onclick="addEventDateRow('editEventDates')">
+                        <button type="button" class="btn btn-secondary btn-sm ev-add-date" onclick="addEventDateRow('editEventDates')">
                             <i class="fas fa-plus"></i> Add another date
                         </button>
                     </div>
@@ -3656,7 +2883,7 @@ body.ev-modal-open{overflow:hidden}
                     </div>
                 </div>
                 <div class="ev-modal-actions">
-                    <button type="button" class="btn btn-gray" onclick="closeCrudModal('editEventModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCrudModal('editEventModal')">Cancel</button>
                     <button type="submit" name="edit_event" class="btn btn-primary"><i class="fas fa-save"></i> Update Event</button>
                 </div>
             </div>
@@ -3664,18 +2891,18 @@ body.ev-modal-open{overflow:hidden}
     </div>
 </div>
 
-<div class="ev-modal" id="deleteEventModal" aria-hidden="true">
-    <div class="ev-modal-card small">
-        <div class="ev-modal-head">
-            <h3><i class="fas fa-trash"></i> Delete Event</h3>
-            <button type="button" class="ev-modal-close" onclick="closeCrudModal('deleteEventModal')">&times;</button>
+<div class="ev-modal modal-overlay" id="deleteEventModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><i class="fas fa-trash"></i> Delete Event</h3>
+            <button type="button" class="modal-dialog-close" aria-label="Close" onclick="closeCrudModal('deleteEventModal')">&times;</button>
         </div>
         <form method="POST" action="includes/events-process.php">
             <input type="hidden" name="event_id" id="deleteEventId">
-            <div class="ev-modal-body">
-                <div class="ev-danger">Delete <strong id="deleteEventTitle">this event</strong>?<div style="margin-top:5px;">This action cannot be undone.</div></div>
+            <div class="modal-dialog-body">
+                <div class="alert alert-danger">Delete <strong id="deleteEventTitle">this event</strong>?<div class="ev-danger-note">This action cannot be undone.</div></div>
                 <div class="ev-modal-actions">
-                    <button type="button" class="btn btn-gray" onclick="closeCrudModal('deleteEventModal')">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCrudModal('deleteEventModal')">Cancel</button>
                     <button type="submit" name="delete_event" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Event</button>
                 </div>
             </div>
@@ -3695,33 +2922,25 @@ body.ev-modal-open{overflow:hidden}
 </datalist>
 
 <div
-    class="event-modal"
+    class="modal-overlay ev-modal-details"
     id="eventDetailsModal"
 >
 
-    <div class="event-modal-card">
+    <div class="modal-dialog">
 
 
-        <div
-            style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                margin-bottom:15px;
-            "
-        >
+        <div class="modal-dialog-header">
 
             <h3
                 id="detailsTitle"
-                style="
-                    margin:0;
-                "
+                class="modal-dialog-title"
             ></h3>
 
 
             <button
                 type="button"
-                class="btn btn-gray btn-sm"
+                class="modal-dialog-close"
+                aria-label="Close"
                 onclick="
                     closeEventDetails()
                 "
@@ -3734,10 +2953,12 @@ body.ev-modal-open{overflow:hidden}
         </div>
 
 
-        <div class="event-details-grid">
+        <div class="modal-dialog-body">
+
+        <div class="ev-details-grid">
 
 
-            <div class="event-detail">
+            <div class="ev-detail">
 
                 <small>Date</small>
 
@@ -3746,7 +2967,7 @@ body.ev-modal-open{overflow:hidden}
             </div>
 
 
-            <div class="event-detail">
+            <div class="ev-detail">
 
                 <small>Time</small>
 
@@ -3755,7 +2976,7 @@ body.ev-modal-open{overflow:hidden}
             </div>
 
 
-            <div class="event-detail">
+            <div class="ev-detail">
 
                 <small>Type</small>
 
@@ -3764,7 +2985,7 @@ body.ev-modal-open{overflow:hidden}
             </div>
 
 
-            <div class="event-detail">
+            <div class="ev-detail">
 
                 <small>Source</small>
 
@@ -3773,7 +2994,7 @@ body.ev-modal-open{overflow:hidden}
             </div>
 
 
-            <div class="event-detail">
+            <div class="ev-detail">
 
                 <small>Venue</small>
 
@@ -3782,7 +3003,7 @@ body.ev-modal-open{overflow:hidden}
             </div>
 
 
-            <div class="event-detail">
+            <div class="ev-detail">
 
                 <small>Organiser</small>
 
@@ -3796,23 +3017,16 @@ body.ev-modal-open{overflow:hidden}
 
         <p
             id="detailsDescription"
-            style="
-                margin-top:15px;
-                color:#475569;
-                font-size:11px;
-                white-space:pre-wrap;
-            "
+            class="ev-details-desc"
         ></p>
 
 
         <div
             id="detailsLinks"
-            style="
-                display:flex;
-                gap:8px;
-                margin-top:12px;
-            "
+            class="ev-details-links"
         ></div>
+
+        </div>
 
 
     </div>
@@ -4204,7 +3418,7 @@ function openEventDetails(
                 href="${event.google_link}"
                 target="_blank"
                 rel="noopener"
-                class="btn btn-gray btn-sm"
+                class="btn btn-secondary btn-sm"
             >
                 <i class="fab fa-google"></i>
                 Google Calendar

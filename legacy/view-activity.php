@@ -38,10 +38,10 @@ function fmt_date(?string $d): string
 
 function progress_color(int $pct): string
 {
-    if ($pct >= 100) return '#16a34a';
-    if ($pct >= 60)  return '#ff9800';
-    if ($pct >= 30)  return '#f59e0b';
-    return '#ef4444';
+    if ($pct >= 100) return 'var(--green-fg)';
+    if ($pct >= 60)  return 'var(--brand-500)';
+    if ($pct >= 30)  return 'var(--amber-fg)';
+    return 'var(--red-fg)';
 }
 
 function quarter_label(string $q): string
@@ -195,213 +195,182 @@ foreach ($activities as $act) {
    STATUS META
 ----------------------------------------------- */
 $status_map = [
-    'draft'      => ['Draft', 'badge-draft'],
-    'submitted'  => ['Submitted', 'badge-submitted'],
-    'approved'   => ['Approved', 'badge-approved'],
-    'completed'  => ['Completed', 'badge-approved'],
-    'rejected'   => ['Rejected', 'badge-rejected'],
+    'draft'      => ['Draft', 'status-draft'],
+    'submitted'  => ['Submitted', 'status-submitted'],
+    'approved'   => ['Approved', 'status-approved'],
+    'completed'  => ['Completed', 'status-completed'],
+    'rejected'   => ['Rejected', 'status-rejected'],
 ];
-$status_meta = $status_map[$status] ?? [ucfirst($status), 'badge-draft'];
+$status_meta = $status_map[$status] ?? [ucfirst($status), 'status-draft'];
 
 $page_title = 'View Activity Plan';
 include 'includes/header.php';
 ?>
 <style>
-:root{
-    --ink:#0d1117;
-    --surface:#f0f2f5;
-    --panel:#fff;
-    --border:#e2e8f0;
-    --muted:#94a3b8;
-    --text:#334155;
-    --green:#16a34a;
-    --green-lt:#dcfce7;
-    --orange:#ea580c;
-    --orange-lt:#fff7ed;
-    --amber:#d97706;
-    --amber-lt:#fef3c7;
-    --red:#dc2626;
-    --red-lt:#fee2e2;
-    --blue:#ff9800;
-    --blue-lt:#dbeafe;
-    --radius:10px;
-    --shadow-sm:0 1px 3px rgba(0,0,0,.05),0 1px 2px rgba(0,0,0,.04);
-    --shadow:0 4px 16px rgba(0,0,0,.07);
+/* View Activity Plan: page-only layout (va- prefix) */
+.va-hero-meta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; font-size: var(--fs-sm); opacity: .9; }
+.va-hero-meta .status-pill { opacity: 1; }
+.va-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.va-info-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink-300); margin-bottom: 3px; display: block; }
+.va-info-value { font-size: var(--fs-base); font-weight: 600; color: var(--ink-700); }
+.va-mgr-comment { margin: 18px 0 0; }
+.va-mgr-comment .va-comment-body { margin-top: 4px; line-height: 1.65; }
+.va-good { color: var(--green-fg); }
+.va-warn { color: var(--amber-fg); }
+
+.va-page .activity-list { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.va-page .activity-card { border: 1px solid var(--ink-100); border-radius: var(--radius-md); overflow: hidden; }
+.va-page .activity-head {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 14px 16px; background: var(--surface-hover);
+    border-bottom: 1px solid var(--ink-100); cursor: pointer;
 }
-body{background:var(--surface)}
-.page-wrap{max-width:1120px;margin:0 auto;padding:28px 20px 80px}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
-.back-link{text-decoration:none;color:#64748b;font-weight:600}
-.back-link:hover{color:var(--green)}
-.topbar-actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn-green{background:var(--green);border-color:var(--green);color:#fff}
-.btn-outline{background:#fff;color:#111827}
-.hero-banner{background:linear-gradient(135deg,#ff5722 0%, #ff9800 100%);border-radius:12px;padding:24px 28px;color:#fff;margin-bottom:20px}
-.hero-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
-.hero-title{font-size:24px;font-weight:800;margin-bottom:6px}
-.hero-sub{font-size:13px;opacity:.9;display:flex;flex-wrap:wrap;gap:14px}
-.badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase}
-.badge-draft{background:#f1f5f9;color:#64748b}
-.badge-submitted{background:var(--blue-lt);color:var(--blue)}
-.badge-approved{background:var(--green-lt);color:var(--green)}
-.badge-rejected{background:var(--red-lt);color:var(--red)}
-.stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.stat-tile{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px 20px;box-shadow:var(--shadow-sm)}
-.stat-tile-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
-.stat-tile-val{font-size:28px;font-weight:700}
-.stat-tile-sub{font-size:11px;color:var(--muted)}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-sm);margin-bottom:18px;overflow:hidden}
-.card-header{padding:14px 20px;border-bottom:1px solid var(--border);background:#fafbfc;font-weight:700}
-.card-body{padding:20px}
-.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
-.info-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
-.info-value{font-size:14px;font-weight:600}
-.activity-list{display:flex;flex-direction:column;gap:12px;padding:16px}
-.activity-card{border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.activity-head{display:flex;align-items:center;gap:14px;padding:14px 16px;background:#fafbfc;border-bottom:1px solid var(--border);cursor:pointer}
-.act-num{width:28px;height:28px;border-radius:7px;background:var(--green-lt);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
-.act-title-block{flex:1}
-.act-title{font-weight:700}
-.act-meta{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;margin-top:3px}
-.progress-bar-wrap{width:110px;height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden}
-.progress-bar-fill{height:100%;border-radius:99px;transition:width .4s ease}
-.progress-label{font-size:12px;font-weight:700;min-width:38px;text-align:right}
-.activity-detail{display:none}
-.activity-detail.open{display:block}
-.detail-section{padding:16px;border-bottom:1px solid var(--border)}
-.detail-section:last-child{border-bottom:none}
-.detail-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
-.detail-text{font-size:13px;color:var(--text);line-height:1.65}
-.entries-table{width:100%;border-collapse:collapse;font-size:13px}
-.entries-table th{padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);background:#f8fafc;border-bottom:2px solid var(--border)}
-.entries-table td{padding:9px 12px;border-bottom:1px solid #f1f5f9}
-.no-entries{text-align:center;padding:20px;color:var(--muted);font-style:italic}
-.act-chevron{transition:transform .2s}
-.act-chevron.open{transform:rotate(180deg)}
-@media (max-width:860px){.stats-strip{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:560px){.stats-strip{grid-template-columns:1fr 1fr}.progress-bar-wrap{width:70px}}
+.va-act-num {
+    width: 28px; height: 28px; border-radius: var(--radius-sm);
+    background: var(--brand-50); color: var(--brand-600);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; flex-shrink: 0;
+}
+.va-act-title-block { flex: 1; min-width: 180px; }
+.va-act-title { font-weight: 700; color: var(--ink-700); }
+.va-act-meta { font-size: 11px; color: var(--ink-300); display: flex; flex-wrap: wrap; gap: 10px; margin-top: 3px; }
+.va-progress { display: flex; align-items: center; gap: 10px; }
+.va-page .progress-bar-wrap { width: 110px; height: 6px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; }
+.va-page .progress-bar-fill { height: 100%; border-radius: var(--radius-pill); transition: width .4s ease; }
+.va-progress-label { font-size: var(--fs-xs); font-weight: 700; min-width: 38px; text-align: right; }
+.va-page .activity-detail { display: none; }
+.va-page .activity-detail.open { display: block; }
+.va-detail-section { padding: 16px; border-bottom: 1px solid var(--ink-100); }
+.va-detail-section:last-child { border-bottom: none; }
+.va-detail-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--ink-300); margin-bottom: 6px; }
+.va-detail-text { font-size: var(--fs-sm); color: var(--ink-500); line-height: 1.65; }
+.va-page .act-chevron { transition: transform .2s; color: var(--ink-300); }
+.va-page .act-chevron.open { transform: rotate(180deg); }
+.va-review-table { margin-bottom: 20px; }
+.va-review-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.va-inline-form { display: inline; }
+
+@media (max-width: 560px) { .va-page .progress-bar-wrap { width: 70px; } }
 </style>
 
-<div class="page-wrap">
+<div class="page-stack va-page">
 
-    <div class="topbar">
-        <a href="my-activities" class="back-link"><i class="fa fa-arrow-left"></i> Activity Plans</a>
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-clipboard-list" aria-hidden="true"></i> <?= h($plan['plan_title']) ?></h1>
+            <p>Activity Plan #<?= $plan_id ?>: activities, weights and weekly progress.</p>
+            <div class="va-hero-meta">
+                <span class="status-pill <?= h($status_meta[1]) ?>"><?= h($status_meta[0]) ?></span>
+                <?php if (!empty($plan['category_name'])): ?>
+                    <span><?= h($plan['category_name']) ?></span>
+                <?php endif; ?>
+                <?php if (!empty($plan['fiscal_year'])): ?>
+                    <span>FY <?= h($plan['fiscal_year']) ?></span>
+                <?php endif; ?>
+                <span><?= number_format($total_weight, 1) ?>% total weight</span>
+            </div>
+        </div>
 
-        <div class="topbar-actions">
+        <div class="hero-actions">
+            <a href="my-activities" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Activity Plans</a>
             <?php if ($is_owner && $status === 'draft'): ?>
-                <a href="edit-activity?id=<?= $plan_id ?>" class="btn btn-outline">Edit Plan</a>
+                <a href="edit-activity?id=<?= $plan_id ?>" class="btn"><i class="fas fa-pen" aria-hidden="true"></i> Edit Plan</a>
 
-                <form method="POST" action="includes/activity-process.php" style="display:inline">
+                <form method="POST" action="includes/activity-process.php" class="va-inline-form">
                     <input type="hidden" name="action" value="submit_activity_plan">
                     <input type="hidden" name="plan_id" value="<?= $plan_id ?>">
-                    <button type="submit" class="btn btn-green" onclick="return confirm('Submit this activity plan for supervisor review?')">
-                        Submit for Review
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Submit this activity plan for supervisor review?')">
+                        <i class="fas fa-paper-plane" aria-hidden="true"></i> Submit for Review
                     </button>
                 </form>
             <?php endif; ?>
 
-            <button onclick="window.print()" class="btn btn-outline">Print</button>
+            <button onclick="window.print()" class="btn"><i class="fas fa-print" aria-hidden="true"></i> Print</button>
         </div>
     </div>
 
-    <div class="hero-banner">
-        <div class="hero-inner">
-            <div>
-                <div style="font-size:11px;font-weight:700;text-transform:uppercase;opacity:.8;margin-bottom:4px;">
-                    Activity Plan - #<?= $plan_id ?>
-                </div>
-                <div class="hero-title"><?= h($plan['plan_title']) ?></div>
-                <div class="hero-sub">
-                    <?php if (!empty($plan['category_name'])): ?>
-                        <span><?= h($plan['category_name']) ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($plan['fiscal_year'])): ?>
-                        <span>FY <?= h($plan['fiscal_year']) ?></span>
-                    <?php endif; ?>
-                    <span><?= number_format($total_weight, 1) ?>% total weight</span>
-                </div>
-            </div>
-
-            <div>
-                <span class="badge <?= h($status_meta[1]) ?>"><?= h($status_meta[0]) ?></span>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary"><i class="fas fa-list-check" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Activities</div>
+                <div class="stat-value"><?= $total_activities ?></div>
+                <div class="stat-sub">defined in plan</div>
             </div>
         </div>
-    </div>
-
-    <div class="stats-strip">
-        <div class="stat-tile">
-            <div class="stat-tile-label">Activities</div>
-            <div class="stat-tile-val"><?= $total_activities ?></div>
-            <div class="stat-tile-sub">defined in plan</div>
-        </div>
-        <div class="stat-tile">
-            <div class="stat-tile-label">Weekly Entries</div>
-            <div class="stat-tile-val"><?= $total_entries ?></div>
-            <div class="stat-tile-sub">recorded updates</div>
-        </div>
-        <div class="stat-tile">
-            <div class="stat-tile-label">Total Weight</div>
-            <div class="stat-tile-val" style="color:<?= abs($total_weight - 100) < 1 ? 'var(--green)' : 'var(--amber)' ?>">
-                <?= number_format($total_weight, 1) ?>%
+        <div class="stat-card">
+            <div class="stat-icon bg-blue"><i class="fas fa-calendar-week" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Weekly Entries</div>
+                <div class="stat-value"><?= $total_entries ?></div>
+                <div class="stat-sub">recorded updates</div>
             </div>
-            <div class="stat-tile-sub"><?= abs($total_weight - 100) < 1 ? 'balanced' : 'target 100%' ?></div>
         </div>
-        <div class="stat-tile">
-            <div class="stat-tile-label">Avg Progress</div>
-            <div class="stat-tile-val" style="color:<?= progress_color($avg_progress) ?>">
-                <?= $avg_progress ?>%
+        <div class="stat-card">
+            <div class="stat-icon <?= abs($total_weight - 100) < 1 ? 'bg-green' : 'bg-amber' ?>"><i class="fas fa-scale-balanced" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Total Weight</div>
+                <div class="stat-value <?= abs($total_weight - 100) < 1 ? 'va-good' : 'va-warn' ?>"><?= number_format($total_weight, 1) ?>%</div>
+                <div class="stat-sub"><?= abs($total_weight - 100) < 1 ? 'balanced' : 'target 100%' ?></div>
             </div>
-            <div class="stat-tile-sub">overall completion</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-teal"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+            <div class="stat-info">
+                <div class="stat-label">Avg Progress</div>
+                <div class="stat-value" style="color:<?= progress_color($avg_progress) ?>"><?= $avg_progress ?>%</div>
+                <div class="stat-sub">overall completion</div>
+            </div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-header">Plan Details</div>
+        <div class="card-header"><h3><i class="fas fa-circle-info" aria-hidden="true"></i> Plan Details</h3></div>
         <div class="card-body">
-            <div class="info-grid">
+            <div class="va-info-grid">
                 <div>
-                    <div class="info-label">Plan Owner</div>
-                    <div class="info-value"><?= h($plan['owner_display_name'] ?? '-') ?></div>
+                    <div class="va-info-label">Plan Owner</div>
+                    <div class="va-info-value"><?= h($plan['owner_display_name'] ?? '-') ?></div>
                 </div>
                 <div>
-                    <div class="info-label">Department</div>
-                    <div class="info-value"><?= h($plan['department_id'] ?? '-') ?></div>
+                    <div class="va-info-label">Department</div>
+                    <div class="va-info-value"><?= h($plan['department_id'] ?? '-') ?></div>
                 </div>
                 <div>
-                    <div class="info-label">Category</div>
-                    <div class="info-value"><?= h($plan['category_name'] ?? '-') ?></div>
+                    <div class="va-info-label">Category</div>
+                    <div class="va-info-value"><?= h($plan['category_name'] ?? '-') ?></div>
                 </div>
                 <div>
-                    <div class="info-label">Fiscal Year</div>
-                    <div class="info-value"><?= h($plan['fiscal_year'] ?? '-') ?></div>
+                    <div class="va-info-label">Fiscal Year</div>
+                    <div class="va-info-value"><?= h($plan['fiscal_year'] ?? '-') ?></div>
                 </div>
                 <div>
-                    <div class="info-label">Supervisor</div>
-                    <div class="info-value"><?= h($plan['supervisor_name'] ?? '-') ?></div>
+                    <div class="va-info-label">Supervisor</div>
+                    <div class="va-info-value"><?= h($plan['supervisor_name'] ?? '-') ?></div>
                 </div>
                 <div>
-                    <div class="info-label">Created</div>
-                    <div class="info-value"><?= fmt_date($plan['created_at'] ?? null) ?></div>
+                    <div class="va-info-label">Created</div>
+                    <div class="va-info-value"><?= fmt_date($plan['created_at'] ?? null) ?></div>
                 </div>
                 <?php if (!empty($plan['submitted_at'])): ?>
                     <div>
-                        <div class="info-label">Submitted</div>
-                        <div class="info-value"><?= fmt_date($plan['submitted_at']) ?></div>
+                        <div class="va-info-label">Submitted</div>
+                        <div class="va-info-value"><?= fmt_date($plan['submitted_at']) ?></div>
                     </div>
                 <?php endif; ?>
                 <?php if (!empty($plan['updated_at'])): ?>
                     <div>
-                        <div class="info-label">Updated</div>
-                        <div class="info-value"><?= fmt_date($plan['updated_at']) ?></div>
+                        <div class="va-info-label">Updated</div>
+                        <div class="va-info-value"><?= fmt_date($plan['updated_at']) ?></div>
                     </div>
                 <?php endif; ?>
             </div>
 
             <?php if (!empty($plan['mgr_overall_comment'])): ?>
-                <div style="margin-top:18px;padding:14px 16px;background:var(--amber-lt);border:1px solid #fcd34d;border-left:4px solid var(--amber);border-radius:8px">
-                    <div class="info-label" style="color:var(--amber)">Manager Overall Comment</div>
-                    <div style="font-size:13px;color:var(--text);line-height:1.65;margin-top:4px">
-                        <?= nl2br(h($plan['mgr_overall_comment'])) ?>
+                <div class="alert alert-warning va-mgr-comment">
+                    <div>
+                        <strong>Manager Overall Comment</strong>
+                        <div class="va-comment-body"><?= nl2br(h($plan['mgr_overall_comment'])) ?></div>
                     </div>
                 </div>
             <?php endif; ?>
@@ -410,12 +379,13 @@ body{background:var(--surface)}
 
     <div class="card">
         <div class="card-header">
-            Activities &amp; Weekly Progress
+            <h3><i class="fas fa-list-check" aria-hidden="true"></i> Activities &amp; Weekly Progress</h3>
         </div>
 
         <?php if (empty($activities)): ?>
-            <div class="card-body" style="text-align:center;color:var(--muted)">
-                No activities recorded for this plan.
+            <div class="empty-state">
+                <i class="fas fa-clipboard" aria-hidden="true"></i>
+                <p>No activities recorded for this plan.</p>
             </div>
         <?php else: ?>
             <div class="activity-list">
@@ -427,11 +397,11 @@ body{background:var(--surface)}
                     ?>
                     <div class="activity-card">
                         <div class="activity-head" onclick="toggleActivity(this)">
-                            <span class="act-num"><?= $i + 1 ?></span>
+                            <span class="va-act-num"><?= $i + 1 ?></span>
 
-                            <div class="act-title-block">
-                                <div class="act-title"><?= h($act['description']) ?></div>
-                                <div class="act-meta">
+                            <div class="va-act-title-block">
+                                <div class="va-act-title"><?= h($act['description']) ?></div>
+                                <div class="va-act-meta">
                                     <?php if (!empty($act['unit_of_measure'])): ?>
                                         <span>Unit: <?= h($act['unit_of_measure']) ?></span>
                                     <?php endif; ?>
@@ -439,51 +409,54 @@ body{background:var(--surface)}
                                         <span>Target: <strong><?= number_format((float)$act['annual_target'], 1) ?></strong></span>
                                     <?php endif; ?>
                                     <?php if ((float)$act['total_actual'] > 0): ?>
-                                        <span style="color:var(--green)">Actual: <strong><?= number_format((float)$act['total_actual'], 1) ?></strong></span>
+                                        <span class="va-good">Actual: <strong><?= number_format((float)$act['total_actual'], 1) ?></strong></span>
                                     <?php endif; ?>
                                     <span><?= (int)$act['entry_count'] ?> entr<?= (int)$act['entry_count'] !== 1 ? 'ies' : 'y' ?></span>
                                 </div>
                             </div>
 
                             <?php if ((float)($act['weight'] ?? 0) > 0): ?>
-                                <span style="padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:var(--orange-lt);color:var(--orange)">
+                                <span class="badge badge-warning">
                                     <?= number_format((float)$act['weight'], 1) ?>%
                                 </span>
                             <?php endif; ?>
 
-                            <div style="display:flex;align-items:center;gap:10px">
+                            <div class="va-progress">
                                 <div class="progress-bar-wrap">
                                     <div class="progress-bar-fill" style="width:<?= $pct ?>%;background:<?= $pcolor ?>"></div>
                                 </div>
-                                <span class="progress-label" style="color:<?= $pcolor ?>"><?= $pct ?>%</span>
+                                <span class="va-progress-label" style="color:<?= $pcolor ?>"><?= $pct ?>%</span>
                             </div>
 
-                            <span class="act-chevron"><i class="fa fa-arrow-down"></i></span>
+                            <span class="act-chevron"><i class="fa fa-arrow-down" aria-hidden="true"></i></span>
                         </div>
 
                         <div class="activity-detail">
                             <?php if (!empty($act['key_result'])): ?>
-                                <div class="detail-section">
-                                    <div class="detail-label">Key Result</div>
-                                    <div class="detail-text"><?= nl2br(h($act['key_result'])) ?></div>
+                                <div class="va-detail-section">
+                                    <div class="va-detail-label">Key Result</div>
+                                    <div class="va-detail-text"><?= nl2br(h($act['key_result'])) ?></div>
                                 </div>
                             <?php endif; ?>
 
                             <?php if (!empty($act['mgr_comment'])): ?>
-                                <div class="detail-section">
-                                    <div class="detail-label">Manager Comment</div>
-                                    <div class="detail-text"><?= nl2br(h($act['mgr_comment'])) ?></div>
+                                <div class="va-detail-section">
+                                    <div class="va-detail-label">Manager Comment</div>
+                                    <div class="va-detail-text"><?= nl2br(h($act['mgr_comment'])) ?></div>
                                 </div>
                             <?php endif; ?>
 
-                            <div class="detail-section">
-                                <div class="detail-label">Weekly Entries (<?= count($entries) ?>)</div>
+                            <div class="va-detail-section">
+                                <div class="va-detail-label">Weekly Entries (<?= count($entries) ?>)</div>
 
                                 <?php if (empty($entries)): ?>
-                                    <div class="no-entries">No weekly entries recorded yet.</div>
+                                    <div class="empty-state">
+                                        <i class="fas fa-calendar-xmark" aria-hidden="true"></i>
+                                        <p>No weekly entries recorded yet.</p>
+                                    </div>
                                 <?php else: ?>
-                                    <div style="overflow-x:auto">
-                                        <table class="entries-table">
+                                    <div class="table-responsive">
+                                        <table class="table">
                                             <thead>
                                                 <tr>
                                                     <th>#</th>
@@ -510,7 +483,7 @@ body{background:var(--surface)}
                                                         <?php if (!empty($entry['comment'])): ?>
                                                             <?= h($entry['comment']) ?>
                                                         <?php else: ?>
-                                                            <span style="color:var(--muted);font-style:italic">-</span>
+                                                            <span class="cell-muted">-</span>
                                                         <?php endif; ?>
                                                     </td>
                                                     <td><?= fmt_date($entry['created_at'] ?? null) ?></td>
@@ -530,15 +503,15 @@ body{background:var(--surface)}
 
     <?php if ($is_supervisor && $status === 'submitted'): ?>
         <div class="card">
-            <div class="card-header">Supervisor Review</div>
+            <div class="card-header"><h3><i class="fas fa-user-check" aria-hidden="true"></i> Supervisor Review</h3></div>
             <div class="card-body">
                 <form method="POST" action="includes/activity-review-process.php">
                     <input type="hidden" name="action" value="review_activity_plan">
                     <input type="hidden" name="plan_id" value="<?= $plan_id ?>">
 
                     <?php if (!empty($activities)): ?>
-                        <div style="overflow-x:auto;margin-bottom:20px">
-                            <table class="entries-table">
+                        <div class="table-responsive va-review-table">
+                            <table class="table">
                                 <thead>
                                     <tr>
                                         <th>Activity</th>
@@ -565,22 +538,22 @@ body{background:var(--surface)}
                         </div>
                     <?php endif; ?>
 
-                    <div style="margin-bottom:16px">
-                        <label class="info-label">Overall Manager Comment</label>
+                    <div class="form-group">
+                        <label class="va-info-label">Overall Manager Comment</label>
                         <textarea name="mgr_overall_comment" class="form-control" rows="4"><?= h($plan['mgr_overall_comment'] ?? '') ?></textarea>
                     </div>
 
-                    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
-                        <button type="submit" name="save_review" class="btn btn-outline">Save Draft Review</button>
-                        <button type="submit" name="request_changes" class="btn">Request Changes</button>
-                        <button type="submit" name="approve_plan" class="btn btn-green" onclick="return confirm('Approve this activity plan?')">Approve Plan</button>
+                    <div class="va-review-actions">
+                        <button type="submit" name="save_review" class="btn btn-secondary">Save Draft Review</button>
+                        <button type="submit" name="request_changes" class="btn btn-warning">Request Changes</button>
+                        <button type="submit" name="approve_plan" class="btn btn-primary" onclick="return confirm('Approve this activity plan?')">Approve Plan</button>
                     </div>
                 </form>
             </div>
         </div>
     <?php endif; ?>
 
-</div>
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 

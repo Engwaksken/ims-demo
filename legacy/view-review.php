@@ -148,22 +148,23 @@ $overall_pts = ($total_max > 0)
  * Return a colour hex string based on percentage score.
  */
 function score_color(float $pct): string {
-    return $pct >= 70 ? '#2ECC71' : ($pct >= 40 ? '#F39C12' : '#E74C3C');
+    return $pct >= 70 ? 'high' : ($pct >= 40 ? 'mid' : 'low');
 }
 
+// Recommendation => [tone, icon]; tone maps to the vr-tone-* / is-* classes below.
 $rec_styles = [
-    'Accept'    => ['#2ECC71', 'fa-check-circle',  '#d4edda', '#155724'],
-    'Reject'    => ['#E74C3C', 'fa-times-circle',  '#f8d7da', '#721c24'],
-    'Shortlist' => ['#ff9800', 'fa-star',          '#d1ecf1', '#0c5460'],
-    'Hold'      => ['#F39C12', 'fa-pause-circle',  '#fff3cd', '#856404'],
+    'Accept'    => ['green', 'fa-check-circle'],
+    'Reject'    => ['red',   'fa-times-circle'],
+    'Shortlist' => ['blue',  'fa-star'],
+    'Hold'      => ['amber', 'fa-pause-circle'],
 ];
 $rec = $review['recommendation'] ?? 'Hold';
 $rs  = $rec_styles[$rec] ?? $rec_styles['Hold'];
 
 $app_status_colors = [
-    'Pending'     => '#F39C12', 'Shortlisted' => '#ff9800',
-    'Accepted'    => '#2ECC71', 'Rejected'    => '#E74C3C',
-    'Withdrawn'   => '#95a5a6',
+    'Pending'     => 'badge-warning', 'Shortlisted' => 'badge-info',
+    'Accepted'    => 'badge-success', 'Rejected'    => 'badge-danger',
+    'Withdrawn'   => 'badge-secondary',
 ];
 
 $page_title = 'View Applicant Review';
@@ -171,248 +172,203 @@ require_once 'includes/header.php';
 ?>
 <!----------------- STYLES ----------------------------------------->
 <style>
-/* -- Design tokens ----------------------------------------------- */
-:root {
-    --blue:    #ff9800;
-    --green:   #2ECC71;
-    --red:     #E74C3C;
-    --amber:   #F39C12;
-    --text:    #1e293b;
-    --sub:     #475569;
-    --muted:   #94a3b8;
-    --border:  #e2e8f0;
-    --bg:      #f8fafc;
-    --surface: #ffffff;
-    --r:       12px;
-    --sh:      0 1px 4px rgba(0,0,0,.07), 0 4px 18px rgba(0,0,0,.07);
-}
+/* -- view-review page-specific layout -- */
+.vr-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+.vr-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+@media (max-width: 900px) { .vr-grid { grid-template-columns: 1fr; } }
 
-/* -- Layout ------------------------------------------------------- */
-.vr-wrap { max-width:1100px; margin:0 auto; padding-bottom:60px; }
-.vr-grid { display:grid; grid-template-columns:1fr 340px; gap:22px; align-items:start; }
-@media(max-width:900px){ .vr-grid { grid-template-columns:1fr; } }
+/* Tone helpers */
+.vr-tone-high { --vr-tone: var(--green-fg); }
+.vr-tone-mid  { --vr-tone: var(--amber-fg); }
+.vr-tone-low  { --vr-tone: var(--red-fg); }
+.is-green  { --vr-bg: var(--green-bg);  --vr-fg: var(--green-fg);  --vr-border: var(--green-border); }
+.is-red    { --vr-bg: var(--red-bg);    --vr-fg: var(--red-fg);    --vr-border: var(--red-border); }
+.is-blue   { --vr-bg: var(--blue-bg);   --vr-fg: var(--blue-fg);   --vr-border: var(--blue-border); }
+.is-amber  { --vr-bg: var(--amber-bg);  --vr-fg: var(--amber-fg);  --vr-border: var(--amber-border); }
 
-/* -- Page header -------------------------------------------------  */
-.vr-hdr {
-    background: linear-gradient(130deg,#ff5722 0%,#ff9800 100%);
-    color:#fff; padding:26px 32px; border-radius:14px; margin-bottom:24px;
-    display:flex; align-items:flex-start; justify-content:space-between;
-    gap:14px; flex-wrap:wrap;
-    box-shadow:0 6px 28px rgba(255,87,34,.3);
+/* Recommendation banner */
+.vr-rec {
+    border-radius: var(--radius-xl);
+    padding: 22px 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    border: 2px solid var(--vr-border);
+    background: var(--vr-bg);
+    color: var(--vr-fg);
+    box-shadow: var(--shadow-sm);
 }
-.vr-hdr h1 {
-    font-size:21px; font-weight:800; margin:0 0 4px;
-    display:flex; align-items:center; gap:10px;
+.vr-rec-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+    background: var(--surface-card);
 }
-.vr-hdr p  { font-size:13px; opacity:.78; margin:0; }
-.vr-hdr .meta { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-.meta-pill {
-    background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
-    border-radius:20px; padding:4px 13px; font-size:12px; font-weight:600;
-    display:flex; align-items:center; gap:6px;
-}
+.vr-rec-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; opacity: .75; margin-bottom: 3px; }
+.vr-rec-value { font-size: 26px; font-weight: 800; line-height: 1; }
+.vr-rec-type { font-size: 13px; margin-top: 6px; opacity: .8; }
 
-/* -- Cards -------------------------------------------------------  */
-.card {
-    background:var(--surface); border-radius:var(--r);
-    box-shadow:var(--sh); border:1px solid var(--border); margin-bottom:20px;
-    overflow:hidden;
-}
-.card-hdr {
-    padding:14px 20px; border-bottom:1px solid var(--border);
-    background:#fafbfd; display:flex; align-items:center;
-    justify-content:space-between; gap:10px;
-}
-.card-hdr h3 {
-    font-size:14px; font-weight:700; color:var(--text);
-    display:flex; align-items:center; gap:8px; margin:0;
-}
-.card-hdr h3 i { color:var(--blue); }
-.card-body { padding:20px; }
+.vr-total { font-size: 13px; font-weight: 700; color: var(--ink-900); }
+.vr-total .cell-muted { font-weight: 400; }
 
-/* -- Recommendation hero -----------------------------------------  */
-.rec-hero {
-    border-radius:var(--r); padding:22px 24px; margin-bottom:20px;
-    display:flex; align-items:center; gap:18px;
-    border:2px solid; box-shadow:var(--sh);
-}
-.rec-icon-wrap {
-    width:60px; height:60px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:26px; flex-shrink:0;
-}
-.rec-label {
-    font-size:11px; font-weight:700; text-transform:uppercase;
-    letter-spacing:.5px; opacity:.7; margin-bottom:3px;
-}
-.rec-value { font-size:26px; font-weight:800; line-height:1; }
-.rec-type  { font-size:13px; margin-top:6px; opacity:.75; }
+/* Category score bars */
+.cat-bar-wrap { margin-bottom: 14px; }
+.cat-bar-wrap:last-child { margin-bottom: 0; }
+.cat-bar-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--ink-600); margin-bottom: 4px; font-weight: 600; }
+.cat-bar-track,
+.crit-bar-track { background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; }
+.cat-bar-track { height: 9px; }
+.cat-bar-fill,
+.crit-bar-fill { height: 100%; border-radius: var(--radius-pill); background: var(--vr-tone); transition: width .4s ease; }
 
-/* -- Overall score dial ------------------------------------------  */
-.score-dial-wrap { text-align:center; padding:18px 0 10px; }
-.score-dial {
-    position:relative; width:110px; height:110px;
-    border-radius:50%; margin:0 auto 10px;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 4px 18px rgba(0,0,0,.12);
-}
-.score-dial::before {
-    content:''; position:absolute; inset:8px;
-    border-radius:50%; background:#fff;
-}
-.score-dial-inner {
-    position:relative; z-index:1;
-    display:flex; flex-direction:column; align-items:center;
-}
-.score-dial .sd-text { font-size:22px; font-weight:800; color:var(--text); line-height:1; }
-.score-dial .sd-sub  { font-size:11px; color:var(--muted); margin-top:3px; font-weight:700; }
-
-/* -- Category score bars -----------------------------------------  */
-.cat-bar-wrap { margin-bottom:14px; }
-.cat-bar-row  {
-    display:flex; align-items:center; justify-content:space-between;
-    font-size:12.5px; color:var(--sub); margin-bottom:4px; font-weight:600;
-}
-.cat-bar-track { height:9px; background:#e9eef5; border-radius:5px; overflow:hidden; }
-.cat-bar-fill  { height:100%; border-radius:5px; transition:width .5s ease; }
-.cat-score-badge {
-    font-size:11.5px; font-weight:700;
-    padding:2px 8px; border-radius:12px;
-    background:#f0f7ff; color:#ff9800; border:1px solid #bfdbfe;
-    white-space:nowrap;
-}
-
-/* -- Criteria list -----------------------------------------------  */
-.crit-item { padding:13px 0; border-bottom:1px solid var(--border); }
-.crit-item:last-child { border-bottom:none; }
-.crit-q    { font-size:13px; font-weight:600; color:var(--text); margin-bottom:3px; }
-.crit-desc { font-size:12px; color:var(--muted); margin-bottom:8px; line-height:1.5; }
-.crit-score-row { display:flex; align-items:center; gap:10px; }
-.crit-bar-track { flex:1; height:7px; background:#e9eef5; border-radius:4px; overflow:hidden; }
-.crit-bar-fill  { height:100%; border-radius:4px; transition:width .35s ease; }
+/* Criteria list */
+.vr-crit-body { padding-top: 6px; }
+.crit-item { padding: 13px 0; border-bottom: 1px solid var(--ink-100); }
+.crit-item:last-child { border-bottom: none; }
+.crit-q { font-size: 13px; font-weight: 600; color: var(--ink-900); margin-bottom: 3px; }
+.crit-desc { font-size: 12px; color: var(--ink-300); margin-bottom: 8px; line-height: 1.5; }
+.crit-desc i { color: var(--brand-500); }
+.crit-score-row { display: flex; align-items: center; gap: 10px; }
+.crit-bar-track { flex: 1; height: 7px; }
 .crit-badge {
-    font-size:12.5px; font-weight:700; padding:3px 10px; border-radius:8px;
-    color:#fff; min-width:72px; text-align:center; white-space:nowrap;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--ink-0);
+    background: var(--vr-tone);
+    min-width: 72px;
+    text-align: center;
+    white-space: nowrap;
 }
 
-/* -- Info grid ---------------------------------------------------  */
-.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-@media(max-width:600px){ .info-grid { grid-template-columns:1fr; } }
-.info-item { background:var(--bg); border-radius:8px; padding:11px 13px; }
-.info-item .il {
-    font-size:10.5px; font-weight:700; text-transform:uppercase;
-    letter-spacing:.5px; color:var(--muted); margin-bottom:3px;
+/* Overall score dial */
+.vr-center { text-align: center; }
+.score-dial-wrap { text-align: center; padding: 18px 0 10px; }
+.score-dial {
+    position: relative;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    background: conic-gradient(var(--vr-tone) 0% var(--vr-pct), var(--ink-100) var(--vr-pct) 100%);
 }
-.info-item .iv { font-size:13px; font-weight:600; color:var(--text); }
+.score-dial::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: var(--surface-card); }
+.score-dial-inner { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+.score-dial .sd-text { font-size: 22px; font-weight: 800; color: var(--ink-900); line-height: 1; }
+.score-dial .sd-sub { font-size: 11px; color: var(--ink-300); margin-top: 3px; font-weight: 700; }
+.vr-dial-caption { font-size: 13px; color: var(--ink-600); }
+.vr-dial-caption strong { color: var(--ink-900); }
+.vr-chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
 
-/* -- Reviewer card -----------------------------------------------  */
-.reviewer-pill {
-    display:flex; align-items:center; gap:12px;
-    padding:14px 16px; background:var(--bg);
-    border-radius:10px; border:1px solid var(--border);
-}
+/* Info grid */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 600px) { .info-grid { grid-template-columns: 1fr; } }
+.info-item { background: var(--ink-50); border-radius: var(--radius-md); padding: 11px 13px; }
+.info-item .il,
+.vr-website .il { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-300); margin-bottom: 3px; }
+.info-item .iv { font-size: 13px; font-weight: 600; color: var(--ink-900); }
+.vr-website { margin-top: 12px; }
+.vr-website a { font-size: 13px; word-break: break-all; }
+
+/* Reviewer */
+.reviewer-pill { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--ink-50); border-radius: var(--radius-lg); border: 1px solid var(--ink-100); }
 .reviewer-avatar {
-    width:42px; height:42px; border-radius:50%;
-    background:linear-gradient(135deg,#ff9800,#e65100);
-    color:#fff; font-size:17px; font-weight:700;
-    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--brand-500);
+    color: var(--ink-0);
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
-.reviewer-name  { font-size:14px; font-weight:700; color:var(--text); }
-.reviewer-email { font-size:12px; color:var(--muted); margin-top:1px; }
+.reviewer-name { font-size: 14px; font-weight: 700; color: var(--ink-900); }
+.reviewer-email { font-size: 12px; color: var(--ink-300); margin-top: 1px; }
 
-/* -- Comments box ------------------------------------------------  */
+/* Comments */
 .comments-box {
-    background:var(--bg); border-radius:9px; padding:16px;
-    font-size:13.5px; color:var(--text); line-height:1.75;
-    border:1px solid var(--border); white-space:pre-wrap; word-break:break-word;
-}
-.no-comments { font-size:13px; color:var(--muted); font-style:italic; }
-
-/* -- Stat chips --------------------------------------------------  */
-.chip-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
-.chip {
-    padding:4px 13px; border-radius:20px; font-size:12px; font-weight:700;
-    border:1.5px solid; display:flex; align-items:center; gap:5px;
+    background: var(--ink-50);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    font-size: 13.5px;
+    color: var(--ink-900);
+    line-height: 1.75;
+    border: 1px solid var(--ink-100);
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
-/* -- Timeline ----------------------------------------------------  */
-.timeline { list-style:none; padding:0; margin:0; }
-.tl-item  {
-    display:flex; gap:12px; padding-bottom:16px; position:relative;
-}
-.tl-item:last-child { padding-bottom:0; }
+/* Timeline */
+.timeline { list-style: none; padding: 0; margin: 0; }
+.tl-item { display: flex; gap: 12px; padding-bottom: 16px; position: relative; }
+.tl-item:last-child { padding-bottom: 0; }
 .tl-dot {
-    width:12px; height:12px; border-radius:50%; flex-shrink:0;
-    margin-top:3px; border:2px solid #fff; box-shadow:0 0 0 2px currentColor;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 3px;
+    border: 2px solid var(--surface-card);
+    color: var(--brand-500);
+    box-shadow: 0 0 0 2px currentColor;
 }
-.tl-item::before {
-    content:''; position:absolute;
-    left:5px; top:16px; bottom:0; width:2px;
-    background:var(--border);
-}
-.tl-item:last-child::before { display:none; }
-/* FIX: these classes were referenced in the HTML but never defined */
-.tl-label { font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; }
-.tl-date  { font-size:12px; color:var(--muted); }
+.tl-dot.is-amber  { color: var(--amber-fg); }
+.tl-dot.is-purple { color: var(--purple-fg); }
+.tl-dot.is-green  { color: var(--green-fg); }
+.tl-dot.is-red    { color: var(--red-fg); }
+.tl-dot.is-blue   { color: var(--blue-fg); }
+.tl-item::before { content: ''; position: absolute; left: 5px; top: 16px; bottom: 0; width: 2px; background: var(--ink-100); }
+.tl-item:last-child::before { display: none; }
+.tl-label { font-size: 13px; font-weight: 600; color: var(--ink-900); margin-bottom: 2px; }
+.tl-date { font-size: 12px; color: var(--ink-300); }
 
-/* -- Buttons -----------------------------------------------------  */
-.btn {
-    display:inline-flex; align-items:center; gap:7px;
-    padding:9px 18px; border:none; border-radius:8px;
-    font-size:13px; font-weight:600; cursor:pointer;
-    text-decoration:none; transition:all .17s; font-family:inherit;
-}
-.btn-ghost {
-    background:rgba(255,255,255,.15); color:#fff;
-    border:1.5px solid rgba(255,255,255,.3);
-}
-.btn-ghost:hover { background:rgba(255,255,255,.25); color:#fff; }
-.btn-white { background:#fff; color:var(--blue); border:1.5px solid var(--border); }
-.btn-white:hover { background:#eff6ff; }
+.vr-actions { display: flex; flex-direction: column; gap: 8px; }
+.vr-actions .btn { justify-content: center; }
 
-/* -- Print -------------------------------------------------------  */
 @media print {
-    .vr-hdr-actions, .no-print { display:none !important; }
-    .card { box-shadow:none !important; break-inside:avoid; }
-    .vr-grid { grid-template-columns:1fr !important; }
+    .page-hero .hero-actions, .no-print { display: none !important; }
+    .card { box-shadow: none !important; break-inside: avoid; }
+    .vr-grid { grid-template-columns: 1fr !important; }
 }
 </style>
 
-<div class="vr-wrap">
+<div class="page-stack">
 
 <!-- -- Page Header ------------------------------------------------ -->
-<div class="vr-hdr">
+<div class="page-hero">
     <div>
-        <h1><i class="fas fa-clipboard-check"></i> Review Details</h1>
+        <h1><i class="fas fa-clipboard-check" aria-hidden="true"></i> Review Details</h1>
         <p>
             <strong><?= htmlspecialchars($review['startup_name']) ?></strong>
             &mdash; <?= htmlspecialchars($review['opportunity_title']) ?>
+            &middot; <?= htmlspecialchars($review['review_type'] ?? '-') ?>
+            &middot; Reviewed <?= !empty($review['created_at']) ? date('d M Y', strtotime($review['created_at'])) : '-' ?>
+            &middot; <?= htmlspecialchars($rec) ?>
         </p>
-        <div class="meta">
-            <span class="meta-pill">
-                <i class="fas fa-calendar-alt"></i>
-                Reviewed: <?= !empty($review['created_at']) ? date('d M Y', strtotime($review['created_at'])) : '-' ?>
-            </span>
-            <span class="meta-pill">
-                <i class="fas fa-tag"></i>
-                <?= htmlspecialchars($review['review_type'] ?? '-') ?>
-            </span>
-            <span class="meta-pill" style="background:<?= $rs[0] ?>33; border-color:<?= $rs[0] ?>66;">
-                <i class="fas <?= $rs[1] ?>" style="color:<?= $rs[0] ?>;"></i>
-                <?= htmlspecialchars($rec) ?>
-            </span>
-        </div>
     </div>
-    <div class="vr-hdr-actions" style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button onclick="window.print()" class="btn btn-ghost">
-            <i class="fas fa-print"></i> Print
-        </button>
-        <a href="manage-reviewers?tab=status" class="btn btn-ghost">
-            <i class="fas fa-arrow-left"></i> Back
+    <div class="hero-actions">
+        <a href="manage-reviewers?tab=status" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
         </a>
+        <button type="button" onclick="window.print()" class="btn">
+            <i class="fas fa-print" aria-hidden="true"></i> Print
+        </button>
         <?php if (ims_allowed('reviews.edit', ['Administrator', 'Programs Lead', 'MEAL Lead'], 'See Edit Review buttons on the View Review page')): ?>
-            <a href="review-applicant?id=<?= $review_id ?>" class="btn btn-white">
-                <i class="fas fa-edit"></i> Edit Review
+            <a href="review-applicant?id=<?= $review_id ?>" class="btn btn-primary">
+                <i class="fas fa-edit" aria-hidden="true"></i> Edit Review
             </a>
         <?php endif; ?>
     </div>
@@ -422,18 +378,17 @@ require_once 'includes/header.php';
 <div class="vr-grid">
 
 <!-- ---------------- LEFT COLUMN -------------------------------- -->
-<div>
+<div class="vr-col">
 
-    <!-- Recommendation hero -->
-    <div class="rec-hero"
-         style="background:<?= $rs[2] ?>;border-color:<?= $rs[0] ?>;color:<?= $rs[3] ?>;">
-        <div class="rec-icon-wrap" style="background:<?= $rs[0] ?>22;">
-            <i class="fas <?= $rs[1] ?>" style="color:<?= $rs[0] ?>;"></i>
+    <!-- Recommendation banner -->
+    <div class="vr-rec is-<?= $rs[0] ?>">
+        <div class="vr-rec-icon">
+            <i class="fas <?= $rs[1] ?>"></i>
         </div>
         <div>
-            <div class="rec-label" style="color:<?= $rs[3] ?>;">Recommendation</div>
-            <div class="rec-value" style="color:<?= $rs[0] ?>;"><?= htmlspecialchars($rec) ?></div>
-            <div class="rec-type" style="color:<?= $rs[3] ?>;">
+            <div class="vr-rec-label">Recommendation</div>
+            <div class="vr-rec-value"><?= htmlspecialchars($rec) ?></div>
+            <div class="vr-rec-type">
                 <?= htmlspecialchars($review['review_type'] ?? '-') ?>
                 &nbsp;&middot;&nbsp;
                 Reviewed on <?= !empty($review['created_at'])
@@ -444,18 +399,18 @@ require_once 'includes/header.php';
 
     <!-- Score breakdown by category -->
     <div class="card">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-layer-group"></i> Score by Category</h3>
-            <span style="font-size:13px;font-weight:700;color:var(--text);">
+            <span class="vr-total">
                 <?= (int)round($total_scored) ?><?= $total_max > 0 ? " / {$total_max} pts" : "" ?>
-                <span style="color:var(--muted);font-weight:400;">
+                <span class="cell-muted">
                     <?= $total_max > 0 ? "({$overall_pct}%)" : "" ?>
                 </span>
             </span>
         </div>
         <div class="card-body">
             <?php if (empty($cat_totals)): ?>
-                <p style="color:var(--muted);font-size:13px;margin:0;">
+                <p class="cell-muted">
                     No per-criteria scores found for this review. Showing stored overall score only.
                 </p>
             <?php else: ?>
@@ -466,7 +421,7 @@ require_once 'includes/header.php';
                 <div class="cat-bar-wrap">
                     <div class="cat-bar-row">
                         <span><?= htmlspecialchars($cat) ?></span>
-                        <span class="cat-score-badge">
+                        <span class="badge badge-info">
                             <?= (int)round($ct['scored']) ?> / <?= (int)$ct['max'] ?>
                             &nbsp;&middot;&nbsp; <?= (int)$cpct ?>%
                         </span>
@@ -474,8 +429,8 @@ require_once 'includes/header.php';
                     <div class="cat-bar-track"
                          role="progressbar" aria-valuemin="0" aria-valuemax="100"
                          aria-valuenow="<?= (int)$cpct ?>">
-                        <div class="cat-bar-fill"
-                             style="width:<?= (int)$cpct ?>%; background:<?= $cclr ?>;"></div>
+                        <div class="cat-bar-fill vr-tone-<?= $cclr ?>"
+                             style="width:<?= (int)$cpct ?>%;"></div>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -490,24 +445,24 @@ require_once 'includes/header.php';
             $cpct = ($ct['max'] > 0) ? round(($ct['scored'] / $ct['max']) * 100) : 0;
     ?>
     <div class="card">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-list-ul"></i> <?= htmlspecialchars($cat) ?></h3>
-            <span class="cat-score-badge">
+            <span class="badge badge-info">
                 <?= (int)round($ct['scored']) ?> / <?= (int)$ct['max'] ?> &mdash; <?= (int)$cpct ?>%
             </span>
         </div>
-        <div class="card-body" style="padding-top:6px;">
+        <div class="card-body vr-crit-body">
             <?php foreach ($clist as $ci):
                 $gs  = (float)($ci['given_score'] ?? 0);
                 $mx  = (int)($ci['max_score']   ?? 0);
                 $pct = ($mx > 0) ? round(($gs / $mx) * 100) : 0;
                 $clr = score_color((float)$pct);
             ?>
-            <div class="crit-item">
+            <div class="crit-item vr-tone-<?= $clr ?>">
                 <div class="crit-q"><?= htmlspecialchars($ci['question']) ?></div>
                 <?php if (!empty($ci['description'])): ?>
                     <div class="crit-desc">
-                        <i class="fas fa-info-circle" style="color:#ff9800;"></i>
+                        <i class="fas fa-info-circle"></i>
                         <?= htmlspecialchars($ci['description']) ?>
                     </div>
                 <?php endif; ?>
@@ -516,9 +471,9 @@ require_once 'includes/header.php';
                          role="progressbar" aria-valuemin="0" aria-valuemax="100"
                          aria-valuenow="<?= (int)$pct ?>">
                         <div class="crit-bar-fill"
-                             style="width:<?= (int)$pct ?>%; background:<?= $clr ?>;"></div>
+                             style="width:<?= (int)$pct ?>%;"></div>
                     </div>
-                    <span class="crit-badge" style="background:<?= $clr ?>;">
+                    <span class="crit-badge">
                         <?= (int)round($gs) ?>/<?= (int)$mx ?> (<?= (int)$pct ?>%)
                     </span>
                 </div>
@@ -532,14 +487,17 @@ require_once 'includes/header.php';
 
     <!-- Reviewer comments -->
     <div class="card">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-comment-alt"></i> Reviewer Comments</h3>
         </div>
         <div class="card-body">
             <?php if (!empty($review['comments'])): ?>
                 <div class="comments-box"><?= htmlspecialchars($review['comments']) ?></div>
             <?php else: ?>
-                <p class="no-comments"><i class="fas fa-minus-circle"></i> No comments provided.</p>
+                <div class="empty-state">
+                    <i class="fas fa-comment-slash" aria-hidden="true"></i>
+                    <p>No comments provided.</p>
+                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -547,22 +505,20 @@ require_once 'includes/header.php';
 </div><!-- /left -->
 
 <!-- ---------------- RIGHT COLUMN ------------------------------- -->
-<div>
+<div class="vr-col">
 
     <!-- Overall score dial -->
     <div class="card">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-star"></i> Overall Score</h3>
         </div>
-        <div class="card-body" style="text-align:center;">
+        <div class="card-body vr-center">
             <?php
             $dial_pct = (int)$overall_pct;
             $dial_clr = score_color((float)$dial_pct);
             ?>
             <div class="score-dial-wrap">
-                <div class="score-dial"
-                     style="background:conic-gradient(<?= $dial_clr ?> 0% <?= $dial_pct ?>%,
-                            #e9eef5 <?= $dial_pct ?>% 100%);">
+                <div class="score-dial vr-tone-<?= $dial_clr ?>" style="--vr-pct: <?= $dial_pct ?>%;">
                     <div class="score-dial-inner">
                         <span class="sd-text"><?= (int)$overall_pts ?></span>
                         <span class="sd-sub">
@@ -572,26 +528,24 @@ require_once 'includes/header.php';
                         </span>
                     </div>
                 </div>
-                <div style="font-size:13px;color:var(--sub);">
+                <div class="vr-dial-caption">
                     <?php if ($total_max > 0): ?>
-                        <strong style="color:var(--text);"><?= (int)$overall_pts ?></strong>
+                        <strong><?= (int)$overall_pts ?></strong>
                         out of <?= (int)$total_max ?> points
                     <?php else: ?>
-                        <strong style="color:var(--text);"><?= (int)$overall_pts ?></strong>
+                        <strong><?= (int)$overall_pts ?></strong>
                         (no criteria totals found)
                     <?php endif; ?>
                 </div>
             </div>
 
-            <div class="chip-row" style="justify-content:center;margin-top:14px;">
-                <?php $app_sc = $app_status_colors[$review['app_status']] ?? '#95a5a6'; ?>
-                <span class="chip"
-                      style="color:<?= $app_sc ?>;border-color:<?= $app_sc ?>22;background:<?= $app_sc ?>11;">
-                    <i class="fas fa-circle" style="font-size:8px;"></i>
+            <div class="vr-chips">
+                <?php $app_sc = $app_status_colors[$review['app_status']] ?? 'badge-secondary'; ?>
+                <span class="badge <?= $app_sc ?>">
                     App: <?= htmlspecialchars($review['app_status']) ?>
                 </span>
-                <span class="chip"
-                      style="color:<?= $rs[0] ?>;border-color:<?= $rs[0] ?>33;background:<?= $rs[0] ?>11;">
+                <?php $rec_badge = ['green' => 'badge-success', 'red' => 'badge-danger', 'blue' => 'badge-info', 'amber' => 'badge-warning'][$rs[0]]; ?>
+                <span class="badge <?= $rec_badge ?>">
                     <i class="fas <?= $rs[1] ?>"></i>
                     <?= htmlspecialchars($rec) ?>
                 </span>
@@ -601,7 +555,7 @@ require_once 'includes/header.php';
 
     <!-- Reviewer -->
     <div class="card">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-user-check"></i> Reviewer</h3>
         </div>
         <div class="card-body">
@@ -619,7 +573,7 @@ require_once 'includes/header.php';
 
     <!-- Application info -->
     <div class="card">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-building"></i> Application Info</h3>
         </div>
         <div class="card-body">
@@ -666,13 +620,11 @@ require_once 'includes/header.php';
             </div>
 
             <?php if (!empty($website_url)): ?>
-                <div style="margin-top:12px;">
-                    <div class="il" style="font-size:10.5px;font-weight:700;text-transform:uppercase;
-                         letter-spacing:.5px;color:var(--muted);margin-bottom:4px;">Website</div>
+                <div class="vr-website">
+                    <div class="il">Website</div>
                     <!-- FIX: URL sanitised above; both href and display text are properly escaped -->
                     <a href="<?= htmlspecialchars($website_url) ?>"
-                       target="_blank" rel="noopener noreferrer"
-                       style="font-size:13px;color:var(--blue);word-break:break-all;">
+                       target="_blank" rel="noopener noreferrer">
                         <?= htmlspecialchars($website_url) ?>
                     </a>
                 </div>
@@ -682,13 +634,13 @@ require_once 'includes/header.php';
 
     <!-- Review timeline -->
     <div class="card">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-history"></i> Timeline</h3>
         </div>
         <div class="card-body">
             <ul class="timeline">
                 <li class="tl-item">
-                    <span class="tl-dot" style="color:#ff9800;"></span>
+                    <span class="tl-dot"></span>
                     <div>
                         <div class="tl-label">Application Submitted</div>
                         <div class="tl-date">
@@ -698,7 +650,7 @@ require_once 'includes/header.php';
                     </div>
                 </li>
                 <li class="tl-item">
-                    <span class="tl-dot" style="color:#F39C12;"></span>
+                    <span class="tl-dot is-amber"></span>
                     <div>
                         <div class="tl-label">Review Created</div>
                         <div class="tl-date">
@@ -709,7 +661,7 @@ require_once 'includes/header.php';
                 </li>
                 <?php if (!empty($review['updated_at']) && $review['updated_at'] !== $review['created_at']): ?>
                 <li class="tl-item">
-                    <span class="tl-dot" style="color:#9b59b6;"></span>
+                    <span class="tl-dot is-purple"></span>
                     <div>
                         <div class="tl-label">Last Updated</div>
                         <div class="tl-date">
@@ -719,7 +671,7 @@ require_once 'includes/header.php';
                 </li>
                 <?php endif; ?>
                 <li class="tl-item">
-                    <span class="tl-dot" style="color:<?= $rs[0] ?>;"></span>
+                    <span class="tl-dot is-<?= $rs[0] ?>"></span>
                     <div>
                         <div class="tl-label">
                             Recommendation: <?= htmlspecialchars($rec) ?>
@@ -736,26 +688,20 @@ require_once 'includes/header.php';
 
     <!-- Quick actions -->
     <div class="card no-print">
-        <div class="card-hdr">
+        <div class="card-header">
             <h3><i class="fas fa-bolt"></i> Actions</h3>
         </div>
-        <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
+        <div class="card-body vr-actions">
             <!-- FIX: "View Application" and "Edit Review" now point to different pages -->
-            <a href="view-application?id=<?= (int)$review['application_id'] ?>"
-               class="btn"
-               style="background:#eff6ff;color:#ff9800;border:1.5px solid #bfdbfe;justify-content:center;">
+            <a href="view-application?id=<?= (int)$review['application_id'] ?>" class="btn btn-info">
                 <i class="fas fa-file-alt"></i> View Full Application
             </a>
             <?php if (ims_allowed('reviews.edit', ['Administrator', 'Programs Lead', 'MEAL Lead'], 'See Edit Review buttons on the View Review page')): ?>
-            <a href="review-applicant?id=<?= $review_id ?>"
-               class="btn"
-               style="background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0;justify-content:center;">
+            <a href="review-applicant?id=<?= $review_id ?>" class="btn btn-success">
                 <i class="fas fa-edit"></i> Edit / Update Review
             </a>
             <?php endif; ?>
-            <button onclick="window.print()"
-                    class="btn"
-                    style="background:#fafafa;color:var(--sub);border:1.5px solid var(--border);justify-content:center;">
+            <button type="button" onclick="window.print()" class="btn btn-secondary">
                 <i class="fas fa-print"></i> Print Review
             </button>
         </div>
@@ -763,7 +709,7 @@ require_once 'includes/header.php';
 
 </div><!-- /right -->
 </div><!-- /vr-grid -->
-</div><!-- /vr-wrap -->
+</div><!-- /.page-stack -->
 
 <?php
 ob_end_flush();

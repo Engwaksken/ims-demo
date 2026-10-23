@@ -88,370 +88,164 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
 ?>
 
 <style>
-.payment-header {
-    background: linear-gradient(135deg, #ff6b35 0%, #ff9800 100%);
-    color: white;
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    position: relative;
-}
-
-.payment-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.status-badge-large {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    padding: 12px 24px;
-    border-radius: 25px;
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.payment-content {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 30px;
-}
-
-.main-section {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
-
-.info-card {
-    background: white;
-    border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.info-card h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #ecf0f1;
-}
-
-.info-card h3 i {
-    color: #ff6b35;
-}
-
-.amount-display {
-    background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
-    color: white;
-    padding: 30px;
-    border-radius: 12px;
-    text-align: center;
-}
-
-.amount-display .label {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-bottom: 10px;
-}
-
-.amount-display .amount {
-    font-size: 48px;
-    font-weight: 700;
-}
-
-.amount-display .plan {
-    font-size: 18px;
-    opacity: 0.9;
-    margin-top: 10px;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-.info-item {
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.info-item label {
-    font-size: 12px;
-    color: #7f8c8d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.info-item .value {
-    font-size: 16px;
-    color: #2c3e50;
-    font-weight: 600;
-}
-
-.receipt-preview {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-}
-
-.receipt-preview img {
-    max-width: 100%;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.receipt-preview iframe {
-    width: 100%;
-    height: 500px;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.timeline {
-    position: relative;
-    padding-left: 30px;
-}
-
-.timeline-item {
-    position: relative;
-    padding-bottom: 25px;
-}
-
-.timeline-item:last-child {
-    padding-bottom: 0;
-}
-
-.timeline-item::before {
-    content: '';
-    position: absolute;
-    left: -30px;
-    top: 5px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #ff6b35;
-}
-
-.timeline-item::after {
-    content: '';
-    position: absolute;
-    left: -23px;
-    top: 19px;
-    width: 2px;
-    height: calc(100% - 14px);
-    background: #ecf0f1;
-}
-
-.timeline-item:last-child::after {
-    display: none;
-}
-
-.timeline-content {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-}
-
-.timeline-content strong {
-    color: #2c3e50;
-    display: block;
-    margin-bottom: 5px;
-}
-
-.timeline-content small {
-    color: #7f8c8d;
-}
-
-.payment-aside {
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
-}
-
-.action-card {
-    background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.action-card h3 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 18px;
-}
-
-.action-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.alert-success-custom {
-    background: #d4edda;
-    border-left: 4px solid #2ECC71;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #155724;
-}
-
-.alert-warning-custom {
-    background: #fff3cd;
-    border-left: 4px solid #F39C12;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #856404;
-}
-
-.alert-danger-custom {
-    background: #f8d7da;
-    border-left: 4px solid #E74C3C;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    color: #721c24;
-}
-
-.verification-form {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    margin-top: 20px;
-}
-
+/* Payment Details: main/aside grid, detail tiles, receipt preview and timeline. */
+.vp-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items: start; }
+.vp-main,
+.vp-aside { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.vp-main > .alert { margin-bottom: 0; }
+.vp-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+.vp-info-item { padding: 15px; background: var(--ink-50); border-radius: var(--radius-md); }
+.vp-info-item label,
+.vp-block-label { display: block; font-size: 12px; color: var(--ink-300); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+.vp-info-value { font-size: 15px; color: var(--ink-900); font-weight: 600; }
+.vp-sub { display: block; color: var(--ink-300); font-weight: 400; }
+.vp-block { margin-top: 20px; }
+.vp-block-box { background: var(--ink-50); padding: 15px; border-radius: var(--radius-md); }
+.vp-block-box.is-prose { line-height: 1.8; }
+.vp-block .alert { margin-bottom: 0; }
+.vp-receipt { background: var(--ink-50); border-radius: var(--radius-md); padding: 20px; text-align: center; }
+.vp-receipt img { max-width: 100%; border-radius: var(--radius-md); margin-bottom: 15px; box-shadow: var(--shadow-sm); }
+.vp-receipt iframe { width: 100%; height: 500px; border: none; border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.vp-receipt-actions,
+.vp-receipt-meta { margin-top: 15px; }
+.vp-timeline { position: relative; padding-left: 30px; }
+.vp-timeline-item { position: relative; padding-bottom: 25px; }
+.vp-timeline-item:last-child { padding-bottom: 0; }
+.vp-timeline-item::before { content: ''; position: absolute; left: -30px; top: 5px; width: 14px; height: 14px; border-radius: 50%; background: var(--brand-500); }
+.vp-timeline-item::after { content: ''; position: absolute; left: -23px; top: 19px; width: 2px; height: calc(100% - 14px); background: var(--ink-100); }
+.vp-timeline-item:last-child::after { display: none; }
+.vp-timeline-content { background: var(--ink-50); padding: 15px; border-radius: var(--radius-md); }
+.vp-timeline-content strong { color: var(--ink-900); display: block; margin-bottom: 5px; }
+.vp-timeline-content small { color: var(--ink-300); }
 @media (max-width: 968px) {
-    .payment-content {
-        grid-template-columns: 1fr;
-    }
-    
-    .status-badge-large {
-        position: static;
-        display: inline-block;
-        margin-top: 15px;
-    }
-    
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
+    .vp-grid,
+    .vp-info-grid { grid-template-columns: 1fr; }
 }
-
 @media print {
-    .payment-aside, .no-print {
-        display: none !important;
-    }
-    
-    .main-section {
-        width: 100%;
-    }
+    .vp-aside, .no-print { display: none !important; }
+    .vp-grid { grid-template-columns: 1fr; }
 }
 </style>
 
-<!-- Header -->
-<div class="payment-header">
-    <h1><i class="fas fa-receipt"></i> Payment Details</h1>
-    <div style="opacity: 0.9;">Invoice #<?php echo htmlspecialchars($payment['invoice_number']); ?></div>
-    
-    <?php
-    $status_badges = [
-        'Pending' => 'warning',
-        'Paid' => 'success',
-        'Partially Paid' => 'info',
-        'Overdue' => 'danger',
-        'Cancelled' => 'danger'
-    ];
-    $badge = $status_badges[$payment['payment_status']] ?? 'secondary';
-    ?>
-    <span class="badge badge-<?php echo $badge; ?> status-badge-large">
-        <?php echo htmlspecialchars($payment['payment_status']); ?>
-    </span>
+<?php
+$status_badges = [
+    'Pending' => 'warning',
+    'Paid' => 'success',
+    'Partially Paid' => 'info',
+    'Overdue' => 'danger',
+    'Cancelled' => 'danger'
+];
+$badge = $status_badges[$payment['payment_status']] ?? 'secondary';
+?>
+<div class="page-stack">
+<div class="page-hero">
+    <div>
+        <h1><i class="fas fa-receipt" aria-hidden="true"></i> Payment Details</h1>
+        <p>Invoice #<?php echo htmlspecialchars($payment['invoice_number']); ?></p>
+    </div>
+    <div class="hero-actions">
+        <a href="<?php echo $is_admin ? 'hub-operations?tab=receipts' : 'payment-history'; ?>" class="btn">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+        </a>
+    </div>
 </div>
 
+<div class="stats-grid reports-stats">
+    <div class="stat-card">
+        <div class="stat-icon bg-green"><i class="fas fa-money-bill-wave" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Amount Paid</div>
+            <div class="stat-value"><?php echo format_currency($payment['amount']); ?></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-blue"><i class="fas fa-layer-group" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Plan</div>
+            <div class="stat-value"><?php echo htmlspecialchars($payment['subscription_plan']); ?></div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon bg-amber"><i class="fas fa-flag" aria-hidden="true"></i></div>
+        <div class="stat-info">
+            <div class="stat-label">Status</div>
+            <div class="stat-value"><span class="badge badge-<?php echo $badge; ?>"><?php echo htmlspecialchars($payment['payment_status']); ?></span></div>
+        </div>
+    </div>
+</div>
+
+
 <!-- Main Content -->
-<div class="payment-content">
+<div class="vp-grid">
     <!-- Main Section -->
-    <div class="main-section">
+    <div class="vp-main">
         <!-- Status Alert -->
         <?php if ($payment['payment_status'] == 'Paid'): ?>
-        <div class="alert-success-custom">
+        <div class="alert alert-success">
             <i class="fas fa-check-circle"></i>
+            <div>
             <strong>Payment Verified</strong><br>
             Your payment has been verified and your subscription is active.
+            </div>
         </div>
         <?php elseif ($payment['payment_status'] == 'Pending'): ?>
-        <div class="alert-warning-custom">
+        <div class="alert alert-warning">
             <i class="fas fa-clock"></i>
+            <div>
             <strong>Pending Verification</strong><br>
             Your payment is being verified. This usually takes 1-2 business days.
+            </div>
         </div>
         <?php elseif ($payment['payment_status'] == 'Rejected'): ?>
-        <div class="alert-danger-custom">
+        <div class="alert alert-danger">
             <i class="fas fa-times-circle"></i>
+            <div>
             <strong>Payment Rejected</strong><br>
             <?php echo $payment['rejection_reason'] ? nl2br(htmlspecialchars($payment['rejection_reason'])) : 'Please contact support for more information.'; ?>
+            </div>
         </div>
         <?php endif; ?>
         
-        <!-- Amount Display -->
-        <div class="amount-display">
-            <div class="label">Amount Paid</div>
-            <div class="amount"><?php echo format_currency($payment['amount']); ?></div>
-            <div class="plan"><?php echo htmlspecialchars($payment['subscription_plan']); ?> Plan</div>
-        </div>
-        
         <!-- Payment Information -->
-        <div class="info-card">
-            <h3><i class="fas fa-info-circle"></i> Payment Information</h3>
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-info-circle"></i> Payment Information</h3></div>
+            <div class="card-body">
             
-            <div class="info-grid">
-                <div class="info-item">
+            <div class="vp-info-grid">
+                <div class="vp-info-item">
                     <label>Invoice Number</label>
-                    <div class="value"><code><?php echo htmlspecialchars($payment['invoice_number']); ?></code></div>
+                    <div class="vp-info-value"><code><?php echo htmlspecialchars($payment['invoice_number']); ?></code></div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Payment Date</label>
-                    <div class="value">
+                    <div class="vp-info-value">
                         <?php echo date('d M Y', $payment_date); ?>
-                        <small style="display: block; color: #7f8c8d; font-weight: normal;">
+                        <small class="vp-sub">
                             <?php echo $days_ago == 0 ? 'Today' : $days_ago . ' days ago'; ?>
                         </small>
                     </div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Payment Method</label>
-                    <div class="value"><?php echo htmlspecialchars($payment['payment_method']); ?></div>
+                    <div class="vp-info-value"><?php echo htmlspecialchars($payment['payment_method']); ?></div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Amount</label>
-                    <div class="value"><?php echo format_currency($payment['amount']); ?></div>
+                    <div class="vp-info-value"><?php echo format_currency($payment['amount']); ?></div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Subscription Plan</label>
-                    <div class="value"><?php echo htmlspecialchars($payment['subscription_plan']); ?></div>
+                    <div class="vp-info-value"><?php echo htmlspecialchars($payment['subscription_plan']); ?></div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Status</label>
-                    <div class="value">
-                        <span class="badge badge-<?php echo $badge; ?>" style="font-size: 14px;">
+                    <div class="vp-info-value">
+                        <span class="badge badge-<?php echo $badge; ?>">
                             <?php echo htmlspecialchars($payment['payment_status']); ?>
                         </span>
                     </div>
@@ -459,47 +253,49 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
             </div>
             
             <?php if ($payment['payment_reference']): ?>
-            <div style="margin-top: 20px;">
-                <label style="font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; display: block;">
+            <div class="vp-block">
+                <label class="vp-block-label">
                     Transaction Reference
                 </label>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
-                    <code style="font-size: 14px;"><?php echo htmlspecialchars($payment['payment_reference']); ?></code>
+                <div class="vp-block-box">
+                    <code><?php echo htmlspecialchars($payment['payment_reference']); ?></code>
                 </div>
             </div>
             <?php endif; ?>
             
             <?php if ($payment['notes']): ?>
-            <div style="margin-top: 20px;">
-                <label style="font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; display: block;">
+            <div class="vp-block">
+                <label class="vp-block-label">
                     Payment Notes
                 </label>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; line-height: 1.8;">
+                <div class="vp-block-box is-prose">
                     <?php echo nl2br(htmlspecialchars($payment['notes'])); ?>
                 </div>
             </div>
             <?php endif; ?>
+            </div>
         </div>
         
         <!-- Member Information (Admin View) -->
         <?php if ($is_admin): ?>
-        <div class="info-card">
-            <h3><i class="fas fa-user"></i> Member Information</h3>
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-user"></i> Member Information</h3></div>
+            <div class="card-body">
             
-            <div class="info-grid">
-                <div class="info-item">
+            <div class="vp-info-grid">
+                <div class="vp-info-item">
                     <label>Member Name</label>
-                    <div class="value"><?php echo htmlspecialchars($payment['member_name']); ?></div>
+                    <div class="vp-info-value"><?php echo htmlspecialchars($payment['member_name']); ?></div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Membership Number</label>
-                    <div class="value"><code><?php echo htmlspecialchars($payment['membership_number']); ?></code></div>
+                    <div class="vp-info-value"><code><?php echo htmlspecialchars($payment['membership_number']); ?></code></div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Email</label>
-                    <div class="value">
+                    <div class="vp-info-value">
                         <a href="mailto:<?php echo htmlspecialchars($payment['member_email']); ?>">
                             <?php echo htmlspecialchars($payment['member_email']); ?>
                         </a>
@@ -507,9 +303,9 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
                 </div>
                 
                 <?php if ($payment['member_phone']): ?>
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Phone</label>
-                    <div class="value">
+                    <div class="vp-info-value">
                         <a href="tel:<?php echo htmlspecialchars($payment['member_phone']); ?>">
                             <?php echo htmlspecialchars($payment['member_phone']); ?>
                         </a>
@@ -517,15 +313,17 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
                 </div>
                 <?php endif; ?>
             </div>
+            </div>
         </div>
         <?php endif; ?>
         
         <!-- Receipt Preview -->
         <?php if ($payment['receipt_path']): ?>
-        <div class="info-card">
-            <h3><i class="fas fa-file-invoice"></i> Payment Receipt</h3>
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-file-invoice"></i> Payment Receipt</h3></div>
+            <div class="card-body">
             
-            <div class="receipt-preview">
+            <div class="vp-receipt">
                 <?php 
                 $file_extension = strtolower(pathinfo($payment['receipt_path'], PATHINFO_EXTENSION));
                 if (in_array($file_extension, ['jpg', 'jpeg', 'png', 'gif'])): 
@@ -536,7 +334,7 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
                     <iframe src="<?php echo htmlspecialchars(ims_upload_url($payment['receipt_path'])); ?>"></iframe>
                 <?php endif; ?>
                 
-                <div style="margin-top: 15px;">
+                <div class="vp-receipt-actions">
                     <a href="<?php echo htmlspecialchars(ims_upload_url($payment['receipt_path'], true)); ?>" 
                        class="btn btn-info" target="_blank" download>
                         <i class="fas fa-download"></i> Download Receipt
@@ -544,58 +342,62 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
                 </div>
                 
                 <?php if ($receipt): ?>
-                <div style="margin-top: 15px; font-size: 12px; color: #7f8c8d;">
+                <div class="cell-muted vp-receipt-meta">
                     Uploaded on <?php echo date('d M Y, h:i A', strtotime($receipt['uploaded_at'])); ?>
                 </div>
                 <?php endif; ?>
+            </div>
             </div>
         </div>
         <?php endif; ?>
         
         <!-- Verification Details -->
         <?php if ($payment['verified_at']): ?>
-        <div class="info-card">
-            <h3><i class="fas fa-check-square"></i> Verification Details</h3>
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-check-square"></i> Verification Details</h3></div>
+            <div class="card-body">
             
-            <div class="info-grid">
-                <div class="info-item">
+            <div class="vp-info-grid">
+                <div class="vp-info-item">
                     <label>Verified By</label>
-                    <div class="value"><?php echo htmlspecialchars($payment['verified_by_name']); ?></div>
+                    <div class="vp-info-value"><?php echo htmlspecialchars($payment['verified_by_name']); ?></div>
                 </div>
                 
-                <div class="info-item">
+                <div class="vp-info-item">
                     <label>Verified At</label>
-                    <div class="value"><?php echo date('d M Y, h:i A', strtotime($payment['verified_at'])); ?></div>
+                    <div class="vp-info-value"><?php echo date('d M Y, h:i A', strtotime($payment['verified_at'])); ?></div>
                 </div>
             </div>
             
             <?php if ($payment['payment_status'] == 'Rejected' && $payment['rejection_reason']): ?>
-            <div style="margin-top: 20px;">
-                <label style="font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 10px; display: block;">
+            <div class="vp-block">
+                <label class="vp-block-label">
                     Rejection Reason
                 </label>
-                <div style="background: #f8d7da; padding: 15px; border-radius: 8px; border-left: 4px solid #E74C3C;">
+                <div class="alert alert-danger">
                     <?php echo nl2br(htmlspecialchars($payment['rejection_reason'])); ?>
                 </div>
             </div>
             <?php endif; ?>
+            </div>
         </div>
         <?php endif; ?>
         
         <!-- Timeline -->
-        <div class="info-card">
-            <h3><i class="fas fa-history"></i> Payment Timeline</h3>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-content">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-history"></i> Payment Timeline</h3></div>
+            <div class="card-body">
+            <div class="vp-timeline">
+                <div class="vp-timeline-item">
+                    <div class="vp-timeline-content">
                         <strong>Payment Initiated</strong>
                         <small><?php echo date('d M Y, h:i A', strtotime($payment['created_at'])); ?></small>
                     </div>
                 </div>
                 
                 <?php if ($receipt): ?>
-                <div class="timeline-item">
-                    <div class="timeline-content">
+                <div class="vp-timeline-item">
+                    <div class="vp-timeline-content">
                         <strong>Receipt Uploaded</strong>
                         <small><?php echo date('d M Y, h:i A', strtotime($receipt['uploaded_at'])); ?></small>
                     </div>
@@ -603,8 +405,8 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
                 <?php endif; ?>
                 
                 <?php if ($payment['verified_at']): ?>
-                <div class="timeline-item">
-                    <div class="timeline-content">
+                <div class="vp-timeline-item">
+                    <div class="vp-timeline-content">
                         <strong>
                             <?php echo $payment['payment_status'] == 'Cancelled' ? 'Payment Rejected' : 'Payment Verified'; ?>
                         </strong>
@@ -616,14 +418,17 @@ $days_ago = floor((time() - $payment_date) / (60 * 60 * 24));
                 </div>
                 <?php endif; ?>
             </div>
+            </div>
         </div>
     </div>
-    <div class="payment-aside"><!-- right column (was .sidebar, which collided with the app sidebar) -->
+    <div class="vp-aside"><!-- right column (was .sidebar, which collided with the app sidebar) -->
     
    
         <!-- Payments are verified or rejected from Hub Operations (receipts tab). -->
     </div>
 </div>
+
+</div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 

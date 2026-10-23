@@ -181,249 +181,126 @@ $page_title = 'AI vs Reviewer Comparison';
 require_once 'includes/header.php';
 ?>
 
-<link rel="stylesheet" href="css/opportunities.css">
-
 <style>
-.compare-table .badge{
-    font-size:11px;
-}
-
-.compare-comment{
-    min-width:280px;
-    line-height:1.6;
-    color:var(--ink-400);
-}
-
-.compare-diff-high{
-    background:var(--red-bg)!important;
-    color:var(--red-fg)!important;
-    border:1px solid var(--red-border)!important;
-}
-
-.compare-diff-low{
-    background:var(--green-bg)!important;
-    color:var(--green-fg)!important;
-    border:1px solid var(--green-border)!important;
-}
-
-.compare-summary{
-    white-space:pre-wrap;
-    line-height:1.8;
-    color:var(--ink-500);
-}
-
-.compare-grid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:18px;
-}
-
-@media(max-width:900px){
-    .compare-grid{
-        grid-template-columns:1fr;
-    }
-}
+/* AI vs reviewer comparison: two detail cards side by side, stacked below 900px. */
+.ac-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.ac-meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 14px; color: var(--ink-400); font-size: 13px; }
+.ac-meta i { color: var(--brand-500); margin-right: 4px; }
+.ac-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.ac-summary { white-space: pre-wrap; line-height: 1.8; color: var(--ink-500); }
+.ac-stat-text { font-size: 18px; letter-spacing: 0; }
+.ac-criterion { min-width: 250px; }
+.ac-comment { min-width: 280px; line-height: 1.6; color: var(--ink-400); }
+.ac-card-body-flush { padding: 0; }
+.ac-card-body-flush .table-responsive { margin-top: 0; }
+@media (max-width: 900px) { .ac-grid { grid-template-columns: 1fr; } }
 </style>
 
-<div class="container-fluid">
+<div class="page-stack">
 
-    <!-- HERO -->
-    <div class="opp-hero">
-
-        <div class="opp-hero-left">
-
-            <div class="opp-eyebrow">
-                <span class="opp-dot"></span>
-                AI REVIEW ANALYTICS
-            </div>
-
-            <h1>
-                <i class="fas fa-robot"></i>
-                AI vs Reviewer Comparison
-            </h1>
-
+    <div class="page-hero">
+        <div>
+            <h1><i class="fas fa-robot" aria-hidden="true"></i> AI vs Reviewer Comparison</h1>
             <p>
                 <?= h($app['startup_name'] ?? 'Application') ?>
                 -
                 <?= h($app['opportunity_title'] ?? '-') ?>
             </p>
-
         </div>
 
-        <div class="opp-hero-actions">
-
-            <a href="ai-review-applicant?id=<?= (int)$applicationId ?>" class="btn btn-white">
-                <i class="fas fa-robot"></i>
-                AI Reviews
+        <div class="hero-actions">
+            <a href="startups-shortlisting" class="btn">
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
             </a>
-
-            <a href="review-applicant?id=<?= (int)$applicationId ?>" class="btn btn-white">
-                <i class="fas fa-user-check"></i>
-                Manual Reviews
+            <a href="review-applicant?id=<?= (int)$applicationId ?>" class="btn">
+                <i class="fas fa-user-check" aria-hidden="true"></i> Manual Reviews
             </a>
-
-            <a href="startups-shortlisting" class="btn btn-white">
-                <i class="fas fa-arrow-left"></i>
-                Back
+            <a href="ai-review-applicant?id=<?= (int)$applicationId ?>" class="btn btn-primary">
+                <i class="fas fa-robot" aria-hidden="true"></i> AI Reviews
             </a>
-
         </div>
-
     </div>
 
     <!-- STATS -->
     <div class="stats-grid reports-stats">
-
         <div class="stat-card">
-
-            <div class="stat-icon bg-primary">
-                <i class="fas fa-robot"></i>
-            </div>
-
+            <div class="stat-icon bg-primary"><i class="fas fa-robot" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">AI Score</span>
-
-                <span class="stat-value">
-                    <?= number_format((float)($summary['ai_score'] ?? 0),1) ?>%
-                </span>
+                <span class="stat-value"><?= number_format((float)($summary['ai_score'] ?? 0),1) ?>%</span>
             </div>
-
         </div>
 
         <div class="stat-card">
-
-            <div class="stat-icon bg-green">
-                <i class="fas fa-users"></i>
-            </div>
-
+            <div class="stat-icon bg-green"><i class="fas fa-users" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Reviewer Average</span>
-
-                <span class="stat-value">
-                    <?= number_format((float)($summary['reviewer_avg'] ?? 0),1) ?>%
-                </span>
+                <span class="stat-value"><?= number_format((float)($summary['reviewer_avg'] ?? 0),1) ?>%</span>
             </div>
-
         </div>
 
         <div class="stat-card">
-
-            <div class="stat-icon bg-amber">
-                <i class="fas fa-user-check"></i>
-            </div>
-
+            <div class="stat-icon bg-amber"><i class="fas fa-user-check" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">Reviewers</span>
-
-                <span class="stat-value">
-                    <?= (int)($summary['reviewer_count'] ?? 0) ?>
-                </span>
+                <span class="stat-value"><?= (int)($summary['reviewer_count'] ?? 0) ?></span>
             </div>
-
         </div>
 
         <div class="stat-card">
-
-            <div class="stat-icon bg-purple">
-                <i class="fas fa-lightbulb"></i>
-            </div>
-
+            <div class="stat-icon bg-purple"><i class="fas fa-lightbulb" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <span class="stat-label">AI Recommendation</span>
-
-                <span class="stat-value" style="font-size:18px">
-                    <?= h($summary['ai_recommendation'] ?? '-') ?>
-                </span>
+                <span class="stat-value ac-stat-text"><?= h($summary['ai_recommendation'] ?? '-') ?></span>
             </div>
-
         </div>
-
     </div>
 
     <!-- APPLICATION DETAILS -->
-    <div class="compare-grid">
-
-        <div class="opp-panel">
-
-            <div class="opp-panel-head">
-                <h3>
-                    <i class="fas fa-building"></i>
-                    Application Details
-                </h3>
+    <div class="ac-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-building" aria-hidden="true"></i> Application Details</h3>
             </div>
-
-            <div class="opp-panel-body">
-
-                <div class="opp-meta" style="margin-bottom:14px">
-
-                    <div class="opp-meta-item">
-                        <i class="fas fa-layer-group"></i>
-                        <?= h($app['sector'] ?? '-') ?>
-                    </div>
-
-                    <div class="opp-meta-item">
-                        <i class="fas fa-chart-line"></i>
-                        <?= h($app['business_stage'] ?? '-') ?>
-                    </div>
-
-                    <div class="opp-meta-item">
-                        <i class="fas fa-money-bill-wave"></i>
-                        UGX <?= number_format((float)($app['funding_sought'] ?? 0),2) ?>
-                    </div>
-
+            <div class="card-body">
+                <div class="ac-meta">
+                    <span><i class="fas fa-layer-group" aria-hidden="true"></i><?= h($app['sector'] ?? '-') ?></span>
+                    <span><i class="fas fa-chart-line" aria-hidden="true"></i><?= h($app['business_stage'] ?? '-') ?></span>
+                    <span><i class="fas fa-money-bill-wave" aria-hidden="true"></i>UGX <?= number_format((float)($app['funding_sought'] ?? 0),2) ?></span>
                 </div>
 
-                <span class="badge badge-info">
-                    <?= h($app['review_type_name'] ?? '-') ?>
-                </span>
-
-                <span class="badge badge-success">
-                    <?= h($app['status'] ?? '-') ?>
-                </span>
-
-            </div>
-
-        </div>
-
-        <div class="opp-panel">
-
-            <div class="opp-panel-head">
-                <h3>
-                    <i class="fas fa-align-left"></i>
-                    AI Summary
-                </h3>
-            </div>
-
-            <div class="opp-panel-body">
-
-                <div class="compare-summary">
-                    <?= nl2br(h($summary['ai_summary'] ?? 'No AI review generated yet.')) ?>
+                <div class="ac-badges">
+                    <span class="badge badge-assigned"><?= h($app['review_type_name'] ?? '-') ?></span>
+                    <span class="badge badge-available"><?= h($app['status'] ?? '-') ?></span>
                 </div>
-
             </div>
-
         </div>
 
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-align-left" aria-hidden="true"></i> AI Summary</h3>
+            </div>
+            <div class="card-body">
+                <div class="ac-summary"><?= nl2br(h($summary['ai_summary'] ?? 'No AI review generated yet.')) ?></div>
+            </div>
+        </div>
     </div>
 
     <!-- COMPARISON TABLE -->
-    <div class="opp-panel">
-
-        <div class="opp-panel-head">
-
-            <h3>
-                <i class="fas fa-balance-scale"></i>
-                AI vs Human Reviewer Comparison
-            </h3>
-
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-balance-scale" aria-hidden="true"></i> AI vs Human Reviewer Comparison</h3>
         </div>
 
-        <div class="opp-panel-body">
-
+        <div class="card-body ac-card-body-flush">
+            <?php if (empty($criteria)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-balance-scale" aria-hidden="true"></i>
+                    <p>No comparison criteria found.</p>
+                </div>
+            <?php else: ?>
             <div class="table-responsive">
-
-                <table class="tbl compare-table">
-
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Category</th>
@@ -437,35 +314,27 @@ require_once 'includes/header.php';
                     </thead>
 
                     <tbody>
-
                     <?php foreach ($criteria as $c): ?>
-
                         <?php
                             $ai   = (float)($c['ai_score'] ?? 0);
                             $rv   = (float)($c['reviewer_avg_score'] ?? 0);
                             $diff = $ai - $rv;
 
                             $diffClass = abs($diff) >= 2
-                                ? 'compare-diff-high'
-                                : 'compare-diff-low';
+                                ? 'badge-rejected'
+                                : 'badge-available';
                         ?>
-
                         <tr>
-
                             <td>
-                                <span class="badge badge-type">
-                                    <?= h($c['category']) ?>
-                                </span>
+                                <span class="badge badge-purple"><?= h($c['category']) ?></span>
                             </td>
 
-                            <td style="min-width:250px">
-                                <strong>
-                                    <?= h($c['question']) ?>
-                                </strong>
+                            <td class="ac-criterion">
+                                <strong><?= h($c['question']) ?></strong>
                             </td>
 
                             <td>
-                                <span class="badge badge-info">
+                                <span class="badge badge-assigned">
                                     <?= number_format($ai,1) ?>
                                     /
                                     <?= number_format((float)$c['max_score'],0) ?>
@@ -473,7 +342,7 @@ require_once 'includes/header.php';
                             </td>
 
                             <td>
-                                <span class="badge badge-success">
+                                <span class="badge badge-available">
                                     <?= number_format($rv,1) ?>
                                     /
                                     <?= number_format((float)$c['max_score'],0) ?>
@@ -487,39 +356,21 @@ require_once 'includes/header.php';
                             </td>
 
                             <td>
-                                <span class="badge badge-secondary">
-                                    <?= h($c['weight']) ?>
-                                </span>
+                                <span class="badge badge-returned"><?= h($c['weight']) ?></span>
                             </td>
 
-                            <td class="compare-comment">
+                            <td class="ac-comment">
                                 <?= nl2br(h($c['ai_comments'] ?? '-')) ?>
                             </td>
-
                         </tr>
-
                     <?php endforeach; ?>
-
-                    <?php if (empty($criteria)): ?>
-
-                        <tr>
-                            <td colspan="7" style="text-align:center;padding:40px;color:#6b7280">
-                                No comparison criteria found.
-                            </td>
-                        </tr>
-
-                    <?php endif; ?>
-
                     </tbody>
-
                 </table>
-
             </div>
-
+            <?php endif; ?>
         </div>
-
     </div>
 
-</div>
+</div><!-- /.page-stack -->
 
 <?php require_once 'includes/footer.php'; ?>
