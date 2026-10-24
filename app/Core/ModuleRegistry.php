@@ -19,6 +19,8 @@ final class ModuleRegistry
         'activity-event-requests.php' => 'activity-event-requests.php',
         'finance-reports' => 'finance-reports.php',
         'finance-reports.php' => 'finance-reports.php',
+        'manage-project-program-budgets' => 'manage-project-program-budgets.php',
+        'manage-project-program-budgets.php' => 'manage-project-program-budgets.php',
         'activity_log' => 'activity_log.php',
         'activity_log.php' => 'activity_log.php',
         'ai-review-applicant' => 'ai-review-applicant.php',
