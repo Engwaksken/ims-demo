@@ -17,6 +17,8 @@ final class ModuleRegistry
         'activity-process.php' => 'activity-process.php',
         'activity-event-requests' => 'activity-event-requests.php',
         'activity-event-requests.php' => 'activity-event-requests.php',
+        'finance-reports' => 'finance-reports.php',
+        'finance-reports.php' => 'finance-reports.php',
         'activity_log' => 'activity_log.php',
         'activity_log.php' => 'activity_log.php',
         'ai-review-applicant' => 'ai-review-applicant.php',
