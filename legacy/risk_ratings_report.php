@@ -355,6 +355,8 @@ HTML;
     $dompdf->loadHtml($pdfHtml, 'UTF-8');
     $dompdf->setPaper('A4', 'landscape');
     $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
     $filename = 'Risk_Ratings_Report_' . date('Y-m-d') . '.pdf';
 

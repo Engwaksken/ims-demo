@@ -502,6 +502,8 @@ $dompdf->setPaper('A4', 'portrait');
 
 // Render PDF
 $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
 // Log PDF generation
 log_action($_SESSION['user_id'], 'Generate Employee PDF', 'employee_directory', $employee_id, "Generated PDF for {$employee['full_name']}");

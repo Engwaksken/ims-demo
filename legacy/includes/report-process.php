@@ -355,6 +355,8 @@ tr, .panel, .card  { page-break-inside: avoid !important; }
     $dompdf->loadHtml($html, 'UTF-8');
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
+require_once __DIR__ . '/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
     /* -- File name -- */
     $filename = strtolower(str_replace(['_', ' '], '-', $report_type))

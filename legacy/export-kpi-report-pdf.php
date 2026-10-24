@@ -219,6 +219,8 @@ $dompdf = new \Dompdf\Dompdf($options);
 $dompdf->loadHtml($html, 'UTF-8');
 $dompdf->setPaper('A4', 'landscape');
 $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
 if (function_exists('log_action')) {
     log_action(

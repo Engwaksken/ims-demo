@@ -288,6 +288,8 @@ td{padding:6px;border-bottom:1px solid #f3f4f6;vertical-align:top}
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
     log_action((int)$_SESSION['user_id'], 'Export Member Folder', 'member_documents', $member_id, "PDF report $year" . ($with_images ? ' with images' : ''));
     $pdfName = preg_replace('/[^A-Za-z0-9_-]+/', '_', 'Member_Folder_' . $member['membership_number'] . '_' . $year) . '.pdf';

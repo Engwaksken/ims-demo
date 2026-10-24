@@ -111,6 +111,8 @@ if ($exportType === 'pdf') {
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
     $dompdf->stream(preg_replace('/\W/','_',$surveyName).".pdf", ["Attachment" => true]);
     exit;
 }

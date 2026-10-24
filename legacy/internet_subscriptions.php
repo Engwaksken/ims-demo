@@ -273,6 +273,8 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'landscape');
     $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
     if (ob_get_length()) {
         ob_end_clean();

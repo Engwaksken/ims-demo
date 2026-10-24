@@ -146,6 +146,8 @@ function wp_export_pdf(array $workplan, array $stats, string $entityLabel, int $
     $dompdf->setPaper('A3', 'landscape');
     $dompdf->loadHtml($html);
     $dompdf->render();
+require_once __DIR__ . '/../includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
     $dompdf->stream($filenameBase . '.pdf', ['Attachment' => true]);
 }
 
@@ -200,7 +202,7 @@ function wp_build_pdf_html(array $workplan, array $stats, string $entityLabel, i
     </head>
     <body>
         <h1><?php echo htmlspecialchars($entityLabel); ?> - Annual Workplan <?php echo $year; ?></h1>
-        <div class="subtitle">Generated <?php echo date('d M Y'); ?> · Statuses updated monthly by the M&amp;E lead by the 15th.</div>
+        <div class="subtitle">Generated <?php echo date('d M Y'); ?> ï¿½ Statuses updated monthly by the M&amp;E lead by the 15th.</div>
 
         <div class="stats-row">
             <div class="stat-card"><div class="num"><?php echo $stats['milestone_count']; ?></div><div class="lbl">Milestones</div></div>

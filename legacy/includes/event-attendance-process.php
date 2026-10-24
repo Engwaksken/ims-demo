@@ -200,6 +200,8 @@ function export_attendance_pdf(array $event, array $rows, string $attendance_dat
     $dompdf->loadHtml($html, 'UTF-8');
     $dompdf->setPaper('A4', 'landscape');
     $dompdf->render();
+require_once __DIR__ . '/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
     $filename = safe_filename(($event['event_title'] ?? 'event') . '_' . $attendance_date) . '.pdf';
     $dompdf->stream($filename, ['Attachment' => true]);

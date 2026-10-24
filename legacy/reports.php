@@ -516,6 +516,8 @@ if ($export === 'pdf') {
     $dompdf->loadHtml($pdf_html, 'UTF-8');
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
     $filename = 'analytics_overview_' . date('Ymd_His') . '.pdf';
 

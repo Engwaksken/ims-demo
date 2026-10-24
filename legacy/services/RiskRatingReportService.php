@@ -852,6 +852,8 @@ class RiskRatingReportService
         $dompdf->loadHtml($html, 'UTF-8');
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
+require_once __DIR__ . '/../includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
         $dir = __DIR__ . '/../uploads/risk_reports/';
         if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {

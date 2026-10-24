@@ -430,6 +430,8 @@ if ($export === 'pdf') {
     $dp->loadHtml($html);
     $dp->setPaper('A4','landscape');
     $dp->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dp);
     $dp->stream('progress_'.$pdfTab.'_'.date('Ymd').'.pdf',['Attachment'=>true]);
     exit;
 }

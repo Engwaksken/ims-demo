@@ -570,6 +570,8 @@ function exportMyRequestsPdf(mysqli $conn, string $where, string $types, array $
     $dompdf->loadHtml($html);
     $dompdf->setPaper('A4', 'landscape');
     $dompdf->render();
+require_once __DIR__ . '/pdf-branding.php';
+ims_brand_pdf($dompdf);
     $dompdf->stream('my_requests.pdf', ['Attachment' => true]);
     exit;
 }

@@ -39,4 +39,6 @@ $pdf = new Dompdf();
 $pdf->loadHtml($html);
 $pdf->setPaper('A4','landscape');
 $pdf->render();
+require_once __DIR__ . '/../includes/pdf-branding.php';
+ims_brand_pdf($pdf);
 $pdf->stream('projects_report.pdf', ['Attachment'=>1]);
