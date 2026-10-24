@@ -1,6 +1,8 @@
 <?php
 require_once 'includes/config.php';
 require_once 'helpers/auth_redirect.php';
+$siteBranding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['name' => (string)SITE_NAME, 'logo' => '/images/logo.png', 'favicon' => '/images/favicon.png'];
+$globalSiteName = (string)($siteBranding['name'] ?? SITE_NAME);
 
 redirect_if_logged_in();
 
@@ -61,8 +63,8 @@ $remaining_seconds = max(0, strtotime($_SESSION['verification_expiry']) - time()
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Verification - <?php echo htmlspecialchars(SITE_NAME); ?></title>
-    <link rel="icon" type="image/png" href="images/favicon.png">
+    <title>Email Verification - <?= htmlspecialchars($globalSiteName, ENT_QUOTES, 'UTF-8') ?></title>
+    <link rel="icon" href="<?= htmlspecialchars((string)$siteBranding['favicon'], ENT_QUOTES, 'UTF-8') ?>" type="<?= strtolower(pathinfo((string)$siteBranding['favicon'], PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png' ?>">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
@@ -138,7 +140,7 @@ $remaining_seconds = max(0, strtotime($_SESSION['verification_expiry']) - time()
         <div class="login-card">
             <div class="login-header">
                 <h1>
-                    <img src="images/logo.png" alt="<?php echo htmlspecialchars(SITE_NAME); ?> Logo" onerror="this.style.display='none'">
+                    <img src="<?= htmlspecialchars((string)$siteBranding['logo'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($globalSiteName, ENT_QUOTES, 'UTF-8') ?> Logo" onerror="this.style.display='none'">
                 </h1>
                 <p>Email Verification</p>
             </div>

@@ -150,6 +150,51 @@ function settings_upsert_many(
     }
 }
 
+function settings_store_brand_image(string $field, string $kind): ?string
+{
+    if (!isset($_FILES[$field]) || (int)($_FILES[$field]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    $file = $_FILES[$field];
+    $maxBytes = $kind === 'logo' ? 3 * 1024 * 1024 : 512 * 1024;
+    if ((int)$file['error'] !== UPLOAD_ERR_OK || (int)$file['size'] < 1 || (int)$file['size'] > $maxBytes) {
+        throw new InvalidArgumentException($kind === 'logo' ? 'Site logo upload must be no larger than 3 MB.' : 'Favicon upload must be no larger than 512 KB.');
+    }
+
+    $image = @getimagesize((string)$file['tmp_name']);
+    $mime = is_array($image) ? (string)($image['mime'] ?? '') : '';
+    $allowed = $kind === 'logo'
+        ? ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp']
+        : ['image/png' => 'png', 'image/x-icon' => 'ico', 'image/vnd.microsoft.icon' => 'ico'];
+    if (!isset($allowed[$mime]) || empty($image[0]) || empty($image[1]) || $image[0] > 4096 || $image[1] > 4096) {
+        throw new InvalidArgumentException($kind === 'logo' ? 'Site logo must be a valid PNG, JPEG, or WebP image.' : 'Favicon must be a valid PNG or ICO image.');
+    }
+
+    $directory = dirname(__DIR__, 2) . '/public/uploads/site-branding';
+    if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
+        throw new RuntimeException('Could not create the site branding upload directory.');
+    }
+
+    $name = bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
+    if (!move_uploaded_file((string)$file['tmp_name'], $directory . '/' . $name)) {
+        throw new RuntimeException('Could not store the uploaded ' . $kind . '.');
+    }
+
+    return 'uploads/site-branding/' . $name;
+}
+
+function settings_remove_old_brand_image(string $relativePath): void
+{
+    if (!preg_match('#^uploads/site-branding/[a-f0-9]{32}\.(?:png|jpe?g|webp|ico)$#i', $relativePath)) {
+        return;
+    }
+    $path = dirname(__DIR__, 2) . '/public/' . $relativePath;
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
 function powerbi_upsert(
     mysqli $conn,
     string $key,
@@ -257,24 +302,45 @@ function settings_error(
 */
 
 if (isset($_POST['update_settings'])) {
+    $newBrandFiles = [];
+    $settingsCommitted = false;
     try {
-        settings_upsert_many(
-            $conn,
-            [
-                'site_name' => sanitize_input(settings_post('site_name')),
+        $oldLogo = settings_get($conn, 'site_logo_path');
+        $oldFavicon = settings_get($conn, 'site_favicon_path');
+        $newLogo = settings_store_brand_image('site_logo', 'logo');
+        if ($newLogo !== null) $newBrandFiles[] = $newLogo;
+        $newFavicon = settings_store_brand_image('site_favicon', 'favicon');
+        if ($newFavicon !== null) $newBrandFiles[] = $newFavicon;
+        $systemName = settings_post('site_name');
+        $systemNameLength = function_exists('mb_strlen') ? mb_strlen($systemName, 'UTF-8') : strlen($systemName);
+        if ($systemName === '' || $systemNameLength > 120) {
+            throw new InvalidArgumentException('System name is required and must be 120 characters or fewer.');
+        }
+
+        $generalSettings = [
+                'site_name' => sanitize_input($systemName),
                 'site_email' => sanitize_input(settings_post('site_email')),
                 'site_phone' => sanitize_input(settings_post('site_phone')),
                 'site_address' => sanitize_input(settings_post('site_address')),
                 'timezone' => sanitize_input(settings_post('timezone', 'Africa/Kampala')),
                 'date_format' => sanitize_input(settings_post('date_format', 'd M Y')),
                 'currency' => sanitize_input(settings_post('currency', 'UGX')),
-                'items_per_page' => (string)max(
-                    10,
-                    min(100, (int)($_POST['items_per_page'] ?? 25))
-                ),
-            ],
+                'items_per_page' => (string)max(10, min(100, (int)($_POST['items_per_page'] ?? 25))),
+        ];
+        if ($newLogo !== null) $generalSettings['site_logo_path'] = $newLogo;
+        if ($newFavicon !== null) $generalSettings['site_favicon_path'] = $newFavicon;
+
+        $conn->begin_transaction();
+        settings_upsert_many(
+            $conn,
+            $generalSettings,
             $userId
         );
+        $conn->commit();
+        $settingsCommitted = true;
+
+        if ($newLogo !== null) settings_remove_old_brand_image($oldLogo);
+        if ($newFavicon !== null) settings_remove_old_brand_image($oldFavicon);
 
         settings_success(
             $userId,
@@ -283,11 +349,15 @@ if (isset($_POST['update_settings'])) {
             'Update Settings'
         );
     } catch (Throwable $e) {
+        @$conn->rollback();
+        if (!$settingsCommitted) {
+            foreach ($newBrandFiles as $newBrandFile) settings_remove_old_brand_image($newBrandFile);
+        }
         error_log('Settings update failed: ' . $e->getMessage());
 
         settings_error(
             $userId,
-            'Could not update system settings.',
+            $e instanceof InvalidArgumentException ? $e->getMessage() : 'Could not update system settings.',
             'general'
         );
     }

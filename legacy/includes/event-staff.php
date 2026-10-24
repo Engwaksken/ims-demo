@@ -411,7 +411,7 @@ if (!function_exists('ev_staff_email_invites')) {
 
         $settings = function_exists('getEmailSettings') ? (getEmailSettings() ?: []) : [];
         $fromEmail = trim((string)($settings['from_email'] ?? ''));
-        $fromName = trim((string)($settings['from_name'] ?? '')) ?: (defined('SITE_NAME') ? SITE_NAME : 'IMS');
+        $fromName = trim((string)($settings['from_name'] ?? '')) ?: (string)($GLOBALS['IMS_SITE_BRANDING']['name'] ?? (defined('SITE_NAME') ? SITE_NAME : 'IMS'));
 
         if ($fromEmail === '') {
             error_log('Event invites not sent: no from_email in email settings.');

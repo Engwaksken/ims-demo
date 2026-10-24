@@ -380,9 +380,7 @@ $_SESSION['pending_role']        = $userRole;
 |--------------------------------------------------------------------------
 */
 
-$siteName = defined('SITE_NAME')
-    ? (string) SITE_NAME
-    : 'EdTech Fellowship CMS';
+$siteName = (string)($GLOBALS['IMS_SITE_BRANDING']['name'] ?? (defined('SITE_NAME') ? SITE_NAME : 'EdTech Fellowship CMS'));
 
 $safeSiteName = htmlspecialchars(
     $siteName,

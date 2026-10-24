@@ -381,6 +381,29 @@ try {
     // LegacyRunner requires pages inside a method, so $conn above is a local
     // there; publish it so `global $conn` in helper functions still works.
     $GLOBALS['conn'] = $conn;
+
+    // Resolve global site branding once per request for the shared application chrome.
+    $siteBranding = [
+        'name' => (string)SITE_NAME,
+        'logo' => '/images/logo.png',
+        'favicon' => '/images/favicon.png',
+    ];
+    $brandingResult = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name','site_logo_path','site_favicon_path')");
+    if ($brandingResult) {
+        while ($brandingRow = $brandingResult->fetch_assoc()) {
+            $key = (string)$brandingRow['setting_key'];
+            $value = trim((string)($brandingRow['setting_value'] ?? ''));
+            if ($key === 'site_name' && $value !== '') {
+                $siteBranding['name'] = $value;
+            } elseif ($key === 'site_logo_path' && preg_match('#^uploads/site-branding/[a-f0-9]{32}\.(?:png|jpe?g|webp)$#i', $value)) {
+                $siteBranding['logo'] = '/' . $value;
+            } elseif ($key === 'site_favicon_path' && preg_match('#^uploads/site-branding/[a-f0-9]{32}\.(?:png|ico)$#i', $value)) {
+                $siteBranding['favicon'] = '/' . $value;
+            }
+        }
+        $brandingResult->free();
+    }
+    $GLOBALS['IMS_SITE_BRANDING'] = $siteBranding;
 } catch (Throwable $exception) {
     error_log(
         'Application database initialization failed: '

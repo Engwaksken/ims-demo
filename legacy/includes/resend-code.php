@@ -2,6 +2,7 @@
 // Backend - Resend Verification Code
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/mail-function.php';
+$systemName = (string)($GLOBALS['IMS_SITE_BRANDING']['name'] ?? SITE_NAME);
 
 header('Content-Type: application/json');
 
@@ -40,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $_SESSION['verification_expiry'] = $code_expiry;
         
         // Send verification email
-        $subject = 'New Login Verification Code - ' . SITE_NAME;
+        $subject = 'New Login Verification Code - ' . $systemName;
         $body = '
         <!DOCTYPE html>
         <html>
@@ -59,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>' . SITE_NAME . '</h1>
+                    <h1>' . htmlspecialchars($systemName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1>
                     <p>New Verification Code</p>
                 </div>
                 <div class="content">
@@ -84,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </ul>
                 </div>
                 <div class="footer">
-                    <p>This is an automated message from ' . SITE_NAME . '. Please do not reply to this email.</p>
-                    <p>&copy; ' . date('Y') . ' ' . SITE_NAME . '. All rights reserved.</p>
+                    <p>This is an automated message from ' . htmlspecialchars($systemName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '. Please do not reply to this email.</p>
+                    <p>&copy; ' . date('Y') . ' ' . htmlspecialchars($systemName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '. All rights reserved.</p>
                 </div>
             </div>
         </body>
@@ -96,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $altBody .= "Your new verification code is: " . $verification_code . "\n\n";
         $altBody .= "This code will expire in 10 minutes.\n\n";
         $altBody .= "This is a new code. Any previous codes have been invalidated.\n\n";
-        $altBody .= "- " . SITE_NAME;
+        $altBody .= "- " . $systemName;
         
         $emailResult = sendEmail($user['email'], $subject, $body, $altBody);
         

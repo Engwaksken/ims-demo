@@ -8,7 +8,11 @@ $page_title = $page_title ?? 'Dashboard';
 
 // Presentation-only helpers for the layout chrome.
 $hdr_title   = htmlspecialchars((string)$page_title, ENT_QUOTES, 'UTF-8');
-$hdr_site    = htmlspecialchars((string)SITE_NAME, ENT_QUOTES, 'UTF-8');
+$hdr_branding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['name' => (string)SITE_NAME, 'logo' => '/images/logo.png', 'favicon' => '/images/favicon.png'];
+$hdr_site    = htmlspecialchars((string)($hdr_branding['name'] ?? SITE_NAME), ENT_QUOTES, 'UTF-8');
+$hdr_logo    = htmlspecialchars((string)($hdr_branding['logo'] ?? '/images/logo.png'), ENT_QUOTES, 'UTF-8');
+$hdr_favicon = htmlspecialchars((string)($hdr_branding['favicon'] ?? '/images/favicon.png'), ENT_QUOTES, 'UTF-8');
+$hdr_favicon_type = strtolower(pathinfo($hdr_favicon, PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png';
 $hdr_initial = function_exists('mb_substr')
     ? mb_strtoupper(mb_substr((string)$user_name, 0, 1, 'UTF-8'), 'UTF-8')
     : strtoupper(substr((string)$user_name, 0, 1));
@@ -46,7 +50,7 @@ $hdr_bell_label = $hdr_unread > 0
     <title><?php echo $hdr_title; ?> | <?php echo $hdr_site; ?></title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="../images/favicon.png">
+    <link rel="icon" type="<?php echo $hdr_favicon_type; ?>" href="<?php echo $hdr_favicon; ?>">
 
     <!-- Fonts (DM Sans is requested by reports.css; preconnect speeds it up) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

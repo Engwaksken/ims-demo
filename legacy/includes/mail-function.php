@@ -142,9 +142,7 @@ if (!function_exists('sendEmail')) {
             (string) ($settings['from_email'] ?? '')
         );
 
-        $defaultSiteName = defined('SITE_NAME')
-            ? (string) SITE_NAME
-            : 'Website';
+        $defaultSiteName = (string)($GLOBALS['IMS_SITE_BRANDING']['name'] ?? (defined('SITE_NAME') ? SITE_NAME : 'Website'));
 
         $fromName = trim(
             (string) ($settings['from_name'] ?? $defaultSiteName)

@@ -139,7 +139,9 @@ $sidebar_link = static function (array $e): string {
 <aside class="sidebar" id="appSidebar" aria-label="Main navigation">
     <div class="sidebar-header">
         <div class="sidebar-brand">
-            <h1><?= htmlspecialchars((string)(defined('SITE_NAME') ? SITE_NAME : 'Dashboard'), ENT_QUOTES, 'UTF-8') ?></h1>
+            <?php $sidebarBranding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['name' => (string)(defined('SITE_NAME') ? SITE_NAME : 'Dashboard'), 'logo' => '/images/logo.png']; ?>
+            <img src="<?= htmlspecialchars((string)($sidebarBranding['logo'] ?? '/images/logo.png'), ENT_QUOTES, 'UTF-8') ?>" alt="" class="sidebar-brand-logo">
+            <h1><?= htmlspecialchars((string)($sidebarBranding['name'] ?? 'Dashboard'), ENT_QUOTES, 'UTF-8') ?></h1>
         </div>
 
         <a href="user-profile" class="sidebar-user" title="My profile">

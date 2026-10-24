@@ -175,6 +175,8 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
     .settings-tabs { margin-bottom: 0; }
 
     .settings-stats { margin-bottom: 18px; }
+    .settings-branding-preview { display:block; width:min(100%,280px); height:72px; margin:8px 0; padding:8px; object-fit:contain; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-card); }
+    .settings-favicon-preview { display:block; width:48px; height:48px; margin:8px 0; padding:5px; object-fit:contain; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-card); }
     .settings-stats .stat-value.settings-stat-text { font-size: var(--fs-md); word-break: break-word; }
     .settings-stats .stat-value.settings-stat-small { font-size: var(--fs-xs); }
     .settings-stats.google-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -350,11 +352,11 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
     <div class="card-header"><h3><i class="fas fa-cog" aria-hidden="true"></i> General Settings</h3></div>
     <div class="card-body">
     
-    <form method="POST" action="includes/settings-process.php">
+    <form method="POST" action="includes/settings-process.php" enctype="multipart/form-data">
         <div class="form-row">
             <div class="form-group">
-                <label for="site_name" class="required">Organization Name</label>
-                <input type="text" id="site_name" name="site_name" class="form-control" 
+                <label for="site_name" class="required">System Name</label>
+                <input type="text" id="site_name" name="site_name" class="form-control" maxlength="120"
                        value="<?php echo htmlspecialchars($settings['site_name'] ?? 'Hive Colab'); ?>" required>
             </div>
             
@@ -362,6 +364,22 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 <label for="site_email">Organization Email</label>
                 <input type="email" id="site_email" name="site_email" class="form-control" 
                        value="<?php echo htmlspecialchars($settings['site_email'] ?? ''); ?>">
+            </div>
+        </div>
+
+        <?php $settingsBranding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['logo' => '/images/logo.png', 'favicon' => '/images/favicon.png']; ?>
+        <div class="form-row settings-branding-row">
+            <div class="form-group">
+                <label for="site_logo">Site Logo</label>
+                <img class="settings-branding-preview" src="<?= htmlspecialchars((string)$settingsBranding['logo'], ENT_QUOTES, 'UTF-8') ?>" alt="Current site logo">
+                <input type="file" id="site_logo" name="site_logo" class="form-control" accept="image/png,image/jpeg,image/webp">
+                <small class="settings-hint">PNG, JPEG, or WebP; maximum 3 MB. Used in the global navigation and PDF reports.</small>
+            </div>
+            <div class="form-group">
+                <label for="site_favicon">Favicon</label>
+                <img class="settings-favicon-preview" src="<?= htmlspecialchars((string)$settingsBranding['favicon'], ENT_QUOTES, 'UTF-8') ?>" alt="Current site favicon">
+                <input type="file" id="site_favicon" name="site_favicon" class="form-control" accept="image/png,image/x-icon,.ico">
+                <small class="settings-hint">PNG or ICO; maximum 512 KB. Appears in the browser tab.</small>
             </div>
         </div>
         
