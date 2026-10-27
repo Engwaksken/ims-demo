@@ -176,7 +176,7 @@ function hub_send_member_credentials(string $email, string $fullName, string $me
 
     $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host     = preg_replace('/[^A-Za-z0-9.\-:]/', '', (string)($_SERVER['HTTP_HOST'] ?? ''));
-    $loginUrl = $host !== '' ? $scheme . '://' . $host . '/login' : 'https://ims.hivecolab.com/login';
+    $loginUrl = $host !== '' ? $scheme . '://' . $host . '/login' : 'https://ims.kemmytech.com/login';
 
     $safeName     = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
     $safeEmail    = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');

@@ -801,7 +801,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 name="google_redirect_uri"
                 class="form-control"
                 value="<?= htmlspecialchars($google_settings['google_redirect_uri'] ?? '') ?>"
-                placeholder="https://ims.hivecolab.com/includes/google-calendar-callback.php"
+                placeholder="https://ims.kemmytech.com/includes/google-calendar-callback.php"
             >
             <small class="settings-hint">
                 This must exactly match the authorised redirect URI in Google Cloud.

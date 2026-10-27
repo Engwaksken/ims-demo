@@ -200,7 +200,7 @@ if (!defined('APP_URL')) {
         rtrim(
             (string) environment_value(
                 'APP_URL',
-                'https://ims.hivecolab.com'
+                'https://ims.kemmytech.com'
             ),
             '/'
         )

@@ -64,7 +64,7 @@ function app_login_url(): string
         return $scheme . '://' . $_SERVER['HTTP_HOST'] . '/login';
     }
 
-    return 'https://ims.hivecolab.com/login.php';
+    return 'https://ims.kemmytech.com/login.php';
 }
 
 function send_new_user_credentials_email(

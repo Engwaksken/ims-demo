@@ -47,7 +47,7 @@ function send_reset_email(string $email, string $fullName, string $plainPassword
 {
     $safeName     = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
     $safePassword = htmlspecialchars($plainPassword, ENT_QUOTES, 'UTF-8');
-    $loginUrl     = 'https://ims.hivecolab.com/login.php';
+    $loginUrl     = 'https://ims.kemmytech.com/login.php';
     if (function_exists('get_setting')) {
         $base = rtrim((string)get_setting('site_url', ''), '/');
         if ($base !== '') {

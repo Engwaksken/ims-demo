@@ -516,7 +516,7 @@ function send_application_confirmation(string $email, string $startup_name, int 
         <p>We will be in touch if your application is shortlisted. In the meantime you can
            track your status at any time by logging in to your account.</p>
 
-        <a href='https://ims.hivecolab.com/my-applications' class='btn'>
+        <a href='https://ims.kemmytech.com/my-applications' class='btn'>
             View My Applications
         </a>
 
@@ -530,7 +530,7 @@ function send_application_confirmation(string $email, string $startup_name, int 
              . "Reference: {$reference}\n"
              . "Submitted: " . date('d M Y, h:i A') . "\n"
              . "We will contact you if shortlisted.\n"
-             . "Track status: https://ims.hivecolab.com/my-applications.php";
+             . "Track status: https://ims.kemmytech.com/my-applications.php";
 
     sendEmail($email, $subject, email_wrapper($content), $altBody);
 }
@@ -544,8 +544,8 @@ function send_draft_saved_email(
 ): void {
     $reference  = 'DRAFT-' . str_pad($app_id, 6, '0', STR_PAD_LEFT);
     $subject    = "Draft Saved & Account Created - Hive Colab";
-    $login_url  = 'https://ims.hivecolab.com/login.php';
-    $portal_url = 'https://ims.hivecolab.com/my-applications.php';
+    $login_url  = 'https://ims.kemmytech.com/login.php';
+    $portal_url = 'https://ims.kemmytech.com/my-applications.php';
 
     $content = "
         <h3>Your Draft Has Been Saved!</h3>
@@ -613,7 +613,7 @@ function send_draft_updated_email(
 ): void {
     $reference  = 'DRAFT-' . str_pad($app_id, 6, '0', STR_PAD_LEFT);
     $subject    = "Draft Updated - " . $startup;
-    $portal_url = 'https://ims.hivecolab.com/my-applications.php';
+    $portal_url = 'https://ims.kemmytech.com/my-applications.php';
 
     $content = "
         <h3>Your Draft Has Been Updated</h3>
@@ -673,7 +673,7 @@ function send_asset_request_admin_notification(array $request, array $recipients
         <p><strong>Reason:</strong></p>
         <p>" . nl2br(htmlspecialchars($request['request_reason'])) . "</p>
 
-        <a href='https://ims.hivecolab.com/manage_assets' class='btn'>
+        <a href='https://ims.kemmytech.com/manage_assets' class='btn'>
             Review Asset Request
         </a>
     ";
@@ -684,7 +684,7 @@ function send_asset_request_admin_notification(array $request, array $recipients
         . "Category: {$request['category']}\n"
         . "Urgency: {$request['urgency_level']}\n"
         . "Reason: {$request['request_reason']}\n"
-        . "Review: https://ims.hivecolab.com/manage_assets.php";
+        . "Review: https://ims.kemmytech.com/manage_assets.php";
 
     sendEmail($recipients, $subject, email_wrapper($content), $altBody);
 }
@@ -742,7 +742,7 @@ function send_procurement_submitted_email(array $data, array $recipients): void
 
         <p>{$data['description']}</p>
 
-        <a href='https://ims.hivecolab.com/manage_procurement' class='btn'>
+        <a href='https://ims.kemmytech.com/manage_procurement' class='btn'>
             Review Request
         </a>
     ";
@@ -806,7 +806,7 @@ function send_rfq_created_email(array $recipients, array $data): void
             <div><strong>RFQ Number:</strong> {$data['rfq_number']}</div>
         </div>
 
-        <a href='https://ims.hivecolab.com/manage_rfq?procurement_id={$data['procurement_id']}' class='btn'>
+        <a href='https://ims.kemmytech.com/manage_rfq?procurement_id={$data['procurement_id']}' class='btn'>
             Manage RFQ
         </a>
     ";
@@ -881,7 +881,7 @@ function send_quotation_review_invite_email(string $email, array $data): void
             <div><strong>Procurement:</strong> " . htmlspecialchars($data['title'] ?? '-') . "</div>
         </div>
 
-        <a href='https://ims.hivecolab.com/manage_quotation_reviews?rfq_id=" . (int)$data['rfq_id'] . "' class='btn'>
+        <a href='https://ims.kemmytech.com/manage_quotation_reviews?rfq_id=" . (int)$data['rfq_id'] . "' class='btn'>
             Review Quotations
         </a>
     ";
@@ -925,7 +925,7 @@ function send_event_registration_confirmation(array $data): void
         $checkinPayload .= '&sig=' . ims_event_checkin_signature($registrationId, $eventId);
     }
     $checkinToken = base64_encode($checkinPayload);
-    $checkinUrl   = 'https://ims.hivecolab.com/event-checkin?token=' . urlencode($checkinToken);
+    $checkinUrl   = 'https://ims.kemmytech.com/event-checkin?token=' . urlencode($checkinToken);
 
     $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' . urlencode($checkinUrl);
 
@@ -1023,7 +1023,7 @@ function send_booking_request_confirmation(string $email, string $name, array $b
             <div><strong>Amount:</strong> UGX " . number_format((float)($booking['booking_amount'] ?? 0)) . "</div>
         </div>
         <p>You'll receive another email as soon as your booking is confirmed.</p>
-        <a href='https://ims.hivecolab.com/my-bookings' class='btn'>View My Bookings</a>
+        <a href='https://ims.kemmytech.com/my-bookings' class='btn'>View My Bookings</a>
         <p>Best regards,<br><strong>Hive Colab Team</strong></p>
     ";
 
@@ -1032,7 +1032,7 @@ function send_booking_request_confirmation(string $email, string $name, array $b
         . "Space: " . ($booking['space_name'] ?? '-') . "\n"
         . "Date: " . ($booking['booking_date'] ?? '-') . "\n"
         . "Status: Pending confirmation\n"
-        . "View bookings: https://ims.hivecolab.com/my-bookings.php";
+        . "View bookings: https://ims.kemmytech.com/my-bookings.php";
 
     sendEmail($email, $subject, email_wrapper($content), $altBody);
 }
@@ -1054,14 +1054,14 @@ function send_booking_admin_notification(array $recipients, array $booking, stri
             <div><strong>Attendees:</strong> " . (int)($booking['number_of_attendees'] ?? 0) . "</div>
             <div><strong>Amount:</strong> UGX " . number_format((float)($booking['booking_amount'] ?? 0)) . "</div>
         </div>
-        <a href='https://ims.hivecolab.com/manage-bookings' class='btn'>Review Booking</a>
+        <a href='https://ims.kemmytech.com/manage-bookings' class='btn'>Review Booking</a>
     ";
 
     $altBody = "New Booking Request\n"
         . "Requested By: {$member_name}\n"
         . "Space: " . ($booking['space_name'] ?? '-') . "\n"
         . "Date: " . ($booking['booking_date'] ?? '-') . "\n"
-        . "Review: https://ims.hivecolab.com/manage-bookings";
+        . "Review: https://ims.kemmytech.com/manage-bookings";
 
     sendEmail($recipients, $subject, email_wrapper($content), $altBody);
 }
@@ -1079,7 +1079,7 @@ function send_booking_cancellation_email(string $email, array $booking): void
         <p>This confirms that your booking below has been cancelled.</p>
         " . _booking_info_box($booking) . "
         <p>Need to book again? You're welcome to submit a new request any time.</p>
-        <a href='https://ims.hivecolab.com/book-space' class='btn'>Book a Space</a>
+        <a href='https://ims.kemmytech.com/book-space' class='btn'>Book a Space</a>
         <p>Best regards,<br><strong>Hive Colab Team</strong></p>
     ";
 
@@ -1103,7 +1103,7 @@ function send_booking_cancellation_admin_notification(array $recipients, array $
         <p><strong>" . htmlspecialchars($member_name) . "</strong> has cancelled the following booking.
            This slot is now free again.</p>
         " . _booking_info_box($booking) . "
-        <a href='https://ims.hivecolab.com/manage-bookings' class='btn'>View Bookings Calendar</a>
+        <a href='https://ims.kemmytech.com/manage-bookings' class='btn'>View Bookings Calendar</a>
     ";
 
     $altBody = "Booking Cancelled\n"
@@ -1138,7 +1138,7 @@ function send_booking_reschedule_email(string $email, array $booking): void
             <div><strong>New Time:</strong> {$newTime}</div>
         </div>
         <p>You'll be notified again once Operations confirms the new slot.</p>
-        <a href='https://ims.hivecolab.com/my-bookings' class='btn'>View My Bookings</a>
+        <a href='https://ims.kemmytech.com/my-bookings' class='btn'>View My Bookings</a>
         <p>Best regards,<br><strong>Hive Colab Team</strong></p>
     ";
 
@@ -1166,7 +1166,7 @@ function send_booking_reschedule_admin_notification(array $recipients, array $bo
         <p><strong>" . htmlspecialchars($member_name) . "</strong> moved their booking for
            <strong>" . htmlspecialchars((string)($booking['space_name'] ?? '')) . "</strong>
            from {$oldDate} to {$newDate}. It is now Pending and needs confirmation.</p>
-        <a href='https://ims.hivecolab.com/manage-bookings' class='btn'>Review Booking</a>
+        <a href='https://ims.kemmytech.com/manage-bookings' class='btn'>Review Booking</a>
     ";
 
     $altBody = "Booking Rescheduled\n"
@@ -1202,7 +1202,7 @@ function send_booking_reminder_email(string $email, array $booking, string $audi
         <p>{$intro}</p>
         " . _booking_info_box($booking) . "
         <p>If anything has changed, please update or cancel the booking as soon as possible.</p>
-        <a href='https://ims.hivecolab.com/my-bookings' class='btn'>View Booking Details</a>
+        <a href='https://ims.kemmytech.com/my-bookings' class='btn'>View Booking Details</a>
         <p>Best regards,<br><strong>Hive Colab Team</strong></p>
     ";
 
@@ -1249,7 +1249,7 @@ if (!function_exists('send_booking_approved_email')) {
                     . "</div>
             </div>
             <p>Please arrive on time and contact the Operations team if your plans change.</p>
-            <a href='https://ims.hivecolab.com/hub-events?tab=my-bookings'
+            <a href='https://ims.kemmytech.com/hub-events?tab=my-bookings'
                class='btn'>View My Bookings</a>
             <p>Best regards,<br><strong>Hive Colab Team</strong></p>
         ";
@@ -1294,7 +1294,7 @@ if (!function_exists('send_booking_rejected_email')) {
                 " . nl2br(htmlspecialchars($reason)) . "
             </div>
             <p>You may return to the booking page and choose another free date or time.</p>
-            <a href='https://ims.hivecolab.com/hub-events'
+            <a href='https://ims.kemmytech.com/hub-events'
                class='btn'>Choose Another Slot</a>
             <p>Best regards,<br><strong>Hive Colab Team</strong></p>
         ";
@@ -1303,7 +1303,7 @@ if (!function_exists('send_booking_rejected_email')) {
             . "Space: " . ($booking['space_name'] ?? '-') . "\n"
             . "Date: " . ($booking['booking_date'] ?? '-') . "\n"
             . "Reason: " . $reason . "\n"
-            . "Choose another slot: https://ims.hivecolab.com/hub-events.php";
+            . "Choose another slot: https://ims.kemmytech.com/hub-events.php";
 
         sendEmail(
             $email,
