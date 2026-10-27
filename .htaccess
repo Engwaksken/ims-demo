@@ -12,8 +12,8 @@ RewriteBase /
 # ============================================================
 
 RewriteCond %{HTTPS} !=on [OR]
-RewriteCond %{HTTP_HOST} !^ims\.hivecolab\.com$ [NC]
-RewriteRule ^ https://ims.hivecolab.com%{REQUEST_URI} [R=301,L,NE]
+RewriteCond %{HTTP_HOST} !^ims\.kemmytech\.com$ [NC]
+RewriteRule ^ https://ims.kemmytech.com%{REQUEST_URI} [R=301,L,NE]
 
 
 # ============================================================
