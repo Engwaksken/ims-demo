@@ -213,6 +213,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
     .settings-appearance { margin: 8px 0 20px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); }
     .settings-appearance legend { padding: 0 6px; font-weight: 600; color: var(--ink-700); }
     .settings-color-input { height: 42px; padding: 4px; max-width: 120px; cursor: pointer; }
+    .settings-subLabel { display: block; margin-top: 10px; font-size: var(--fs-xs); font-weight: 600; }
     .settings-checkbox { display: inline-flex; align-items: center; gap: 8px; font-weight: 400; }
     .settings-hint { display: block; margin-top: 4px; color: var(--ink-300); font-size: var(--fs-xs); }
     .form-group > label.settings-toggle-label { display: flex; align-items: center; gap: 10px; }
@@ -412,6 +413,13 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                         <option value="<?= htmlspecialchars($fontKey, ENT_QUOTES, 'UTF-8') ?>" <?= $settingsTheme['theme_font_family'] === $fontKey ? 'selected' : '' ?>><?= htmlspecialchars($fontLabel, ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <div id="themeFontCustomGroup" <?= $settingsTheme['theme_font_family'] === 'custom' ? '' : 'hidden' ?>>
+                        <label for="theme_font_custom" class="settings-subLabel">Custom font name(s)</label>
+                        <input type="text" id="theme_font_custom" name="theme_font_custom" class="form-control" maxlength="200"
+                               placeholder="e.g. Open Sans, Arial"
+                               value="<?= htmlspecialchars($settingsTheme['theme_font_custom'], ENT_QUOTES, 'UTF-8') ?>">
+                        <small class="settings-hint">Up to 4 names, separated by commas; letters, numbers, spaces and hyphens only. The font is not downloaded, so it must be installed on users' devices; otherwise the next name in the list (or a standard sans-serif) is used.</small>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="theme_font_scale">Text Size</label>
@@ -423,6 +431,17 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     <small class="settings-hint">Scales the whole interface for every user. Individuals can still adjust it with the accessibility button.</small>
                 </div>
             </div>
+            <script>
+            (function () {
+                var select = document.getElementById('theme_font_family');
+                var group = document.getElementById('themeFontCustomGroup');
+                if (!select || !group) return;
+                select.addEventListener('change', function () {
+                    group.hidden = select.value !== 'custom';
+                    if (!group.hidden) document.getElementById('theme_font_custom').focus();
+                });
+            })();
+            </script>
             <label class="settings-checkbox">
                 <input type="checkbox" name="theme_reset" value="1"> Reset appearance to the default theme (ignores the colour, font and size choices above)
             </label>

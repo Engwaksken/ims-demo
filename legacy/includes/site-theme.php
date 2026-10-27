@@ -14,10 +14,14 @@ const IMS_THEME_DEFAULTS = [
     'theme_primary_color' => '#ea580c',
     'theme_sidebar_color' => '#1e2530', // --dark-color, the flat sidebar background in style.css
     'theme_font_family' => 'default',
+    'theme_font_custom' => '',
     'theme_font_scale' => '100',
 ];
 
-/** Font choices: key => [label, CSS font stack]. Only locally available fonts (no new external requests). */
+/**
+ * Font choices: key => [label, CSS font stack]. Only locally available fonts
+ * (no new external requests). 'custom' takes its stack from theme_font_custom.
+ */
 function ims_theme_font_families(): array
 {
     return [
@@ -28,7 +32,41 @@ function ims_theme_font_families(): array
         'tahoma' => ['Tahoma', 'Tahoma, Verdana, sans-serif'],
         'trebuchet' => ['Trebuchet MS', '"Trebuchet MS", Helvetica, sans-serif'],
         'georgia' => ['Georgia (serif)', 'Georgia, "Times New Roman", serif'],
+        'custom' => ['Other (specify)', null],
     ];
+}
+
+const IMS_THEME_GENERIC_FONTS = ['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui'];
+
+/**
+ * Canonicalise an admin-typed font list ("Open Sans, Arial") to "Open Sans, Arial",
+ * or null when invalid. Names are restricted to letters, digits, spaces and
+ * hyphens so the value can never break out of the CSS declaration.
+ */
+function ims_theme_custom_font(string $value): ?string
+{
+    $names = [];
+    foreach (explode(',', $value) as $name) {
+        $name = preg_replace('/\s+/', ' ', trim(trim($name), "\"' "));
+        if ($name === '') continue;
+        if (!preg_match('/\A[A-Za-z0-9][A-Za-z0-9 \-]{0,49}\z/', $name)) return null;
+        $names[] = $name;
+    }
+    return $names === [] || count($names) > 4 ? null : implode(', ', $names);
+}
+
+/** CSS font stack for a canonical custom font list, with a sans-serif fallback. */
+function ims_theme_custom_font_stack(string $fonts): string
+{
+    $stack = [];
+    $hasGeneric = false;
+    foreach (explode(', ', $fonts) as $name) {
+        $generic = in_array(strtolower($name), IMS_THEME_GENERIC_FONTS, true);
+        $hasGeneric = $hasGeneric || $generic;
+        $stack[] = $generic ? strtolower($name) : '"' . $name . '"';
+    }
+    if (!$hasGeneric) $stack[] = 'sans-serif';
+    return implode(', ', $stack);
 }
 
 /** Interface text size choices: percent => label. */
@@ -96,6 +134,13 @@ function ims_theme_validate(array $input): array
     }
     $theme['theme_font_family'] = $font;
 
+    $customInput = trim((string)($input['theme_font_custom'] ?? ''));
+    $custom = $customInput === '' ? '' : ims_theme_custom_font($customInput);
+    if ($custom === null || ($font === 'custom' && $custom === '')) {
+        throw new InvalidArgumentException('Custom font must be up to 4 font names separated by commas, using only letters, numbers, spaces and hyphens (e.g. "Open Sans, Arial").');
+    }
+    $theme['theme_font_custom'] = $custom;
+
     $scale = (string)($input['theme_font_scale'] ?? '100');
     if (!array_key_exists($scale, ims_theme_font_scales())) {
         throw new InvalidArgumentException('Choose a text size from the list.');
@@ -113,8 +158,11 @@ function ims_theme_resolve(array $stored): array
         $hex = ims_theme_hex((string)($stored[$key] ?? ''));
         if ($hex !== null) $theme[$key] = $hex;
     }
-    if (array_key_exists((string)($stored['theme_font_family'] ?? ''), ims_theme_font_families())) {
-        $theme['theme_font_family'] = (string)$stored['theme_font_family'];
+    $custom = ims_theme_custom_font((string)($stored['theme_font_custom'] ?? ''));
+    if ($custom !== null) $theme['theme_font_custom'] = $custom;
+    $font = (string)($stored['theme_font_family'] ?? '');
+    if (array_key_exists($font, ims_theme_font_families()) && ($font !== 'custom' || $custom !== null)) {
+        $theme['theme_font_family'] = $font;
     }
     if (array_key_exists((string)($stored['theme_font_scale'] ?? ''), ims_theme_font_scales())) {
         $theme['theme_font_scale'] = (string)$stored['theme_font_scale'];
@@ -142,7 +190,9 @@ function ims_theme_style_tag(array $theme): string
         $css[] = '#appSidebar.sidebar{background:' . $s . ';}';
     }
     if ($theme['theme_font_family'] !== 'default') {
-        $stack = ims_theme_font_families()[$theme['theme_font_family']][1];
+        $stack = $theme['theme_font_family'] === 'custom'
+            ? ims_theme_custom_font_stack($theme['theme_font_custom'])
+            : ims_theme_font_families()[$theme['theme_font_family']][1];
         $css[] = 'html:root{--font-body:' . $stack . ';}body,button,input,select,textarea{font-family:' . $stack . ';}';
     }
     if ($theme['theme_font_scale'] !== '100') {
