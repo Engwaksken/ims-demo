@@ -396,9 +396,9 @@ try {
             if ($key === 'site_name' && $value !== '') {
                 $siteBranding['name'] = $value;
             } elseif ($key === 'site_logo_path' && preg_match('#^uploads/site-branding/[a-f0-9]{32}\.(?:png|jpe?g|webp)$#i', $value)) {
-                $siteBranding['logo'] = '/' . $value;
+                $siteBranding['logo'] = '/public/' . $value;
             } elseif ($key === 'site_favicon_path' && preg_match('#^uploads/site-branding/[a-f0-9]{32}\.(?:png|ico)$#i', $value)) {
-                $siteBranding['favicon'] = '/' . $value;
+                $siteBranding['favicon'] = '/public/' . $value;
             }
         }
         $brandingResult->free();

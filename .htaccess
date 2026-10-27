@@ -142,6 +142,7 @@ RewriteRule ^fonts/(.+)$ legacy/assets/fonts/$1 [END,NC]
 # Uploaded files are never served directly: /uploads/..., /legacy/uploads/...
 # and /public/uploads/... all go through the authenticated endpoint
 # legacy/download-file.php (login + per-file authorization).
+RewriteRule ^public/uploads/site-branding/[a-f0-9]{32}\.(?:png|jpe?g|webp|ico)$ - [END,NC]
 RewriteRule ^(?:legacy/|public/)?uploads/(.+)$ legacy/download-file.php?path=$1 [END,B,NC]
 
 

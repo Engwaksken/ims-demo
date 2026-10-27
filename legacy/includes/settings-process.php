@@ -172,14 +172,17 @@ function settings_store_brand_image(string $field, string $kind): ?string
     }
 
     $directory = dirname(__DIR__, 2) . '/public/uploads/site-branding';
-    if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
+    if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
         throw new RuntimeException('Could not create the site branding upload directory.');
     }
 
+    @chmod($directory, 0755);
     $name = bin2hex(random_bytes(16)) . '.' . $allowed[$mime];
-    if (!move_uploaded_file((string)$file['tmp_name'], $directory . '/' . $name)) {
+    $storedFile = $directory . '/' . $name;
+    if (!move_uploaded_file((string)$file['tmp_name'], $storedFile)) {
         throw new RuntimeException('Could not store the uploaded ' . $kind . '.');
     }
+    @chmod($storedFile, 0644);
 
     return 'uploads/site-branding/' . $name;
 }
