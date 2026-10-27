@@ -210,6 +210,10 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
 
     .settings-ok { color: var(--green-fg); }
     .settings-bad { color: var(--red-fg); }
+    .settings-appearance { margin: 8px 0 20px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md); }
+    .settings-appearance legend { padding: 0 6px; font-weight: 600; color: var(--ink-700); }
+    .settings-color-input { height: 42px; padding: 4px; max-width: 120px; cursor: pointer; }
+    .settings-checkbox { display: inline-flex; align-items: center; gap: 8px; font-weight: 400; }
     .settings-hint { display: block; margin-top: 4px; color: var(--ink-300); font-size: var(--fs-xs); }
     .form-group > label.settings-toggle-label { display: flex; align-items: center; gap: 10px; }
     .settings-alert-tight { margin-bottom: 12px; }
@@ -382,6 +386,47 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 <small class="settings-hint">PNG or ICO; maximum 512 KB. Appears in the browser tab.</small>
             </div>
         </div>
+
+        <?php $settingsTheme = ims_theme_resolve((array)($settingsBranding['theme'] ?? [])); ?>
+        <fieldset class="settings-appearance">
+            <legend>Appearance</legend>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="theme_primary_color">Primary Colour</label>
+                    <input type="color" id="theme_primary_color" name="theme_primary_color" class="form-control settings-color-input"
+                           value="<?= htmlspecialchars($settingsTheme['theme_primary_color'], ENT_QUOTES, 'UTF-8') ?>">
+                    <small class="settings-hint">Buttons, links, active tabs and highlights. Very light colours are rejected so white text stays visible. A few pages still use fixed colours.</small>
+                </div>
+                <div class="form-group">
+                    <label for="theme_sidebar_color">Sidebar Colour</label>
+                    <input type="color" id="theme_sidebar_color" name="theme_sidebar_color" class="form-control settings-color-input"
+                           value="<?= htmlspecialchars($settingsTheme['theme_sidebar_color'], ENT_QUOTES, 'UTF-8') ?>">
+                    <small class="settings-hint">Background of the main navigation. Very light colours are rejected so white text stays visible.</small>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="theme_font_family">Font Family</label>
+                    <select id="theme_font_family" name="theme_font_family" class="form-control">
+                        <?php foreach (ims_theme_font_families() as $fontKey => [$fontLabel]): ?>
+                        <option value="<?= htmlspecialchars($fontKey, ENT_QUOTES, 'UTF-8') ?>" <?= $settingsTheme['theme_font_family'] === $fontKey ? 'selected' : '' ?>><?= htmlspecialchars($fontLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="theme_font_scale">Text Size</label>
+                    <select id="theme_font_scale" name="theme_font_scale" class="form-control">
+                        <?php foreach (ims_theme_font_scales() as $scaleKey => $scaleLabel): ?>
+                        <option value="<?= htmlspecialchars((string)$scaleKey, ENT_QUOTES, 'UTF-8') ?>" <?= $settingsTheme['theme_font_scale'] === (string)$scaleKey ? 'selected' : '' ?>><?= htmlspecialchars($scaleLabel, ENT_QUOTES, 'UTF-8') ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small class="settings-hint">Scales the whole interface for every user. Individuals can still adjust it with the accessibility button.</small>
+                </div>
+            </div>
+            <label class="settings-checkbox">
+                <input type="checkbox" name="theme_reset" value="1"> Reset appearance to the default theme (ignores the colour, font and size choices above)
+            </label>
+        </fieldset>
         
         <div class="form-row">
             <div class="form-group">

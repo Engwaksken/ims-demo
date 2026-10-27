@@ -388,7 +388,9 @@ try {
         'logo' => '/images/logo.png',
         'favicon' => '/images/favicon.png',
     ];
-    $brandingResult = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name','site_logo_path','site_favicon_path')");
+    require_once __DIR__ . '/site-theme.php';
+    $siteThemeStored = [];
+    $brandingResult = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name','site_logo_path','site_favicon_path','theme_primary_color','theme_sidebar_color','theme_font_family','theme_font_scale')");
     if ($brandingResult) {
         while ($brandingRow = $brandingResult->fetch_assoc()) {
             $key = (string)$brandingRow['setting_key'];
@@ -399,10 +401,13 @@ try {
                 $siteBranding['logo'] = '/site-branding-image?file=' . rawurlencode(basename($value));
             } elseif ($key === 'site_favicon_path' && preg_match('#^uploads/site-branding/[a-f0-9]{32}\.(?:png|ico)$#i', $value)) {
                 $siteBranding['favicon'] = '/site-branding-image?file=' . rawurlencode(basename($value));
+            } elseif (str_starts_with($key, 'theme_')) {
+                $siteThemeStored[$key] = $value;
             }
         }
         $brandingResult->free();
     }
+    $siteBranding['theme'] = ims_theme_resolve($siteThemeStored);
     $GLOBALS['IMS_SITE_BRANDING'] = $siteBranding;
 } catch (Throwable $exception) {
     error_log(

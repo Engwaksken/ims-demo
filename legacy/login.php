@@ -25,6 +25,7 @@ $faviconType = strtolower(pathinfo($faviconFile, PATHINFO_EXTENSION)) === 'ico' 
     <title>Login - <?= htmlspecialchars($globalSiteName, ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="icon" href="<?= htmlspecialchars((string)$siteBranding['favicon'], ENT_QUOTES, 'UTF-8') ?>" type="<?= $faviconType ?>">
     <link rel="stylesheet" href="css/style.css">
+    <?php echo ims_theme_style_tag((array)($siteBranding['theme'] ?? [])); ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="js/accessibility.js"></script>
 </head>

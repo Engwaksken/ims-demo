@@ -417,6 +417,7 @@ final class ModuleRegistry
         'services/RiskRatingReportService.php' => 'services/RiskRatingReportService.php',
         'settings' => 'settings.php',
         'settings.php' => 'settings.php',
+        'site-branding-image' => 'site-branding-image.php',
         'startup-field-visits' => 'startup-field-visits.php',
         'startup-field-visits.php' => 'startup-field-visits.php',
         'startup-milestones' => 'startup-milestones.php',

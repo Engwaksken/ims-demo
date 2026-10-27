@@ -63,6 +63,7 @@ $hdr_bell_label = $hdr_unread > 0
          Per-page stylesheets are linked by each page after this header. -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/reports.css">
+    <?php echo ims_theme_style_tag((array)($hdr_branding['theme'] ?? [])); ?>
     <!-- Accessibility widget (bottom-right): applies saved settings before paint, loads its own CSS. -->
     <script src="../js/accessibility.js"></script>
     <!-- Font Awesome: the one copy for the whole app (pages must not load their own). -->
