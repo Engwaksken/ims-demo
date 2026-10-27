@@ -140,28 +140,21 @@ if ($export === 'assets_template' && $isAssetManager) {
 }
 
 if ($export === 'assets_csv' || $export === 'assets_pdf') {
-   $headers = [
-    'Code',
-    'Asset',
-    'Category',
-    'Serial',
-    'Condition',
-    'Status',
-    'Purchase Cost',
-    'Dep. %',
-    'Disposed Cost'
-];
-   $rows = array_map(fn($a) => [
-    $a['asset_code'] ?? '',
-    $a['asset_name'] ?? '',
-    $a['category_name'] ?? $a['category'] ?? '',
-    $a['serial_number'] ?? '',
-    $a['condition_status'] ?? '',
-    $a['availability_status'] ?? '',
-    number_format((float)($a['purchase_cost'] ?? 0)),
-    number_format((float)($a['depreciation_rate'] ?? 0), 2) . '%',
-    number_format((float)($a['current_value'] ?? 0)),
-], $assets);
+   $headers = ['Class', 'Description', 'Asset Number', 'Date of Acquisition', 'Cost', 'Opening NBV', 'Additions', 'Revaluations', 'Disposal', 'Impairment loss', 'Depreciation', 'Closing NBV'];
+   $rows = array_map(static function ($a) {
+       $cost = (float)($a['purchase_cost'] ?? 0);
+       $closing = (float)($a['current_value'] ?? 0);
+       if ($closing <= 0 && $cost > 0 && (float)($a['depreciation_rate'] ?? 0) <= 0) $closing = $cost;
+       $depreciation = max(0, $cost - $closing);
+       $disposal = ($a['offload_status'] ?? '') === 'Offloaded' ? $closing : 0;
+       $closingNbv = ($a['offload_status'] ?? '') === 'Offloaded' ? 0 : $closing;
+       return [
+           $a['category_name'] ?? $a['category'] ?? '', $a['description'] ?? $a['asset_name'] ?? '',
+           $a['asset_code'] ?? '', $a['purchase_date'] ?? '', number_format($cost, 2),
+           number_format($cost, 2), '0.00', '0.00',
+           number_format($disposal, 2), '0.00', number_format($depreciation, 2), number_format($closingNbv, 2),
+       ];
+   }, $assets);
     $export === 'assets_csv'
         ? exportCsv('assets_inventory.csv', $headers, $rows)
         : exportPdf('assets_inventory.pdf', 'Assets Inventory', $headers, $rows);
@@ -356,9 +349,17 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
 
     <!-- -------------- TAB: ASSETS INVENTORY -------------- -->
     <?php if ($isAssetManager): ?>
+    <style>
+        .assets-register-wrap{overflow-x:auto}
+        .assets-register-table{min-width:1450px;table-layout:auto}
+        .assets-register-table th{white-space:nowrap}
+        .assets-register-table td{vertical-align:top;white-space:nowrap}
+        .assets-register-table td:nth-child(2){white-space:normal;min-width:180px;max-width:280px}
+        .assets-register-table td:last-child{white-space:normal;min-width:145px}
+    </style>
     <div class="tab-panel <?= $activeTab === 'assets' ? 'active' : '' ?>" id="tab-assets">
         <div class="panel">
-            <div class="panel-body table-wrap">
+            <div class="panel-body table-wrap assets-register-wrap">
                 <form method="GET">
                     <input type="hidden" name="tab" value="assets">
                     <div class="tab-toolbar filters-bar">
@@ -378,56 +379,41 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
                     </div>
                 </form>
 
-                <table class="table">
+                <p class="note" style="margin:10px 0;font-size:12px">Asset movement fields not stored in the current inventory database (additions, revaluations and impairment) display as zero; depreciation and NBV are estimated from recorded cost and current value.</p>
+                 <table class="table assets-register-table">
                     <thead>
                        <tr>
-    <th>Asset</th>
-    <th>Category</th>
-    <th>Serial</th>
-    <th>Condition</th>
-    <th>Status</th>
-    <th>Cost</th>
-    <th>Dep. %</th>
-    <th>Disposed</th>
-    <th>Actions</th>
+    <th>Class</th><th>Description</th><th>Asset Number</th><th>Date of Acquisition</th>
+    <th>Cost</th><th>Opening NBV</th><th>Additions</th><th>Revaluations</th><th>Disposal</th>
+    <th>Impairment loss</th><th>Depreciation</th><th>Closing NBV</th><th>Actions</th>
 </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($data['assets'])): ?>
-                            <tr><td colspan="9">No assets found.</td></tr>
+                            <tr><td colspan="13">No assets found.</td></tr>
                         <?php endif; ?>
                         <?php foreach ($data['assets'] as $asset): ?>
-                            <?php
-                            $statusClass = match ($asset['availability_status']) {
-                                'Available'    => 'badge-available',
-                                'Assigned'     => 'badge-assigned',
-                                'Under Repair' => 'badge-repair',
-                                default        => 'badge-disposed',
-                            };
-                            ?>
                             <tr>
-                                <td>
-                                    <strong><?= e($asset['asset_name']) ?></strong><br>
-                                    <span class="note"><?= e($asset['asset_code']) ?></span>
-                                </td>
+                                <?php
+                                $cost = (float)($asset['purchase_cost'] ?? 0);
+                                $closingNbv = (float)($asset['current_value'] ?? 0);
+                                if ($closingNbv <= 0 && $cost > 0 && (float)($asset['depreciation_rate'] ?? 0) <= 0) $closingNbv = $cost;
+                                $depreciation = max(0, $cost - $closingNbv);
+                                $disposalNbv = ($asset['offload_status'] ?? '') === 'Offloaded' ? $closingNbv : 0;
+                                if (($asset['offload_status'] ?? '') === 'Offloaded') $closingNbv = 0;
+                                ?>
                                 <td><?= e($asset['category_name'] ?? $asset['category'] ?? '-') ?></td>
-                                <td><?= e($asset['serial_number'] ?: '-') ?></td>
-                                <td><?= e($asset['condition_status']) ?></td>
-                                <td>
-    <span class="badge <?= $statusClass ?>">
-        <?= e($asset['availability_status']) ?>
-    </span>
-</td>
-
-<td>UGX <?= number_format((float)($asset['purchase_cost'] ?? 0)) ?></td>
-
-<td>
-    <?= number_format((float)($asset['depreciation_rate'] ?? 0), 2) ?>%
-</td>
-
-<td>
-    UGX <?= number_format((float)($asset['current_value'] ?? 0)) ?>
-</td>
+                                <td><?= e($asset['description'] ?? $asset['asset_name'] ?? '-') ?></td>
+                                <td><?= e($asset['asset_code'] ?? '-') ?></td>
+                                <td><?= !empty($asset['purchase_date']) ? e(date('d M Y', strtotime($asset['purchase_date']))) : '-' ?></td>
+                                <td>UGX <?= number_format($cost, 2) ?></td>
+                                <td>UGX <?= number_format($cost, 2) ?></td>
+                                <td>UGX 0.00</td>
+                                <td>UGX 0.00</td>
+                                <td>UGX <?= number_format($disposalNbv, 2) ?></td>
+                                <td>UGX 0.00</td>
+                                <td>UGX <?= number_format($depreciation, 2) ?></td>
+                                <td>UGX <?= number_format($closingNbv, 2) ?></td>
                                 <td>
     <div class="actions">
         <button type="button" class="btn btn-sm btn-gray"

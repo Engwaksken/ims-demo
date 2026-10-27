@@ -138,6 +138,9 @@ $doc_icons = [
     'ppt'  => ['class' => 'ppt',   'icon' => 'fa-file-powerpoint'],
     'pptx' => ['class' => 'ppt',   'icon' => 'fa-file-powerpoint'],
 ];
+$detailsTab = (string)($_GET['tab'] ?? 'overview');
+$allowedDetailsTabs = ['overview', 'snapshot', 'details', 'indicators', 'delivery', 'records'];
+if (!in_array($detailsTab, $allowedDetailsTabs, true)) $detailsTab = 'overview';
 ?>
 
 <link rel="stylesheet" href="css/assets.css">
@@ -165,7 +168,14 @@ $doc_icons = [
         </div>
     </div>
 
+    <nav class="pd-tabs" role="tablist" aria-label="Program detail sections">
+        <?php foreach (['overview' => 'Overview', 'snapshot' => 'Snapshot', 'details' => 'Details', 'indicators' => 'Indicators', 'delivery' => 'Delivery', 'records' => 'Records'] as $tabKey => $tabLabel): ?>
+            <a role="tab" aria-controls="program-panel-<?= h($tabKey) ?>" aria-selected="<?= $detailsTab === $tabKey ? 'true' : 'false' ?>" class="pd-tab <?= $detailsTab === $tabKey ? 'active' : '' ?>" href="program-details?id=<?= $program_id ?>&amp;tab=<?= h($tabKey) ?>"><?= h($tabLabel) ?></a>
+        <?php endforeach; ?>
+    </nav>
+
     <!-- -- Overview ------------------------------------------------------ -->
+    <section class="pd-panel" id="program-panel-overview" role="tabpanel" aria-label="Overview" <?= $detailsTab !== 'overview' ? 'hidden' : '' ?>>
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-circle-info" aria-hidden="true"></i> Overview</h3>
@@ -218,8 +228,10 @@ $doc_icons = [
             </div>
         </div>
     </div>
+    </section>
 
     <!-- -- Performance Stats ------------------------------------------- -->
+    <section class="pd-panel" id="program-panel-snapshot" role="tabpanel" aria-label="Snapshot" <?= $detailsTab !== 'snapshot' ? 'hidden' : '' ?>>
     <div class="stats-grid reports-stats">
         <div class="stat-card">
             <div class="stat-icon bg-blue"><i class="fas fa-users"></i></div>
@@ -256,8 +268,10 @@ $doc_icons = [
             </div>
         </div>
     </div>
+    </section>
 
     <!-- -- Description & Objectives ----------------------------------- -->
+    <section class="pd-panel" id="program-panel-details" role="tabpanel" aria-label="Details" <?= $detailsTab !== 'details' ? 'hidden' : '' ?>>
     <div class="detail-grid-2">
 
         <div class="card">
@@ -368,8 +382,10 @@ $doc_icons = [
         </div>
 
     </div>
+    </section>
 
     <!-- -- Indicators -------------------------------------------------- -->
+    <section class="pd-panel" id="program-panel-indicators" role="tabpanel" aria-label="Indicators" <?= $detailsTab !== 'indicators' ? 'hidden' : '' ?>>
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Program Indicators</h3>
@@ -434,8 +450,10 @@ $doc_icons = [
             <?php endif; ?>
         </div>
     </div>
+    </section>
 
     <!-- -- Milestones & Beneficiaries ---------------------------------- -->
+    <section class="pd-panel" id="program-panel-delivery" role="tabpanel" aria-label="Delivery" <?= $detailsTab !== 'delivery' ? 'hidden' : '' ?>>
     <div class="detail-grid-2">
 
         <div class="card">
@@ -514,8 +532,10 @@ $doc_icons = [
         </div>
 
     </div>
+    </section>
 
     <!-- -- Documents --------------------------------------------------- -->
+    <section class="pd-panel" id="program-panel-records" role="tabpanel" aria-label="Records" <?= $detailsTab !== 'records' ? 'hidden' : '' ?>>
     <div class="card">
         <div class="card-header">
             <h3><i class="fas fa-folder-open" aria-hidden="true"></i> Program Documents</h3>
@@ -585,7 +605,17 @@ $doc_icons = [
             </div>
         </div>
     <?php endif; ?>
+    </section>
 
 </div><!-- /.page-stack -->
+
+<style>
+.pd-tabs{display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--border,#e5e7eb);margin:0 0 16px;padding:0 2px}
+.pd-tab{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;color:var(--ink-500,#64748b);text-decoration:none;font-weight:700;white-space:nowrap;border-bottom:3px solid transparent;border-radius:8px 8px 0 0}
+.pd-tab:hover{background:var(--surface-hover,#f5f7fa);color:var(--ink-700,#1f2937)}
+.pd-tab.active{color:var(--brand-600,#ea580c);border-bottom-color:var(--brand-600,#ea580c)}
+.pd-panel[hidden]{display:none!important}
+@media print{.pd-tabs{display:none}.pd-panel[hidden]{display:block!important}}
+</style>
 
 <?php include 'includes/footer.php'; ?>

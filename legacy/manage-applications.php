@@ -396,6 +396,11 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
             <button type="submit" class="btn btn-primary btn-sm" onclick="return confirmBulkAction()">
                 <i class="fas fa-check"></i> Apply
             </button>
+            <?php if (($_SESSION['role'] ?? '') === 'Administrator'): ?>
+                <button type="submit" name="action" value="bulk_delete_applications" formnovalidate class="btn btn-danger btn-sm" onclick="return confirmBulkDelete()">
+                    <i class="fas fa-trash" aria-hidden="true"></i> Delete selected
+                </button>
+            <?php endif; ?>
         </div>
 
         <!-- Table -->
@@ -578,6 +583,12 @@ function confirmBulkAction() {
     if (checked === 0) { alert('Please select at least one application.'); return false; }
     if (!status)       { alert('Please choose a target status.');           return false; }
     return confirm(`Change status of ${checked} application(s) to "${status}"?`);
+}
+
+function confirmBulkDelete() {
+    const checked = document.querySelectorAll('.app-checkbox:checked').length;
+    if (checked === 0) { alert('Please select at least one application.'); return false; }
+    return confirm(`Permanently delete selected Draft or Submitted application(s) for this opportunity? Other statuses will be kept.`);
 }
 
 function sortBy(column) {

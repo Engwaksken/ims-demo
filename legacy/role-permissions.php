@@ -248,20 +248,23 @@ include 'includes/header.php';
             </div>
 
             <?php foreach ($groups as $groupName => $items): if (!$items) continue; ?>
-                <section class="rp-group" aria-labelledby="rp-<?= e(md5($groupName)) ?>">
-                    <h3 id="rp-<?= e(md5($groupName)) ?>"><?= e($groupName) ?> <span class="note">(<?= count($items) ?>)</span></h3>
+                <details class="rp-group" open>
+                    <summary id="rp-<?= e(md5($groupName)) ?>"><?= e($groupName) ?> <span class="note">(<?= count($items) ?>)</span><i class="fas fa-chevron-down" aria-hidden="true"></i></summary>
                     <div class="rp-list">
                         <?php foreach ($items as $item): ?>
-                            <label class="rp-item" data-search="<?= e(strtolower($item['label'] . ' ' . $item['file'] . ' ' . implode(' ', $item['defaults']))) ?>">
-                                <input type="checkbox" name="perm[]" value="<?= e($item['key']) ?>"
-                                       <?= $item['granted'] || $item['protected'] ? 'checked' : '' ?>
-                                       <?= $item['protected'] ? 'disabled' : '' ?>
-                                       onchange="rpUpdate()">
+                            <details class="rp-item" data-search="<?= e(strtolower($item['label'] . ' ' . $item['file'] . ' ' . implode(' ', $item['defaults']))) ?>">
+                                <summary>
+                                    <input type="checkbox" name="perm[]" value="<?= e($item['key']) ?>"
+                                           <?= $item['granted'] || $item['protected'] ? 'checked' : '' ?>
+                                           <?= $item['protected'] ? 'disabled' : '' ?>
+                                           onclick="event.stopPropagation()" onchange="rpUpdate()">
+                                    <strong><?= e($item['label']) ?></strong>
+                                    <i class="fas fa-chevron-down rp-card-chevron" aria-hidden="true"></i>
+                                </summary>
                                 <?php if ($item['protected']): ?>
                                     <input type="hidden" name="perm[]" value="<?= e($item['key']) ?>">
                                 <?php endif; ?>
                                 <span class="rp-text">
-                                    <strong><?= e($item['label']) ?></strong>
                                     <small><?= e($item['file']) ?><?= empty($item['is_action']) ? '.php' : '' ?></small>
                                     <small class="rp-defaults">
                                         Default: <?= e(implode(', ', $item['defaults'])) ?>
@@ -270,10 +273,10 @@ include 'includes/header.php';
                                         <small class="rp-lock"><i class="fas fa-lock" aria-hidden="true"></i> Always allowed for Administrator</small>
                                     <?php endif; ?>
                                 </span>
-                            </label>
+                            </details>
                         <?php endforeach; ?>
                     </div>
-                </section>
+                </details>
             <?php endforeach; ?>
             <p class="note rp-nomatch" id="rpNoMatch" hidden>No pages match your search.</p>
 
@@ -301,10 +304,18 @@ include 'includes/header.php';
 .rp-filters{display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px;align-items:center}
 .rp-filters input{flex:1;min-width:200px}
 .rp-filters select{width:auto}
-.rp-group{padding:0 16px 8px}
-.rp-group h3{margin:12px 0 8px;font-size:14px}
+.rp-group{margin:0 16px 10px;padding:0 12px 12px;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm);background:var(--surface-card)}
+.rp-group summary{display:flex;align-items:center;gap:8px;padding:12px 0;font-size:14px;font-weight:700;cursor:pointer;list-style:none}
+.rp-group summary::-webkit-details-marker{display:none}
+.rp-group summary i{margin-left:auto;font-size:12px;transition:transform .15s}
+.rp-group:not([open]) summary i{transform:rotate(-90deg)}
 .rp-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
-.rp-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm);background:var(--surface-card);cursor:pointer;margin:0}
+.rp-item{padding:0 12px 10px;border:1px solid var(--border,#e5e7eb);border-radius:var(--radius-sm);background:var(--surface-card);margin:0;min-width:0}
+.rp-item summary{display:flex;gap:10px;align-items:center;min-height:42px;cursor:pointer;list-style:none}
+.rp-item summary::-webkit-details-marker{display:none}
+.rp-item summary strong{font-size:13px;color:var(--ink-700,#1e2530);overflow-wrap:anywhere}
+.rp-card-chevron{margin-left:auto;flex:none;font-size:11px;transition:transform .15s}
+.rp-item:not([open]) .rp-card-chevron{transform:rotate(-90deg)}
 .rp-item:hover{border-color:var(--brand-400,#fb923c)}
 .rp-item:has(input:checked){border-color:var(--brand-400,#fb923c);background:var(--brand-50,#fff4ed)}
 .rp-item[hidden]{display:none}
@@ -347,7 +358,9 @@ function rpFilter() {
         if (!item.hidden) shown++;
     });
     document.querySelectorAll('#rpForm .rp-group').forEach(group => {
-        group.hidden = !group.querySelector('.rp-item:not([hidden])');
+        const hasMatches = !!group.querySelector('.rp-item:not([hidden])');
+        group.hidden = !hasMatches;
+        if (term && hasMatches) group.open = true;
     });
     document.getElementById('rpNoMatch').hidden = shown > 0;
 }
