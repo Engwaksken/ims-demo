@@ -13,8 +13,8 @@ function ims_brand_pdf(object $pdf): void
     $branding = $GLOBALS['IMS_SITE_BRANDING'] ?? [];
     $logo = $publicRoot . '/images/logo-pdf.jpg';
     $siteLogo = (string)($branding['logo'] ?? '');
-    if (preg_match('#^/uploads/site-branding/[a-f0-9]{32}\.(png|jpe?g|webp)$#i', $siteLogo, $matches)) {
-        $customLogo = $publicRoot . substr($siteLogo, 1);
+    if (preg_match('#^/public/uploads/site-branding/[a-f0-9]{32}\.(png|jpe?g|webp)$#i', $siteLogo, $matches)) {
+        $customLogo = $publicRoot . substr($siteLogo, strlen('/public'));
         $extension = strtolower($matches[1]);
         if (is_file($customLogo) && (in_array($extension, ['jpg','jpeg'], true) || extension_loaded('gd'))) {
             $logo = $customLogo;
