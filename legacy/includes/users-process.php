@@ -382,56 +382,98 @@ if (isset($_POST['edit_user'])) {
 }
 
 /* ============================================================
-   HANDLE DELETE USER
+   HANDLE DELETE USER(S)
+   Accepts user_ids[] (multi-select) or a single user_id.
 ============================================================ */
 if (isset($_POST['delete_user'])) {
-    $user_id = (int)($_POST['user_id'] ?? 0);
-
-    if ($user_id <= 0) {
-        redirect_users('Invalid user selected.', 'danger');
+    $maxBulkDelete = 100;
+    $rawIds = $_POST['user_ids'] ?? [$_POST['user_id'] ?? 0];
+    if (!is_array($rawIds)) {
+        $rawIds = [$rawIds];
     }
 
-    if (!empty($_SESSION['user_id']) && $user_id === (int)$_SESSION['user_id']) {
-        redirect_users('Cannot delete your own account.', 'danger');
+    $userIds = array_values(array_unique(array_filter(
+        array_map(static fn ($id): int => is_scalar($id) ? (int)$id : 0, $rawIds),
+        static fn (int $id): bool => $id > 0
+    )));
+
+    if ($userIds === []) {
+        redirect_users('No users selected.', 'danger');
+    }
+
+    if (count($userIds) > $maxBulkDelete) {
+        redirect_users("You can delete at most {$maxBulkDelete} users at a time.", 'danger');
+    }
+
+    $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+    if ($currentUserId > 0 && in_array($currentUserId, $userIds, true)) {
+        redirect_users('Cannot delete your own account. Deselect it and try again.', 'danger');
     }
 
     $userStmt = $conn->prepare("SELECT username FROM users WHERE user_id = ? LIMIT 1");
-    if (!$userStmt) {
-        redirect_users('Error preparing user lookup: ' . $conn->error, 'danger');
-    }
-    $userStmt->bind_param('i', $user_id);
-    $userStmt->execute();
-    $userResult = $userStmt->get_result();
-    $userData = $userResult ? $userResult->fetch_assoc() : null;
-    $userStmt->close();
-
-    $username = $userData['username'] ?? 'Unknown';
-
     $deleteStmt = $conn->prepare("DELETE FROM users WHERE user_id = ? LIMIT 1");
-    if (!$deleteStmt) {
+    if (!$userStmt || !$deleteStmt) {
         redirect_users('Error preparing delete: ' . $conn->error, 'danger');
     }
-    $deleteStmt->bind_param('i', $user_id);
 
-    if (!$deleteStmt->execute()) {
-        $error = $deleteStmt->error ?: $conn->error;
-        $deleteStmt->close();
-        redirect_users('Error deleting user: ' . $error, 'danger');
+    $userId = 0;
+    $userStmt->bind_param('i', $userId);
+    $deleteStmt->bind_param('i', $userId);
+
+    $deleted = [];
+    $failed = [];
+
+    // Each user is deleted on its own, so one account that is still referenced
+    // elsewhere does not stop the rest of the selection from being removed.
+    foreach ($userIds as $userId) {
+        $userStmt->execute();
+        $userResult = $userStmt->get_result();
+        $userData = $userResult ? $userResult->fetch_assoc() : null;
+
+        if ($userData === null) {
+            $failed[] = "#{$userId} (not found)";
+            continue;
+        }
+
+        $username = (string)$userData['username'];
+
+        if (!$deleteStmt->execute() || $deleteStmt->affected_rows < 1) {
+            error_log("Delete user {$userId} failed: " . ($deleteStmt->error ?: $conn->error));
+            $failed[] = $username;
+            continue;
+        }
+
+        $deleted[] = $username;
+
+        if (function_exists('log_action') && $currentUserId > 0) {
+            log_action(
+                $currentUserId,
+                'Delete User',
+                'users',
+                $userId,
+                "Deleted user: {$username}"
+            );
+        }
     }
 
+    $userStmt->close();
     $deleteStmt->close();
 
-    if (function_exists('log_action') && !empty($_SESSION['user_id'])) {
-        log_action(
-            (int)$_SESSION['user_id'],
-            'Delete User',
-            'users',
-            $user_id,
-            "Deleted user: {$username}"
+    $deletedCount = count($deleted);
+
+    if ($failed === []) {
+        redirect_users(
+            $deletedCount === 1 ? 'User deleted successfully.' : "{$deletedCount} users deleted successfully.",
+            'success'
         );
     }
 
-    redirect_users('User deleted successfully.', 'success');
+    $failedList = implode(', ', array_slice($failed, 0, 10)) . (count($failed) > 10 ? ', ...' : '');
+    $message = $deletedCount > 0
+        ? "{$deletedCount} user(s) deleted. Could not delete: {$failedList}."
+        : "Could not delete: {$failedList}. The account(s) may still be linked to other records.";
+
+    redirect_users($message, $deletedCount > 0 ? 'warning' : 'danger');
 }
 
 /* ============================================================

@@ -374,3 +374,20 @@
     .pagination-bar { justify-content: center; }
     .results-page-info { display: none; }
 }
+
+/* -- Multi-select delete --------------------------------------- */
+.select-col { width: 36px; text-align: center; }
+.select-col input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--brand-600); }
+.bulk-actions { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink-600); }
+.bulk-actions[hidden] { display: none; }
+.delete-user-list {
+    max-height: 160px;
+    overflow-y: auto;
+    margin: 8px 0 12px;
+    padding: 8px 12px 8px 28px;
+    font-size: 13px;
+    color: var(--ink-500);
+    background: var(--ink-50);
+    border-radius: 6px;
+}
+.delete-user-list[hidden] { display: none; }

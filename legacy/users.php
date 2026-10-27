@@ -253,6 +253,13 @@ function pageRange(int $cur, int $total): array {
                     <strong><?= number_format($totalAll) ?></strong> user<?= $totalAll !== 1 ? 's' : '' ?>
                 <?php endif; ?>
             </span>
+            <span class="bulk-actions" id="bulkActions" hidden>
+                <span id="bulkCount">0 selected</span>
+                <button type="button" class="btn btn-sm btn-gray" onclick="clearSelection()">Clear</button>
+                <button type="button" class="btn btn-sm btn-red" onclick="openBulkDeleteModal()">
+                    <i class="fas fa-trash-alt"></i> Delete selected
+                </button>
+            </span>
             <span class="results-page-info">
                 Page <strong><?= $page ?></strong> of <strong><?= $totalPages ?></strong>
                 &nbsp;.&nbsp;
@@ -265,6 +272,9 @@ function pageRange(int $cur, int $total): array {
             <table class="table">
                 <thead>
                 <tr>
+                    <th class="select-col">
+                        <input type="checkbox" id="selectAllUsers" aria-label="Select all users on this page">
+                    </th>
                     <th>#</th>
                     <th>User</th>
                     <th>Email</th>
@@ -279,7 +289,7 @@ function pageRange(int $cur, int $total): array {
                 <tbody>
                 <?php if (empty($users)): ?>
                     <tr class="empty-row">
-                        <td colspan="9">
+                        <td colspan="10">
                             <i class="fas fa-user-slash"></i>
                             No users match your search.
                             <?php if ($search !== '' || $filterRole !== '' || $filterStatus !== ''): ?>
@@ -292,6 +302,13 @@ function pageRange(int $cur, int $total): array {
                 <?php foreach ($users as $u): ?>
                     <?php $initials = strtoupper(mb_substr(trim($u['full_name']), 0, 1)); ?>
                     <tr>
+                        <td class="select-col">
+                            <?php if ((int)$u['user_id'] !== (int)$_SESSION['user_id']): ?>
+                                <input type="checkbox" class="user-select" value="<?= (int)$u['user_id'] ?>"
+                                       data-username="<?= e($u['username']) ?>"
+                                       aria-label="Select <?= e($u['username']) ?>">
+                            <?php endif; ?>
+                        </td>
                         <td class="note"><?= (int)$u['user_id'] ?></td>
 
                         <td>
@@ -527,23 +544,24 @@ function pageRange(int $cur, int $total): array {
 <div class="modal" id="deleteModal">
     <div class="modal-card modal-sm">
         <div class="modal-head">
-            <h3 style="color:var(--red-fg)"><i class="fas fa-exclamation-triangle"></i> Delete User</h3>
+            <h3 style="color:var(--red-fg)"><i class="fas fa-exclamation-triangle"></i> <span id="deleteModalTitle">Delete User</span></h3>
             <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
         </div>
         <div class="modal-body">
             <p style="font-size:14px;color:var(--ink-500)">
                 Are you sure you want to permanently delete <strong id="deleteUserName"></strong>?
             </p>
+            <ul class="delete-user-list" id="deleteUserList" hidden></ul>
             <div class="delete-warning">
                 <i class="fas fa-info-circle"></i>
-                This action cannot be undone. All data associated with this account will be removed.
+                This action cannot be undone. All data associated with the selected account(s) will be removed.
             </div>
-            <form method="POST" action="includes/users-process.php">
-                <input type="hidden" name="user_id" id="deleteUserId">
+            <form method="POST" action="includes/users-process.php" id="deleteUsersForm">
+                <div id="deleteUserIds"></div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-gray" onclick="closeModal('deleteModal')">Cancel</button>
                     <button type="submit" name="delete_user" class="btn btn-red">
-                        <i class="fas fa-trash-alt"></i> Yes, Delete
+                        <i class="fas fa-trash-alt"></i> <span id="deleteSubmitLabel">Yes, Delete</span>
                     </button>
                 </div>
             </form>
@@ -562,11 +580,80 @@ window.addEventListener('click', function (e) {
     });
 });
 
-function openDeleteModal(userId, username) {
-    document.getElementById('deleteUserId').value       = userId;
-    document.getElementById('deleteUserName').textContent = username;
+// Fill the shared delete modal with one or more users ({id, username}) and open it.
+function showDeleteModal(users) {
+    var idBox = document.getElementById('deleteUserIds');
+    var list  = document.getElementById('deleteUserList');
+    var many  = users.length > 1;
+
+    idBox.textContent = '';
+    list.textContent  = '';
+    users.forEach(function (u) {
+        var input = document.createElement('input');
+        input.type  = 'hidden';
+        input.name  = 'user_ids[]';
+        input.value = u.id;
+        idBox.appendChild(input);
+
+        if (many) {
+            var li = document.createElement('li');
+            li.textContent = '@' + u.username;
+            list.appendChild(li);
+        }
+    });
+
+    list.hidden = !many;
+    document.getElementById('deleteModalTitle').textContent  = many ? 'Delete ' + users.length + ' Users' : 'Delete User';
+    document.getElementById('deleteUserName').textContent    = many ? 'these ' + users.length + ' users' : users[0].username;
+    document.getElementById('deleteSubmitLabel').textContent = many ? 'Yes, Delete ' + users.length : 'Yes, Delete';
     openModal('deleteModal');
 }
+
+function openDeleteModal(userId, username) {
+    showDeleteModal([{ id: userId, username: username }]);
+}
+
+// -- Multi-select ----------------------------------------------
+function selectedUsers() {
+    return Array.prototype.map.call(
+        document.querySelectorAll('.user-select:checked'),
+        function (box) { return { id: box.value, username: box.dataset.username }; }
+    );
+}
+
+function updateBulkActions() {
+    var boxes     = document.querySelectorAll('.user-select');
+    var count     = selectedUsers().length;
+    var selectAll = document.getElementById('selectAllUsers');
+
+    document.getElementById('bulkActions').hidden  = count === 0;
+    document.getElementById('bulkCount').textContent = count + ' selected';
+    if (selectAll) {
+        selectAll.checked       = boxes.length > 0 && count === boxes.length;
+        selectAll.indeterminate = count > 0 && count < boxes.length;
+        selectAll.disabled      = boxes.length === 0;
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.user-select').forEach(function (box) { box.checked = false; });
+    updateBulkActions();
+}
+
+function openBulkDeleteModal() {
+    var users = selectedUsers();
+    if (users.length) showDeleteModal(users);
+}
+
+document.getElementById('selectAllUsers')?.addEventListener('change', function () {
+    var checked = this.checked;
+    document.querySelectorAll('.user-select').forEach(function (box) { box.checked = checked; });
+    updateBulkActions();
+});
+document.querySelectorAll('.user-select').forEach(function (box) {
+    box.addEventListener('change', updateBulkActions);
+});
+updateBulkActions();
 
 // Debounce: submit search 450 ms after user stops typing
 (function () {
