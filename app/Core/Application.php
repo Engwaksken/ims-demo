@@ -30,7 +30,7 @@ final class Application
             'secure'=>(bool) env('SESSION_SECURE_COOKIE', !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
             'httponly'=>true, 'samesite'=>'Lax'
         ]);
-       // session_start();
+        session_start();
     }
 
     public function run(): void
