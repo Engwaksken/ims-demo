@@ -330,6 +330,7 @@ if (isset($_POST['update_settings'])) {
                 'currency' => sanitize_input(settings_post('currency', 'UGX')),
                 'items_per_page' => (string)max(10, min(100, (int)($_POST['items_per_page'] ?? 25))),
         ];
+        $generalSettings += isset($_POST['theme_reset']) ? IMS_THEME_DEFAULTS : ims_theme_validate($_POST);
         if ($newLogo !== null) $generalSettings['site_logo_path'] = $newLogo;
         if ($newFavicon !== null) $generalSettings['site_favicon_path'] = $newFavicon;
 
