@@ -11,6 +11,10 @@ $error = $_SESSION['login_error'] ?? '';
 unset($_SESSION['login_error']);
 $siteBranding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['name' => (string)SITE_NAME, 'logo' => '/images/logo.png', 'favicon' => '/images/favicon.png'];
 $globalSiteName = (string)($siteBranding['name'] ?? SITE_NAME);
+$faviconQuery = [];
+parse_str((string)(parse_url((string)$siteBranding['favicon'], PHP_URL_QUERY) ?? ''), $faviconQuery);
+$faviconFile = (string)($faviconQuery['file'] ?? $siteBranding['favicon']);
+$faviconType = strtolower(pathinfo($faviconFile, PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png';
 ?>
 
 <!DOCTYPE html>
@@ -19,7 +23,7 @@ $globalSiteName = (string)($siteBranding['name'] ?? SITE_NAME);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - <?= htmlspecialchars($globalSiteName, ENT_QUOTES, 'UTF-8') ?></title>
-    <link rel="icon" href="<?= htmlspecialchars((string)$siteBranding['favicon'], ENT_QUOTES, 'UTF-8') ?>" type="<?= strtolower(pathinfo((string)$siteBranding['favicon'], PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png' ?>">
+    <link rel="icon" href="<?= htmlspecialchars((string)$siteBranding['favicon'], ENT_QUOTES, 'UTF-8') ?>" type="<?= $faviconType ?>">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="js/accessibility.js"></script>

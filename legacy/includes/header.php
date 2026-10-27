@@ -12,7 +12,10 @@ $hdr_branding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['name' => (string)SITE_NAME, '
 $hdr_site    = htmlspecialchars((string)($hdr_branding['name'] ?? SITE_NAME), ENT_QUOTES, 'UTF-8');
 $hdr_logo    = htmlspecialchars((string)($hdr_branding['logo'] ?? '/images/logo.png'), ENT_QUOTES, 'UTF-8');
 $hdr_favicon = htmlspecialchars((string)($hdr_branding['favicon'] ?? '/images/favicon.png'), ENT_QUOTES, 'UTF-8');
-$hdr_favicon_type = strtolower(pathinfo($hdr_favicon, PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png';
+$hdr_favicon_query = [];
+parse_str((string)(parse_url($hdr_favicon, PHP_URL_QUERY) ?? ''), $hdr_favicon_query);
+$hdr_favicon_file = (string)($hdr_favicon_query['file'] ?? $hdr_favicon);
+$hdr_favicon_type = strtolower(pathinfo($hdr_favicon_file, PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png';
 $hdr_initial = function_exists('mb_substr')
     ? mb_strtoupper(mb_substr((string)$user_name, 0, 1, 'UTF-8'), 'UTF-8')
     : strtoupper(substr((string)$user_name, 0, 1));
