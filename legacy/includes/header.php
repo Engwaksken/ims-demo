@@ -12,7 +12,10 @@ $hdr_branding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['name' => (string)SITE_NAME, '
 $hdr_site    = htmlspecialchars((string)($hdr_branding['name'] ?? SITE_NAME), ENT_QUOTES, 'UTF-8');
 $hdr_logo    = htmlspecialchars((string)($hdr_branding['logo'] ?? '/images/logo.png'), ENT_QUOTES, 'UTF-8');
 $hdr_favicon = htmlspecialchars((string)($hdr_branding['favicon'] ?? '/images/favicon.png'), ENT_QUOTES, 'UTF-8');
-$hdr_favicon_type = strtolower(pathinfo($hdr_favicon, PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png';
+$hdr_favicon_query = [];
+parse_str((string)(parse_url($hdr_favicon, PHP_URL_QUERY) ?? ''), $hdr_favicon_query);
+$hdr_favicon_file = (string)($hdr_favicon_query['file'] ?? $hdr_favicon);
+$hdr_favicon_type = strtolower(pathinfo($hdr_favicon_file, PATHINFO_EXTENSION)) === 'ico' ? 'image/x-icon' : 'image/png';
 $hdr_initial = function_exists('mb_substr')
     ? mb_strtoupper(mb_substr((string)$user_name, 0, 1, 'UTF-8'), 'UTF-8')
     : strtoupper(substr((string)$user_name, 0, 1));
@@ -60,6 +63,7 @@ $hdr_bell_label = $hdr_unread > 0
          Per-page stylesheets are linked by each page after this header. -->
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/reports.css">
+    <?php echo ims_theme_style_tag((array)($hdr_branding['theme'] ?? [])); ?>
     <!-- Accessibility widget (bottom-right): applies saved settings before paint, loads its own CSS. -->
     <script src="../js/accessibility.js"></script>
     <!-- Font Awesome: the one copy for the whole app (pages must not load their own). -->

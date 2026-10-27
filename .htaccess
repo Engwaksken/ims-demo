@@ -12,8 +12,8 @@ RewriteBase /
 # ============================================================
 
 RewriteCond %{HTTPS} !=on [OR]
-RewriteCond %{HTTP_HOST} !^ims\.hivecolab\.com$ [NC]
-RewriteRule ^ https://ims.hivecolab.com%{REQUEST_URI} [R=301,L,NE]
+RewriteCond %{HTTP_HOST} !^ims\.kemmytech\.com$ [NC]
+RewriteRule ^ https://ims.kemmytech.com%{REQUEST_URI} [R=301,L,NE]
 
 
 # ============================================================
@@ -35,7 +35,7 @@ RewriteRule ^(?:app|config|routes|vendor|storage|database|tests)(?:/|$) - [F,L,N
 RewriteRule ^legacy/(?:cron|database|helpers|services|partials|cgi-bin|vendor)(?:/|$) - [F,L,NC]
 
 # Library-only include files are never valid web entry points
-RewriteRule ^(?:legacy/)?includes/(?:config|security|auth|header|sidebar|footer|mail-function|google-calendar-service|backup-service|AiReviewService|workplan-stats|unifi_api|task-carryover|task-reminders|task-importer)\.php$ - [F,L,NC]
+RewriteRule ^(?:legacy/)?includes/(?:config|security|auth|header|sidebar|footer|mail-function|google-calendar-service|backup-service|AiReviewService|workplan-stats|unifi_api|task-carryover|task-reminders|task-importer|site-theme)\.php$ - [F,L,NC]
 
 # Database dumps, backups, logs, environment and editor/backup artifacts
 RewriteRule (?:^|/)(?:error_log|php_errors?\.log|\.user\.ini|composer\.(?:json|lock)|artisan|generate-key\.php)$ - [F,L,NC]
