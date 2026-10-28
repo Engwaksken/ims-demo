@@ -34,6 +34,8 @@ final class ModuleRegistry
         'application-csv-import.php' => 'application-csv-import.php',
         'application-opportunities' => 'application-opportunities.php',
         'application-opportunities.php' => 'application-opportunities.php',
+        'appointments' => 'appointments.php',
+        'appointments.php' => 'appointments.php',
         'application-process' => 'includes/submit-application-process.php',
         'application-process.php' => 'includes/submit-application-process.php',
         'submit-application-process' => 'includes/submit-application-process.php',
