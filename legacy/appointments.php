@@ -224,7 +224,7 @@ include 'includes/header.php';
             <p>Book time with colleagues. Accepted appointments block the slot for both of you and come with reminders.</p>
         </div>
         <div class="hero-actions">
-            <button type="button" class="btn btn-primary" data-open-modal="apptCreateModal"><i class="fas fa-plus" aria-hidden="true"></i> New appointment</button>
+            <button type="button" class="btn btn-primary" onclick="openModal('apptCreateModal')"><i class="fas fa-plus" aria-hidden="true"></i> New appointment</button>
         </div>
     </div>
 
@@ -339,20 +339,22 @@ include 'includes/header.php';
     </div>
 </div>
 
-<div class="modal" id="apptCreateModal" role="dialog" aria-modal="true" aria-labelledby="apptCreateTitle">
-    <div class="modal-card">
-        <div class="modal-head">
+<!-- New appointment Modal -->
+<div id="apptCreateModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="apptCreateTitle" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
             <h3 id="apptCreateTitle"><i class="fas fa-handshake" aria-hidden="true"></i> New appointment</h3>
-            <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+            <button type="button" class="close" aria-label="Close">&times;</button>
         </div>
-        <form method="post" action="appointments">
-            <div class="modal-body">
+        <div class="modal-body">
+            <form method="POST" action="appointments">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="create">
                 <input type="hidden" name="return_view" value="<?= $escape($view) ?>">
+
                 <div class="appt-form-grid">
                     <div class="form-group is-wide">
-                        <label for="apptInvitee">Meet with <span class="required-mark">*</span></label>
+                        <label for="apptInvitee" class="required">Meet with</label>
                         <select id="apptInvitee" name="invitee_id" class="form-control" required>
                             <option value="">Choose a staff member</option>
                             <?php foreach ($staff as $person): ?>
@@ -361,15 +363,15 @@ include 'includes/header.php';
                         </select>
                     </div>
                     <div class="form-group is-wide">
-                        <label for="apptTitle">Subject <span class="required-mark">*</span></label>
+                        <label for="apptTitle" class="required">Subject</label>
                         <input id="apptTitle" name="title" class="form-control" maxlength="200" required placeholder="e.g. Q4 budget review">
                     </div>
                     <div class="form-group">
-                        <label for="apptStart">Starts <span class="required-mark">*</span></label>
+                        <label for="apptStart" class="required">Starts</label>
                         <input id="apptStart" name="start_at" type="datetime-local" class="form-control" required min="<?= date('Y-m-d\TH:i') ?>">
                     </div>
                     <div class="form-group">
-                        <label for="apptEnd">Ends <span class="required-mark">*</span></label>
+                        <label for="apptEnd" class="required">Ends</label>
                         <input id="apptEnd" name="end_at" type="datetime-local" class="form-control" required min="<?= date('Y-m-d\TH:i') ?>">
                     </div>
                     <div class="is-wide appt-busy" id="apptBusy" aria-live="polite"></div>
@@ -391,28 +393,32 @@ include 'includes/header.php';
                         <p class="form-hint">They get a notification and an email. Once they accept, the time is blocked in both calendars.</p>
                     </div>
                 </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send request</button>
-            </div>
-        </form>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal('apptCreateModal')" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send request</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<div class="modal" id="apptRespondModal" role="dialog" aria-modal="true" aria-labelledby="apptRespondTitle">
-    <div class="modal-card appt-modal-sm">
-        <div class="modal-head">
+<!-- Accept / Decline / Cancel Modal -->
+<div id="apptRespondModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="apptRespondTitle" aria-hidden="true">
+    <div class="modal-content appt-modal-sm">
+        <div class="modal-header">
             <h3 id="apptRespondTitle">Respond</h3>
-            <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+            <button type="button" class="close" aria-label="Close">&times;</button>
         </div>
-        <form method="post" action="appointments">
-            <div class="modal-body">
+        <div class="modal-body">
+            <form method="POST" action="appointments">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" id="apptRespondAction">
                 <input type="hidden" name="appointment_id" id="apptRespondId">
                 <input type="hidden" name="return_view" value="<?= $escape($view) ?>">
+
                 <p id="apptRespondMessage"></p>
+
                 <div class="form-group" id="apptRespondRemind">
                     <label for="apptRespondRemindSelect">Remind me</label>
                     <select id="apptRespondRemindSelect" name="remind_minutes" class="form-control">
@@ -425,35 +431,39 @@ include 'includes/header.php';
                     <label for="apptRespondNoteInput">Reason (optional)</label>
                     <textarea id="apptRespondNoteInput" name="note" class="form-control" rows="2" maxlength="500" placeholder="e.g. I'm out of office that day; could we do Thursday?"></textarea>
                 </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" data-close-modal>Back</button>
-                <button type="submit" class="btn btn-primary" id="apptRespondSubmit">Confirm</button>
-            </div>
-        </form>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal('apptRespondModal')" class="btn btn-secondary">Back</button>
+                    <button type="submit" class="btn btn-primary" id="apptRespondSubmit">Confirm</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<div class="modal" id="apptRescheduleModal" role="dialog" aria-modal="true" aria-labelledby="apptRescheduleTitle">
-    <div class="modal-card appt-modal-sm">
-        <div class="modal-head">
+<!-- Reschedule Modal -->
+<div id="apptRescheduleModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="apptRescheduleTitle" aria-hidden="true">
+    <div class="modal-content appt-modal-sm">
+        <div class="modal-header">
             <h3 id="apptRescheduleTitle"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Propose a new time</h3>
-            <button type="button" class="modal-close" data-close-modal aria-label="Close">&times;</button>
+            <button type="button" class="close" aria-label="Close">&times;</button>
         </div>
-        <form method="post" action="appointments">
-            <div class="modal-body">
+        <div class="modal-body">
+            <form method="POST" action="appointments">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="reschedule">
                 <input type="hidden" name="appointment_id" id="apptRescheduleId">
                 <input type="hidden" name="return_view" value="<?= $escape($view) ?>">
+
                 <p id="apptRescheduleMessage"></p>
+
                 <div class="appt-form-grid">
                     <div class="form-group">
-                        <label for="apptRescheduleStart">Starts <span class="required-mark">*</span></label>
+                        <label for="apptRescheduleStart" class="required">Starts</label>
                         <input id="apptRescheduleStart" name="start_at" type="datetime-local" class="form-control" required min="<?= date('Y-m-d\TH:i') ?>">
                     </div>
                     <div class="form-group">
-                        <label for="apptRescheduleEnd">Ends <span class="required-mark">*</span></label>
+                        <label for="apptRescheduleEnd" class="required">Ends</label>
                         <input id="apptRescheduleEnd" name="end_at" type="datetime-local" class="form-control" required min="<?= date('Y-m-d\TH:i') ?>">
                     </div>
                     <div class="is-wide appt-busy" id="apptRescheduleBusy" aria-live="polite"></div>
@@ -463,23 +473,19 @@ include 'includes/header.php';
                         <p class="form-hint">The other person must accept the new time. If it was already confirmed, the slot is released until they do.</p>
                     </div>
                 </div>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" data-close-modal>Back</button>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send new time</button>
-            </div>
-        </form>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal('apptRescheduleModal')" class="btn btn-secondary">Back</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send new time</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 <script>
 (function () {
-    function open(id) { document.getElementById(id).classList.add('show'); document.body.style.overflow = 'hidden'; }
-    function closeAll() { document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show')); document.body.style.overflow = ''; }
-    document.querySelectorAll('[data-open-modal]').forEach(b => b.addEventListener('click', () => { open(b.dataset.openModal); document.getElementById('apptInvitee').focus(); }));
-    document.querySelectorAll('[data-close-modal]').forEach(b => b.addEventListener('click', closeAll));
-    document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m) closeAll(); }));
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+    // Opening, closing, Escape and backdrop clicks use the global modal helpers in public/js/main.js.
 
     // Respond modal: accept (pick a reminder), decline or cancel (optional reason).
     const copy = {
@@ -498,7 +504,7 @@ include 'includes/header.php';
         submit.className = c[3];
         document.getElementById('apptRespondRemind').hidden = mode !== 'accept';
         document.getElementById('apptRespondNote').hidden = mode === 'accept';
-        open('apptRespondModal');
+        openModal('apptRespondModal');
     }));
 
     // Default the end to +30 min and list both people's busy times for the chosen day.
@@ -550,9 +556,8 @@ include 'includes/header.php';
         rStart.value = b.dataset.start;
         rEnd.value = b.dataset.end;
         document.getElementById('apptRescheduleNote').value = '';
-        open('apptRescheduleModal');
+        openModal('apptRescheduleModal');
         loadRescheduleBusy();
-        rStart.focus();
     }));
 })();
 </script>
