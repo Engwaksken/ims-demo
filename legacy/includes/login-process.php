@@ -2,11 +2,47 @@
 
 declare(strict_types=1);
 
+// Keep diagnostics deliberately metadata-only: exception messages can contain
+// submitted values, SQL, or connection details and are therefore not logged.
+$loginDiagnosticStage = 'request bootstrap';
+ini_set('log_errors', '1');
+ini_set('display_errors', '0');
+register_shutdown_function(static function () use (&$loginDiagnosticStage): void {
+    $error = error_get_last();
+    if ($error === null || !in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR], true)) {
+        return;
+    }
+
+    error_log(sprintf(
+        'Login POST fatal failure; stage=%s; type=%d; file=%s; line=%d',
+        $loginDiagnosticStage,
+        $error['type'],
+        basename((string) $error['file']),
+        (int) $error['line']
+    ));
+});
+set_exception_handler(static function (Throwable $exception) use (&$loginDiagnosticStage): void {
+    error_log(sprintf(
+        'Login POST uncaught exception; stage=%s; class=%s; file=%s; line=%d',
+        $loginDiagnosticStage,
+        get_class($exception),
+        basename($exception->getFile()),
+        $exception->getLine()
+    ));
+
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=UTF-8');
+    }
+    echo 'The login request could not be processed.';
+});
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once __DIR__ . '/config.php';
+$loginDiagnosticStage = 'mail dependency bootstrap';
 require_once __DIR__ . '/mail-function.php';
 
 /*
@@ -79,10 +115,10 @@ function safeLogAction(
             $description
         );
     } catch (Throwable $exception) {
-        error_log(
-            'Unable to save activity log: '
-            . $exception->getMessage()
-        );
+        error_log(sprintf(
+            'Login activity-log failure; class=%s; file=%s; line=%d',
+            get_class($exception), basename($exception->getFile()), $exception->getLine()
+        ));
     }
 }
 
@@ -127,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 */
 
 $username = trim((string) ($_POST['username'] ?? ''));
+$loginDiagnosticStage = 'credential validation';
 $password = (string) ($_POST['password'] ?? '');
 
 if ($username === '' || $password === '') {
@@ -146,6 +183,7 @@ if ($username === '' || $password === '') {
 */
 
 $loginWindow = 900;
+$loginDiagnosticStage = 'rate limiting';
 $loginUserKey = 'login:user:' . mb_strtolower($username);
 $loginIpKey = 'login:ip:' . ims_client_ip();
 
@@ -171,9 +209,10 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
     try {
         $conn = db_connect();
     } catch (Throwable $exception) {
-        error_log(
-            'Login database error: ' . $exception->getMessage()
-        );
+        error_log(sprintf(
+            'Login database connection failure; stage=database connection; class=%s; file=%s; line=%d',
+            get_class($exception), basename($exception->getFile()), $exception->getLine()
+        ));
 
         $response['message'] =
             'The system could not connect to the database.';
@@ -182,6 +221,7 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
     }
 }
 
+$loginDiagnosticStage = 'database charset setup';
 $conn->set_charset('utf8mb4');
 
 /*
@@ -205,6 +245,7 @@ $sql = "
     LIMIT 1
 ";
 
+$loginDiagnosticStage = 'user lookup';
 try {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('ss', $username, $username);
@@ -215,9 +256,10 @@ try {
 
     $stmt->close();
 } catch (Throwable $exception) {
-    error_log(
-        'Login query error: ' . $exception->getMessage()
-    );
+    error_log(sprintf(
+        'Login query failure; stage=user lookup; class=%s; file=%s; line=%d',
+        get_class($exception), basename($exception->getFile()), $exception->getLine()
+    ));
 
     $response['message'] =
         'The login request could not be processed.';
@@ -276,6 +318,7 @@ if (!$isActive) {
     sendLoginResponse($response);
 }
 
+$loginDiagnosticStage = 'password verification';
 /*
 |--------------------------------------------------------------------------
 | Verify password
@@ -325,12 +368,13 @@ if (
 */
 
 try {
+    $loginDiagnosticStage = 'verification code generation';
     $verificationCode = (string) random_int(100000, 999999);
 } catch (Throwable $exception) {
-    error_log(
-        'Verification code generation failed: '
-        . $exception->getMessage()
-    );
+    error_log(sprintf(
+        'Login verification-code generation failure; stage=verification code generation; class=%s; file=%s; line=%d',
+        get_class($exception), basename($exception->getFile()), $exception->getLine()
+    ));
 
     $response['message'] =
         'The verification code could not be generated.';
@@ -343,6 +387,7 @@ $verificationExpiry = date(
     time() + 600
 );
 
+$loginDiagnosticStage = 'pending login/session setup';
 /*
 |--------------------------------------------------------------------------
 | Store pending login
@@ -570,6 +615,7 @@ TEXT;
 */
 
 try {
+    $loginDiagnosticStage = 'verification email delivery';
     $emailResult = sendEmail(
         $userEmail,
         $subject,
@@ -577,10 +623,10 @@ try {
         $altBody
     );
 } catch (Throwable $exception) {
-    error_log(
-        'Verification email error: '
-        . $exception->getMessage()
-    );
+    error_log(sprintf(
+        'Login verification email failure; stage=verification email delivery; class=%s; file=%s; line=%d',
+        get_class($exception), basename($exception->getFile()), $exception->getLine()
+    ));
 
     $emailResult = false;
 }
