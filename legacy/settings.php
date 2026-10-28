@@ -362,13 +362,22 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             <div class="form-group">
                 <label for="site_name" class="required">System Name</label>
                 <input type="text" id="site_name" name="site_name" class="form-control" maxlength="120"
-                       value="<?php echo htmlspecialchars($settings['site_name'] ?? 'Hive Colab'); ?>" required>
+                       value="<?php echo htmlspecialchars($settings['site_name'] ?? (string)SITE_NAME); ?>" required>
+                <small class="settings-hint">Shown in page titles, the login screens, emails and public pages.</small>
             </div>
-            
+
             <div class="form-group">
                 <label for="site_email">Organization Email</label>
-                <input type="email" id="site_email" name="site_email" class="form-control" 
+                <input type="email" id="site_email" name="site_email" class="form-control"
                        value="<?php echo htmlspecialchars($settings['site_email'] ?? ''); ?>">
+                <small class="settings-hint">Public contact address shown on public pages and in emails.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="site_website">Organization Website</label>
+                <input type="url" id="site_website" name="site_website" class="form-control" maxlength="255" placeholder="https://www.example.org"
+                       value="<?php echo htmlspecialchars($settings['site_website'] ?? ''); ?>">
+                <small class="settings-hint">Where "Back to website" links on public pages go.</small>
             </div>
         </div>
 
@@ -396,8 +405,21 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     <label for="theme_primary_color">Primary Colour</label>
                     <input type="color" id="theme_primary_color" name="theme_primary_color" class="form-control settings-color-input"
                            value="<?= htmlspecialchars($settingsTheme['theme_primary_color'], ENT_QUOTES, 'UTF-8') ?>">
-                    <small class="settings-hint">Buttons, links, active tabs and highlights. Very light colours are rejected so white text stays visible. A few pages still use fixed colours.</small>
+                    <small class="settings-hint">Buttons, links, active tabs and highlights, on every page, the login screens and emails. Very light colours are rejected so white text stays visible.</small>
                 </div>
+                <div class="form-group">
+                    <label for="theme_secondary_color">Secondary Colour</label>
+                    <input type="color" id="theme_secondary_color" name="theme_secondary_color" class="form-control settings-color-input"
+                           value="<?= htmlspecialchars(ims_theme_secondary_hex($settingsTheme), ENT_QUOTES, 'UTF-8') ?>"
+                           <?= $settingsTheme['theme_secondary_color'] === '' ? 'disabled' : '' ?>>
+                    <label class="settings-checkbox">
+                        <input type="checkbox" id="theme_secondary_custom" name="theme_secondary_custom" value="1" <?= $settingsTheme['theme_secondary_color'] !== '' ? 'checked' : '' ?>>
+                        Use a custom secondary colour
+                    </label>
+                    <small class="settings-hint">Accents and the second colour of gradients (login screen, email headers and buttons, application forms). When unticked, a lighter shade of the primary colour is used.</small>
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group">
                     <label for="theme_sidebar_color">Sidebar Colour</label>
                     <input type="color" id="theme_sidebar_color" name="theme_sidebar_color" class="form-control settings-color-input"
@@ -432,6 +454,13 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 </div>
             </div>
             <script>
+            (function () {
+                var toggle = document.getElementById('theme_secondary_custom');
+                var colour = document.getElementById('theme_secondary_color');
+                if (toggle && colour) {
+                    toggle.addEventListener('change', function () { colour.disabled = !toggle.checked; });
+                }
+            })();
             (function () {
                 var select = document.getElementById('theme_font_family');
                 var group = document.getElementById('themeFontCustomGroup');
@@ -642,7 +671,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             <div class="form-group">
                 <label for="from_name">From Name</label>
                 <input type="text" id="from_name" name="from_name" class="form-control" 
-                       value="<?php echo htmlspecialchars($settings['from_name'] ?? 'Hive Colab IMS'); ?>">
+                       value="<?php echo htmlspecialchars($settings['from_name'] ?? ims_brand_name()); ?>">
             </div>
             
             <div class="form-group">
@@ -711,7 +740,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             <div class="stat-info">
                 <div class="stat-label">Shared Calendar</div>
                 <div class="stat-value settings-stat-text">
-                <?= htmlspecialchars($google_settings['google_calendar_name'] ?? 'Hive Colab Events') ?>
+                <?= htmlspecialchars($google_settings['google_calendar_name'] ?? ims_brand_name() . ' Events') ?>
             </div>
             </div>
         </div>
@@ -807,7 +836,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     id="google_calendar_name"
                     name="google_calendar_name"
                     class="form-control"
-                    value="<?= htmlspecialchars($google_settings['google_calendar_name'] ?? 'Hive Colab Events') ?>"
+                    value="<?= htmlspecialchars($google_settings['google_calendar_name'] ?? ims_brand_name() . ' Events') ?>"
                 >
             </div>
         </div>
@@ -820,7 +849,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                 name="google_redirect_uri"
                 class="form-control"
                 value="<?= htmlspecialchars($google_settings['google_redirect_uri'] ?? '') ?>"
-                placeholder="https://ims.kemmytech.com/includes/google-calendar-callback.php"
+                placeholder="<?= htmlspecialchars(rtrim(defined('APP_URL') ? (string)APP_URL : '', '/') . '/includes/google-calendar-callback.php') ?>"
             >
             <small class="settings-hint">
                 This must exactly match the authorised redirect URI in Google Cloud.
@@ -836,7 +865,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     name="google_workspace_domain"
                     class="form-control"
                     value="<?= htmlspecialchars($google_settings['google_workspace_domain'] ?? '') ?>"
-                    placeholder="hivecolab.com"
+                    placeholder="example.org"
                 >
             </div>
 
@@ -964,7 +993,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     Google Calendar is connected. Events and Workplan Activities can now
                     synchronise with
                     <strong>
-                        <?= htmlspecialchars($google_settings['google_calendar_name'] ?? 'Hive Colab Events') ?>
+                        <?= htmlspecialchars($google_settings['google_calendar_name'] ?? ims_brand_name() . ' Events') ?>
                     </strong>.
                 </div>
             </div>
@@ -1162,7 +1191,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     name="workspace_gmail_domain"
                     class="form-control"
                     value="<?= htmlspecialchars($google_settings['workspace_gmail_domain'] ?? '') ?>"
-                    placeholder="hivecolab.com"
+                    placeholder="example.org"
                 >
             </div>
 
@@ -1197,7 +1226,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
                     id="workspace_gmail_sender_name"
                     name="workspace_gmail_sender_name"
                     class="form-control"
-                    value="<?= htmlspecialchars($google_settings['workspace_gmail_sender_name'] ?? 'Hive Colab IMS') ?>"
+                    value="<?= htmlspecialchars($google_settings['workspace_gmail_sender_name'] ?? ims_brand_name()) ?>"
                 >
             </div>
         </div>
@@ -1786,7 +1815,7 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
         <h4><i class="fas fa-info-circle"></i> Application Information</h4>
         <div class="settings-info-row">
             <span>Application Name:</span>
-            <strong>Hive Colab IMS</strong>
+            <strong><?= htmlspecialchars(ims_brand_name()) ?></strong>
         </div>
         <div class="settings-info-row">
             <span>Version:</span>

@@ -425,13 +425,7 @@ $_SESSION['pending_role']        = $userRole;
 |--------------------------------------------------------------------------
 */
 
-$siteName = (string)($GLOBALS['IMS_SITE_BRANDING']['name'] ?? (defined('SITE_NAME') ? SITE_NAME : 'EdTech Fellowship CMS'));
-
-$safeSiteName = htmlspecialchars(
-    $siteName,
-    ENT_QUOTES | ENT_SUBSTITUTE,
-    'UTF-8'
-);
+$siteName = (string)($GLOBALS['IMS_SITE_BRANDING']['name'] ?? (defined('SITE_NAME') ? SITE_NAME : 'Information Management System'));
 
 $safeFullName = htmlspecialchars(
     $fullName,
@@ -449,149 +443,31 @@ $ipAddress = htmlspecialchars(
 
 $subject = 'Login Verification Code - ' . $siteName;
 
-$body = <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
+$body = email_wrapper(<<<HTML
+    <p>Hello <strong>{$safeFullName}</strong>,</p>
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <p>
+        A login attempt was made to your account.
+        Use the verification code below to complete your login.
+    </p>
 
-    <title>Login Verification</title>
-
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, Helvetica, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            background: #f4f6f9;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .header {
-            padding: 30px;
-            color: #ffffff;
-            text-align: center;
-            background: #f39c12;
-            border-radius: 10px 10px 0 0;
-        }
-
-        .header h1,
-        .header p {
-            margin: 0;
-        }
-
-        .header p {
-            margin-top: 8px;
-        }
-
-        .content {
-            padding: 30px;
-            background: #ffffff;
-            border-radius: 0 0 10px 10px;
-        }
-
-        .code-box {
-            margin: 24px 0;
-            padding: 20px;
-            text-align: center;
-            background: #fffaf7;
-            border: 2px dashed #ff6b35;
-            border-radius: 8px;
-        }
-
-        .code {
-            color: #ff6b35;
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 5px;
-        }
-
-        .warning {
-            margin: 20px 0;
-            padding: 15px;
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-        }
-
-        .footer {
-            margin-top: 20px;
-            color: #7f8c8d;
-            font-size: 12px;
-            text-align: center;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>{$safeSiteName}</h1>
-            <p>Login Verification Required</p>
-        </div>
-
-        <div class="content">
-            <p>
-                Hello <strong>{$safeFullName}</strong>,
-            </p>
-
-            <p>
-                A login attempt was made to your account.
-                Use the verification code below to complete your login.
-            </p>
-
-            <div class="code-box">
-                <div class="code">{$verificationCode}</div>
-            </div>
-
-            <p>
-                <strong>This code expires in 10 minutes.</strong>
-            </p>
-
-            <div class="warning">
-                <strong>Security notice:</strong>
-                If you did not attempt to log in, ignore this email and
-                consider changing your password.
-            </div>
-
-            <p><strong>Login details</strong></p>
-
-            <ul>
-                <li>
-                    <strong>Time:</strong>
-                    {$loginTime}
-                </li>
-
-                <li>
-                    <strong>IP address:</strong>
-                    {$ipAddress}
-                </li>
-            </ul>
-        </div>
-
-        <div class="footer">
-            <p>
-                This is an automated message from {$safeSiteName}.
-                Please do not reply.
-            </p>
-
-            <p>
-                &copy; {$safeSiteName}. All rights reserved.
-            </p>
-        </div>
+    <div class="code-box">
+        <div class="code">{$verificationCode}</div>
     </div>
-</body>
-</html>
-HTML;
+
+    <p><strong>This code expires in 10 minutes.</strong></p>
+
+    <div class="warning">
+        <strong>Security notice:</strong>
+        If you did not attempt to log in, ignore this email and
+        consider changing your password.
+    </div>
+
+    <div class="info-box">
+        <div><strong>Time:</strong> {$loginTime}</div>
+        <div><strong>IP address:</strong> {$ipAddress}</div>
+    </div>
+HTML, 'Login Verification Required');
 
 $altBody = <<<TEXT
 Hello {$fullName},

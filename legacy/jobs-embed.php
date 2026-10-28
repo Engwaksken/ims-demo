@@ -18,8 +18,11 @@ $filterDept = trim((string)($_GET['dept'] ?? ''));
 $showSearch = ($_GET['show_search'] ?? '1') !== '0';
 $showFilter = ($_GET['show_filter'] ?? '1') !== '0';
 $showHeader = ($_GET['show_header'] ?? '1') !== '0';
-$accentRaw  = preg_replace('/[^#0-9a-fA-F]/', '', $_GET['accent'] ?? '');
-$accent     = $accentRaw ?: '#f97316';   // falls back to --brand-500
+$brand      = ims_brand();
+$accentRaw  = trim((string)($_GET['accent'] ?? ''));
+if (!preg_match('/\A#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\z/', $accentRaw)) $accentRaw = '';
+// ?accent= wins; otherwise the configured primary colour (the original #f97316 while the theme is at its default).
+$accent     = $accentRaw ?: ($brand['primary'] === IMS_THEME_DEFAULTS['theme_primary_color'] ? '#f97316' : $brand['primary']);
 $applyBase  = rtrim((string)($_GET['apply_base'] ?? ''), '/');
 
 /* -- Sanitise filter inputs via prepared statement ------------- */
@@ -83,7 +86,7 @@ $darkOverrides = '
   }
   body   { background: var(--surface-page); color: var(--ink-500); }
   .job-row { border-color: rgba(255,255,255,.07); }
-  .job-row:hover { border-color: rgba(249,115,22,.3); }
+  .job-row:hover { border-color: color-mix(in srgb, var(--brand-500) 30%, transparent); }
   .sb-search-inner { background: var(--surface-2); border-color: rgba(255,255,255,.1); }
   .sb-search-inner input { color: var(--ink-700); }
   .sb-opt { color: var(--ink-400); }
@@ -97,15 +100,17 @@ $darkOverrides = '
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Career Opportunities - Hive Colab</title>
+<title>Career Opportunities - <?= e($brand['name']) ?></title>
+<link rel="icon" href="<?= e($brand['favicon']) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="css/jobs-listing.css">
+<?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
 <style>
-/* -- Accent colour override (from ?accent= param) --------------- */
-:root {
+/* -- Accent colour override (?accent= param, else the site theme) -- */
+html:root {
   --brand-500: <?= e($accent) ?>;
   --brand-600: <?= e($accent) ?>;
   --brand-400: <?= e($accent) ?>;
@@ -370,8 +375,8 @@ body {
     <?php if ($showHeader): ?>
     <div class="widget-header-block">
         <div class="widget-eyebrow"><i class="fas fa-briefcase"></i> Open Positions</div>
-        <h2 class="widget-header">Join <em>Hive Colab</em></h2>
-        <p class="widget-sub">Be part of Africa's leading startup ecosystem.</p>
+        <h2 class="widget-header">Join <em><?= e($brand['name']) ?></em></h2>
+        <p class="widget-sub">Explore open roles and grow your career with us.</p>
     </div>
     <?php endif; ?>
 
@@ -574,7 +579,7 @@ body {
 
     <!-- -- Footer ----------------------------------------------- -->
     <div class="widget-footer">
-        Powered by <a href="https://hivecolab.org" target="_blank">Hive Colab</a>
+        Powered by <a href="<?= e($brand['website']) ?>" target="_blank" rel="noopener"><?= e($brand['name']) ?></a>
     </div>
 
 </div><!-- /.widget-wrap -->
@@ -622,10 +627,10 @@ function wToggle(id) {
 
 /* -- Auto-resize host iframe --------------------------------- */
 function postHeight() {
-    window.parent.postMessage(
-        { type: 'hivecolab-jobs-height', height: document.body.scrollHeight },
-        '*'
-    );
+    var height = document.body.scrollHeight;
+    // 'hivecolab-jobs-height' is kept for sites still running older copies of jobs-embed.js.
+    window.parent.postMessage({ type: 'ims-jobs-height', height: height }, '*');
+    window.parent.postMessage({ type: 'hivecolab-jobs-height', height: height }, '*');
 }
 
 postHeight();

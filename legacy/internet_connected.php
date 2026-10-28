@@ -58,7 +58,8 @@ function formatRemaining(int $minutes): string {
 $status = $_GET['status'] ?? '';
 $mac    = normalizeMac((string)($_GET['mac'] ?? $_GET['client_mac'] ?? ''));
 
-$redirectUrl = 'https://hivecolab.org';
+$brand       = ims_brand();
+$redirectUrl = preg_match('/\Ahttps?:\/\//i', $brand['website']) ? $brand['website'] : '/';
 
 $device = null;
 $error  = '';
@@ -151,7 +152,8 @@ $remainingText    = $device ? formatRemaining($remainingMinutes) : 'N/A';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Internet Connected</title>
+    <title>Internet Connected - <?= h($brand['name']) ?></title>
+    <link rel="icon" href="<?= h($brand['favicon']) ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <?php if ($device): ?>
@@ -163,7 +165,13 @@ $remainingText    = $device ? formatRemaining($remainingMinutes) : 'N/A';
     <style>
 /* Links: no underlines (matches css/style.css); visible keyboard focus. */
 a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
-:where(a):focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
+/* Accent colours follow the configured site theme, with the original palette as fallback. */
+:root {
+    --ic-accent: var(--brand-600, #ff6b35);
+    --ic-accent-hover: var(--brand-secondary, var(--brand-500, #ff9800));
+    --ic-page-bg: var(--brand-100, #ff6b002b);
+}
+:where(a):focus-visible { outline: 2px solid var(--ic-accent); outline-offset: 2px; }
         * {
             box-sizing: border-box;
         }
@@ -172,7 +180,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             margin: 0;
             min-height: 100vh;
             font-family: Arial, sans-serif;
-            background: #ff6b002b;
+            background: var(--ic-page-bg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -248,7 +256,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: #ff6b35;
+            background: var(--ic-accent);
             color: #fff;
             text-decoration: none;
             padding: 12px 18px;
@@ -257,7 +265,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         }
 
         .btn:hover {
-            background:#ff9800;
+            background: var(--ic-accent-hover);
         }
 
         .muted {
@@ -266,6 +274,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             color: #64748b;
         }
     </style>
+    <?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
 <script src="js/accessibility.js"></script>
 </head>
 <body>
@@ -277,7 +286,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         </div>
 
         <h1>Connected Successfully</h1>
-        <p>Your device has been authorized. Redirecting to Hive Colab website...</p>
+        <p>Your device has been authorized. Redirecting to the <?= h($brand['name']) ?> website...</p>
 
        <div class="details">
 

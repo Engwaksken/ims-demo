@@ -769,8 +769,11 @@ $ma_badge_class = [
                                             </button>
                                         <?php endif; ?>
 
+                                        <?php $supportEmail = ims_brand_email(); ?>
                                         <a
-                                            href="mailto:info@hivecolab.com?subject=<?= rawurlencode("Application {$ref} Inquiry") ?>"
+                                            href="<?= $supportEmail !== ''
+                                                ? htmlspecialchars('mailto:' . $supportEmail . '?subject=' . rawurlencode("Application {$ref} Inquiry"), ENT_QUOTES, 'UTF-8')
+                                                : 'contact-support?app_id=' . (int)$applicationId ?>"
                                             class="btn btn-secondary btn-sm"
                                         >
                                             <i class="fas fa-envelope" aria-hidden="true"></i>

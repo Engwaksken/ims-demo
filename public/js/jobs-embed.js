@@ -1,16 +1,19 @@
 /*
- * Hive Colab jobs widget.
+ * Jobs widget.
  * Embed on a partner site:
- *   <div id="hivecolab-jobs"></div>
+ *   <div id="ims-jobs"></div>
  *   <script src="https://<ims-host>/js/jobs-embed.js"></script>
  * The iframe URL is derived from this script's src (/js/jobs-embed.js -> /jobs-embed);
- * set window.HiveColabJobsConfig.src to override.
+ * set window.IMSJobsConfig.src to override. Older embeds using
+ * <div id="hivecolab-jobs"> and window.HiveColabJobsConfig keep working.
  */
 (function () {
     'use strict';
-    var cfg = window.HiveColabJobsConfig || {};
+    /* window.IMSJobsConfig; window.HiveColabJobsConfig is still read for existing embeds. */
+    var cfg = window.IMSJobsConfig || window.HiveColabJobsConfig || {};
 
-    var CONTAINER_ID  = cfg.containerId  || 'hivecolab-jobs';
+    /* Default container: #ims-jobs, or the older #hivecolab-jobs (resolved in init). */
+    var CONTAINER_ID  = cfg.containerId  || null;
     var MIN_HEIGHT    = cfg.minHeight    != null ? parseInt(cfg.minHeight, 10)  : 400;
     var BORDER_RADIUS = cfg.borderRadius || '20px';   /* matches --radius-xl */
     var THEME         = cfg.theme        || 'light';
@@ -32,7 +35,7 @@
             ink100:       '#d1d5db',   /* --ink-100       */
             ink200:       '#9ca3af',   /* --ink-200       */
             ink300:       '#6b7280',   /* --ink-300       */
-            brand500:     '#f97316',   /* --brand-500     */
+            brand500:     '#64748b',   /* neutral; the widget itself uses the site theme */
             shadow:       '0 4px 24px rgba(13,17,23,.10), 0 1px 4px rgba(13,17,23,.06)',
         },
         dark: {
@@ -41,7 +44,7 @@
             ink100:       '#3a3028',
             ink200:       '#5a5048',
             ink300:       '#7a6e62',
-            brand500:     '#f97316',
+            brand500:     '#64748b',
             shadow:       '0 4px 32px rgba(0,0,0,.45), 0 1px 6px rgba(0,0,0,.30)',
         },
     };
@@ -126,7 +129,7 @@
             'position:absolute',
             'top:0', 'left:0', 'right:0',
             'height:3px',
-            'background:linear-gradient(90deg,' + ACCENT_COLOR + ',#fb923c)',
+            'background:' + ACCENT_COLOR,
             'border-radius:' + BORDER_RADIUS + ' ' + BORDER_RADIUS + ' 0 0',
         ].join(';');
         overlay.appendChild(bar);
@@ -138,7 +141,7 @@
             'border-radius:50%',
 
             /* brand-50 background circle — matches .widget-empty-icon */
-            'background:' + (THEME === 'dark' ? 'rgba(249,115,22,.12)' : '#fff4ed'),
+            'background:color-mix(in srgb,' + ACCENT_COLOR + ' ' + (THEME === 'dark' ? '12%' : '8%') + ',transparent)',
             'display:flex', 'align-items:center', 'justify-content:center',
         ].join(';');
 
@@ -193,7 +196,7 @@
     function makeIframe() {
         var iframe       = document.createElement('iframe');
         iframe.src       = buildSrc();
-        iframe.title     = 'Hive Colab Job Opportunities';
+        iframe.title     = cfg.title || 'Job opportunities';
         iframe.setAttribute('frameborder', '0');
         iframe.setAttribute('scrolling', 'no');
         iframe.setAttribute('loading', 'eager');
@@ -231,7 +234,8 @@
     /* -- Listen for height messages from the widget -------------- */
     function listenForResize(iframe, container) {
         window.addEventListener('message', function (evt) {
-            if (!evt.data || evt.data.type !== 'hivecolab-jobs-height') return;
+            if (!evt.data || (evt.data.type !== 'ims-jobs-height' && evt.data.type !== 'hivecolab-jobs-height')) return;
+            if (iframe.contentWindow && evt.source !== iframe.contentWindow) return;
 
             /* Validate origin when possible */
             try {
@@ -252,14 +256,17 @@
 
     /* -- Main init ----------------------------------------------- */
     function init() {
-        var container = document.getElementById(CONTAINER_ID);
+        var container = CONTAINER_ID
+            ? document.getElementById(CONTAINER_ID)
+            : (document.getElementById('ims-jobs') || document.getElementById('hivecolab-jobs'));
         if (!container) {
             console.warn(
-                '[HiveColabJobs] No element with id="' + CONTAINER_ID + '" found.',
-                'Add <div id="' + CONTAINER_ID + '"></div> to your page.'
+                '[IMS jobs widget] No element with id="' + (CONTAINER_ID || 'ims-jobs') + '" found.',
+                'Add <div id="' + (CONTAINER_ID || 'ims-jobs') + '"></div> to your page.'
             );
             return;
         }
+        CONTAINER_ID = container.id;
 
         injectKeyframes();
         styleContainer(container);

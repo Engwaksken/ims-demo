@@ -233,18 +233,7 @@ function notifyStaff(mysqli $conn, string $title, string $message, string $type,
 
 function emailWrap(string $inner): string
 {
-    return "
-    <div style='font-family:Arial,sans-serif;max-width:620px;margin:auto;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;'>
-      <div style='background:linear-gradient(135deg,#1a252f,#F47C20);padding:24px 30px;text-align:center;'>
-        <h2 style='color:#fff;margin:0;font-size:20px;letter-spacing:.5px;'>Hive Colab Accelerator</h2>
-      </div>
-      <div style='padding:28px 30px;color:#2c3e50;line-height:1.65;font-size:14px;'>
-        {$inner}
-      </div>
-      <div style='background:#f8f9fa;padding:14px 30px;text-align:center;font-size:11px;color:#aaa;'>
-        &copy; " . date('Y') . " Hive Colab &mdash; This is an automated message, please do not reply.
-      </div>
-    </div>";
+    return email_wrapper($inner, 'Accelerator');
 }
 
 function statusBadge(string $status): string
@@ -275,6 +264,7 @@ function emailApplicantStatusChange(array $app, string $notes): void
     $status  = (string)($app['status'] ?? 'Pending');
     $app_id  = (int)($app['application_id'] ?? 0);
     $badge   = statusBadge($status);
+    $org     = email_h(email_brand()['name']);
 
     $statusMsg = match ($status) {
         'Shortlisted' => "
@@ -288,7 +278,7 @@ function emailApplicantStatusChange(array $app, string $notes): void
             <p>A member of our team will contact you within 2–3 business days to
             discuss onboarding and next steps.</p>",
         'Rejected' => "
-            <p>Thank you for your interest in Hive Colab and for the time you invested
+            <p>Thank you for your interest in {$org} and for the time you invested
             in your application for <strong>{$startup}</strong>.</p>
             <p>After careful consideration, we regret to inform you that your application
             was <strong>not successful</strong> at this time. We encourage you to apply
@@ -300,7 +290,7 @@ function emailApplicantStatusChange(array $app, string $notes): void
 
     $notesSafe  = trim($notes) !== '' ? nl2br(safeText($notes)) : '';
     $notesBlock = $notesSafe !== ''
-        ? "<div style='background:#f8f9fa;border-left:4px solid #F47C20;padding:12px 16px;margin:16px 0;border-radius:0 6px 6px 0;'>
+        ? "<div style='background:#f8f9fa;border-left:4px solid " . email_brand()['primary'] . ";padding:12px 16px;margin:16px 0;border-radius:0 6px 6px 0;'>
              <strong>Reviewer Note:</strong><br>{$notesSafe}
            </div>"
         : '';
@@ -315,7 +305,7 @@ function emailApplicantStatusChange(array $app, string $notes): void
           Application ID: <strong>#{$app_id}</strong>
         </p>
         <hr style='border:none;border-top:1px solid #eee;margin:20px 0;'>
-        <p style='font-size:13px;'>Best regards,<br><strong>Hive Colab Team</strong></p>";
+        <p style='font-size:13px;'>Best regards,<br><strong>{$org} Team</strong></p>";
 
     $subject = match ($status) {
         'Shortlisted' => "You've Been Shortlisted - {$startup}",
@@ -377,7 +367,7 @@ function emailStaffStatusChange(array $app, string $notes, array $staffEmails): 
         {$notesBlock}
         <p style='font-size:12px;color:#888;'>Log in to the admin panel to view the full application.</p>";
 
-    $subject = "[Hive Colab] Application #{$app_id} - {$startup} - {$status}";
+    $subject = "[" . email_brand()['name'] . "] Application #{$app_id} - {$startup} - {$status}";
 
     $primary = array_shift($staffEmails);
     if (!$primary) {
@@ -415,7 +405,7 @@ function emailStaffBatchUpdate(int $count, string $status, array $staffEmails): 
         </table>
         <p style='font-size:12px;color:#888;'>Log in to the admin panel for details.</p>";
 
-    $subject = "[Hive Colab] Batch Update: {$count} application(s) - {$status}";
+    $subject = "[" . email_brand()['name'] . "] Batch Update: {$count} application(s) - {$status}";
     $primary = array_shift($staffEmails);
     if (!$primary) {
         return;

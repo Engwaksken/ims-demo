@@ -4,8 +4,11 @@
     'use strict';
 
     /* ---------- config ---------- */
-    var cfg = window.HiveColabConfig || {};
-    var CONTAINER_ID  = cfg.containerId  || 'hivecolab-apply';
+    /* window.IMSApplyConfig; window.HiveColabConfig is still read for existing embeds. */
+    var cfg = window.IMSApplyConfig || window.HiveColabConfig || {};
+    /* Default container: #ims-apply, or the older #hivecolab-apply. */
+    var CONTAINER_ID  = cfg.containerId  || null;
+    var ACCENT        = cfg.accentColor  || '#64748b';
     var MIN_HEIGHT    = cfg.minHeight    || 400;
     var BORDER_RADIUS = cfg.borderRadius || '16px';
     var BACKGROUND    = cfg.background   || '#FFF8F2';
@@ -20,9 +23,11 @@
 
     /* ---------- find / create container ---------- */
     function init() {
-        var container = document.getElementById(CONTAINER_ID);
+        var container = CONTAINER_ID
+            ? document.getElementById(CONTAINER_ID)
+            : (document.getElementById('ims-apply') || document.getElementById('hivecolab-apply'));
         if (!container) {
-            console.warn('[HiveColab] No element with id="' + CONTAINER_ID + '" found.');
+            console.warn('[IMS apply widget] No element with id="' + (CONTAINER_ID || 'ims-apply') + '" found.');
             return;
         }
 
@@ -49,12 +54,12 @@
             'gap:14px',
             'font-family:system-ui,sans-serif',
             'font-size:14px',
-            'color:#FF6B2B',
+            'color:' + ACCENT,
             'background:' + BACKGROUND,
             'z-index:2',
             'transition:opacity .4s',
         ].join(';');
-        loader.innerHTML = '<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:hc-spin 1s linear infinite"><circle cx="18" cy="18" r="15" stroke="#FF6B2B" stroke-width="3" stroke-dasharray="70 24" stroke-linecap="round"/></svg><span>Loading opportunities...</span>';
+        loader.innerHTML = '<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:hc-spin 1s linear infinite"><circle cx="18" cy="18" r="15" stroke="' + ACCENT + '" stroke-width="3" stroke-dasharray="70 24" stroke-linecap="round"/></svg><span>Loading opportunities...</span>';
         container.appendChild(loader);
 
         /* spin keyframes */
@@ -68,7 +73,7 @@
         /* --- iframe --- */
         var iframe = document.createElement('iframe');
         iframe.src             = SRC;
-        iframe.title           = 'Hive Colab - Apply for Programs';
+        iframe.title           = cfg.title || 'Apply for programs';
         iframe.allow           = 'fullscreen';
         iframe.setAttribute('scrolling', 'no');
         iframe.setAttribute('frameborder', '0');
@@ -93,7 +98,8 @@
 
         /* --- auto-resize via postMessage --- */
         window.addEventListener('message', function (event) {
-            if (event.data && event.data.type === 'hivecolab-height') {
+            if (iframe.contentWindow && event.source !== iframe.contentWindow) return;
+            if (event.data && (event.data.type === 'ims-apply-height' || event.data.type === 'hivecolab-height')) {
                 var h = Math.max(parseInt(event.data.height, 10), MIN_HEIGHT);
                 iframe.style.height    = h + 'px';
                 iframe.style.minHeight = h + 'px';

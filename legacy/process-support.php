@@ -12,8 +12,9 @@ declare(strict_types=1);
 | sendEmail() from includes/mail-function.php. Reply-To is not trusted from
 | the form: the message body carries the account's own email/name.
 |
-| Support inbox: SUPPORT_EMAIL in .env, else the active email_settings
-| from_email, else info@hivecolab.org (the address shown on the page).
+| Support inbox: SUPPORT_EMAIL in .env, else the organisation email from
+| Settings (the address shown on the page), else the active email_settings
+| from_email.
 |
 */
 
@@ -121,13 +122,15 @@ $recipient = (string)ims_env('SUPPORT_EMAIL', '');
 
 require_once __DIR__ . '/includes/mail-function.php';
 
+$orgEmail = function_exists('ims_brand_email') ? ims_brand_email() : '';
+
 if ($recipient === '' || filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
-    $settings = function_exists('getEmailSettings') ? getEmailSettings() : null;
-    $recipient = (string)($settings['from_email'] ?? '');
+    $recipient = $orgEmail;
 }
 
 if ($recipient === '' || filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
-    $recipient = 'info@hivecolab.org';
+    $settings = function_exists('getEmailSettings') ? getEmailSettings() : null;
+    $recipient = (string)($settings['from_email'] ?? '');
 }
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -174,7 +177,8 @@ if ($attachmentPath !== null) {
 
 if ($sent !== true) {
     error_log('process-support: email not sent: ' . (is_string($sent) ? $sent : 'unknown error'));
-    support_back('Sorry, your message could not be sent right now. Please try again later or email info@hivecolab.org.', 'danger', $appId);
+    support_back('Sorry, your message could not be sent right now. Please try again later'
+        . ($orgEmail !== '' ? ' or email ' . $orgEmail : '') . '.', 'danger', $appId);
 }
 
 if (function_exists('log_action')) {

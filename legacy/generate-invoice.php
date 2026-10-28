@@ -81,12 +81,13 @@ while ($row = $org_result->fetch_assoc()) {
     $org_settings[$row['setting_key']] = $row['setting_value'];
 }
 
-// Set default organization details if not in settings
-$org_name = $org_settings['org_name'] ?? 'Hive Colab';
-$org_address = $org_settings['org_address'] ?? 'Kampala, Uganda';
-$org_email = $org_settings['contact_email'] ?? 'info@hivecolab.org';
-$org_phone = $org_settings['contact_phone'] ?? '+256 700 000 000';
-$org_website = $org_settings['org_website'] ?? 'www.hivecolab.org';
+// Set default organization details if not in settings (organisation branding from Settings > General)
+$brand = ims_brand();
+$org_name = $org_settings['org_name'] ?? $brand['name'];
+$org_address = $org_settings['org_address'] ?? ($brand['address'] !== '' ? $brand['address'] : 'Kampala, Uganda');
+$org_email = $org_settings['contact_email'] ?? $brand['email'];
+$org_phone = $org_settings['contact_phone'] ?? ($brand['phone'] !== '' ? $brand['phone'] : '+256 700 000 000');
+$org_website = $org_settings['org_website'] ?? $brand['website_label'];
 $org_tin = $org_settings['org_tin'] ?? 'TIN: 1000000000';
 
 // Calculate subscription period
@@ -447,7 +448,7 @@ $html .= <<<HTML
     <!-- Notes -->
     <div class="notes">
         <div class="notes-title">Notes:</div>
-        Thank you for your membership with Hive Colab.<br>
+        Thank you for your membership with {$org_name}.<br>
         For any inquiries regarding this invoice, please contact us at {$org_email}.<br>
         This is a computer-generated invoice and does not require a signature.
     </div>
@@ -477,6 +478,8 @@ $dompdf->setPaper('A4', 'portrait');
 
 // Render PDF
 $dompdf->render();
+require_once __DIR__ . '/includes/pdf-branding.php';
+ims_brand_pdf($dompdf);
 
 // Log activity
 // Prepared via log_action() (invoice_number came from the DB unescaped).

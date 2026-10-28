@@ -106,7 +106,8 @@ $statusColor = $alreadyCheckedIn ? '#2563eb' : '#16a34a';
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Event Check-in</title>
+<title>Event Check-in - <?= e(ims_brand_name()) ?></title>
+<link rel="icon" href="<?= e(ims_brand()['favicon']) ?>">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -202,7 +203,7 @@ h2{
 
 <script>
 setTimeout(function () {
-    window.location.href = "https://hivecolab.org/";
+    window.location.href = <?= json_encode(ims_brand()['website'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?>;
 }, 3000);
 </script>
 

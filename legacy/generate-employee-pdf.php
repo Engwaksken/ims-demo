@@ -488,7 +488,7 @@ if ($employee['status'] == 'Approved') {
 // Footer
 $html .= '
     <div class="footer">
-        <p><strong>Hive Colab</strong> - Employee Directory</p>
+        <p><strong>' . htmlspecialchars(ims_brand_name()) . '</strong> - Employee Directory</p>
         <p>Generated on ' . date('d M Y H:i:s') . ' | This document is confidential and for internal use only.</p>
     </div>
 </body>

@@ -32,6 +32,10 @@ if ($app_id > 0) {
         $application = $app_result->fetch_assoc();
     }
 }
+
+$brand = ims_brand();
+$brandEmail = ims_brand_email();
+$brandPhoneHref = preg_replace('/[^0-9+]/', '', $brand['phone']);
 ?>
 
 <style>
@@ -178,27 +182,31 @@ if ($app_id > 0) {
             <div class="card-header"><h3><i class="fas fa-info-circle" aria-hidden="true"></i> Contact Information</h3></div>
             <div class="card-body">
 
+            <?php if ($brandEmail !== ''): ?>
             <div class="cs-method">
                 <div class="cs-method-icon">
                     <i class="fas fa-envelope"></i>
                 </div>
                 <div class="cs-method-body">
                     <h4>Email Support</h4>
-                    <p><a href="mailto:info@hivecolab.org">info@hivecolab.org</a></p>
+                    <p><a href="mailto:<?= htmlspecialchars($brandEmail, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($brandEmail, ENT_QUOTES, 'UTF-8') ?></a></p>
                     <small class="cell-muted">Response within 24 hours</small>
                 </div>
             </div>
+            <?php endif; ?>
 
+            <?php if ($brand['phone'] !== ''): ?>
             <div class="cs-method">
                 <div class="cs-method-icon">
                     <i class="fas fa-phone"></i>
                 </div>
                 <div class="cs-method-body">
                     <h4>Phone Support</h4>
-                    <p><a href="tel:+256392177978">+256 39 2177978</a></p>
+                    <p><a href="tel:<?= htmlspecialchars($brandPhoneHref, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($brand['phone'], ENT_QUOTES, 'UTF-8') ?></a></p>
                     <small class="cell-muted">Mon-Fri, 9:00 AM - 5:00 PM</small>
                 </div>
             </div>
+            <?php endif; ?>
 
             <div class="cs-method">
                 <div class="cs-method-icon">
@@ -206,22 +214,24 @@ if ($app_id > 0) {
                 </div>
                 <div class="cs-method-body">
                     <h4>Visit Us</h4>
-                    <p>Hive Colab<br>
-                    Kampala, Uganda</p>
+                    <p><?= htmlspecialchars($brand['name'], ENT_QUOTES, 'UTF-8') ?><?php if ($brand['address'] !== ''): ?><br>
+                    <?= nl2br(htmlspecialchars($brand['address'], ENT_QUOTES, 'UTF-8')) ?><?php endif; ?></p>
                     <small class="cell-muted">By appointment only</small>
                 </div>
             </div>
 
+            <?php if ($brand['website'] !== ''): ?>
             <div class="cs-method">
                 <div class="cs-method-icon">
-                    <i class="fab fa-twitter"></i>
+                    <i class="fas fa-globe"></i>
                 </div>
                 <div class="cs-method-body">
-                    <h4>Social Media</h4>
-                    <p>@HiveColab</p>
+                    <h4>Website</h4>
+                    <p><a href="<?= htmlspecialchars($brand['website'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener"><?= htmlspecialchars($brand['website_label'], ENT_QUOTES, 'UTF-8') ?></a></p>
                     <small class="cell-muted">Follow us for updates</small>
                 </div>
             </div>
+            <?php endif; ?>
             </div>
         </div>
 
@@ -230,7 +240,7 @@ if ($app_id > 0) {
             <div class="card-header"><h3><i class="fas fa-clock" aria-hidden="true"></i> Office Hours</h3></div>
             <div class="card-body cs-hours">
                 <strong>Monday - Friday:</strong><br>
-                9:00 AM - 5:00 PM EAT<br><br>
+                9:00 AM - 5:00 PM<br><br>
                 <strong>Saturday - Sunday:</strong><br>
                 Closed<br><br>
                 <small class="cell-muted">

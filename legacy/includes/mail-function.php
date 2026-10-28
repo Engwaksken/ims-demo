@@ -439,7 +439,72 @@ if (!function_exists('sendMail')) {
     }
 }
 
-function email_wrapper(string $content): string {
+/** Branding for emails: Settings > General (name, logo, contact) and Appearance (colours, font). */
+function email_brand(): array
+{
+    if (function_exists('ims_brand')) {
+        return ims_brand();
+    }
+    $name = defined('SITE_NAME') ? (string)SITE_NAME : 'Information Management System';
+    return [
+        'name' => $name, 'logo_url' => '', 'email' => '', 'phone' => '', 'address' => '', 'website' => '', 'website_label' => '',
+        'primary' => '#ea580c', 'primary_dark' => '#c2410c', 'primary_light' => '#fdf1ea', 'secondary' => '#f97316',
+        'font' => "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    ];
+}
+
+function email_h(string $value): string
+{
+    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/** "Best regards, <Organisation> Team" sign-off; $team names a unit, e.g. "Procurement Team". */
+function email_signoff(string $team = 'Team'): string
+{
+    return '<p>Best regards,<br><strong>' . email_h(email_brand()['name'] . ' ' . $team) . '</strong></p>';
+}
+
+/** Absolute URL of a page in this system, e.g. email_app_url() . 'login'. */
+function email_app_url(): string
+{
+    return rtrim(defined('APP_URL') ? (string)APP_URL : '', '/') . '/';
+}
+
+/** "If you have any questions please email ..." paragraph, or '' when no contact email is set. */
+function email_questions_line(): string
+{
+    $link = email_contact_link();
+    return $link === '' ? '' : '<p>If you have any questions please email ' . $link . '.</p>';
+}
+
+/** The organisation contact email as a mailto link, or '' when none is configured. */
+function email_contact_link(): string
+{
+    $email = function_exists('ims_brand_email') ? ims_brand_email() : '';
+    return $email === '' ? '' : "<a href='mailto:" . email_h($email) . "'>" . email_h($email) . '</a>';
+}
+
+/**
+ * Wrap email content in the branded layout. Classes available to $content:
+ * info-box, cred-box, password, code-box/code, warning, btn, reminder-badge.
+ */
+function email_wrapper(string $content, string $subtitle = ''): string {
+    $brand = email_brand();
+    $primary = $brand['primary'];
+    $primaryDark = $brand['primary_dark'];
+    $primaryLight = $brand['primary_light'];
+    $secondary = $brand['secondary'];
+    $font = $brand['font'];
+    $name = email_h($brand['name']);
+    $logo = $brand['logo_url'] !== ''
+        ? "<img src='" . email_h($brand['logo_url']) . "' alt='" . $name . "' style='max-height:48px;max-width:200px;margin:0 auto 12px;display:block;background:#ffffff;border-radius:8px;padding:6px 10px;'>"
+        : '';
+    $subtitleHtml = $subtitle !== '' ? "<p class='subtitle'>" . email_h($subtitle) . '</p>' : '';
+    $contact = [];
+    if ($brand['email'] !== '') $contact[] = "<a href='mailto:" . email_h($brand['email']) . "'>" . email_h($brand['email']) . '</a>';
+    if ($brand['phone'] !== '') $contact[] = email_h($brand['phone']);
+    if ($brand['website'] !== '') $contact[] = "<a href='" . email_h($brand['website']) . "'>" . email_h($brand['website_label']) . '</a>';
+    $contactHtml = $contact === [] ? '' : implode(' &middot; ', $contact) . '<br>';
     return "
     <!DOCTYPE html>
     <html lang='en'>
@@ -447,32 +512,37 @@ function email_wrapper(string $content): string {
         <meta charset='UTF-8'>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
-            body        { margin:0; padding:0; background:#f5f6fa; font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+            body        { margin:0; padding:0; background:#f5f6fa; font-family:$font; }
             .outer      { padding:30px 15px; }
             .card       { max-width:600px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden;
                           box-shadow:0 4px 15px rgba(0,0,0,0.08); }
-            .header     { background:linear-gradient(135deg,#FF5722 0%,#FF9800 100%); padding:30px 35px; text-align:center; }
-            .header img { height:40px; margin-bottom:12px; }
+            .header     { background-color:$primary; background-image:linear-gradient(135deg,$primary 0%,$secondary 100%); padding:30px 35px; text-align:center; }
             .header h1  { color:#ffffff; margin:0; font-size:22px; font-weight:700; letter-spacing:0.5px; }
+            .header .subtitle { color:#ffffff; margin:8px 0 0; font-size:14px; opacity:0.9; }
             .body       { padding:35px; color:#2c3e50; line-height:1.7; font-size:15px; }
             .body p     { margin:0 0 16px; }
-            .body h3    { color:#ff5722; margin:0 0 12px; font-size:18px; }
-            .info-box   { background:#f8f9fa; border-left:4px solid #ff5722; border-radius:6px;
+            .body h3    { color:$primary; margin:0 0 12px; font-size:18px; }
+            .body a     { color:$primaryDark; }
+            .info-box   { background:#f8f9fa; border-left:4px solid $primary; border-radius:6px;
                           padding:15px 18px; margin:20px 0; font-size:14px; }
             .info-box strong { display:inline-block; min-width:150px; color:#7f8c8d; }
-            .cred-box   { background:#fff8e1; border:2px solid #F39C12; border-radius:8px;
+            .cred-box   { background:$primaryLight; border:2px solid $secondary; border-radius:8px;
                           padding:20px 22px; margin:20px 0; }
-            .cred-box h4 { margin:0 0 12px; color:#e67e22; font-size:16px; }
+            .cred-box h4 { margin:0 0 12px; color:$primaryDark; font-size:16px; }
+            .code-box   { margin:24px 0; padding:20px; text-align:center; background:$primaryLight;
+                          border:2px dashed $primary; border-radius:8px; }
+            .code       { color:$primaryDark; font-size:32px; font-weight:bold; letter-spacing:5px; }
             .password   { font-family:'Courier New',Courier,monospace; font-size:22px; font-weight:700;
                           color:#c0392b; letter-spacing:3px; background:#fff; border:2px dashed #e74c3c;
                           padding:8px 16px; border-radius:6px; display:inline-block; margin:6px 0; }
             .warning    { background:#fdecea; border-left:4px solid #e74c3c; border-radius:4px;
                           padding:10px 14px; margin-top:14px; font-size:13px; color:#7d1a1a; }
-            .btn        { display:inline-block; background:linear-gradient(135deg,#FF5722,#FF9800);
+            .btn        { display:inline-block; background-color:$primary; background-image:linear-gradient(135deg,$primary,$secondary);
                           color:#ffffff !important; text-decoration:none; padding:13px 28px;
                           border-radius:8px; font-weight:700; font-size:15px; margin:20px 0; }
             .footer     { background:#f8f9fa; padding:20px 35px; text-align:center;
                           font-size:12px; color:#95a5a6; border-top:1px solid #ecf0f1; }
+            .footer a   { color:#7f8c8d; }
             .reminder-badge { display:inline-block; background:#FFF3CD; color:#8a6d1a; font-weight:700;
                           font-size:12px; padding:4px 10px; border-radius:20px; margin-bottom:10px; }
         </style>
@@ -481,13 +551,16 @@ function email_wrapper(string $content): string {
     <div class='outer'>
         <div class='card'>
             <div class='header'>
-                <h1>Hive Colab</h1>
+                $logo
+                <h1>$name</h1>
+                $subtitleHtml
             </div>
             <div class='body'>
                 $content
             </div>
             <div class='footer'>
-                &copy; " . date('Y') . " Hive Colab. All rights reserved.<br>
+                $contactHtml
+                &copy; " . date('Y') . " $name. All rights reserved.<br>
                 This is an automated message - please do not reply directly to this email.
             </div>
         </div>
@@ -516,21 +589,20 @@ function send_application_confirmation(string $email, string $startup_name, int 
         <p>We will be in touch if your application is shortlisted. In the meantime you can
            track your status at any time by logging in to your account.</p>
 
-        <a href='https://ims.kemmytech.com/my-applications' class='btn'>
+        <a href='" . email_app_url() . "my-applications' class='btn'>
             View My Applications
         </a>
 
-        <p>If you have any questions please email
-           <a href='mailto:info@hivecolab.com'>info@hivecolab.com</a>.</p>
+        " . email_questions_line() . "
 
-        <p>Best regards,<br><strong>The Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
 
     $altBody = "Application Submitted - {$startup_name}\n"
              . "Reference: {$reference}\n"
              . "Submitted: " . date('d M Y, h:i A') . "\n"
              . "We will contact you if shortlisted.\n"
-             . "Track status: https://ims.kemmytech.com/my-applications.php";
+             . "Track status: " . email_app_url() . "my-applications.php";
 
     sendEmail($email, $subject, email_wrapper($content), $altBody);
 }
@@ -543,15 +615,15 @@ function send_draft_saved_email(
     string $temp_pass
 ): void {
     $reference  = 'DRAFT-' . str_pad($app_id, 6, '0', STR_PAD_LEFT);
-    $subject    = "Draft Saved & Account Created - Hive Colab";
-    $login_url  = 'https://ims.kemmytech.com/login.php';
-    $portal_url = 'https://ims.kemmytech.com/my-applications.php';
+    $subject    = "Draft Saved & Account Created - " . email_brand()['name'];
+    $login_url  = email_app_url() . 'login.php';
+    $portal_url = email_app_url() . 'my-applications.php';
 
     $content = "
         <h3>Your Draft Has Been Saved!</h3>
         <p>Hi " . htmlspecialchars($name) . ",</p>
         <p>Great start! Your application draft for <strong>" . htmlspecialchars($startup) . "</strong>
-           has been saved. We have also created a Hive Colab account for you so you can
+           has been saved. We have also created a " . email_h(email_brand()['name']) . " account for you so you can
            return and complete it at any time.</p>
 
         <div class='info-box'>
@@ -589,7 +661,7 @@ function send_draft_saved_email(
             <a href='{$portal_url}'>{$portal_url}</a>
         </p>
 
-        <p>Best regards,<br><strong>The Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
 
     $altBody = "Draft Saved - " . $startup . "\n"
@@ -613,7 +685,7 @@ function send_draft_updated_email(
 ): void {
     $reference  = 'DRAFT-' . str_pad($app_id, 6, '0', STR_PAD_LEFT);
     $subject    = "Draft Updated - " . $startup;
-    $portal_url = 'https://ims.kemmytech.com/my-applications.php';
+    $portal_url = email_app_url() . 'my-applications.php';
 
     $content = "
         <h3>Your Draft Has Been Updated</h3>
@@ -633,10 +705,9 @@ function send_draft_updated_email(
 
         <a href='{$portal_url}' class='btn'>Go to My Applications</a>
 
-        <p>If you have any questions please email
-           <a href='mailto:info@hivecolab.com'>info@hivecolab.com</a>.</p>
+        " . email_questions_line() . "
 
-        <p>Best regards,<br><strong>The Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
 
     $altBody = "Draft Updated - " . $startup . "\n"
@@ -673,7 +744,7 @@ function send_asset_request_admin_notification(array $request, array $recipients
         <p><strong>Reason:</strong></p>
         <p>" . nl2br(htmlspecialchars($request['request_reason'])) . "</p>
 
-        <a href='https://ims.kemmytech.com/manage_assets' class='btn'>
+        <a href='" . email_app_url() . "manage_assets' class='btn'>
             Review Asset Request
         </a>
     ";
@@ -684,7 +755,7 @@ function send_asset_request_admin_notification(array $request, array $recipients
         . "Category: {$request['category']}\n"
         . "Urgency: {$request['urgency_level']}\n"
         . "Reason: {$request['request_reason']}\n"
-        . "Review: https://ims.kemmytech.com/manage_assets.php";
+        . "Review: " . email_app_url() . "manage_assets.php";
 
     sendEmail($recipients, $subject, email_wrapper($content), $altBody);
 }
@@ -711,7 +782,7 @@ function send_asset_request_user_confirmation(string $email, array $request): vo
 
         <p>You will be notified once the request has been reviewed.</p>
 
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
 
     $altBody = "Asset Request Submitted\n"
@@ -742,7 +813,7 @@ function send_procurement_submitted_email(array $data, array $recipients): void
 
         <p>{$data['description']}</p>
 
-        <a href='https://ims.kemmytech.com/manage_procurement' class='btn'>
+        <a href='" . email_app_url() . "manage_procurement' class='btn'>
             Review Request
         </a>
     ";
@@ -806,7 +877,7 @@ function send_rfq_created_email(array $recipients, array $data): void
             <div><strong>RFQ Number:</strong> {$data['rfq_number']}</div>
         </div>
 
-        <a href='https://ims.kemmytech.com/manage_rfq?procurement_id={$data['procurement_id']}' class='btn'>
+        <a href='" . email_app_url() . "manage_rfq?procurement_id={$data['procurement_id']}' class='btn'>
             Manage RFQ
         </a>
     ";
@@ -839,7 +910,7 @@ function send_supplier_rfq_invitation_email(string $email, array $data): void
         return;
     }
 
-    $subject = 'RFQ Invitation - ' . ($data['rfq_number'] ?? 'Hive Colab');
+    $subject = 'RFQ Invitation - ' . ($data['rfq_number'] ?? email_brand()['name']);
 
     $content = "
         <h3>Request for Quotation Invitation</h3>
@@ -853,9 +924,9 @@ function send_supplier_rfq_invitation_email(string $email, array $data): void
             <div><strong>Invited At:</strong> " . date('d M Y, h:i A') . "</div>
         </div>
 
-        <p>Please contact Hive Colab procurement team for submission details.</p>
+        <p>Please contact the " . email_h(email_brand()['name']) . " procurement team for submission details.</p>
 
-        <p>Best regards,<br><strong>Hive Colab Procurement Team</strong></p>
+        " . email_signoff('Procurement Team') . "
     ";
 
     $altBody = "RFQ Invitation\n"
@@ -881,7 +952,7 @@ function send_quotation_review_invite_email(string $email, array $data): void
             <div><strong>Procurement:</strong> " . htmlspecialchars($data['title'] ?? '-') . "</div>
         </div>
 
-        <a href='https://ims.kemmytech.com/manage_quotation_reviews?rfq_id=" . (int)$data['rfq_id'] . "' class='btn'>
+        <a href='" . email_app_url() . "manage_quotation_reviews?rfq_id=" . (int)$data['rfq_id'] . "' class='btn'>
             Review Quotations
         </a>
     ";
@@ -925,11 +996,11 @@ function send_event_registration_confirmation(array $data): void
         $checkinPayload .= '&sig=' . ims_event_checkin_signature($registrationId, $eventId);
     }
     $checkinToken = base64_encode($checkinPayload);
-    $checkinUrl   = 'https://ims.kemmytech.com/event-checkin?token=' . urlencode($checkinToken);
+    $checkinUrl   = email_app_url() . 'event-checkin?token=' . urlencode($checkinToken);
 
     $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' . urlencode($checkinUrl);
 
-    $subject = 'Event Registration Confirmed - ' . ($data['event_title'] ?? 'Hive Colab Event');
+    $subject = 'Event Registration Confirmed - ' . ($data['event_title'] ?? email_brand()['name'] . ' Event');
 
     $eventDate = !empty($data['event_date'])
         ? date('l, d F Y', strtotime((string)$data['event_date']))
@@ -970,7 +1041,7 @@ function send_event_registration_confirmation(array $data): void
             <a href='{$checkinUrl}'>{$checkinUrl}</a>
         </p>
 
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
 
     $altBody = "Registration Confirmed\n"
@@ -1009,7 +1080,7 @@ function send_booking_request_confirmation(string $email, string $name, array $b
 {
     if ($email === '') return;
 
-    $subject = 'Booking Request Received - ' . ($booking['space_name'] ?? 'Hive Colab Space');
+    $subject = 'Booking Request Received - ' . ($booking['space_name'] ?? email_brand()['name'] . ' Space');
 
     $content = "
         <h3>Booking Request Received</h3>
@@ -1023,8 +1094,8 @@ function send_booking_request_confirmation(string $email, string $name, array $b
             <div><strong>Amount:</strong> UGX " . number_format((float)($booking['booking_amount'] ?? 0)) . "</div>
         </div>
         <p>You'll receive another email as soon as your booking is confirmed.</p>
-        <a href='https://ims.kemmytech.com/my-bookings' class='btn'>View My Bookings</a>
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        <a href='" . email_app_url() . "my-bookings' class='btn'>View My Bookings</a>
+        " . email_signoff() . "
     ";
 
     $altBody = "Booking Request Received\n"
@@ -1032,7 +1103,7 @@ function send_booking_request_confirmation(string $email, string $name, array $b
         . "Space: " . ($booking['space_name'] ?? '-') . "\n"
         . "Date: " . ($booking['booking_date'] ?? '-') . "\n"
         . "Status: Pending confirmation\n"
-        . "View bookings: https://ims.kemmytech.com/my-bookings.php";
+        . "View bookings: " . email_app_url() . "my-bookings.php";
 
     sendEmail($email, $subject, email_wrapper($content), $altBody);
 }
@@ -1054,14 +1125,14 @@ function send_booking_admin_notification(array $recipients, array $booking, stri
             <div><strong>Attendees:</strong> " . (int)($booking['number_of_attendees'] ?? 0) . "</div>
             <div><strong>Amount:</strong> UGX " . number_format((float)($booking['booking_amount'] ?? 0)) . "</div>
         </div>
-        <a href='https://ims.kemmytech.com/manage-bookings' class='btn'>Review Booking</a>
+        <a href='" . email_app_url() . "manage-bookings' class='btn'>Review Booking</a>
     ";
 
     $altBody = "New Booking Request\n"
         . "Requested By: {$member_name}\n"
         . "Space: " . ($booking['space_name'] ?? '-') . "\n"
         . "Date: " . ($booking['booking_date'] ?? '-') . "\n"
-        . "Review: https://ims.kemmytech.com/manage-bookings";
+        . "Review: " . email_app_url() . "manage-bookings";
 
     sendEmail($recipients, $subject, email_wrapper($content), $altBody);
 }
@@ -1071,7 +1142,7 @@ function send_booking_cancellation_email(string $email, array $booking): void
 {
     if ($email === '') return;
 
-    $subject = 'Booking Cancelled - ' . ($booking['space_name'] ?? 'Hive Colab Space');
+    $subject = 'Booking Cancelled - ' . ($booking['space_name'] ?? email_brand()['name'] . ' Space');
 
     $content = "
         <h3>Booking Cancelled</h3>
@@ -1079,8 +1150,8 @@ function send_booking_cancellation_email(string $email, array $booking): void
         <p>This confirms that your booking below has been cancelled.</p>
         " . _booking_info_box($booking) . "
         <p>Need to book again? You're welcome to submit a new request any time.</p>
-        <a href='https://ims.kemmytech.com/book-space' class='btn'>Book a Space</a>
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        <a href='" . email_app_url() . "book-space' class='btn'>Book a Space</a>
+        " . email_signoff() . "
     ";
 
     $altBody = "Booking Cancelled\n"
@@ -1103,7 +1174,7 @@ function send_booking_cancellation_admin_notification(array $recipients, array $
         <p><strong>" . htmlspecialchars($member_name) . "</strong> has cancelled the following booking.
            This slot is now free again.</p>
         " . _booking_info_box($booking) . "
-        <a href='https://ims.kemmytech.com/manage-bookings' class='btn'>View Bookings Calendar</a>
+        <a href='" . email_app_url() . "manage-bookings' class='btn'>View Bookings Calendar</a>
     ";
 
     $altBody = "Booking Cancelled\n"
@@ -1119,7 +1190,7 @@ function send_booking_reschedule_email(string $email, array $booking): void
 {
     if ($email === '') return;
 
-    $subject = 'Booking Rescheduled - ' . ($booking['space_name'] ?? 'Hive Colab Space');
+    $subject = 'Booking Rescheduled - ' . ($booking['space_name'] ?? email_brand()['name'] . ' Space');
 
     $oldDate = !empty($booking['old_date']) ? date('d M Y', strtotime((string)$booking['old_date'])) : '-';
     $oldTime = !empty($booking['old_start']) ? date('h:i A', strtotime((string)$booking['old_start'])) . ' - ' . date('h:i A', strtotime((string)$booking['old_end'])) : '-';
@@ -1138,8 +1209,8 @@ function send_booking_reschedule_email(string $email, array $booking): void
             <div><strong>New Time:</strong> {$newTime}</div>
         </div>
         <p>You'll be notified again once Operations confirms the new slot.</p>
-        <a href='https://ims.kemmytech.com/my-bookings' class='btn'>View My Bookings</a>
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        <a href='" . email_app_url() . "my-bookings' class='btn'>View My Bookings</a>
+        " . email_signoff() . "
     ";
 
     $altBody = "Booking Rescheduled\n"
@@ -1166,7 +1237,7 @@ function send_booking_reschedule_admin_notification(array $recipients, array $bo
         <p><strong>" . htmlspecialchars($member_name) . "</strong> moved their booking for
            <strong>" . htmlspecialchars((string)($booking['space_name'] ?? '')) . "</strong>
            from {$oldDate} to {$newDate}. It is now Pending and needs confirmation.</p>
-        <a href='https://ims.kemmytech.com/manage-bookings' class='btn'>Review Booking</a>
+        <a href='" . email_app_url() . "manage-bookings' class='btn'>Review Booking</a>
     ";
 
     $altBody = "Booking Rescheduled\n"
@@ -1202,8 +1273,8 @@ function send_booking_reminder_email(string $email, array $booking, string $audi
         <p>{$intro}</p>
         " . _booking_info_box($booking) . "
         <p>If anything has changed, please update or cancel the booking as soon as possible.</p>
-        <a href='https://ims.kemmytech.com/my-bookings' class='btn'>View Booking Details</a>
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        <a href='" . email_app_url() . "my-bookings' class='btn'>View Booking Details</a>
+        " . email_signoff() . "
     ";
 
     $altBody = "Reminder: Upcoming Booking\n"
@@ -1231,12 +1302,12 @@ if (!function_exists('send_booking_approved_email')) {
         }
 
         $subject = 'Booking Approved - '
-            . ($booking['space_name'] ?? 'Hive Colab Space');
+            . ($booking['space_name'] ?? email_brand()['name'] . ' Space');
 
         $content = "
             <h3>Your Booking Has Been Approved</h3>
             <p>Dear " . htmlspecialchars($name) . ",</p>
-            <p>Your Hive Colab space booking request has been
+            <p>Your " . email_h(email_brand()['name']) . " space booking request has been
                <strong>approved</strong> by our Operations team.</p>
             " . _booking_info_box($booking) . "
             <div class='info-box'>
@@ -1249,9 +1320,9 @@ if (!function_exists('send_booking_approved_email')) {
                     . "</div>
             </div>
             <p>Please arrive on time and contact the Operations team if your plans change.</p>
-            <a href='https://ims.kemmytech.com/hub-events?tab=my-bookings'
+            <a href='" . email_app_url() . "hub-events?tab=my-bookings'
                class='btn'>View My Bookings</a>
-            <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+            " . email_signoff() . "
         ";
 
         $altBody = "Booking Approved\n"
@@ -1282,28 +1353,28 @@ if (!function_exists('send_booking_rejected_email')) {
         }
 
         $subject = 'Booking Request Rejected - '
-            . ($booking['space_name'] ?? 'Hive Colab Space');
+            . ($booking['space_name'] ?? email_brand()['name'] . ' Space');
 
         $content = "
             <h3>Booking Request Not Approved</h3>
             <p>Dear " . htmlspecialchars($name) . ",</p>
-            <p>Your Hive Colab space booking request was not approved.</p>
+            <p>Your " . email_h(email_brand()['name']) . " space booking request was not approved.</p>
             " . _booking_info_box($booking) . "
             <div class='warning'>
                 <strong>Reason:</strong><br>
                 " . nl2br(htmlspecialchars($reason)) . "
             </div>
             <p>You may return to the booking page and choose another free date or time.</p>
-            <a href='https://ims.kemmytech.com/hub-events'
+            <a href='" . email_app_url() . "hub-events'
                class='btn'>Choose Another Slot</a>
-            <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+            " . email_signoff() . "
         ";
 
         $altBody = "Booking Request Rejected\n"
             . "Space: " . ($booking['space_name'] ?? '-') . "\n"
             . "Date: " . ($booking['booking_date'] ?? '-') . "\n"
             . "Reason: " . $reason . "\n"
-            . "Choose another slot: https://ims.kemmytech.com/hub-events.php";
+            . "Choose another slot: " . email_app_url() . "hub-events.php";
 
         sendEmail(
             $email,

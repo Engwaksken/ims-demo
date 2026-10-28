@@ -305,18 +305,19 @@ if ($job['salary_min'] || $job['salary_max']) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($page_title) ?> - Hive Colab</title>
-    <link rel="icon" type="image/png" href="images/favicon.png">
+    <title><?= htmlspecialchars($page_title) ?> - <?= htmlspecialchars(ims_brand_name(), ENT_QUOTES, 'UTF-8') ?></title>
+    <link rel="icon" type="image/png" href="<?= htmlspecialchars(ims_brand()['favicon'], ENT_QUOTES, 'UTF-8') ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <style>
 /* Links: no underlines (matches css/style.css); visible keyboard focus. */
 a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
-:where(a):focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
+:where(a):focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-    --orange:  #FF6B2B;
-    --orange-d:#e85b1e;
-    --amber:   #FF9800;
+    /* Accent colours follow the configured site theme, with the original palette as fallback. */
+    --orange:  var(--brand-600, #FF6B2B);
+    --orange-d:var(--brand-700, #e85b1e);
+    --amber:   var(--brand-secondary, var(--brand-500, #FF9800));
     --green:   #16a34a;
     --red:     #dc2626;
     --blue:    #2563eb;
@@ -350,9 +351,9 @@ body {
 
 /* -- Job hero banner --------------------------- */
 .aj-hero {
-    background: linear-gradient(130deg, #FF6B2B 0%, #FF9800 100%);
+    background: linear-gradient(130deg, var(--orange) 0%, var(--amber) 100%);
     color: #fff; border-radius: var(--r); padding: 28px 32px; margin-bottom: 24px;
-    box-shadow: 0 6px 28px rgba(255,107,43,.3);
+    box-shadow: 0 6px 28px color-mix(in srgb, var(--orange) 30%, transparent);
 }
 .aj-hero h1 { font-size: 24px; font-weight: 800; margin-bottom: 10px; line-height: 1.2; }
 .aj-hero-meta {
@@ -422,7 +423,7 @@ body {
 }
 .aj-fi::placeholder, .aj-fta::placeholder { color: var(--muted); }
 .aj-fi:focus, .aj-fs:focus, .aj-fta:focus {
-    border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,107,43,.1);
+    border-color: var(--orange); box-shadow: 0 0 0 3px color-mix(in srgb, var(--orange) 10%, transparent);
 }
 .aj-fta { resize: vertical; min-height: 110px; line-height: 1.6; }
 .aj-fs  { cursor: pointer; }
@@ -437,7 +438,7 @@ body {
     padding: 22px 16px; text-align: center; background: #fff7f4;
     cursor: pointer; transition: all .2s; position: relative;
 }
-.aj-drop:hover, .aj-drop.drag { background: #fff0ea; border-color: var(--orange-d); }
+.aj-drop:hover, .aj-drop.drag { background: var(--brand-50, #fff0ea); border-color: var(--orange-d); }
 .aj-drop input[type="file"] {
     position: absolute; inset: 0; opacity: 0;
     cursor: pointer; width: 100%; height: 100%;
@@ -509,9 +510,9 @@ body {
 }
 .aj-btn-primary {
     background: linear-gradient(135deg, var(--orange), var(--amber));
-    color: #fff; box-shadow: 0 4px 14px rgba(255,107,43,.28);
+    color: #fff; box-shadow: 0 4px 14px color-mix(in srgb, var(--orange) 28%, transparent);
 }
-.aj-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,107,43,.4); }
+.aj-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px color-mix(in srgb, var(--orange) 40%, transparent); }
 .aj-btn-ghost { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.2); }
 .aj-btn-ghost:hover { background: rgba(255,255,255,.18); }
 .aj-btn:disabled { opacity: .55; cursor: not-allowed; transform: none !important; }
@@ -525,7 +526,7 @@ body {
     border-radius: var(--r); overflow: hidden; box-shadow: var(--sh);
 }
 .aj-job-summary .top {
-    background: linear-gradient(135deg, #FF6B2B, #FF9800);
+    background: linear-gradient(135deg, var(--orange), var(--amber));
     color: #fff; padding: 18px 20px;
 }
 .aj-job-summary .top h3 { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
@@ -606,6 +607,7 @@ body {
     font-size: 13px; color: var(--sub); cursor: pointer; line-height: 1.6;
 }
 </style>
+<?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
 <script src="js/accessibility.js"></script>
 </head>
 <body>
@@ -772,7 +774,7 @@ body {
                     <input type="text" class="aj-fi" name="applicant_location"
                            id="aj-loc"
                            value="<?= $d('applicant_location') ?>"
-                           placeholder="e.g. Kampala, Uganda">
+                           placeholder="e.g. City, Country">
                 </div>
             </div>
             <div class="aj-form-row">

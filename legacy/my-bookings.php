@@ -83,9 +83,10 @@ $completed = $conn->query("SELECT COUNT(*) as count FROM space_bookings
 $stats['completed'] = $completed;
 
 
+// Bank details are placeholders: configure the organisation's real account details here.
 $bank_details = [
     'bank_name'      => 'Stanbic Bank Uganda',
-    'account_name'   => 'Hive Colab Limited',
+    'account_name'   => ims_brand_name(),
     'account_number' => '9030012345678',
     'branch'         => 'Kampala Road Branch',
     'swift_code'     => 'SBICUGKX',

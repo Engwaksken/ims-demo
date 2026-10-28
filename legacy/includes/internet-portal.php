@@ -54,16 +54,24 @@ if (!function_exists('normalizeMac')) {
     }
 }
 
+if (!function_exists('portalDefaultRedirectUrl')) {
+    /** The organisation website (Settings > General), used when no redirect URL is given. */
+    function portalDefaultRedirectUrl(): string {
+        $site = function_exists('ims_brand') ? trim((string)ims_brand()['website']) : '';
+        return preg_match('/^https?:\/\//i', $site) ? $site : '/';
+    }
+}
+
 if (!function_exists('portalRedirectUrl')) {
     function portalRedirectUrl(string $url): string {
         $url = trim($url);
 
         if ($url === '' || strtolower($url) === 'null') {
-            return 'https://hivecolab.org/';
+            return portalDefaultRedirectUrl();
         }
 
         if (!preg_match('/^https?:\/\//i', $url)) {
-            return 'https://hivecolab.org/';
+            return portalDefaultRedirectUrl();
         }
 
         return $url;
@@ -92,7 +100,7 @@ if (!function_exists('autoAuthorizeInternetClient')) {
         string $site,
         int $minutes,
         string $zone = 'lan',
-        string $redirurl = 'https://hivecolab.org/'
+        string $redirurl = ''
     ): bool {
         $clientMac = normalizeMac($clientMac);
 

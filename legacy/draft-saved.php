@@ -29,13 +29,18 @@ $reference = 'DRAFT-' . str_pad($draft_id, 6, '0', STR_PAD_LEFT);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Draft Saved - Hive Colab</title>
-    <link rel="icon" type="image/png" href="images/favicon.png">
+    <title>Draft Saved - <?php echo htmlspecialchars(ims_brand_name(), ENT_QUOTES, 'UTF-8'); ?></title>
+    <link rel="icon" type="image/png" href="<?php echo htmlspecialchars(ims_brand()['favicon'], ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
 /* Links: no underlines (matches css/style.css); visible keyboard focus. */
 a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
-:where(a):focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
+/* Accent colours follow the configured site theme, with the original palette as fallback. */
+:root {
+    --ds-accent:   var(--brand-600, #ff5722);
+    --ds-accent-2: var(--brand-secondary, var(--brand-500, #ff9800));
+}
+:where(a):focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -55,7 +60,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
 
         /* -- Success banner -- */
         .banner {
-            background: linear-gradient(135deg, #ff5722 0%, #ff9800 100%);
+            background: linear-gradient(135deg, var(--ds-accent) 0%, var(--ds-accent-2) 100%);
             color: white;
             border-radius: 14px 14px 0 0;
             padding: 20px 25px 20px;
@@ -88,7 +93,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         .ref-tag {
             background: #eaf4fb;
             border: 1px solid #bee5f8;
-            color: #ff9800;
+            color: var(--ds-accent-2);
             border-radius: 6px;
             padding: 8px 14px;
             display: inline-block;
@@ -177,7 +182,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ff5722, #ff9800);
+            background: linear-gradient(135deg, var(--ds-accent), var(--ds-accent-2));
             color: white;
             font-weight: 700;
             font-size: 14px;
@@ -215,12 +220,12 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #ff5722, #FF9800);
+            background: linear-gradient(135deg, var(--ds-accent), var(--ds-accent-2));
             color: white;
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #ff5722, #ff9800);
+            background: linear-gradient(135deg, var(--ds-accent), var(--ds-accent-2));
             color: white;
         }
 
@@ -240,6 +245,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             .btn-row { flex-direction: column; }
         }
     </style>
+    <?php echo ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])); ?>
 <script src="js/accessibility.js"></script>
 </head>
 <body>
@@ -297,7 +303,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
 
         <!-- -- NEXT STEPS -- -->
         <div class="steps">
-            <h3><i class="fas fa-list-ol" style="color:#ff5722;margin-right:6px;"></i> What to do next</h3>
+            <h3><i class="fas fa-list-ol" style="color:var(--ds-accent);margin-right:6px;"></i> What to do next</h3>
 
             <?php if ($is_new_user): ?>
             <div class="step-item">

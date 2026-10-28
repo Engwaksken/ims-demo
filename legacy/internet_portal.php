@@ -37,20 +37,36 @@ usort($currentEvents, function (array $a, array $b): int {
 
 $heroEvent    = $currentEvents[0] ?? null;   // first upcoming event for the hero
 $eventCount   = count($currentEvents);
+
+$brand        = ims_brand();
+$brandName    = $brand['name'];
+$brandEvent   = $brandName . ' Event';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HiveColab - Internet Subscription Portal</title>
+<title><?= h($brandName) ?> - Internet Subscription Portal</title>
 
-<link rel="icon" href="images/favicon.png" type="image/png">
-<link rel="shortcut icon" href="images/favicon.png" type="image/png">
-<link rel="apple-touch-icon" href="images/favicon.png">
+<link rel="icon" href="<?= h($brand['favicon']) ?>" type="image/png">
+<link rel="shortcut icon" href="<?= h($brand['favicon']) ?>" type="image/png">
+<link rel="apple-touch-icon" href="<?= h($brand['favicon']) ?>">
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="css/internet-portal.css">
+<?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
+<style>
+/* Map the portal palette onto the site theme; the stylesheet's colours remain the fallback. */
+html:root {
+  --brand: var(--brand-600, #FF6B00);
+  --brand-dark: var(--brand-700, #D45200);
+  --brand-light: var(--brand-50, #FFF3E8);
+  --brand-glow: color-mix(in srgb, var(--brand) 18%, transparent);
+}
+.hero-slider { background: linear-gradient(135deg, var(--brand-700, #c2410c) 0%, var(--brand-500, #f97316) 55%, var(--brand-400, #fb923c) 100%); }
+.hero-eyebrow-dot { background: var(--brand-200, #ffc89e); }
+</style>
 <script src="js/accessibility.js"></script>
 </head>
 
@@ -60,14 +76,14 @@ $eventCount   = count($currentEvents);
     <!-- ── Top bar ──────────────────────────────────────────────────────── -->
     <div class="topbar">
         <div class="topbar-logo">
-            <img src="images/logo.png"
-                 alt="HiveColab"
+            <img src="<?= h($brand['logo']) ?>"
+                 alt="<?= h($brandName) ?>"
                  onerror="this.style.display='none';
                           document.getElementById('logo-fallback').style.display='grid';">
             <div class="topbar-logo-fallback" id="logo-fallback" style="display:none">
                 <i class="fas fa-wifi"></i>
             </div>
-            <span class="topbar-brand">Hive<span>Colab</span></span>
+            <span class="topbar-brand"><?= h($brandName) ?></span>
         </div>
 
         <div class="topbar-mac">
@@ -128,19 +144,19 @@ $eventCount   = count($currentEvents);
                 <!-- Heading — mirrors opportunities h1 + .opp-hero-accent -->
                 <?php if ($heroEvent): ?>
                 <h1 id="heroTitle">
-                    <?= h($heroEvent['event_title'] ?? 'HiveColab Event') ?><br>
+                    <?= h($heroEvent['event_title'] ?? $brandEvent) ?><br>
                     <span class="hero-accent" id="heroMeta">
                         <?php if ($dateLabel): ?>
                             <?= h($dateLabel) ?>
                             <?= $timeLabel ? '&nbsp;·&nbsp;' . h($timeLabel) : '' ?>
                         <?php else: ?>
-                            HiveColab&nbsp;Event
+                            <?= h($brandEvent) ?>
                         <?php endif; ?>
                     </span>
                 </h1>
                 <?php else: ?>
                 <h1>
-                    HiveColab<br>
+                    <?= h($brandName) ?><br>
                     <span class="hero-accent">WiFi&nbsp;Portal</span>
                 </h1>
                 <?php endif; ?>
@@ -156,7 +172,7 @@ $eventCount   = count($currentEvents);
                 <?php elseif ($heroEvent && $heroSubFallback): ?>
                 <p class="hero-sub" id="heroDesc">
                     <?php if (!empty($heroEvent['venue'])): ?>
-                        <i class="fas fa-location-dot" style="color:#ffc89e;margin-right:5px;"></i>
+                        <i class="fas fa-location-dot" style="color:var(--brand-200, #ffc89e);margin-right:5px;"></i>
                         <?= h($heroEvent['venue']) ?>
                     <?php endif; ?>
                 </p>
@@ -191,7 +207,7 @@ $eventCount   = count($currentEvents);
                                 aria-label="Event <?= $i + 1 ?>"
                                 style="width:<?= $i === 0 ? '22px' : '7px' ?>;height:7px;
                                        border-radius:999px;border:0;cursor:pointer;padding:0;
-                                       background:<?= $i === 0 ? '#FF6B00' : 'rgba(255,255,255,.35)' ?>;
+                                       background:<?= $i === 0 ? 'var(--brand)' : 'rgba(255,255,255,.35)' ?>;
                                        transition:all .25s;"></button>
                         <?php endforeach; ?>
                     </div>
@@ -245,7 +261,7 @@ $eventCount   = count($currentEvents);
     <!-- JS event data for the carousel -->
     <?php if ($eventCount > 1): ?>
     <script>
-    window.__heroEvents = <?= json_encode(array_map(function (array $ev): array {
+    window.__heroEvents = <?= json_encode(array_map(function (array $ev) use ($brandEvent): array {
         $dl = !empty($ev['event_date']) ? date('D, d M Y', strtotime($ev['event_date'])) : '';
         $tl = '';
         if (!empty($ev['start_time'])) {
@@ -256,7 +272,7 @@ $eventCount   = count($currentEvents);
             ? (int)(new DateTime())->diff(new DateTime($ev['event_date']))->days
             : null;
         return [
-            'title'       => $ev['event_title']  ?? 'HiveColab Event',
+            'title'       => $ev['event_title']  ?? $brandEvent,
             'description' => $ev['description']  ?? '',
             'eventType'   => ucfirst($ev['event_type'] ?? 'Event'),
             'eventIcon'   => eventIcon($ev['event_type'] ?? ''),
@@ -436,7 +452,7 @@ $eventCount   = count($currentEvents);
                     <input type="hidden" name="ap_mac"      value="<?= h($apMac     ?? '') ?>">
                     <input type="hidden" name="site"        value="<?= h($site      ?? 'default') ?>">
                     <input type="hidden" name="zone"        value="<?= h($zone      ?? 'lan') ?>">
-                    <input type="hidden" name="redirurl"    value="<?= h($redirurl  ?? 'https://hivecolab.org/') ?>">
+                    <input type="hidden" name="redirurl"    value="<?= h($redirurl  ?? portalDefaultRedirectUrl()) ?>">
                     <input type="hidden" name="receipt_mode" id="receiptMode" value="photo">
 
                     <div class="form-group">
@@ -559,7 +575,7 @@ $eventCount   = count($currentEvents);
 
     <!-- ── Footer ───────────────────────────────────────────────────────── -->
     <div class="portal-footer">
-        <span>&copy; <?= date('Y') ?> HiveColab – WiFi Portal</span>
+        <span>&copy; <?= date('Y') ?> <?= h($brandName) ?> – WiFi Portal</span>
 
         <?php if ($clientMac): ?>
         <span class="footer-mac">
@@ -568,9 +584,11 @@ $eventCount   = count($currentEvents);
         </span>
         <?php endif; ?>
 
-        <a href="https://hivecolab.org" target="_blank" rel="noopener">
-            <i class="fas fa-arrow-up-right-from-square"></i> hivecolab.org
+        <?php if ($brand['website'] !== ''): ?>
+        <a href="<?= h($brand['website']) ?>" target="_blank" rel="noopener">
+            <i class="fas fa-arrow-up-right-from-square"></i> <?= h($brand['website_label']) ?>
         </a>
+        <?php endif; ?>
     </div>
 
 </div><!-- /.portal-wrap -->
@@ -726,7 +744,7 @@ document.getElementById('portalForm')?.addEventListener('submit', function (e) {
     let timer;
 
     function dotStyle(dot, active) {
-        dot.style.background = active ? '#FF6B00' : 'rgba(255,255,255,.35)';
+        dot.style.background = active ? 'var(--brand)' : 'rgba(255,255,255,.35)';
         dot.style.width      = active ? '22px' : '7px';
     }
 
@@ -752,7 +770,7 @@ document.getElementById('portalForm')?.addEventListener('submit', function (e) {
                 if (metaEl) {
                     let meta = ev.dateLabel || '';
                     if (ev.timeLabel) meta += (meta ? '  \u00b7  ' : '') + ev.timeLabel;
-                    metaEl.textContent = meta || 'HiveColab Event';
+                    metaEl.textContent = meta || <?= json_encode($brandEvent, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
                 }
                 // Update description
                 if (descEl) descEl.textContent = ev.description;
@@ -799,7 +817,7 @@ function resetForm() {
 }
 
 <?php if ($success): ?>
-setTimeout(() => { window.location.href = 'https://hivecolab.org'; }, 4000);
+setTimeout(() => { window.location.href = <?= json_encode(portalDefaultRedirectUrl(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?>; }, 4000);
 <?php endif; ?>
 </script>
 

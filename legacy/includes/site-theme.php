@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 const IMS_THEME_DEFAULTS = [
     'theme_primary_color' => '#ea580c',
+    'theme_secondary_color' => '', // '' = automatic: a lighter shade of the primary colour
     'theme_sidebar_color' => '#1e2530', // --dark-color, the flat sidebar background in style.css
     'theme_font_family' => 'default',
     'theme_font_custom' => '',
@@ -128,6 +129,23 @@ function ims_theme_validate(array $input): array
         $theme[$key] = $hex;
     }
 
+    // Secondary colour: accents and the second stop of gradients. Unticking
+    // "Custom secondary colour" (or leaving it blank) keeps it automatic.
+    $secondaryInput = trim((string)($input['theme_secondary_color'] ?? ''));
+    if (empty($input['theme_secondary_custom']) || $secondaryInput === '') {
+        $theme['theme_secondary_color'] = '';
+    } else {
+        $hex = ims_theme_hex($secondaryInput);
+        if ($hex === null) {
+            throw new InvalidArgumentException('Secondary colour must be a hex colour such as #f97316.');
+        }
+        // Gradient headers in emails and public pages carry white text across this colour too.
+        if (ims_theme_contrast_with_white($hex) < 2.5) {
+            throw new InvalidArgumentException('Secondary colour is too light for white text; choose a darker colour.');
+        }
+        $theme['theme_secondary_color'] = $hex;
+    }
+
     $font = (string)($input['theme_font_family'] ?? 'default');
     if (!array_key_exists($font, ims_theme_font_families())) {
         throw new InvalidArgumentException('Choose a font family from the list.');
@@ -158,7 +176,9 @@ function ims_theme_resolve(array $stored): array
         $hex = ims_theme_hex((string)($stored[$key] ?? ''));
         if ($hex !== null) $theme[$key] = $hex;
     }
-    $custom = ims_theme_custom_font((string)($stored['theme_font_custom'] ?? ''));
+    $secondary = ims_theme_hex((string)($stored['theme_secondary_color'] ?? ''));
+    if ($secondary !== null) $theme['theme_secondary_color'] = $secondary;
+    $custom =ims_theme_custom_font((string)($stored['theme_font_custom'] ?? ''));
     if ($custom !== null) $theme['theme_font_custom'] = $custom;
     $font = (string)($stored['theme_font_family'] ?? '');
     if (array_key_exists($font, ims_theme_font_families()) && ($font !== 'custom' || $custom !== null)) {
@@ -185,6 +205,11 @@ function ims_theme_style_tag(array $theme): string
             . ';--brand-500:' . ims_theme_mix($p, 0.15) . ';--brand-600:' . $p
             . ';--brand-700:' . ims_theme_mix($p, -0.18) . ';}';
     }
+    if ($theme['theme_secondary_color'] !== '') {
+        $s = $theme['theme_secondary_color'];
+        $css[] = 'html:root{--brand-secondary:' . $s . ';--brand-secondary-50:' . ims_theme_mix($s, 0.92)
+            . ';--brand-secondary-700:' . ims_theme_mix($s, -0.18) . ';}';
+    }
     if ($theme['theme_sidebar_color'] !== IMS_THEME_DEFAULTS['theme_sidebar_color']) {
         $s = $theme['theme_sidebar_color'];
         $css[] = '#appSidebar.sidebar{background:' . $s . ';}';
@@ -207,4 +232,90 @@ function ims_theme_style_tag(array $theme): string
     }
 
     return $css === [] ? '' : "<style id=\"ims-site-theme\">" . implode('', $css) . "</style>\n";
+}
+
+/** The secondary colour to use: the stored one, or a lighter shade of the primary (as --brand-500). */
+function ims_theme_secondary_hex(array $theme): string
+{
+    $theme = ims_theme_resolve($theme);
+    if ($theme['theme_secondary_color'] !== '') return $theme['theme_secondary_color'];
+    return $theme['theme_primary_color'] === IMS_THEME_DEFAULTS['theme_primary_color']
+        ? '#f97316'
+        : ims_theme_mix($theme['theme_primary_color'], 0.15);
+}
+
+/** CSS font stack for the configured font, for places (emails) without style.css. */
+function ims_theme_font_stack(array $theme): string
+{
+    $theme = ims_theme_resolve($theme);
+    if ($theme['theme_font_family'] === 'custom') return ims_theme_custom_font_stack($theme['theme_font_custom']);
+    if ($theme['theme_font_family'] === 'default') return "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    return (string)ims_theme_font_families()[$theme['theme_font_family']][1];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Organisation branding (Settings > General)
+|--------------------------------------------------------------------------
+| One place for the organisation's name, contact details and colours, so
+| emails, public pages and PDFs never hard-code an organisation.
+*/
+
+/** Absolute URL for an app-relative path such as /images/logo.png. */
+function ims_brand_absolute_url(string $path): string
+{
+    if (preg_match('#\Ahttps?://#i', $path)) return $path;
+    $base = defined('APP_URL') ? rtrim((string)APP_URL, '/') : '';
+    return $base . '/' . ltrim($path, '/');
+}
+
+/**
+ * Resolved branding: name, logo, logo_url (absolute, for emails), favicon,
+ * email, phone, address, website, primary, primary_dark, secondary, font.
+ */
+function ims_brand(): array
+{
+    static $cache = null;
+    $source = $GLOBALS['IMS_SITE_BRANDING'] ?? [];
+    $key = md5(serialize($source));
+    if ($cache !== null && $cache[0] === $key) return $cache[1];
+
+    $theme = ims_theme_resolve((array)($source['theme'] ?? []));
+    $name = trim((string)($source['name'] ?? ''));
+    if ($name === '') $name = defined('SITE_NAME') ? (string)SITE_NAME : 'Information Management System';
+    $logo = (string)($source['logo'] ?? '/images/logo.png');
+    $website = trim((string)($source['website'] ?? ''));
+    if ($website === '') $website = defined('APP_URL') ? (string)APP_URL : '';
+
+    $brand = [
+        'name' => $name,
+        'logo' => $logo,
+        'logo_url' => ims_brand_absolute_url($logo),
+        'favicon' => (string)($source['favicon'] ?? '/images/favicon.png'),
+        'email' => trim((string)($source['email'] ?? '')),
+        'phone' => trim((string)($source['phone'] ?? '')),
+        'address' => trim((string)($source['address'] ?? '')),
+        'website' => $website,
+        'website_label' => (string)preg_replace('#\Ahttps?://(www\.)?|/+\z#i', '', $website),
+        'primary' => $theme['theme_primary_color'],
+        'primary_dark' => ims_theme_mix($theme['theme_primary_color'], -0.18),
+        'primary_light' => ims_theme_mix($theme['theme_primary_color'], 0.93),
+        'secondary' => ims_theme_secondary_hex($theme),
+        'font' => ims_theme_font_stack($theme),
+        'theme' => $theme,
+    ];
+    $cache = [$key, $brand];
+    return $brand;
+}
+
+function ims_brand_name(): string
+{
+    return ims_brand()['name'];
+}
+
+/** Organisation contact email (General > Organization Email), or '' when not set. */
+function ims_brand_email(): string
+{
+    $email = ims_brand()['email'];
+    return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
 }

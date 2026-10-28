@@ -8,9 +8,9 @@ require_once __DIR__ . '/includes/visitor-register-handler.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title><?= htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8') ?> - <?= htmlspecialchars($hub_name, ENT_QUOTES, 'UTF-8') ?></title>
 
-    <link rel="icon" type="image/png" href="images/favicon.png">
-    <link rel="shortcut icon" href="images/favicon.png" type="image/png">
-    <link rel="apple-touch-icon" href="images/favicon.png">
+    <link rel="icon" type="image/png" href="<?= htmlspecialchars(ims_brand()['favicon'], ENT_QUOTES, 'UTF-8') ?>">
+    <link rel="shortcut icon" href="<?= htmlspecialchars(ims_brand()['favicon'], ENT_QUOTES, 'UTF-8') ?>" type="image/png">
+    <link rel="apple-touch-icon" href="<?= htmlspecialchars(ims_brand()['favicon'], ENT_QUOTES, 'UTF-8') ?>">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +18,18 @@ require_once __DIR__ . '/includes/visitor-register-handler.php';
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="css/visitor-register.css">
+    <?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
+    <style>
+    /* Map the page palette onto the site theme; falls back to the stylesheet's colours when no theme is set. */
+    html:root {
+        --brand: var(--brand-600, #ff6b35);
+        --brand-dark: var(--brand-700, #e55a28);
+        --brand-light: var(--brand-secondary, var(--brand-500, #ff9800));
+        --brand-pale: var(--brand-100, #fff3e0);
+        --brand-faint: var(--brand-50, #fffaf6);
+        --border-focus: var(--brand-secondary, var(--brand-500, #ff9800));
+    }
+    </style>
 <script src="js/accessibility.js"></script>
 </head>
 <body>
@@ -25,7 +37,7 @@ require_once __DIR__ . '/includes/visitor-register-handler.php';
 <nav class="nav-bar">
     <div class="nav-brand">
         <div class="nav-logo">
-            <img src="images/logo.png" alt="Logo" class="nav-logo-img">
+            <img src="<?= htmlspecialchars(ims_brand()['logo'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($hub_name, ENT_QUOTES, 'UTF-8') ?> logo" class="nav-logo-img">
         </div>
         <div class="nav-title">
             <?= htmlspecialchars($hub_name, ENT_QUOTES, 'UTF-8') ?> <span>Visitors</span>

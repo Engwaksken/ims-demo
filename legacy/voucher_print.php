@@ -661,7 +661,7 @@ body {
             >
         <?php else: ?>
             <span class="logo-fallback">
-                Hive Colab
+                <?= vpEsc(ims_brand_name()) ?>
             </span>
         <?php endif; ?>
     </div>

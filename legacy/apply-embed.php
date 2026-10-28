@@ -6,6 +6,7 @@ header('X-Frame-Options: ALLOWALL');
 header('Content-Security-Policy: frame-ancestors *');
 
 require_once 'includes/config.php';
+$brand = ims_brand();
 
 $opportunities = [];
 $query = "SELECT o.*,
@@ -23,7 +24,8 @@ while ($row = $result->fetch_assoc()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apply - Hive Colab</title>
+    <title>Apply - <?php echo htmlspecialchars($brand['name'], ENT_QUOTES, 'UTF-8'); ?></title>
+    <link rel="icon" href="<?php echo htmlspecialchars($brand['favicon'], ENT_QUOTES, 'UTF-8'); ?>">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,13 +35,15 @@ while ($row = $result->fetch_assoc()) {
     <style>
 /* Links: no underlines (matches css/style.css); visible keyboard focus. */
 a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
-:where(a):focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
+:where(a):focus-visible { outline: 2px solid var(--hive-orange); outline-offset: 2px; }
         /* ---- reset & tokens ---- */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+        /* Accent colours follow the configured site theme (ims_theme_style_tag below)
+           and fall back to the original palette when no theme is set. */
         :root {
-            --hive-orange:   #FF6B2B;
-            --hive-amber:    #FFA500;
+            --hive-orange:   var(--brand-600, #FF6B2B);
+            --hive-amber:    var(--brand-secondary, var(--brand-500, #FFA500));
             --hive-gold:     #FFD166;
             --hive-dark:     #1A1208;
             --hive-charcoal: #2D2416;
@@ -49,8 +53,8 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             --hive-border:   #F0E8DF;
             --radius-card:   16px;
             --radius-pill:   999px;
-            --shadow-card:   0 2px 12px rgba(26,18,8,.08), 0 8px 32px rgba(255,107,43,.07);
-            --shadow-hover:  0 8px 32px rgba(26,18,8,.12), 0 20px 48px rgba(255,107,43,.14);
+            --shadow-card:   0 2px 12px rgba(26,18,8,.08), 0 8px 32px color-mix(in srgb, var(--hive-orange) 7%, transparent);
+            --shadow-hover:  0 8px 32px rgba(26,18,8,.12), 0 20px 48px color-mix(in srgb, var(--hive-orange) 14%, transparent);
             --transition:    .28s cubic-bezier(.34,1.56,.64,1);
         }
 
@@ -88,8 +92,8 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--hive-orange);
-            background: rgba(255,107,43,.08);
-            border: 1px solid rgba(255,107,43,.2);
+            background: color-mix(in srgb, var(--hive-orange) 8%, transparent);
+            border: 1px solid color-mix(in srgb, var(--hive-orange) 20%, transparent);
             padding: 6px 16px;
             border-radius: var(--radius-pill);
             margin-bottom: 18px;
@@ -144,7 +148,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         .hc-card:hover {
             transform: translateY(-6px);
             box-shadow: var(--shadow-hover);
-            border-color: rgba(255,107,43,.25);
+            border-color: color-mix(in srgb, var(--hive-orange) 25%, transparent);
         }
 
         .hc-card.featured {
@@ -234,9 +238,9 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         }
 
         .hc-deadline.soon {
-            background: rgba(255,107,43,.08);
+            background: color-mix(in srgb, var(--hive-orange) 8%, transparent);
             color: var(--hive-orange);
-            border-color: rgba(255,107,43,.2);
+            border-color: color-mix(in srgb, var(--hive-orange) 20%, transparent);
         }
 
         .hc-deadline i { font-size: 13px; opacity: .8; }
@@ -310,7 +314,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             background: linear-gradient(135deg, var(--hive-orange) 0%, var(--hive-amber) 100%);
             text-decoration: none;
             transition: transform var(--transition), box-shadow var(--transition), filter .2s;
-            box-shadow: 0 4px 18px rgba(255,107,43,.3);
+            box-shadow: 0 4px 18px color-mix(in srgb, var(--hive-orange) 30%, transparent);
             position: relative;
             overflow: hidden;
         }
@@ -325,7 +329,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
 
         .hc-btn:hover {
             transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 28px rgba(255,107,43,.45);
+            box-shadow: 0 8px 28px color-mix(in srgb, var(--hive-orange) 45%, transparent);
             filter: brightness(1.06);
         }
 
@@ -344,7 +348,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             width: 72px;
             height: 72px;
             border-radius: 50%;
-            background: rgba(255,107,43,.07);
+            background: color-mix(in srgb, var(--hive-orange) 7%, transparent);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -392,6 +396,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             .hc-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <?php echo ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])); ?>
 </head>
 <body>
 
@@ -402,7 +407,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         <div class="hc-eyebrow">
             <i class="fas fa-rocket"></i> Open Applications
         </div>
-        <h1 class="hc-title">Grow with <span>Hive Colab</span></h1>
+        <h1 class="hc-title">Grow with <span><?php echo htmlspecialchars($brand['name'], ENT_QUOTES, 'UTF-8'); ?></span></h1>
         <p class="hc-subtitle">
             Join our innovation ecosystem - apply to programs built to take your startup further.
         </p>
@@ -495,7 +500,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
     <?php endif; ?>
 
     <div class="hc-footer">
-        Powered by <a href="https://www.hivecolab.org" target="_blank">Hive Colab</a>
+        Powered by <a href="<?php echo htmlspecialchars($brand['website'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($brand['name'], ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
 
 </div>
@@ -503,10 +508,10 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
 <!-- Post height to parent so iframe auto-resizes -->
 <script>
     function postHeight() {
-        window.parent.postMessage(
-            { type: 'hivecolab-height', height: document.body.scrollHeight },
-            '*'
-        );
+        var height = document.body.scrollHeight;
+        // 'hivecolab-height' is kept for sites still running older copies of apply-embed.js.
+        window.parent.postMessage({ type: 'ims-apply-height', height: height }, '*');
+        window.parent.postMessage({ type: 'hivecolab-height', height: height }, '*');
     }
     postHeight();
     window.addEventListener('resize', postHeight);

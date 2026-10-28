@@ -14,7 +14,10 @@ if (empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 $purposes = ['Meeting', 'Event', 'Co-working', 'Training', 'Consultation', 'Tour', 'Interview', 'Other'];
-$branches = ['Hive-Kampala', 'Hive-Mbarara'];
+// Branch choices: define VISITOR_BRANCHES (array) in config to list several sites.
+$branches = defined('VISITOR_BRANCHES') && is_array(VISITOR_BRANCHES) && VISITOR_BRANCHES !== []
+    ? array_values(array_map('strval', VISITOR_BRANCHES))
+    : ['Main Office'];
 $genders = ['Male', 'Female'];
 $nationalities = ['National', 'Non-National'];
 $pwd_types = [
@@ -37,7 +40,7 @@ $purpose_success      = '';
 $date_success         = '';
 $time_success         = '';
 
-$hub_name = defined('HUB_NAME') ? HUB_NAME : 'Hive Colab';
+$hub_name = ims_brand_name();
 
 $conn = isset($conn) && $conn instanceof mysqli ? $conn : (function_exists('db_connect') ? db_connect() : null);
 if (!$conn instanceof mysqli) {

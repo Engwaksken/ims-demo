@@ -1,4 +1,4 @@
-// Hive Colab IMS - Main JavaScript
+// IMS - Main JavaScript
 //
 // Loaded once per page by legacy/includes/footer.php. Every function that was
 // public before (openModal, closeModal, showAlert, showNotification,

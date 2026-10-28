@@ -42,56 +42,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // Send verification email
         $subject = 'New Login Verification Code - ' . $systemName;
-        $body = '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg,#ff6b35 0%, #f39c12 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }
-                .code-box { background: white; border: 2px dashed#ff6b35; padding: 20px; text-align: center; margin: 20px 0; border-radius: 8px; }
-                .code { font-size: 32px; font-weight: bold; color:#ff6b35; letter-spacing: 5px; }
-                .footer { text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 12px; }
-                .info { background: #d1ecf1; border-left: 4px solid #0c5460; padding: 15px; margin: 20px 0; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>' . htmlspecialchars($systemName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1>
-                    <p>New Verification Code</p>
-                </div>
-                <div class="content">
-                    <p>Hello <strong>' . htmlspecialchars($user['full_name']) . '</strong>,</p>
-                    
-                    <p>You requested a new verification code. Please use the code below to complete your login:</p>
-                    
-                    <div class="code-box">
-                        <div class="code">' . $verification_code . '</div>
-                    </div>
-                    
-                    <p><strong>This code will expire in 10 minutes.</strong></p>
-                    
-                    <div class="info">
-                        <strong>Note:</strong> This is a new code. Any previous codes have been invalidated.
-                    </div>
-                    
-                    <p>Request Details:</p>
-                    <ul>
-                        <li><strong>Time:</strong> ' . date('d M Y, h:i A') . '</li>
-                        <li><strong>IP Address:</strong> ' . $_SERVER['REMOTE_ADDR'] . '</li>
-                    </ul>
-                </div>
-                <div class="footer">
-                    <p>This is an automated message from ' . htmlspecialchars($systemName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '. Please do not reply to this email.</p>
-                    <p>&copy; ' . date('Y') . ' ' . htmlspecialchars($systemName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '. All rights reserved.</p>
-                </div>
+        $body = email_wrapper('
+            <p>Hello <strong>' . htmlspecialchars((string)$user['full_name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</strong>,</p>
+            <p>You requested a new verification code. Please use the code below to complete your login:</p>
+            <div class="code-box">
+                <div class="code">' . $verification_code . '</div>
             </div>
-        </body>
-        </html>
-        ';
+            <p><strong>This code will expire in 10 minutes.</strong></p>
+            <div class="info-box">
+                <strong>Note:</strong> This is a new code. Any previous codes have been invalidated.
+            </div>
+            <div class="info-box">
+                <div><strong>Time:</strong> ' . date('d M Y, h:i A') . '</div>
+                <div><strong>IP Address:</strong> ' . htmlspecialchars((string)($_SERVER['REMOTE_ADDR'] ?? 'Unknown'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</div>
+            </div>
+        ', 'New Verification Code');
         
         $altBody = "Hello " . $user['full_name'] . ",\n\n";
         $altBody .= "Your new verification code is: " . $verification_code . "\n\n";

@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['request_booking'])) 
 }
 
 if (!$member) {
-    hub_fail('Only registered Hive Colab members can book spaces.', $return);
+    hub_fail('Only registered ' . ims_brand_name() . ' members can book spaces.', $return);
 }
 if (strcasecmp((string)($member['membership_status'] ?? ''), 'Active') !== 0) {
     hub_fail('Your membership must be active to book a space.', $return);

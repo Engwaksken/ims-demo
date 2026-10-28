@@ -1,6 +1,13 @@
-# IMS Site
+# Information Management System (IMS)
 
-PHP information management system (programs, projects, KPIs, workplans, HR, hub operations, procurement).
+A white-label PHP information management system (programs, projects, KPIs, workplans, HR, hub operations, procurement).
+
+## Branding
+
+Nothing in the code is tied to a particular organisation. The organisation name, logo, favicon,
+contact details (email, phone, address, website), primary/secondary/sidebar colours and font are
+configured under **Settings > General** and are used across the internal pages, public pages,
+emails and PDF/print views.
 
 ## Setup
 

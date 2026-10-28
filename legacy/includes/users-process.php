@@ -64,7 +64,7 @@ function app_login_url(): string
         return $scheme . '://' . $_SERVER['HTTP_HOST'] . '/login';
     }
 
-    return 'https://ims.kemmytech.com/login.php';
+    return email_app_url() . 'login';
 }
 
 function send_new_user_credentials_email(
@@ -81,12 +81,15 @@ function send_new_user_credentials_email(
     $safeRole = htmlspecialchars($role, ENT_QUOTES, 'UTF-8');
     $safeEmail = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
 
-    $subject = 'Your Hive Colab Account Has Been Created';
+    $orgName = email_brand()['name'];
+    $safeOrg = email_h($orgName);
+
+    $subject = 'Your ' . $orgName . ' Account Has Been Created';
 
     $content = "
-        <h3>Welcome to Hive Colab</h3>
+        <h3>Welcome to {$safeOrg}</h3>
         <p>Hi {$safeName},</p>
-        <p>An account has been created for you on the Hive Colab system.</p>
+        <p>An account has been created for you on the {$safeOrg} system.</p>
 
         <div class='info-box'>
             <div><strong>Full Name:</strong> {$safeName}</div>
@@ -116,10 +119,10 @@ function send_new_user_credentials_email(
         <p>If the button above does not work, use this link:</p>
         <p><a href='{$loginUrl}'>{$loginUrl}</a></p>
 
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
 
-    $altBody = "Welcome to Hive Colab\n"
+    $altBody = "Welcome to {$orgName}\n"
         . "Your account has been created.\n\n"
         . "Full Name: {$fullName}\n"
         . "Email: {$email}\n"

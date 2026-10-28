@@ -8,7 +8,8 @@ redirect_if_logged_in();
 
 // Fetch and clear login error
 $error = $_SESSION['login_error'] ?? '';
-unset($_SESSION['login_error']);
+$success = $_SESSION['login_success'] ?? '';
+unset($_SESSION['login_error'], $_SESSION['login_success']);
 $siteBranding = $GLOBALS['IMS_SITE_BRANDING'] ?? ['name' => (string)SITE_NAME, 'logo' => '/images/logo.png', 'favicon' => '/images/favicon.png'];
 $globalSiteName = (string)($siteBranding['name'] ?? SITE_NAME);
 $faviconQuery = [];
@@ -36,13 +37,20 @@ $faviconType = strtolower(pathinfo($faviconFile, PATHINFO_EXTENSION)) === 'ico' 
                 <h1>
                     <img src="<?= htmlspecialchars((string)$siteBranding['logo'], ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($globalSiteName, ENT_QUOTES, 'UTF-8') ?> Logo" onerror="this.style.display='none'">
                 </h1>
-                <p>Information Management System</p>
+                <p><?= htmlspecialchars($globalSiteName, ENT_QUOTES, 'UTF-8') ?></p>
             </div>
             
             <?php if ($error): ?>
                 <div class="alert alert-danger" id="errorAlert">
                     <i class="fas fa-exclamation-circle"></i>
                     <span><?php echo htmlspecialchars($error); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($success): ?>
+                <div class="alert alert-success" role="status">
+                    <i class="fas fa-check-circle"></i>
+                    <span><?php echo htmlspecialchars($success); ?></span>
                 </div>
             <?php endif; ?>
             
@@ -86,6 +94,10 @@ $faviconType = strtolower(pathinfo($faviconFile, PATHINFO_EXTENSION)) === 'ico' 
                     <i class="fas fa-sign-in-alt"></i> Login
                 </button>
             </form>
+
+            <div class="login-forgot">
+                <a href="forgot-password">Forgot your password?</a>
+            </div>
         </div>
     </div>
     

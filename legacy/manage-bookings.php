@@ -1761,11 +1761,16 @@ function openEmailMemberModal() {
             'emailMemberMessage'
         );
 
+    const orgName =
+        <?= json_encode(ims_brand_name(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
     to.value =
         booking.email;
 
     subject.value =
-        'Hive Colab Booking #'
+        orgName
+        +
+        ' Booking #'
         +
         booking.booking_id
         +
@@ -1780,7 +1785,11 @@ function openEmailMemberModal() {
         +
         ',\n\n'
         +
-        'This message is regarding your Hive Colab booking request.\n\n'
+        'This message is regarding your '
+        +
+        orgName
+        +
+        ' booking request.\n\n'
         +
         'Booking ID: #'
         +
@@ -1814,7 +1823,11 @@ function openEmailMemberModal() {
         +
         '\n\n'
         +
-        'Regards,\nHive Colab Operations';
+        'Regards,\n'
+        +
+        orgName
+        +
+        ' Operations';
 
     closeBookingModal(
         'bookingViewModal'

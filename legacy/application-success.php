@@ -38,6 +38,11 @@ $page_title = 'Application Submitted Successfully';
 
 // Generate application reference number
 $reference = 'APP-' . str_pad($application_id, 6, '0', STR_PAD_LEFT);
+$brand = ims_brand();
+$brandName = $brand['name'];
+$brandEmail = ims_brand_email();
+$brandPhoneHref = preg_replace('/[^0-9+]/', '', $brand['phone']);
+$jsFlags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -45,18 +50,27 @@ $reference = 'APP-' . str_pad($application_id, 6, '0', STR_PAD_LEFT);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title><?php echo htmlspecialchars($page_title); ?> - Hive Colab</title>
+    <title><?php echo htmlspecialchars($page_title); ?> - <?php echo htmlspecialchars($brandName, ENT_QUOTES, 'UTF-8'); ?></title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="images/favicon.png">
-    <link rel="apple-touch-icon" href="images/favicon.png">
+    <link rel="icon" type="image/png" href="<?php echo htmlspecialchars($brand['favicon'], ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($brand['favicon'], ENT_QUOTES, 'UTF-8'); ?>">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <style>
+/* Brand tokens (defaults); the configured site theme overrides them below. */
+:root {
+    --brand-50: #ffeed6;
+    --brand-100: #ffecd1;
+    --brand-600: #ff9800;
+    --brand-secondary: #F39C12;
+    --brand-secondary-50: #fff3cd;
+    --brand-secondary-700: #e67e22;
+}
 /* Links: no underlines (matches css/style.css); visible keyboard focus. */
 a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
-:where(a):focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }
+:where(a):focus-visible { outline: 2px solid var(--brand-600); outline-offset: 2px; }
         * {
             margin: 0;
             padding: 0;
@@ -65,7 +79,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         
         body {
             font-family: 'Outfit', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ff980029 0%, #ff98002e 100%);
+            background: linear-gradient(135deg, var(--brand-50) 0%, var(--brand-100) 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -142,7 +156,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         }
         
         .reference-box {
-            background: linear-gradient(135deg, #ff9800 0%, #ff9800 100%);
+            background: var(--brand-600);
             color: white;
             padding: 25px;
             border-radius: 12px;
@@ -175,7 +189,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
-            border-left: 4px solid #ff9800;
+            border-left: 4px solid var(--brand-600);
         }
         
         .info-label {
@@ -220,15 +234,15 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         }
         
         .contact-info {
-            background: #fff3cd;
-            border: 2px solid #F39C12;
+            background: var(--brand-secondary-50);
+            border: 2px solid var(--brand-secondary);
             border-radius: 12px;
             padding: 20px;
             margin: 20px 0;
         }
         
         .contact-info h4 {
-            color: #e67e22;
+            color: var(--brand-secondary-700);
             margin-bottom: 12px;
             display: flex;
             align-items: center;
@@ -272,7 +286,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #ff9800 0%, #ff9800 100%);
+            background: var(--brand-600);
             color: white;
         }
         
@@ -283,8 +297,8 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
         
         .btn-secondary {
             background: white;
-            color: #ff9800;
-            border: 2px solid #ff9800;
+            color: var(--brand-600);
+            border: 2px solid var(--brand-600);
         }
         
         .btn-secondary:hover {
@@ -381,6 +395,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
             }
         }
     </style>
+    <?php echo ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])); ?>
 <script src="js/accessibility.js"></script>
 </head>
 <body>
@@ -452,17 +467,29 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
                     <i class="fas fa-question-circle"></i> Need Help?
                 </h4>
                 <div class="contact-details">
+                    <?php if ($brandEmail !== ''): ?>
                     <div>
                         <i class="fas fa-envelope"></i> Email: 
-                        <a href="mailto:info@hivecolab.com">info@hivecolab.com</a>
+                        <a href="mailto:<?php echo htmlspecialchars($brandEmail, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($brandEmail, ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
+                    <?php endif; ?>
+                    <?php if ($brand['phone'] !== ''): ?>
                     <div>
                         <i class="fas fa-phone"></i> Phone: 
-                        <a href="tel:+256392177978">+256 392 177 978</a>
+                        <a href="tel:<?php echo htmlspecialchars($brandPhoneHref, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($brand['phone'], ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
+                    <?php endif; ?>
+                    <?php if ($brand['address'] !== ''): ?>
                     <div>
-                        <i class="fas fa-map-marker-alt"></i> Visit us at 4<sup>th</sup> Floor, Kanjokya House, Plot 90, Kanjokya Street, Kampala, Uganda
+                        <i class="fas fa-map-marker-alt"></i> Visit us at <?php echo htmlspecialchars($brand['address'], ENT_QUOTES, 'UTF-8'); ?>
                     </div>
+                    <?php endif; ?>
+                    <?php if ($brand['website'] !== ''): ?>
+                    <div>
+                        <i class="fas fa-globe"></i> Website: 
+                        <a href="<?php echo htmlspecialchars($brand['website'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($brand['website_label'], ENT_QUOTES, 'UTF-8'); ?></a>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
             
@@ -476,7 +503,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
                     <i class="fas fa-search"></i> More Opportunities
                 </a>
                 
-                <a href="https://hivecolab.org" class="btn btn-primary">
+                <a href="<?php echo htmlspecialchars($brand['website'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
                     <i class="fas fa-home"></i> Back to Home
                 </a>
             </div>
@@ -508,7 +535,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
                 Please save your reference number: <strong><?php echo $reference; ?></strong>
             </p> -->
             <p style="font-size: 12px; margin-top: 10px; opacity: 0.8;">
-                &copy; <?php echo date('Y'); ?> Hive Colab. All rights reserved.
+                &copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($brandName, ENT_QUOTES, 'UTF-8'); ?>. All rights reserved.
             </p>
         </div>
     </div>
@@ -516,7 +543,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
     <script>
     // Social Share Functions
     function shareTwitter() {
-        const text = encodeURIComponent("I just applied to <?php echo htmlspecialchars($application['opportunity_title']); ?> at @HiveColab! ?? #Entrepreneurship #Innovation");
+        const text = encodeURIComponent(<?php echo json_encode('I just applied to ' . $application['opportunity_title'] . ' at ' . $brandName . '! #Entrepreneurship #Innovation', $jsFlags); ?>);
         const url = "https://twitter.com/intent/tweet?text=" + text;
         window.open(url, '_blank', 'width=600,height=400');
     }
@@ -533,7 +560,7 @@ a, a:hover, a:focus, a:active, a:visited { text-decoration: none; }
     }
     
     function shareWhatsApp() {
-        const text = encodeURIComponent("I just applied to <?php echo htmlspecialchars($application['opportunity_title']); ?> at Hive Colab! Reference: <?php echo $reference; ?>");
+        const text = encodeURIComponent(<?php echo json_encode('I just applied to ' . $application['opportunity_title'] . ' at ' . $brandName . '! Reference: ' . $reference, $jsFlags); ?>);
         window.open("https://wa.me/?text=" + text, '_blank');
     }
     

@@ -47,7 +47,7 @@ function send_reset_email(string $email, string $fullName, string $plainPassword
 {
     $safeName     = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
     $safePassword = htmlspecialchars($plainPassword, ENT_QUOTES, 'UTF-8');
-    $loginUrl     = 'https://ims.kemmytech.com/login.php';
+    $loginUrl     = email_app_url() . 'login';
     if (function_exists('get_setting')) {
         $base = rtrim((string)get_setting('site_url', ''), '/');
         if ($base !== '') {
@@ -55,25 +55,27 @@ function send_reset_email(string $email, string $fullName, string $plainPassword
         }
     }
     $safeUrl = htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8');
+    $orgName = email_brand()['name'];
+    $safeOrg = email_h($orgName);
 
     $content = "
         <h3>Your password has been reset</h3>
         <p>Hi {$safeName},</p>
-        <p>As part of a security update, the password on your Hive Colab member account has been reset.</p>
+        <p>As part of a security update, the password on your {$safeOrg} member account has been reset.</p>
         <div class='cred-box'>
             <p style='margin:8px 0 4px;font-size:14px;'><strong>Temporary Password:</strong></p>
             <div class='password'>{$safePassword}</div>
             <div class='warning'><strong>Important:</strong> Please change this password after logging in.</div>
         </div>
         <a href='{$safeUrl}' class='btn'>Log In</a>
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
-    $altBody = "Your Hive Colab password has been reset as part of a security update.\n"
+    $altBody = "Your {$orgName} password has been reset as part of a security update.\n"
         . "Temporary Password: {$plainPassword}\n"
         . "Login here: {$loginUrl}\n"
         . "Please change your password after logging in.";
 
-    return sendEmail($email, 'Your Hive Colab password has been reset', email_wrapper($content), $altBody);
+    return sendEmail($email, 'Your ' . $orgName . ' password has been reset', email_wrapper($content), $altBody);
 }
 
 $conn = db_connect();

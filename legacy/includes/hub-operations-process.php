@@ -176,16 +176,17 @@ function hub_send_member_credentials(string $email, string $fullName, string $me
 
     $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host     = preg_replace('/[^A-Za-z0-9.\-:]/', '', (string)($_SERVER['HTTP_HOST'] ?? ''));
-    $loginUrl = $host !== '' ? $scheme . '://' . $host . '/login' : 'https://ims.kemmytech.com/login';
+    $loginUrl = $host !== '' ? $scheme . '://' . $host . '/login' : email_app_url() . 'login';
 
     $safeName     = htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8');
     $safeEmail    = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
     $safeNo       = htmlspecialchars($membershipNo, ENT_QUOTES, 'UTF-8');
     $safePassword = htmlspecialchars($plainPassword, ENT_QUOTES, 'UTF-8');
     $safeUrl      = htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8');
+    $orgName      = email_brand()['name'];
 
     $content = "
-        <h3>Welcome to Hive Colab</h3>
+        <h3>Welcome to " . email_h($orgName) . "</h3>
         <p>Hi {$safeName},</p>
         <p>Your hub membership ({$safeNo}) has been registered and a member account has been created for you.</p>
         <div class='cred-box'>
@@ -198,17 +199,17 @@ function hub_send_member_credentials(string $email, string $fullName, string $me
         <a href='{$safeUrl}' class='btn'>Log In Now</a>
         <p>If the button above does not work, use this link:</p>
         <p><a href='{$safeUrl}'>{$safeUrl}</a></p>
-        <p>Best regards,<br><strong>Hive Colab Team</strong></p>
+        " . email_signoff() . "
     ";
 
-    $altBody = "Welcome to Hive Colab\n"
+    $altBody = "Welcome to {$orgName}\n"
         . "Membership: {$membershipNo}\n"
         . "Email: {$email}\n"
         . "Temporary Password: {$plainPassword}\n\n"
         . "Login here: {$loginUrl}\n"
         . "Please change your password after logging in.";
 
-    return sendEmail($email, 'Your Hive Colab Member Account', email_wrapper($content), $altBody);
+    return sendEmail($email, 'Your ' . $orgName . ' Member Account', email_wrapper($content), $altBody);
 }
 
 /* =========================

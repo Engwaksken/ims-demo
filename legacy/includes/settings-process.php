@@ -319,10 +319,19 @@ if (isset($_POST['update_settings'])) {
         if ($systemName === '' || $systemNameLength > 120) {
             throw new InvalidArgumentException('System name is required and must be 120 characters or fewer.');
         }
+        $siteEmail = settings_post('site_email');
+        if ($siteEmail !== '' && !filter_var($siteEmail, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Organization email must be a valid email address.');
+        }
+        $siteWebsite = settings_post('site_website');
+        if ($siteWebsite !== '' && (strlen($siteWebsite) > 255 || !preg_match('#\Ahttps?://[^\s<>"\']+\z#i', $siteWebsite) || !filter_var($siteWebsite, FILTER_VALIDATE_URL))) {
+            throw new InvalidArgumentException('Organization website must be a full address starting with https:// or http://.');
+        }
 
         $generalSettings = [
                 'site_name' => sanitize_input($systemName),
-                'site_email' => sanitize_input(settings_post('site_email')),
+                'site_email' => sanitize_input($siteEmail),
+                'site_website' => $siteWebsite,
                 'site_phone' => sanitize_input(settings_post('site_phone')),
                 'site_address' => sanitize_input(settings_post('site_address')),
                 'timezone' => sanitize_input(settings_post('timezone', 'Africa/Kampala')),
@@ -511,7 +520,7 @@ if (isset($_POST['update_google_calendar'])) {
             'google_calendar_name' => sanitize_input(
                 settings_post(
                     'google_calendar_name',
-                    'Hive Colab Events'
+                    ims_brand_name() . ' Events'
                 )
             ),
             'google_redirect_uri' => sanitize_input(
@@ -822,7 +831,7 @@ if (isset($_POST['update_google_workspace'])) {
                     => sanitize_input(
                         settings_post(
                             'workspace_gmail_sender_name',
-                            'Hive Colab IMS'
+                            ims_brand_name()
                         )
                     ),
                 'workspace_gmail_use_for_notifications'

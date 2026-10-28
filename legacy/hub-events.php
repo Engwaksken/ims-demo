@@ -60,7 +60,7 @@ $stmt->close();
 if (!$member) {
     echo '
         <div class="alert alert-danger">
-            Only registered Hive Colab members can access space booking.
+            Only registered ' . htmlspecialchars(ims_brand_name()) . ' members can access space booking.
         </div>
     ';
 
@@ -245,7 +245,7 @@ if (
             Hub Space Booking
         </h1>
         <p>
-            Internal Hive Colab members can request only free dates and time slots.
+            Internal <?= htmlspecialchars(ims_brand_name()) ?> members can request only free dates and time slots.
             Operations/Admin reviews every request.
         </p>
     </div>

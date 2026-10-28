@@ -164,9 +164,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
             <td></td>
         </tr></tbody></table>';
 
+        $brand = email_brand();
         $email_body = '
 <div style="font-family:sans-serif;max-width:680px;margin:0 auto;color:#374151;">
-  <div style="background:#0f2942;color:#fff;padding:24px 28px;border-radius:8px 8px 0 0;">
+  <div style="background-color:' . $brand['primary'] . ';background-image:linear-gradient(135deg,' . $brand['primary'] . ',' . $brand['secondary'] . ');color:#fff;padding:24px 28px;border-radius:8px 8px 0 0;">
     <h2 style="margin:0;font-size:20px;">New Procurement Request</h2>
     <p style="margin:6px 0 0;opacity:.8;font-size:13px;">Reference: ' . $ref . '</p>
   </div>
@@ -191,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'creat
     </div>
   </div>
   <p style="font-size:11px;color:#9ca3af;text-align:center;margin-top:12px;">
-    Sent by IMS Procurement Module &nbsp;·&nbsp; ' . date('d M Y H:i') . '
+    Sent by ' . email_h($brand['name']) . ' Procurement Module &nbsp;·&nbsp; ' . date('d M Y H:i') . '
   </p>
 </div>';
 

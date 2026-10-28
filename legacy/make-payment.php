@@ -56,10 +56,10 @@ if ($payment['payment_status'] == 'Paid') {
     exit();
 }
 
-// Hive Colab bank details (hardcoded - you can move to config)
+// Bank details are placeholders: configure the organisation's real account details here (hardcoded - you can move to config)
 $bank_details = [
     'bank_name' => 'Stanbic Bank Uganda',
-    'account_name' => 'Hive Colab Limited',
+    'account_name' => ims_brand_name(),
     'account_number' => '9030012345678',
     'branch' => 'Kampala Road Branch',
     'swift_code' => 'SBICUGKX',

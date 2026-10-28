@@ -24,20 +24,22 @@ $featured = count(array_filter($jobs, fn($j) => $j['is_featured']));
 $urgent   = count(array_filter($jobs, fn($j) => $j['is_urgent']));
 
 $page_title = 'Career Opportunities';
+$brand = ims_brand();
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title><?= e($page_title) ?> - Hive Colab</title>
-<meta name="description" content="Explore open positions at Hive Colab and join Africa's most dynamic startup ecosystem.">
-<link rel="icon" type="image/png" href="images/favicon.png">
+<title><?= e($page_title) ?> - <?= e($brand['name']) ?></title>
+<meta name="description" content="Explore open positions at <?= e($brand['name']) ?> and grow your career with us.">
+<link rel="icon" type="image/png" href="<?= e($brand['favicon']) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="css/jobs-listing.css">
+<?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
 <script src="js/accessibility.js"></script>
 </head>
 <body>
@@ -51,13 +53,13 @@ $page_title = 'Career Opportunities';
         Now Hiring
       </div>
       <h1>
-        Shape Africa's
-        <span class="accent">Startup Future</span>
+        Build What's Next
+        <span class="accent">At <?= e($brand['name']) ?></span>
         <span class="outline">With Us</span>
       </h1>
       <p class="hero-sub">
-        Join a team of builders, designers, and dreamers accelerating
-        the continent's most ambitious founders from Kampala and beyond.
+        Join a team of builders, designers, and dreamers at
+        <?= e($brand['name']) ?> and help us do our best work.
       </p>
     </div><!-- /.hero-left -->
 
@@ -384,7 +386,7 @@ $page_title = 'Career Opportunities';
 
 <!-- -- FOOTER -------------------------------------------------- -->
 <footer class="footer">
-  <p>&copy; <?= date('Y') ?> <a href="https://hivecolab.org/">Hive Colab</a>. All rights reserved. &nbsp;.&nbsp; Built to accelerate Africa's builders.</p>
+  <p>&copy; <?= date('Y') ?> <a href="<?= e($brand['website']) ?>"><?= e($brand['name']) ?></a>. All rights reserved.</p>
 </footer>
 
 <script>
@@ -510,7 +512,7 @@ function toggleDetails(id) {
 ---------------------------------------- */
 function shareJob(id, title) {
   const url = location.origin + location.pathname + '#job-' + id;
-  const shareData = { title: title + ' - Hive Colab', url };
+  const shareData = { title: title + ' - ' + <?= json_encode($brand['name'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>, url };
 
   if (navigator.share) {
     navigator.share(shareData).catch(() => {});

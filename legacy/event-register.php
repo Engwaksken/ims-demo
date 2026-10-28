@@ -253,8 +253,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/png" href="images/favicon.png">
-<title>Register - <?= e($eventTitle) ?></title>
+<link rel="icon" type="image/png" href="<?= e(ims_brand()['favicon']) ?>">
+<title>Register - <?= e($eventTitle) ?> - <?= e(ims_brand_name()) ?></title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -263,6 +263,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 
 <link rel="stylesheet" href="css/events.css">
 <link rel="stylesheet" href="css/event-register.css">
+<?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
 <script src="js/accessibility.js"></script>
 </head>
 <body>
@@ -288,7 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
             <i class="fas fa-clock"></i> Redirecting you shortly...
         </p>
 
-        <a href="https://hivecolab.org" class="btn btn-primary" style="margin-top:15px;display:inline-block;">
+        <a href="<?= e(ims_brand()['website']) ?>" class="btn btn-primary" style="margin-top:15px;display:inline-block;">
             Go Now
         </a>
     </div>
@@ -296,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
 
 <script>
 setTimeout(function () {
-    window.location.href = "https://hivecolab.org";
+    window.location.href = <?= json_encode(ims_brand()['website'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES) ?>;
 }, 5000);
 </script>
 

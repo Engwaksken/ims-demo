@@ -201,7 +201,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
     <body>
         <div class="header">
             ' . $logoHtml . '
-            <h2>HiveColab Internet Subscriptions</h2>
+            <h2>' . h(ims_brand_name()) . ' Internet Subscriptions</h2>
             <p>Generated on ' . h(date('d M Y, g:i A')) . ' EAT</p>
         </div>
 
@@ -260,7 +260,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'pdf') {
         </table>
 
         <div class="footer">
-            HiveColab Internet Subscription Report
+            ' . h(ims_brand_name()) . ' Internet Subscription Report
         </div>
     </body>
     </html>';

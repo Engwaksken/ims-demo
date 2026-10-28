@@ -59,7 +59,7 @@ function pfsense_authorize_mac(string $mac): bool
         'zone'      => PFSENSE_CP_ZONE,
         'auth_user' => $mac,
         'auth_pass' => $mac,
-        'redirurl'  => 'https://hivecolab.org/',
+        'redirurl'  => ims_brand()['website'],
     ]);
 
     if (!function_exists('curl_init')) {

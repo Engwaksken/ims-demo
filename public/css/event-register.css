@@ -28,7 +28,7 @@ body {
 
 /* -- Hero header ------------------------------------------------ */
 .reg-hero {
-    background: linear-gradient(135deg, #c2410c 0%, #f97316 60%, #fb923c 100%);
+    background: linear-gradient(135deg, var(--brand-700, #c2410c) 0%, var(--brand-600, #f97316) 60%, var(--brand-secondary, var(--brand-400, #fb923c)) 100%);
     color: #fff;
     border-radius: 20px 20px 0 0;
     padding: 32px 32px 28px;
@@ -169,9 +169,9 @@ body {
 }
 
 .type-opt:checked + .type-label {
-    border-color: #f97316;
+    border-color: var(--brand-500, #f97316);
     background: #fff4ed;
-    color: #c2410c;
+    color: var(--brand-700, #c2410c);
 }
 
 /* -- Member / startup lookup ------------------------------------ */
@@ -298,8 +298,8 @@ body {
 }
 
 .form-control:focus {
-    border-color: #f97316;
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, .14);
+    border-color: var(--brand-500, #f97316);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-500, #f97316) 14%, transparent);
 }
 
 .form-control[readonly] {
@@ -340,7 +340,7 @@ select.form-control {
 .check-wrap input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: #f97316;
+    accent-color: var(--brand-500, #f97316);
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -349,7 +349,7 @@ select.form-control {
 .submit-btn {
     width: 100%;
     padding: 14px;
-    background: linear-gradient(135deg, #c2410c, #f97316);
+    background: linear-gradient(135deg, var(--brand-700, #c2410c), var(--brand-secondary, var(--brand-500, #f97316)));
     color: #fff;
     border: none;
     border-radius: 12px;
@@ -452,6 +452,6 @@ a:visited {
 }
 
 :where(a):focus-visible {
-    outline: 2px solid #ea580c;
+    outline: 2px solid var(--brand-600, #ea580c);
     outline-offset: 2px;
 }

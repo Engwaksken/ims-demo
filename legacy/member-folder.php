@@ -275,7 +275,7 @@ td{padding:6px;border-bottom:1px solid #f3f4f6;vertical-align:top}
         endforeach;
     endif;
 ?>
-<div class="foot">Hive Colab IMS &middot; Confidential member record &middot; <?= date('Y') ?></div>
+<div class="foot"><?= htmlspecialchars(ims_brand_name()) ?> &middot; Confidential member record &middot; <?= date('Y') ?></div>
 </body></html>
 <?php
     $html = (string)ob_get_clean();

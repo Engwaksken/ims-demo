@@ -520,7 +520,7 @@ if (
         ? '<img src="' .
             pvEsc($logoDataUri) .
             '" alt="Voucher logo">'
-        : '<span class="logo-text">Hive Colab</span>';
+        : '<span class="logo-text">' . pvEsc(ims_brand_name()) . '</span>';
 
     $html = '<!DOCTYPE html>
 <html>
@@ -941,7 +941,7 @@ table {
 
     $tempDirectory =
         sys_get_temp_dir() .
-        '/hivecolab_voucher_pdf';
+        '/ims_voucher_pdf';
 
     if (!is_dir($tempDirectory)) {
         @mkdir($tempDirectory, 0755, true);

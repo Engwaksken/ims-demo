@@ -31,7 +31,8 @@ function e(string $v): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title><?= $code ?> - <?= e($title) ?> | Hive Colab IMS</title>
+<?php $appName = (string)(getenv('APP_NAME') ?: ($_ENV['APP_NAME'] ?? 'Information Management System')); ?>
+<title><?= $code ?> - <?= e($title) ?> | <?= e($appName) ?></title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;background:#f6f7f9;font-family:Arial,sans-serif;color:#111827}
@@ -48,7 +49,7 @@ p{color:#6b7280;line-height:1.7}
 </head>
 <body>
 <main class="card">
-<img src="/images/logo.png" class="logo" alt="Hive Colab">
+<img src="/images/logo.png" class="logo" alt="<?= e($appName) ?>">
 <div class="code">Error <?= $code ?></div>
 <h1><?= e($title) ?></h1>
 <p><?= e($message) ?></p>

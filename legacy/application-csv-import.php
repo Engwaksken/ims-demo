@@ -148,7 +148,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'download_template' && $opport
             'Private Limited Company',
             'Scale',
             'Yes',
-            'Hive Colab Agri-Tech 2020; GIZ Make-IT Africa 2021',
+            'Regional Agri-Tech Accelerator 2020; GIZ Make-IT Africa 2021',
             'AgroSense was started by David Waiswa and two agronomists after witnessing smallholder farmers in Mbale lose 30-50% of their maize harvests annually due to undetected soil nutrient deficiencies and poor timing of inputs. We built affordable IoT soil sensors and paired them with an SMS advisory service accessible on any phone.',
             'Over 4 million smallholder farmers in Uganda lack access to affordable, real-time soil data, forcing them to apply fertilisers blindly. This leads to over-application in some areas and under-application in others, costing farmers an estimated UGX 200 billion annually in wasted inputs and lost yield.',
             '4.2 million smallholder farmers across Eastern and Northern Uganda',

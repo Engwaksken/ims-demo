@@ -551,7 +551,7 @@ $googleCalendarName =
     gcal_setting(
         $conn,
         'google_calendar_name',
-        'Hive Colab Events'
+        ims_brand_name() . ' Events'
     );
 
 $googleCalendarId =
@@ -1561,7 +1561,7 @@ body.ev-modal-open { overflow: hidden; }
 
             <p>
 
-                Hive Colab events from IMS and the connected Google Calendar.
+                <?= htmlspecialchars(ims_brand_name()) ?> events from IMS and the connected Google Calendar.
 
             </p>
 

@@ -172,15 +172,15 @@ $types = array_values(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title><?= e($page_title) ?> - Hive Colab</title>
+<title><?= e($page_title) ?> - <?= e(ims_brand_name()) ?></title>
 
 <meta
     name="description"
-    content="Apply to Hive Colab's open programs, accelerators, and opportunities. Join Africa's dynamic startup ecosystem."
+    content="Apply to <?= e(ims_brand_name()) ?>'s open programs, accelerators, and opportunities."
 >
 
-<link rel="icon" type="image/png" href="/images/favicon.png">
-<link rel="apple-touch-icon" href="/images/favicon.png">
+<link rel="icon" type="image/png" href="<?= e(ims_brand()['favicon']) ?>">
+<link rel="apple-touch-icon" href="<?= e(ims_brand()['favicon']) ?>">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -196,6 +196,7 @@ $types = array_values(
  integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 
 <link rel="stylesheet" href="/css/opportunities.css">
+<?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
 
 <style>
 /*
@@ -271,13 +272,13 @@ $types = array_values(
 .opp-card-desc blockquote {
     margin: 8px 0;
     padding: 7px 10px;
-    border-left: 3px solid #fb923c;
-    background: #fff7ed;
+    border-left: 3px solid var(--brand-400);
+    background: var(--brand-50);
     border-radius: 0 6px 6px 0;
 }
 
 .opp-card-desc a {
-    color: #ea580c;
+    color: var(--brand-600);
     text-decoration: none;
     text-underline-offset: 2px;
 }
@@ -348,7 +349,7 @@ $types = array_values(
             </h1>
 
             <p class="opp-hero-sub">
-                Join Hive Colab's innovation ecosystem and take your startup
+                Join <?= e(ims_brand_name()) ?> and take your startup
                 to the next level. Applications are reviewed on a rolling basis.
             </p>
         </div>
@@ -666,7 +667,7 @@ $types = array_values(
 <footer class="opp-footer">
     <p>
         &copy; <?= date('Y') ?>
-        <a href="https://hivecolab.org/">Hive Colab</a>.
+        <a href="<?= e(ims_brand()['website']) ?>"><?= e(ims_brand_name()) ?></a>.
         All rights reserved.
     </p>
 </footer>

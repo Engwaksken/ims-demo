@@ -30,7 +30,9 @@ if (!$opportunity) {
     exit;
 }
 
-$pageTitle = 'Apply - ' . ($opportunity['opportunity_title'] ?? 'Opportunity');
+$brand = ims_brand();
+$brandName = $brand['name'];
+$pageTitle = 'Apply - ' . ($opportunity['opportunity_title'] ?? 'Opportunity') . ' - ' . $brandName;
 
 $stmt = $conn->prepare(
     "SELECT COUNT(*) AS total
@@ -190,7 +192,7 @@ $sectorOptions = [
 ];
 
 $heardOptions = [
-    'Fellowship website (edtech.hivecolab.com) or Hive Colab website',
+    'Programme website or ' . $brandName . ' website',
     'Social media',
     'Referral from a partner organisation',
     'Referral from a past Fellowship venture',
@@ -266,15 +268,16 @@ function safe_saved_html(?string $html): string
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title><?= e($pageTitle) ?></title>
-<link rel="icon" type="image/png" href="images/favicon.png">
+<link rel="icon" type="image/png" href="<?= e($brand['favicon']) ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link rel="stylesheet" href="css/opportunities.css">
+<?= ims_theme_style_tag((array)($GLOBALS['IMS_SITE_BRANDING']['theme'] ?? [])) ?>
 <style>
-:root{--brand:#f28c28;--brand-dark:#c96709;--ink:#1f2937;--muted:#6b7280;--border:#e5e7eb;--soft:#fff8f1;--danger:#b91c1c;--success:#15803d}
-*{box-sizing:border-box}.apply-shell{max-width:1180px;margin:0 auto;padding:24px 18px 60px}.apply-notice{padding:14px 16px;border-radius:12px;margin:0 0 18px;border:1px solid var(--border);background:#fff}.apply-notice--error{border-color:#fecaca;background:#fef2f2;color:#991b1b}.apply-notice--draft{border-color:#fde68a;background:#fffbeb}.progress-shell{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--border)}.progress-inner{max-width:1180px;margin:auto;padding:12px 18px}.stepper{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;overflow:visible}.step-btn{border:0;background:transparent;padding:7px 2px;cursor:pointer;color:var(--muted);font-weight:700;font-size:11px;min-width:0;white-space:nowrap}.step-btn span{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;margin:0 auto 5px;border:2px solid var(--border);background:#fff}.step-btn.active{color:var(--brand-dark)}.step-btn.active span,.step-btn.done span{border-color:var(--brand);background:var(--brand);color:#fff}.progress-track{height:5px;background:#f3f4f6;border-radius:999px;margin-top:10px;overflow:hidden}.progress-fill{height:100%;width:11.111%;background:var(--brand);transition:.25s}.form-section{display:none;background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;margin-top:24px;box-shadow:0 8px 24px rgba(0,0,0,.04)}.form-section.active{display:block}.section-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:22px}.section-head__icon{width:44px;height:44px;border-radius:12px;background:var(--soft);display:grid;place-items:center;color:var(--brand-dark);font-size:19px}.section-head h2{margin:0 0 4px;font-family:'Playfair Display',serif}.section-head p{margin:0;color:var(--muted)}.grid-2,.grid-3,.grid-4{display:grid;gap:16px}.grid-2{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(3,1fr)}.grid-4{grid-template-columns:repeat(4,1fr)}.form-group{margin-bottom:18px}.form-group label,.group-label{display:block;font-weight:700;margin-bottom:7px;color:var(--ink)}.req{color:var(--danger)}.form-control{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}.form-control:focus{outline:2px solid rgba(242,140,40,.18);border-color:var(--brand)}textarea.form-control{resize:vertical;min-height:110px}.help{font-size:12px;color:var(--muted);margin-top:6px}.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.choice{display:flex;align-items:flex-start;gap:8px;padding:11px;border:1px solid var(--border);border-radius:10px;background:#fff}.choice input{margin-top:3px}.conditional{display:none;margin-top:10px}.conditional.show{display:block}.repeater{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}.repeater-row{display:grid;gap:10px;padding:12px;border-bottom:1px solid var(--border);align-items:end}.repeater-row:last-child{border-bottom:0}.repeater-founders{grid-template-columns:1.4fr 1fr .55fr .85fr .8fr .8fr .9fr 42px}.repeater-team{grid-template-columns:1.5fr 1fr .6fr .9fr .9fr 1fr 42px}.repeater-programmes{grid-template-columns:1.2fr 1.2fr .55fr 1.7fr 42px}.repeater-funding{grid-template-columns:1.2fr .9fr .8fr .55fr .55fr .9fr 42px}.remove-row{height:42px;width:42px;border:0;border-radius:9px;background:#fef2f2;color:#b91c1c;cursor:pointer}.btn-add{border:1px dashed var(--brand);background:var(--soft);color:var(--brand-dark);padding:10px 14px;border-radius:9px;font-weight:700;cursor:pointer}.nav-bar{display:flex;gap:10px;align-items:center;margin-top:24px;border-top:1px solid var(--border);padding-top:20px}.nav-bar .spacer{flex:1}.btn{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none}.btn-primary{background:var(--brand);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--border);color:var(--ink)}.btn-draft{background:#fff7ed;color:#9a4f0b;border:1px solid #fed7aa}.btn-success{background:var(--success);color:#fff}.word-counter{font-size:12px;text-align:right;color:var(--muted);margin-top:4px}.word-counter.over{color:var(--danger);font-weight:700}.privacy-box{padding:16px;border:1px solid #c7d2fe;background:#eef2ff;border-radius:12px;font-size:14px;line-height:1.6}.file-zone{border:1.5px dashed #cbd5e1;border-radius:12px;padding:18px;text-align:center;background:#fafafa;cursor:pointer}.file-zone i{font-size:26px;color:var(--brand-dark);margin-bottom:8px}.file-zone input{display:none}.file-note{font-size:12px;color:var(--muted);margin-top:6px}.mini-title{font-size:13px;font-weight:800;color:#374151;margin:0 0 8px}.metrics-table{width:100%;border-collapse:collapse}.metrics-table th,.metrics-table td{border:1px solid var(--border);padding:10px;vertical-align:top}.metrics-table th{text-align:left;background:#f9fafb}.metric-label{font-weight:600}.hidden{display:none!important}
+:root{--brand:var(--brand-600, #f28c28);--brand-dark:var(--brand-700, #c96709);--ink:#1f2937;--muted:#6b7280;--border:#e5e7eb;--soft:var(--brand-50, #fff8f1);--danger:#b91c1c;--success:#15803d}
+*{box-sizing:border-box}.apply-shell{max-width:1180px;margin:0 auto;padding:24px 18px 60px}.apply-notice{padding:14px 16px;border-radius:12px;margin:0 0 18px;border:1px solid var(--border);background:#fff}.apply-notice--error{border-color:#fecaca;background:#fef2f2;color:#991b1b}.apply-notice--draft{border-color:#fde68a;background:#fffbeb}.progress-shell{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--border)}.progress-inner{max-width:1180px;margin:auto;padding:12px 18px}.stepper{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:2px;overflow:visible}.step-btn{border:0;background:transparent;padding:7px 2px;cursor:pointer;color:var(--muted);font-weight:700;font-size:11px;min-width:0;white-space:nowrap}.step-btn span{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;margin:0 auto 5px;border:2px solid var(--border);background:#fff}.step-btn.active{color:var(--brand-dark)}.step-btn.active span,.step-btn.done span{border-color:var(--brand);background:var(--brand);color:#fff}.progress-track{height:5px;background:#f3f4f6;border-radius:999px;margin-top:10px;overflow:hidden}.progress-fill{height:100%;width:11.111%;background:var(--brand);transition:.25s}.form-section{display:none;background:#fff;border:1px solid var(--border);border-radius:18px;padding:26px;margin-top:24px;box-shadow:0 8px 24px rgba(0,0,0,.04)}.form-section.active{display:block}.section-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:22px}.section-head__icon{width:44px;height:44px;border-radius:12px;background:var(--soft);display:grid;place-items:center;color:var(--brand-dark);font-size:19px}.section-head h2{margin:0 0 4px;font-family:'Playfair Display',serif}.section-head p{margin:0;color:var(--muted)}.grid-2,.grid-3,.grid-4{display:grid;gap:16px}.grid-2{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(3,1fr)}.grid-4{grid-template-columns:repeat(4,1fr)}.form-group{margin-bottom:18px}.form-group label,.group-label{display:block;font-weight:700;margin-bottom:7px;color:var(--ink)}.req{color:var(--danger)}.form-control{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}.form-control:focus{outline:2px solid color-mix(in srgb, var(--brand) 18%, transparent);border-color:var(--brand)}textarea.form-control{resize:vertical;min-height:110px}.help{font-size:12px;color:var(--muted);margin-top:6px}.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.choice{display:flex;align-items:flex-start;gap:8px;padding:11px;border:1px solid var(--border);border-radius:10px;background:#fff}.choice input{margin-top:3px}.conditional{display:none;margin-top:10px}.conditional.show{display:block}.repeater{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}.repeater-row{display:grid;gap:10px;padding:12px;border-bottom:1px solid var(--border);align-items:end}.repeater-row:last-child{border-bottom:0}.repeater-founders{grid-template-columns:1.4fr 1fr .55fr .85fr .8fr .8fr .9fr 42px}.repeater-team{grid-template-columns:1.5fr 1fr .6fr .9fr .9fr 1fr 42px}.repeater-programmes{grid-template-columns:1.2fr 1.2fr .55fr 1.7fr 42px}.repeater-funding{grid-template-columns:1.2fr .9fr .8fr .55fr .55fr .9fr 42px}.remove-row{height:42px;width:42px;border:0;border-radius:9px;background:#fef2f2;color:#b91c1c;cursor:pointer}.btn-add{border:1px dashed var(--brand);background:var(--soft);color:var(--brand-dark);padding:10px 14px;border-radius:9px;font-weight:700;cursor:pointer}.nav-bar{display:flex;gap:10px;align-items:center;margin-top:24px;border-top:1px solid var(--border);padding-top:20px}.nav-bar .spacer{flex:1}.btn{border:0;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none}.btn-primary{background:var(--brand);color:#fff}.btn-secondary{background:#fff;border:1px solid var(--border);color:var(--ink)}.btn-draft{background:var(--brand-50, #fff7ed);color:var(--brand-700, #9a4f0b);border:1px solid var(--brand-200, #fed7aa)}.btn-success{background:var(--success);color:#fff}.word-counter{font-size:12px;text-align:right;color:var(--muted);margin-top:4px}.word-counter.over{color:var(--danger);font-weight:700}.privacy-box{padding:16px;border:1px solid #c7d2fe;background:#eef2ff;border-radius:12px;font-size:14px;line-height:1.6}.file-zone{border:1.5px dashed #cbd5e1;border-radius:12px;padding:18px;text-align:center;background:#fafafa;cursor:pointer}.file-zone i{font-size:26px;color:var(--brand-dark);margin-bottom:8px}.file-zone input{display:none}.file-note{font-size:12px;color:var(--muted);margin-top:6px}.mini-title{font-size:13px;font-weight:800;color:#374151;margin:0 0 8px}.metrics-table{width:100%;border-collapse:collapse}.metrics-table th,.metrics-table td{border:1px solid var(--border);padding:10px;vertical-align:top}.metrics-table th{text-align:left;background:#f9fafb}.metric-label{font-weight:600}.hidden{display:none!important}
 
 .application-details-content{display:flex;flex-direction:column;gap:16px}
 .detail-block{border:1px solid var(--border);border-radius:14px;padding:18px;background:#fff}
@@ -282,7 +285,7 @@ function safe_saved_html(?string $html): string
 .detail-block p{line-height:1.7;margin:0 0 10px}
 .detail-block ul,.detail-block ol{padding-left:22px;margin:10px 0}
 .detail-block li{margin:7px 0;line-height:1.6}
-.eligibility-block{background:#fffaf5;border-color:#fed7aa}
+.eligibility-block{background:var(--brand-50, #fffaf5);border-color:var(--brand-200, #fed7aa)}
 .detail-meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .detail-meta-grid>div{border:1px solid var(--border);border-radius:12px;padding:14px;background:#f8fafc}
 .detail-meta-grid span{display:block;font-size:12px;color:var(--muted);margin-bottom:5px}
@@ -327,8 +330,8 @@ body {
 <body>
 
 <div class="apply-topbar">
-    <a href="./" class="apply-topbar__brand notranslate" translate="no" aria-label="Hive Colab home">
-        <img src="images/logo.png" alt="Hive Colab">
+    <a href="./" class="apply-topbar__brand notranslate" translate="no" aria-label="<?= e($brandName) ?> home">
+        <img src="<?= e($brand['logo']) ?>" alt="<?= e($brandName) ?>">
     </a>
     <div class="apply-topbar__right">
         <div class="apply-topbar__deadline">
@@ -600,7 +603,7 @@ body {
     </div>
 
     <div class="form-group">
-        <label>12. How did you hear about the Mastercard Foundation EdTech Fellowship? <span class="req">*</span></label>
+        <label>12. How did you hear about <?= e($opportunity['opportunity_title'] ?? 'this programme') ?>? <span class="req">*</span></label>
         <div class="choice-grid">
             <?php foreach ($heardOptions as $opt): ?>
                 <label class="choice"><input type="checkbox" name="heard_about[]" value="<?= e($opt) ?>" <?= checkedArray('heard_about',$opt,$draft) ?>> <?= e($opt) ?></label>
@@ -947,7 +950,7 @@ body {
 
     <div class="form-group">
         <label>Conflict of Interest <span class="req">*</span></label>
-        <p class="help">Do any founders, team members, or shareholders have a personal, family, or business relationship with Hive Colab staff?</p>
+        <p class="help">Do any founders, team members, or shareholders have a personal, family, or business relationship with <?= e($brandName) ?> staff?</p>
         <select class="form-control" name="conflict_of_interest" required><option value="">Select...</option><option value="Yes" <?= selectedValue('conflict_of_interest','Yes',$draft) ?>>Yes</option><option value="No" <?= selectedValue('conflict_of_interest','No',$draft) ?>>No</option></select>
         <div class="conditional" data-show-when="conflict_of_interest:Yes"><textarea class="form-control" name="conflict_description" placeholder="Please describe the relationship"><?= dv('conflict_description',$draft) ?></textarea></div>
     </div>
@@ -970,7 +973,7 @@ body {
 
     <div class="privacy-box">
         <strong>Safeguarding &amp; Data Privacy Statement</strong><br><br>
-        The information submitted through this application will be used for evaluating applications to the Mastercard Foundation EdTech Fellowship in Uganda, conducting due diligence, programme design, monitoring and evaluation, and fulfilling donor compliance requirements. Hive Colab will treat submitted information as confidential and process personal and organisational data in accordance with the Data Protection and Privacy Act 2019, the Data Protection and Privacy Regulations 2021, and Hive Colab's Data Protection Policy. Application data will be retained for 24 months after the close of the selection process and may be accessed only by authorised programme personnel, evaluation committees and approved partners involved in selection and implementation.
+        The information submitted through this application will be used for evaluating applications to <?= e($opportunity['opportunity_title'] ?? 'this programme') ?> run by <?= e($brandName) ?>, conducting due diligence, programme design, monitoring and evaluation, and fulfilling donor compliance requirements. <?= e($brandName) ?> will treat submitted information as confidential and process personal and organisational data in accordance with applicable data protection laws and regulations and <?= e($brandName) ?>'s Data Protection Policy. Application data will be retained for 24 months after the close of the selection process and may be accessed only by authorised programme personnel, evaluation committees and approved partners involved in selection and implementation.
     </div>
 
     <div class="form-group" style="margin-top:16px">

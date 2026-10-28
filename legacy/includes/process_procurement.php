@@ -37,16 +37,21 @@ function h_val(mixed $v): string
 
 function _email_wrap(string $header_color, string $header_html, string $body_html): string
 {
+    $brand = email_brand();
+    /* The brand colour gets the brand gradient; status colours (approved/rejected) stay solid. */
+    $header_bg = $header_color === $brand['primary']
+        ? 'background-color:' . $brand['primary'] . ';background-image:linear-gradient(135deg,' . $brand['primary'] . ',' . $brand['secondary'] . ');'
+        : 'background:' . $header_color . ';';
     return '
 <div style="font-family:\'Helvetica Neue\',Arial,sans-serif;max-width:680px;margin:0 auto;color:#374151;">
-  <div style="background:' . $header_color . ';color:#fff;padding:22px 28px;border-radius:8px 8px 0 0;">
+  <div style="' . $header_bg . 'color:#fff;padding:22px 28px;border-radius:8px 8px 0 0;">
     ' . $header_html . '
   </div>
   <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;padding:24px 28px;border-radius:0 0 8px 8px;">
     ' . $body_html . '
   </div>
   <p style="font-size:11px;color:#9ca3af;text-align:center;margin-top:14px;">
-    IMS Procurement Module &nbsp;·&nbsp; ' . date('d M Y H:i') . '
+    ' . email_h($brand['name']) . ' Procurement Module &nbsp;·&nbsp; ' . date('d M Y H:i') . '
   </p>
 </div>';
 }
@@ -119,7 +124,7 @@ function buildRequestEmail(
     $ref = 'PROC-' . str_pad((string)$req['procurement_id'], 5, '0', STR_PAD_LEFT);
 
     $colors = [
-        'Submitted' => '#0f2942',
+        'Submitted' => email_brand()['primary'],
         'Approved'  => '#15803d',
         'Rejected'  => '#b91c1c',
     ];

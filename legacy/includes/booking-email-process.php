@@ -322,9 +322,11 @@ $bookingSummary =
     </div>
     ';
 
+$orgName = email_brand()['name'];
+
 $content =
     '
-    <h3>Hive Colab Booking Update</h3>
+    <h3>' . email_h($orgName) . ' Booking Update</h3>
 
     <p>
         Dear '
@@ -351,7 +353,7 @@ $content =
 
     <p style="margin-top:18px;">
         Best regards,<br>
-        <strong>Hive Colab Operations</strong>
+        <strong>' . email_h($orgName) . ' Operations</strong>
     </p>
     ';
 
@@ -393,7 +395,7 @@ $altBody =
     )
     . "\n\n"
     . $message
-    . "\n\nHive Colab Operations";
+    . "\n\n" . $orgName . " Operations";
 
 try {
     $sent =

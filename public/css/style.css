@@ -52,6 +52,11 @@
     --brand-500: #f97316;
     --brand-600: #ea580c;
     --brand-700: #c2410c;
+    /* Secondary (accent) colour: Settings > Appearance overrides these; by
+       default it follows the brand scale. */
+    --brand-secondary: var(--brand-500);
+    --brand-secondary-50: var(--brand-50);
+    --brand-secondary-700: var(--brand-700);
 
     /* Neutrals */
     --ink-900: #0d1117;
@@ -130,7 +135,7 @@
     --mid:     var(--ink-300);
     --card:    var(--surface-card);
     --accent:  var(--brand-600);
-    --accent2: var(--brand-500);
+    --accent2: var(--brand-secondary);
     --radius:  var(--radius-md);
     --shadow:  var(--shadow-md);
 }
@@ -398,7 +403,7 @@ a:visited {
 .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    box-shadow: 0 0 0 3px var(--brand-100);
 }
 
 .form-row {
@@ -705,7 +710,7 @@ table tbody tr:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ff6b352e;
+    background: linear-gradient(135deg, var(--brand-50) 0%, var(--brand-secondary-50) 100%);
 }
 
 .login-card {
@@ -1130,7 +1135,7 @@ table tbody tr:hover {
     display: none;
     background: none;
     border: none;
-    color: #ff6b35;
+    color: var(--primary-color);
     font-size: 24px;
     cursor: pointer;
     padding: 8px 12px;
@@ -1364,7 +1369,7 @@ a.btn-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ff6b352e;
+    background: linear-gradient(135deg, var(--brand-50) 0%, var(--brand-secondary-50) 100%);
     padding: 20px;
 }
 
@@ -1376,6 +1381,17 @@ a.btn-icon {
     width: 100%;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     animation: fadeInUp 0.5s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Brand strip: primary into secondary colour (Settings > Appearance). */
+.login-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brand-600), var(--brand-secondary));
 }
 
 @keyframes fadeInUp {
@@ -1437,7 +1453,7 @@ a.btn-icon {
 .login-card .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    box-shadow: 0 0 0 3px var(--brand-100);
 }
 
 .login-card .btn-block {
@@ -1446,6 +1462,17 @@ a.btn-icon {
     font-size: 16px;
     margin-top: 10px;
     border-radius: 8px;
+    font-weight: 500;
+}
+
+.login-forgot {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 14px;
+}
+
+.login-forgot a {
+    color: var(--brand-700);
     font-weight: 500;
 }
 
