@@ -204,7 +204,7 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $taskId = (int)($_POST['task_id'] ?? 0);
     $scopeTask = null;
     if ($taskId > 0) {
-        $find = $conn->prepare('SELECT task_id,assigned_to,created_by,is_recurring,recurrence_parent_id,status,task_date,task_due_at FROM employee_tasks WHERE task_id=? LIMIT 1');
+        $find = $conn->prepare('SELECT task_id,title,assigned_to,created_by,is_recurring,recurrence_parent_id,status,task_date,task_due_at FROM employee_tasks WHERE task_id=? LIMIT 1');
         $find->bind_param('i', $taskId);
         $find->execute();
         $scopeTask = $find->get_result()->fetch_assoc() ?: null;
@@ -238,37 +238,27 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $backTo($returnQuery);
     }
 
-    // Move a task to another day (and optionally time). "move" is the quick "to today" for overdue tasks.
-    if (in_array($action, ['move', 'reschedule'], true) && $mayManage && (int)$scopeTask['is_recurring'] === 0 && $scopeTask['status'] !== 'Cancelled') {
-        $newDate = $action === 'move' ? $today : trim((string)($_POST['new_date'] ?? ''));
-        $newTime = $action === 'move' ? '' : trim((string)($_POST['new_time'] ?? ''));
-        $dateObject = DateTime::createFromFormat('!Y-m-d', $newDate);
-        $clockObject = $newTime !== '' ? DateTime::createFromFormat('!H:i', $newTime) : null;
-        if (!$dateObject || $dateObject->format('Y-m-d') !== $newDate || ($newTime !== '' && (!$clockObject || $clockObject->format('H:i') !== $newTime))) {
-            $_SESSION['notification'] = ['message' => 'Choose a valid date and time to move the task to.', 'type' => 'warning'];
-            $backTo($returnQuery);
-        }
-        $oldDate = (string)$scopeTask['task_date'];
-        $time = $newTime !== '' ? $newTime . ':00' : (!empty($scopeTask['task_due_at']) ? substr((string)$scopeTask['task_due_at'], 11, 8) : null);
+    // Move one task to another day; shared by the single and the bulk actions.
+    // Returns 'moved', 'same', 'closed' (today already had this repeating task) or 'clash'.
+    $moveTask = static function (array $task, string $newDate, string $newTime, bool $quick) use ($conn, $collabReady, $today, $uid): string {
+        $taskId = (int)$task['task_id'];
+        $oldDate = (string)$task['task_date'];
+        $time = $newTime !== '' ? $newTime . ':00' : (!empty($task['task_due_at']) ? substr((string)$task['task_due_at'], 11, 8) : null);
         $newDueAt = $time !== null ? $newDate . ' ' . $time : null;
-        if ($newDate === $oldDate && $newDueAt === $scopeTask['task_due_at']) $backTo($returnQuery);
+        if ($newDate === $oldDate && $newDueAt === $task['task_due_at']) return 'same';
 
-        $parentId = (int)($scopeTask['recurrence_parent_id'] ?? 0);
+        $parentId = (int)($task['recurrence_parent_id'] ?? 0);
         if ($parentId > 0 && $newDate !== $oldDate) {
             // A repeating task has one task per day: check the target day.
             $clash = $conn->prepare('SELECT task_id,status FROM employee_tasks WHERE recurrence_parent_id=? AND task_date=? AND task_id<>? LIMIT 1');
             $clash->bind_param('isi', $parentId, $newDate, $taskId); $clash->execute();
             $existing = $clash->get_result()->fetch_assoc(); $clash->close();
             if ($existing && $existing['status'] !== 'Cancelled') {
-                if ($action === 'move') {
-                    // Today already has this repeating task: close the old copy instead of duplicating it.
-                    $cancel = $conn->prepare('UPDATE employee_tasks SET status="Cancelled",reminder_sent_at=NOW() WHERE task_id=?');
-                    $cancel->bind_param('i', $taskId); $cancel->execute(); $cancel->close();
-                    $_SESSION['notification'] = ['message' => 'Today already has this repeating task, so the old copy was closed.', 'type' => 'info'];
-                } else {
-                    $_SESSION['notification'] = ['message' => 'That day already has this repeating task. Pick another day.', 'type' => 'warning'];
-                }
-                $backTo($returnQuery);
+                if (!$quick) return 'clash';
+                // Today already has this repeating task: close the old copy instead of duplicating it.
+                $cancel = $conn->prepare('UPDATE employee_tasks SET status="Cancelled",reminder_sent_at=NOW() WHERE task_id=?');
+                $cancel->bind_param('i', $taskId); $cancel->execute(); $cancel->close();
+                return 'closed';
             }
             if ($existing) {
                 // The target day was removed from the series earlier: move this task out of the series.
@@ -282,6 +272,7 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Assignment order matters: moved_from and reminder_at read the old task_date before it changes.
         $move = $conn->prepare('UPDATE employee_tasks SET moved_from=IF(task_date<>?,task_date,moved_from),
             reminder_at=IF(reminder_at IS NULL,NULL,DATE_ADD(reminder_at, INTERVAL DATEDIFF(?,task_date) DAY)),
             task_date=?,task_due_at=?,reminder_sent_at=NULL WHERE task_id=?');
@@ -294,11 +285,36 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 SELECT title,details,assigned_to,created_by,task_frequency,?,"Cancelled",recurrence_parent_id,NOW() FROM employee_tasks WHERE task_id=?');
             $marker->bind_param('si', $today, $taskId); $marker->execute(); $marker->close();
         }
-        if ((int)$scopeTask['assigned_to'] !== $uid) {
-            $titleRow = $conn->query('SELECT title FROM employee_tasks WHERE task_id=' . $taskId)->fetch_assoc();
-            notify_user((int)$scopeTask['assigned_to'], 'A task was moved', ($titleRow['title'] ?? 'Task') . ' · now ' . date('D j M', strtotime($newDate)) . ($time ? ' ' . substr($time, 0, 5) : ''), 'info', $taskId, 'employee_task');
+        return 'moved';
+    };
+    $validDateTime = static function (string $date, string $time): bool {
+        $dateObject = DateTime::createFromFormat('!Y-m-d', $date);
+        if (!$dateObject || $dateObject->format('Y-m-d') !== $date) return false;
+        if ($time === '') return true;
+        $clock = DateTime::createFromFormat('!H:i', $time);
+        return $clock !== false && $clock->format('H:i') === $time;
+    };
+
+    // Move a task to another day (and optionally time). "move" is the quick "to today" for overdue tasks.
+    if (in_array($action, ['move', 'reschedule'], true) && $mayManage && (int)$scopeTask['is_recurring'] === 0 && $scopeTask['status'] !== 'Cancelled') {
+        $newDate = $action === 'move' ? $today : trim((string)($_POST['new_date'] ?? ''));
+        $newTime = $action === 'move' ? '' : trim((string)($_POST['new_time'] ?? ''));
+        if (!$validDateTime($newDate, $newTime)) {
+            $_SESSION['notification'] = ['message' => 'Choose a valid date and time to move the task to.', 'type' => 'warning'];
+            $backTo($returnQuery);
         }
-        $_SESSION['notification'] = ['message' => 'Task moved to ' . date('l j M', strtotime($newDate)) . ($time ? ' at ' . substr($time, 0, 5) : '') . '.', 'type' => 'success'];
+        $result = $moveTask($scopeTask, $newDate, $newTime, $action === 'move');
+        if ($result === 'clash') {
+            $_SESSION['notification'] = ['message' => 'That day already has this repeating task. Pick another day.', 'type' => 'warning'];
+        } elseif ($result === 'closed') {
+            $_SESSION['notification'] = ['message' => 'Today already has this repeating task, so the old copy was closed.', 'type' => 'info'];
+        } elseif ($result === 'moved') {
+            $when = date('l j M', strtotime($newDate)) . ($newTime !== '' ? ' at ' . $newTime : '');
+            if ((int)$scopeTask['assigned_to'] !== $uid) {
+                notify_user((int)$scopeTask['assigned_to'], 'A task was moved', $scopeTask['title'] . ' · now ' . $when, 'info', $taskId, 'employee_task');
+            }
+            $_SESSION['notification'] = ['message' => 'Task moved to ' . $when . '.', 'type' => 'success'];
+        }
         $backTo($returnQuery);
     }
 
@@ -366,6 +382,100 @@ if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'leave' && $isInvited) {
         task_collab_remove($conn, [$taskId, (int)($scopeTask['recurrence_parent_id'] ?? 0)], [$uid]);
         $_SESSION['notification'] = ['message' => 'You left the task.', 'type' => 'success'];
+        $backTo($returnQuery);
+    }
+
+    // Several selected tasks at once. Each task is checked on its own: tasks the
+    // user may not change are skipped and counted, never silently changed.
+    if ($action === 'bulk') {
+        $bulk = (string)($_POST['bulk_action'] ?? '');
+        $ids = array_slice(array_values(array_unique(array_filter(array_map('intval', (array)($_POST['task_ids'] ?? [])), static fn(int $id): bool => $id > 0))), 0, 500);
+        if (!$ids || !in_array($bulk, ['Pending', 'In Progress', 'Completed', 'move', 'assign', 'invite', 'delete'], true)) {
+            $_SESSION['notification'] = ['message' => 'Select at least one task and an action.', 'type' => 'warning'];
+            $backTo($returnQuery);
+        }
+        $selected = $conn->query('SELECT task_id,title,assigned_to,created_by,is_recurring,recurrence_parent_id,status,task_date,task_due_at FROM employee_tasks WHERE is_recurring=0 AND status<>"Cancelled" AND task_id IN (' . implode(',', $ids) . ')')->fetch_all(MYSQLI_ASSOC);
+
+        $newDate = trim((string)($_POST['bulk_date'] ?? ''));
+        $newTime = trim((string)($_POST['bulk_time'] ?? ''));
+        $newAssignee = (int)($_POST['bulk_assignee'] ?? 0);
+        $invitees = array_values(array_unique(array_filter(array_map('intval', (array)($_POST['bulk_invite'] ?? [])), static fn(int $id): bool => $id > 0 && $activeStaff($id))));
+        if ($bulk === 'move' && !$validDateTime($newDate, $newTime)) {
+            $_SESSION['notification'] = ['message' => 'Choose a valid date to move the selected tasks to.', 'type' => 'warning'];
+            $backTo($returnQuery);
+        }
+        if ($bulk === 'assign' && !$activeStaff($newAssignee)) {
+            $_SESSION['notification'] = ['message' => 'Choose an active staff member to assign the selected tasks to.', 'type' => 'warning'];
+            $backTo($returnQuery);
+        }
+        if ($bulk === 'invite' && (!$collabReady || !$invitees)) {
+            $_SESSION['notification'] = ['message' => 'Choose at least one staff member to invite.', 'type' => 'warning'];
+            $backTo($returnQuery);
+        }
+
+        $done = 0; $notAllowed = 0; $clashes = 0;
+        $assignedCount = []; $invitedCount = []; $movedForOthers = [];
+        $statusStmt = $conn->prepare('UPDATE employee_tasks SET status=?,completed_at=IF(?="Completed",COALESCE(completed_at,NOW()),NULL),reminder_sent_at=IF(? IN ("Pending","In Progress"),NULL,reminder_sent_at) WHERE task_id=?');
+        foreach ($selected as $task) {
+            $taskId = (int)$task['task_id'];
+            $owner = $canManageAllTasks || (int)$task['assigned_to'] === $uid || (int)$task['created_by'] === $uid;
+            $invitedOnly = !$owner && $collabReady && task_is_collaborator($conn, $task, $uid);
+            $isStatus = in_array($bulk, ['Pending', 'In Progress', 'Completed'], true);
+            if (!$owner && !($isStatus && $invitedOnly)) { $notAllowed++; continue; }
+
+            if ($isStatus) {
+                $statusStmt->bind_param('sssi', $bulk, $bulk, $bulk, $taskId); $statusStmt->execute();
+                $done++;
+            } elseif ($bulk === 'move') {
+                $result = $moveTask($task, $newDate, $newTime, false);
+                if ($result === 'clash') { $clashes++; continue; }
+                if ($result === 'moved' && (int)$task['assigned_to'] !== $uid) $movedForOthers[(int)$task['assigned_to']][] = $task['title'];
+                $done++;
+            } elseif ($bulk === 'assign') {
+                if ((int)$task['assigned_to'] === $newAssignee) { $done++; continue; }
+                $reassign = $conn->prepare('UPDATE employee_tasks SET assigned_to=? WHERE task_id=?');
+                $reassign->bind_param('ii', $newAssignee, $taskId); $reassign->execute(); $reassign->close();
+                if ($collabReady) task_collab_remove($conn, [$taskId], [$newAssignee]);
+                $assignedCount[] = $task['title'];
+                $done++;
+            } elseif ($bulk === 'invite') {
+                $people = array_values(array_filter($invitees, static fn(int $id): bool => $id !== (int)$task['assigned_to']));
+                foreach (task_collab_add($conn, $taskId, $people, $uid) as $userId) $invitedCount[$userId][] = $task['title'];
+                $done++;
+            } elseif ($bulk === 'delete') {
+                if (!empty($task['recurrence_parent_id'])) {
+                    // Keep the series/date marker so the repeating task does not recreate this day.
+                    $cancel = $conn->prepare('UPDATE employee_tasks SET status="Cancelled",reminder_sent_at=NOW() WHERE task_id=?');
+                    $cancel->bind_param('i', $taskId); $cancel->execute(); $cancel->close();
+                } else {
+                    $delete = $conn->prepare('DELETE FROM employee_tasks WHERE task_id=?');
+                    $delete->bind_param('i', $taskId); $delete->execute(); $delete->close();
+                }
+                $done++;
+            }
+        }
+        $statusStmt->close();
+
+        // One notification per person, not one per task.
+        $summarise = static fn(array $titles): string => count($titles) === 1 ? $titles[0] : count($titles) . ' tasks, including ' . $titles[0];
+        if ($assignedCount && $newAssignee !== $uid) {
+            notify_user($newAssignee, count($assignedCount) === 1 ? 'A task was assigned to you' : 'Tasks were assigned to you', $summarise($assignedCount), 'info', 0, 'employee_task');
+        }
+        $inviter = (string)($_SESSION['full_name'] ?? 'A colleague');
+        foreach ($invitedCount as $userId => $titles) {
+            if ($userId !== $uid) notify_user($userId, 'You were invited to tasks', $inviter . ' invited you to: ' . $summarise($titles), 'info', 0, 'employee_task');
+        }
+        foreach ($movedForOthers as $userId => $titles) {
+            notify_user($userId, 'Tasks were moved', $summarise($titles) . ' · now ' . date('D j M', strtotime($newDate)), 'info', 0, 'employee_task');
+        }
+
+        $verb = ['Pending' => 'marked Pending', 'In Progress' => 'marked In Progress', 'Completed' => 'marked Completed', 'move' => 'moved to ' . ($newDate ? date('D j M', strtotime($newDate)) : ''), 'assign' => 'assigned', 'invite' => 'shared', 'delete' => 'deleted'][$bulk];
+        $message = $done . ' task' . ($done === 1 ? '' : 's') . ' ' . $verb . '.';
+        if ($clashes) $message .= ' ' . $clashes . ' repeating task' . ($clashes === 1 ? ' was' : 's were') . ' not moved because that day already has it.';
+        if ($notAllowed) $message .= ' ' . $notAllowed . ' skipped because you are not allowed to make that change to ' . ($notAllowed === 1 ? 'it' : 'them') . '.';
+        $skippedMissing = count($ids) - count($selected);
+        if ($skippedMissing > 0) $message .= ' ' . $skippedMissing . ' no longer available.';
+        $_SESSION['notification'] = ['message' => $message, 'type' => ($notAllowed || $clashes) ? 'warning' : 'success'];
         $backTo($returnQuery);
     }
 
@@ -703,6 +813,13 @@ if (!$schemaReady): ?>
 .task-repeat-days{display:flex;gap:8px;flex-wrap:wrap}
 .task-repeat-days label{display:inline-flex;gap:6px;align-items:center;padding:7px 10px;border:1px solid var(--task-border);border-radius:8px;background:var(--ink-0)}
 .task-hidden{display:none!important}
+.task-select{width:18px;height:18px;margin:0 8px 0 0;vertical-align:-3px;cursor:pointer}
+.task-row.is-selected{background:var(--task-brand-soft);box-shadow:inset 3px 0 0 var(--task-brand)}
+.task-bulk-bar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:12px 16px;background:var(--task-brand-soft);border-bottom:1px solid var(--task-border)}
+.task-bulk-bar[hidden]{display:none}
+.task-bulk-bar .form-group{margin:0}
+.task-bulk-bar strong{align-self:center;color:var(--task-brand-dark)}
+.task-select-all{display:inline-flex;gap:6px;align-items:center;font-weight:600;font-size:13px;margin-right:12px;cursor:pointer}
 @media(max-width:780px){.tasks-page .stats-grid.reports-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.task-row{align-items:flex-start;flex-direction:column}.task-form-grid,.task-item{grid-template-columns:1fr}.task-form-grid .wide{grid-column:auto}.task-modal{padding:8px}.task-modal-card{max-height:calc(100vh - 16px)}.task-modal-body{padding:14px}}
 </style>
 
@@ -776,7 +893,47 @@ if (!$schemaReady): ?>
 <?php endif; ?>
 
 <div class="card">
-    <div class="card-header"><h3><i class="fas fa-calendar-check" style="color:var(--brand-500)"></i> <?= $escape($period['label']) ?></h3><span><?= $taskTotal ?> task<?= $taskTotal === 1 ? '' : 's' ?></span></div>
+    <div class="card-header"><h3><i class="fas fa-calendar-check" style="color:var(--brand-500)"></i> <?= $escape($period['label']) ?></h3><span><?php if ($tasks): ?><label class="task-select-all"><input type="checkbox" id="taskSelectAll" class="task-select"> Select all</label><?php endif; ?><?= $taskTotal ?> task<?= $taskTotal === 1 ? '' : 's' ?></span></div>
+    <form method="post" id="bulkForm" class="task-bulk-bar" hidden aria-label="Change selected tasks">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="bulk">
+        <input type="hidden" name="return_query" value="<?= $escape($returnQueryString) ?>">
+        <strong id="bulkCount" aria-live="polite">0 selected</strong>
+        <div class="form-group">
+            <label for="bulkAction">Action</label>
+            <select id="bulkAction" name="bulk_action" class="form-control" required>
+                <option value="">Choose…</option>
+                <optgroup label="Status">
+                    <option value="Pending">Mark Pending</option>
+                    <option value="In Progress">Mark In Progress</option>
+                    <option value="Completed">Mark Completed</option>
+                </optgroup>
+                <optgroup label="Change">
+                    <option value="move" data-owner-only>Move to another day…</option>
+                    <option value="assign" data-owner-only>Assign to…</option>
+                    <?php if ($collabReady): ?><option value="invite" data-owner-only>Invite staff…</option><?php endif; ?>
+                    <option value="delete" data-owner-only>Delete</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="form-group task-hidden" data-bulk-for="move"><label for="bulkDate">New date</label><input id="bulkDate" type="date" name="bulk_date" class="form-control" value="<?= $escape($today) ?>"></div>
+        <div class="form-group task-hidden" data-bulk-for="move"><label for="bulkTime">Time (optional)</label><input id="bulkTime" type="time" name="bulk_time" class="form-control"></div>
+        <div class="form-group task-hidden" data-bulk-for="assign"><label for="bulkAssignee">Assign to</label>
+            <select id="bulkAssignee" name="bulk_assignee" class="form-control">
+                <?php foreach ($users as $user): ?><option value="<?= (int)$user['user_id'] ?>"><?= $escape($user['full_name']) ?></option><?php endforeach; ?>
+            </select>
+        </div>
+        <?php if ($collabReady): ?>
+        <div class="form-group task-hidden" data-bulk-for="invite"><label for="bulkInvite">Invite (hold Ctrl or ⌘ to pick several)</label>
+            <select id="bulkInvite" name="bulk_invite[]" class="form-control" multiple size="4">
+                <?php foreach ($users as $user): if ((int)$user['user_id'] === $uid) continue; ?><option value="<?= (int)$user['user_id'] ?>"><?= $escape($user['full_name']) ?></option><?php endforeach; ?>
+            </select>
+        </div>
+        <?php endif; ?>
+        <button type="submit" class="btn btn-primary" id="bulkApply">Apply</button>
+        <button type="button" class="btn btn-secondary" id="bulkClear">Clear selection</button>
+        <small id="bulkNote" class="task-hidden" style="flex-basis:100%">Some selected tasks are only shared with you, so only their status can be changed. Other actions will skip them.</small>
+    </form>
     <div class="card-body">
     <?php if (!$byDay): ?>
         <div class="empty-state"><i class="fas fa-clipboard-list" aria-hidden="true"></i><p><?= $view === 'overdue' ? 'Nothing overdue. Well done.' : 'No tasks in this period.' ?></p></div>
@@ -792,7 +949,7 @@ if (!$schemaReady): ?>
             ?>
             <article class="task-row <?= $task['status'] === 'Completed' ? 'is-done' : '' ?> <?= $upcomingTask ? 'is-upcoming' : '' ?>">
                 <div>
-                    <div class="task-title"><?= $escape($task['title']) ?>
+                    <div class="task-title"><?php if (!$upcomingTask && ($editable || $invitedHere)): ?><input type="checkbox" class="task-select task-select-one" name="task_ids[]" value="<?= (int)$task['task_id'] ?>" form="bulkForm" data-owner="<?= $editable ? '1' : '0' ?>" aria-label="Select <?= $escape($task['title']) ?>"><?php endif; ?><?= $escape($task['title']) ?>
                         <?php if (!empty($task['recurrence_parent_id'])): ?> <span class="badge badge-purple"><i class="fas fa-repeat"></i> Repeating</span><?php endif; ?>
                         <?php if (!empty($task['moved_from'])): ?> <span class="badge badge-secondary">Moved from <?= $escape(date('j M', strtotime((string)$task['moved_from']))) ?></span><?php endif; ?>
                         <?php if ($invitedHere): ?> <span class="badge badge-info"><i class="fas fa-user-group"></i> Shared with you</span><?php endif; ?>
@@ -1292,6 +1449,41 @@ if (!$schemaReady): ?>
     }));
     document.getElementById('shareAssignee').addEventListener('change', refreshCandidates);
     if (shareSearch) shareSearch.addEventListener('input', refreshCandidates);
+
+    // Select several tasks and change them together.
+    const bulkForm = document.getElementById('bulkForm');
+    const boxes = Array.from(document.querySelectorAll('.task-select-one'));
+    const selectAll = document.getElementById('taskSelectAll');
+    const bulkAction = document.getElementById('bulkAction');
+    function refreshBulk() {
+        const chosen = boxes.filter(box => box.checked);
+        boxes.forEach(box => box.closest('.task-row').classList.toggle('is-selected', box.checked));
+        bulkForm.hidden = chosen.length === 0;
+        document.getElementById('bulkCount').textContent = chosen.length + ' selected';
+        if (selectAll) {
+            selectAll.checked = chosen.length > 0 && chosen.length === boxes.length;
+            selectAll.indeterminate = chosen.length > 0 && chosen.length < boxes.length;
+        }
+        const someInvitedOnly = chosen.some(box => box.dataset.owner !== '1');
+        const ownerOnly = ['move', 'assign', 'invite', 'delete'].includes(bulkAction.value);
+        document.getElementById('bulkNote').classList.toggle('task-hidden', !(someInvitedOnly && ownerOnly));
+    }
+    function showBulkFields() {
+        bulkForm.querySelectorAll('[data-bulk-for]').forEach(el => el.classList.toggle('task-hidden', el.dataset.bulkFor !== bulkAction.value));
+        document.getElementById('bulkApply').className = bulkAction.value === 'delete' ? 'btn btn-danger' : 'btn btn-primary';
+        refreshBulk();
+    }
+    boxes.forEach(box => box.addEventListener('change', refreshBulk));
+    if (selectAll) selectAll.addEventListener('change', () => { boxes.forEach(box => { box.checked = selectAll.checked; }); refreshBulk(); });
+    bulkAction.addEventListener('change', showBulkFields);
+    document.getElementById('bulkClear').addEventListener('click', () => { boxes.forEach(box => { box.checked = false; }); refreshBulk(); });
+    bulkForm.addEventListener('submit', event => {
+        const count = boxes.filter(box => box.checked).length;
+        if (bulkAction.value === 'delete' && !window.confirm('Delete ' + count + ' selected task' + (count === 1 ? '' : 's') + '? Days of repeating tasks are only removed from that day.')) {
+            event.preventDefault();
+        }
+    });
+    refreshBulk();
 
     form.addEventListener('submit', event => {
         if (f.repeat.value === 'custom' && !dayBoxes.some(box => box.checked)) {
