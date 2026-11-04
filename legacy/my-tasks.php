@@ -366,7 +366,7 @@ if (!$schemaReady): ?>
 </style>
 
 <div class="tasks-page page-stack">
-<div class="page-hero"><div><h1><i class="fas fa-list-check" aria-hidden="true"></i> <?= $isAdmin && $view === 'all' ? 'Team Tasks' : 'My Tasks' ?></h1><p>Daily actions and weekly priorities linked to KPI and KRA commitments.</p></div><div class="hero-actions"><button type="button" class="btn" id="importTasksButton"><i class="fas fa-file-excel" aria-hidden="true"></i> Import Monday.com Excel</button><button type="button" class="btn btn-primary" id="addTaskButton"><i class="fas fa-plus" aria-hidden="true"></i> Add task</button></div></div>
+<div class="page-hero"><div><h1><i class="fas fa-list-check" aria-hidden="true"></i> <?= $isAdmin && $view === 'all' ? 'Team Tasks' : 'My Tasks' ?></h1><p>Daily actions and weekly priorities linked to KPI and KRA commitments.</p></div><div class="hero-actions"><button type="button" class="btn" id="importTasksButton"><i class="fas fa-file-excel" aria-hidden="true"></i> Import Excel</button><button type="button" class="btn btn-primary" id="addTaskButton"><i class="fas fa-plus" aria-hidden="true"></i> Add task</button></div></div>
 <div class="stats-grid reports-stats">
 <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Pending today</span><span class="stat-value"><?= $counts['Pending'] ?></span></div></div>
 <div class="stat-card"><div class="stat-icon bg-blue"><i class="fas fa-spinner" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">In progress today</span><span class="stat-value"><?= $counts['In Progress'] ?></span></div></div>
