@@ -407,7 +407,6 @@ if (!function_exists('task_import_monday_spreadsheet')) {
 
                 $title = (string)preg_replace('/\s+/u', ' ', $text('title'));
                 if ($title === '') continue;
-                if (mb_strlen($title) > 240) { $skip('Task name is longer than 240 characters', $rowNumber); continue; }
                 $details = $text('details');
 
                 [$ownerId, $peopleNames] = $resolveAssignee($cell('owner'));
@@ -416,21 +415,18 @@ if (!function_exists('task_import_monday_spreadsheet')) {
                     if ($peopleNames) $note('Assigned to you because "' . implode(', ', $peopleNames) . '" did not match a staff account', $rowNumber);
                 }
 
+                // Dates in the sheet are never used to schedule the task: every
+                // imported task is due today. The sheet's date is kept in the
+                // details for reference, so no row is lost to an odd date.
+                $due = $today->setTime(17, 0);
                 $dueRaw = $isBlank($cell('due')) ? $cell('timeline') : $cell('due');
-                $parsedDue = task_import_parse_datetime($dueRaw);
-                if ($parsedDue === null && !$isBlank($dueRaw)) {
-                    $skip('Date "' . mb_substr(trim((string)$dueRaw), 0, 40) . '" was not understood; use a format like 2026-11-04 or 04/11/2026', $rowNumber);
-                    continue;
+                if (!$isBlank($dueRaw)) {
+                    $parsedDue = task_import_parse_datetime($dueRaw);
+                    $sheetDate = $parsedDue !== null
+                        ? $parsedDue[0]->format($parsedDue[1] ? 'Y-m-d H:i' : 'Y-m-d')
+                        : mb_substr(trim((string)$dueRaw), 0, 60);
+                    $details = trim($details . "\n" . 'Date in imported sheet: ' . $sheetDate);
                 }
-                if ($parsedDue === null) {
-                    [$due, $hasTime] = [$today, false];
-                    $note('No due date, so it was set to today', $rowNumber);
-                } else {
-                    [$due, $hasTime] = $parsedDue;
-                }
-                $clock = task_import_parse_time($cell('time'));
-                if ($clock !== null) $due = $due->setTime($clock[0], $clock[1]);
-                elseif (!$hasTime) $due = $due->setTime($parsedDue === null ? 17 : 9, 0);
 
                 $statusText = strtolower($text('status'));
                 $status = in_array($statusText, ['done', 'complete', 'completed', 'closed', 'finished'], true) ? 'Completed'
@@ -447,26 +443,25 @@ if (!function_exists('task_import_monday_spreadsheet')) {
                     elseif (preg_match('/\b(mon|tue|wed|thu|fri|sat|sun)/', $key, $match)) $days[] = $weekdayNumbers[$match[1]];
                 }
                 $days = array_values(array_unique($days)); sort($days);
-                if ($isRecurring && !$days) { $skip('Recurring task needs weekday names in a Repeat On or Weekdays column', $rowNumber); continue; }
-
-                $kpi = $resolveKpi($text('kpi'), $text('kra'), $ownerId);
-                if ($kpi === null) { $skip('Linked KPI/KRA was not found for the assignee', $rowNumber); continue; }
-
-                $endRaw = $cell('end');
-                $endParsed = task_import_parse_datetime($endRaw);
-                if ($isRecurring && !$isBlank($endRaw) && $endParsed === null) { $skip('Repeat Until date was not understood', $rowNumber); continue; }
-
-                $reminderRaw = $cell('reminder');
-                $reminderClock = task_import_parse_time($cell('reminderTime'));
-                $reminderDateTime = null;
-                $reminderParsed = task_import_parse_datetime($reminderRaw);
-                if ($reminderParsed !== null) {
-                    $reminderDateTime = $reminderParsed[0];
-                    if ($reminderClock !== null) $reminderDateTime = $reminderDateTime->setTime($reminderClock[0], $reminderClock[1]);
-                } elseif ($reminderClock !== null) {
-                    $reminderDateTime = $due->setTime($reminderClock[0], $reminderClock[1]);
+                if ($isRecurring && !$days) {
+                    // "Recurring: yes" without weekdays repeats every day (or weekly on today's weekday).
+                    $days = $frequency === 'Weekly' ? [(int)$today->format('N')] : [1, 2, 3, 4, 5, 6, 7];
+                    $note('Repeats ' . ($frequency === 'Weekly' ? 'weekly on ' . $today->format('l') : 'every day') . ' because no weekdays were given', $rowNumber);
                 }
 
+                $kpi = $resolveKpi($text('kpi'), $text('kra'), $ownerId);
+                if ($kpi === null) {
+                    $kpi = ['source' => null, 'id' => null, 'kra' => null];
+                    $note('Imported without a KPI link because "' . mb_substr($text('kpi'), 0, 60) . '" was not found for the assignee', $rowNumber);
+                }
+
+                // Sheet dates (Repeat Until, Reminder dates) are not used either; only a
+                // reminder time of day is kept, applied to today's task.
+                $endParsed = null;
+                $reminderClock = task_import_parse_time($cell('reminderTime'));
+                $reminderDateTime = $reminderClock !== null ? $due->setTime($reminderClock[0], $reminderClock[1]) : null;
+
+                if (mb_strlen($title) > 240) $note('Task name was shortened to 240 characters', $rowNumber);
                 $title = mb_substr($title, 0, 240);
                 $kpiSource = $kpi['source']; $kpiId = $kpi['id']; $kraId = $kpi['kra'];
                 $taskDate = $due->format('Y-m-d');
