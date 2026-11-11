@@ -334,6 +334,9 @@ body {
         <img src="<?= e($brand['logo']) ?>" alt="<?= e($brandName) ?>">
     </a>
     <div class="apply-topbar__right">
+        <?php if (empty($_SESSION['user_id'])): ?>
+            <a href="/login" class="btn btn-secondary" style="white-space: nowrap;">Log in to continue</a>
+        <?php endif; ?>
         <div class="apply-topbar__deadline">
             <i class="fas fa-clock"></i>
             <span>Deadline: <?= date('d M Y', strtotime((string)$opportunity['deadline'])) ?></span>
