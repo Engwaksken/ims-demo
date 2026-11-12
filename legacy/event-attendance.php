@@ -130,6 +130,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
     </div>
     <div class="hero-actions">
         <a href="events" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Events</a>
+        <a href="event-report?id=<?= (int)$event_id ?>" class="btn btn-primary"><i class="fas fa-chart-column" aria-hidden="true"></i> Full report</a>
         <a href="<?= e($process_url) ?>&export=csv" class="btn"><i class="fas fa-file-csv" aria-hidden="true"></i> Export CSV</a>
         <a href="<?= e($process_url) ?>&export=pdf" class="btn" target="_blank"><i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF</a>
     </div>

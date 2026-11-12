@@ -481,7 +481,7 @@ $sql = "
             SELECT COUNT(*)
             FROM event_registrations er
             WHERE er.event_id = e.event_id
-              AND er.attendance_status = 'Attended'
+              AND er.registration_status = 'Attended'
         ) AS attended_count
 
     FROM hub_events e
@@ -1519,6 +1519,8 @@ function ev_render_staff_picker(string $prefix, array $staffOptions): void
 }
 
 $canDeleteEvents = ims_allowed('events.delete', ['Administrator', 'Operations/Admin'], 'Delete events');
+// Same roles as event-report.php.
+$canViewEventReports = in_array((string)($_SESSION['role'] ?? ''), ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Program Director', 'Program Manager', 'Program Officer'], true);
 
 
 ?>
@@ -2617,6 +2619,17 @@ body.ev-modal-open { overflow: hidden; }
                                             >
                                                 <i class="fas <?= $isMeetingRow ? 'fa-share-nodes' : 'fa-qrcode' ?>"></i>
                                             </button>
+
+                                            <?php if ($canViewEventReports): ?>
+                                                <a
+                                                    href="event-report?id=<?= (int)$event['event_id'] ?>"
+                                                    class="btn btn-soft btn-sm"
+                                                    title="Registration &amp; attendance report"
+                                                    aria-label="Registration and attendance report"
+                                                >
+                                                    <i class="fas fa-chart-column"></i>
+                                                </a>
+                                            <?php endif; ?>
 
                                             <?php if ($canDeleteEvents): ?>
                                                 <button
