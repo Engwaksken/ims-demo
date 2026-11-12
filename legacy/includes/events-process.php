@@ -209,6 +209,9 @@ function sync_event_and_invite(mysqli $conn, int $event_id, array $staff_changes
             $event_id,
             'Event invitation',
             'You have been invited to "' . $event['event_title'] . '" on ' . $when . '. Check your calendar for the invite.'
+                . (($participantText = ev_participant_link_text($event)) !== ''
+                    ? ' ' . strtok($participantText, "\n")
+                    : '')
         );
     }
 

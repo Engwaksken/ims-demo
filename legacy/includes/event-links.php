@@ -123,6 +123,73 @@ if (!function_exists('ev_is_meeting_type')) {
         return filter_var($link, FILTER_VALIDATE_URL) ? substr($link, 0, 500) : '';
     }
 
+    /**
+     * The link participants need: the meeting link for meetings, otherwise the
+     * public registration link. Null when a meeting has no link yet.
+     */
+    function ev_participant_link(array $event): ?array
+    {
+        if (ev_is_meeting_type((string)($event['event_type'] ?? ''))) {
+            $link = trim((string)($event['meeting_link'] ?? ''));
+            return $link !== '' ? ['kind' => 'meeting', 'label' => 'Join meeting', 'url' => $link] : null;
+        }
+
+        $eventId = (int)($event['event_id'] ?? 0);
+        return $eventId > 0
+            ? ['kind' => 'register', 'label' => 'Register', 'url' => ev_registration_url($eventId)]
+            : null;
+    }
+
+    /** QR code image for a URL (same service the check-in emails use). */
+    function ev_qr_image_url(string $url, int $size = 220): string
+    {
+        return 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size
+            . '&margin=8&data=' . rawurlencode($url);
+    }
+
+    /** Plain-text lines for calendar descriptions and notifications. */
+    function ev_participant_link_text(array $event): string
+    {
+        $link = ev_participant_link($event);
+        if (!$link) {
+            return '';
+        }
+        if ($link['kind'] === 'meeting') {
+            return 'Join the meeting: ' . $link['url'];
+        }
+        return 'Participant registration: ' . $link['url']
+            . "\nRegistration QR code: " . ev_qr_image_url($link['url'], 400);
+    }
+
+    /** Email block: a join button, or a register button with the QR code. */
+    function ev_participant_link_html(array $event): string
+    {
+        $link = ev_participant_link($event);
+        if (!$link) {
+            return '';
+        }
+        $h = static fn($v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+        $button = '<a href="' . $h($link['url']) . '" style="display:inline-block;padding:10px 18px;background:#2563eb;color:#ffffff;'
+            . 'text-decoration:none;border-radius:6px;font-weight:600;">' . $h($link['label']) . '</a>';
+
+        if ($link['kind'] === 'meeting') {
+            return '<div style="margin:18px 0;">'
+                . '<p style="margin:0 0 10px;"><strong>Meeting link</strong></p>'
+                . '<p style="margin:0 0 10px;">' . $button . '</p>'
+                . '<p style="margin:0;font-size:13px;color:#555;word-break:break-all;"><a href="' . $h($link['url']) . '">' . $h($link['url']) . '</a></p>'
+                . '</div>';
+        }
+
+        return '<div style="margin:18px 0;padding:16px;border:1px solid #e5e7eb;border-radius:10px;text-align:center;">'
+            . '<p style="margin:0 0 6px;"><strong>Participant registration</strong></p>'
+            . '<p style="margin:0 0 12px;font-size:13px;color:#555;">Share this link or QR code with participants so they can register.</p>'
+            . '<img src="' . $h(ev_qr_image_url($link['url'])) . '" width="220" height="220" alt="Registration QR code"'
+            . ' style="display:block;margin:0 auto 12px;width:220px;height:220px;border:1px solid #eee;border-radius:8px;">'
+            . '<p style="margin:0 0 10px;">' . $button . '</p>'
+            . '<p style="margin:0;font-size:13px;color:#555;word-break:break-all;"><a href="' . $h($link['url']) . '">' . $h($link['url']) . '</a></p>'
+            . '</div>';
+    }
+
     function ev_set_meeting_link(mysqli $conn, int $eventId, ?string $link): void
     {
         if (!ev_has_column($conn, 'hub_events', 'meeting_link')) {

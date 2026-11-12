@@ -719,6 +719,12 @@ if (!function_exists('gcal_hub_event_payload')) {
             (string)($event['description'] ?? '')
         );
 
+        // Invites carry the meeting link, or the registration link + QR code.
+        $participantText = ev_participant_link_text($event);
+        if ($participantText !== '') {
+            $description = trim($description . "\n\n" . $participantText);
+        }
+
         $payload = [
             'summary' => (string)(
                 $event['event_title']

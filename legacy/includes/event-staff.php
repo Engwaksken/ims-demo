@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/event-links.php';
+
 /*
 |--------------------------------------------------------------------------
 | EVENT STAFF INVITES
@@ -315,8 +317,8 @@ if (!function_exists('ev_build_ics')) {
         if (!empty($event['organizer'])) {
             $description = trim('Organiser: ' . $event['organizer'] . "\n\n" . $description);
         }
-        if (!empty($event['meeting_link'])) {
-            $description .= "\n\nJoin: " . $event['meeting_link'];
+        if (!$cancelled && ($participantText = ev_participant_link_text($event)) !== '') {
+            $description = trim($description . "\n\n" . $participantText);
         }
 
         $lines = [
@@ -459,8 +461,8 @@ if (!function_exists('ev_staff_email_invites')) {
                 . '<tr><td><strong>Date(s)</strong></td><td>' . $h($dayText) . '</td></tr>'
                 . '<tr><td><strong>Time</strong></td><td>' . $h($timeText) . ' (' . $h($timezone) . ')</td></tr>'
                 . (!empty($event['venue']) ? '<tr><td><strong>Venue</strong></td><td>' . $h($event['venue']) . '</td></tr>' : '')
-                . (!empty($event['meeting_link']) ? '<tr><td><strong>Join</strong></td><td><a href="' . $h($event['meeting_link']) . '">' . $h($event['meeting_link']) . '</a></td></tr>' : '')
                 . '</table>'
+                . ($cancel ? '' : ev_participant_link_html($event))
                 . (!empty($event['description']) && !$cancel ? '<p>' . nl2br($h($event['description'])) . '</p>' : '');
 
             $body = function_exists('email_wrapper') ? email_wrapper($content) : $content;
