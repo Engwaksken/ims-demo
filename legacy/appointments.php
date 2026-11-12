@@ -32,31 +32,29 @@ appt_dispatch_reminders($conn);
 
 /*
 |--------------------------------------------------------------------------
-| GET ?busy=1: busy blocks for me and another staff member on one day.
-| Only times are returned for the other person, never subjects.
+| GET ?busy=1&users=1,2,3: busy blocks for me and other staff on one day.
+| Only times are returned for other people, never subjects.
 |--------------------------------------------------------------------------
 */
 if (isset($_GET['busy'])) {
     header('Content-Type: application/json');
-    $other = (int)($_GET['user'] ?? 0);
+    $requestedIds = array_slice(array_map('intval', explode(',', (string)($_GET['users'] ?? ''))), 0, APPT_MAX_INVITEES);
+    $others = appt_active_staff($conn, array_diff($requestedIds, [$uid]));
     $day = DateTimeImmutable::createFromFormat('!Y-m-d', (string)($_GET['date'] ?? ''));
-    if (!$day || $other <= 0 || !appt_is_staff($conn, $other)) {
+    if (!$day || !$others) {
         echo json_encode(['busy' => []]);
         exit;
     }
     $from = $day->format('Y-m-d 00:00:00');
     $to = $day->modify('+1 day')->format('Y-m-d 00:00:00');
     $exclude = (int)($_GET['exclude'] ?? 0);
+    $labels = [$uid => 'You'] + $others;
     $busy = [];
-    foreach ([$uid => 'You', $other => 'They'] as $person => $label) {
-        foreach (appt_for_user($conn, $person, $from, $to, ['Accepted']) as $row) {
-            if ((int)$row['appointment_id'] === $exclude) continue;
-            $busy[] = ['who' => $label, 'start' => substr((string)$row['start_at'], 11, 5), 'end' => substr((string)$row['end_at'], 11, 5)];
-        }
+    foreach (appt_conflicts($conn, array_keys($labels), $from, $to, $exclude) as $row) {
+        $busy[] = ['who' => $labels[(int)$row['user_id']] ?? '', 'start' => substr((string)$row['start_at'], 11, 5), 'end' => substr((string)$row['end_at'], 11, 5)];
     }
-    foreach (appt_hub_event_busy($conn, [$uid, $other], $from, $to) as $event) {
-        $label = $event['user_id'] === $uid ? 'You (event)' : 'They (event)';
-        $busy[] = ['who' => $label, 'start' => substr($event['start_at'], 11, 5), 'end' => substr($event['end_at'], 11, 5)];
+    foreach (appt_hub_event_busy($conn, array_keys($labels), $from, $to) as $event) {
+        $busy[] = ['who' => ($labels[$event['user_id']] ?? '') . ' (event)', 'start' => substr($event['start_at'], 11, 5), 'end' => substr($event['end_at'], 11, 5)];
     }
     usort($busy, static fn($a, $b) => strcmp($a['start'], $b['start']));
     echo json_encode(['busy' => $busy]);
@@ -107,16 +105,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 */
 $now = date('Y-m-d H:i:s');
 
+// The same conditions as the list views below.
+$viewWhere = [
+    'requests' => "me.response = 'Pending' AND a.status IN ('Pending','Accepted') AND a.start_at > ?",
+    'sent' => "me.response = 'Accepted' AND a.status = 'Pending' AND a.start_at > ?",
+    'upcoming' => "me.response = 'Accepted' AND a.status = 'Accepted' AND a.end_at > ?",
+    'history' => "(a.status IN ('Declined','Cancelled') OR me.response = 'Declined' OR a.end_at <= ?)",
+];
 $countStmt = $conn->prepare(
     "SELECT
-        COALESCE(SUM(status = 'Pending' AND COALESCE(proposed_by, requester_id) <> ? AND start_at > ?), 0),
-        COALESCE(SUM(status = 'Pending' AND COALESCE(proposed_by, requester_id) = ? AND start_at > ?), 0),
-        COALESCE(SUM(status = 'Accepted' AND end_at > ?), 0),
-        COALESCE(SUM(status = 'Accepted' AND DATE(start_at) = ?), 0)
-     FROM staff_appointments WHERE requester_id = ? OR invitee_id = ?"
+        COALESCE(SUM({$viewWhere['requests']}), 0),
+        COALESCE(SUM({$viewWhere['sent']}), 0),
+        COALESCE(SUM({$viewWhere['upcoming']}), 0),
+        COALESCE(SUM(me.response = 'Accepted' AND a.status = 'Accepted' AND DATE(a.start_at) = ?), 0)
+     FROM staff_appointments a
+     JOIN staff_appointment_participants me ON me.appointment_id = a.appointment_id AND me.user_id = ?"
 );
 $today = date('Y-m-d');
-$countStmt->bind_param('isisssii', $uid, $now, $uid, $now, $now, $today, $uid, $uid);
+$countStmt->bind_param('ssssi', $now, $now, $now, $today, $uid);
 $countStmt->execute();
 $countStmt->bind_result($countRequests, $countSent, $countUpcoming, $countToday);
 $countStmt->fetch();
@@ -142,35 +148,30 @@ if ($view === 'calendar') {
     }
     unset($dayItems);
 } else {
-    $where = match ($view) {
-        'requests' => "(a.requester_id = ? OR a.invitee_id = ?) AND a.status = 'Pending' AND COALESCE(a.proposed_by, a.requester_id) <> ? AND a.start_at > ?",
-        'sent' => "(a.requester_id = ? OR a.invitee_id = ?) AND a.status = 'Pending' AND COALESCE(a.proposed_by, a.requester_id) = ? AND a.start_at > ?",
-        'upcoming' => "(a.requester_id = ? OR a.invitee_id = ?) AND a.status = 'Accepted' AND a.end_at > ?",
-        'history' => "(a.requester_id = ? OR a.invitee_id = ?) AND (a.status IN ('Declined','Cancelled') OR a.end_at <= ?)",
-    };
-    $order = in_array($view, ['history'], true) ? 'a.start_at DESC' : 'a.start_at ASC';
+    $order = $view === 'history' ? 'a.start_at DESC' : 'a.start_at ASC';
     $stmt = $conn->prepare(
-        "SELECT a.*, r.full_name AS requester_name, i.full_name AS invitee_name
+        "SELECT a.*, r.full_name AS requester_name,
+                me.response AS my_response, me.remind_minutes AS my_remind_minutes, me.is_organiser AS i_organise
          FROM staff_appointments a
+         JOIN staff_appointment_participants me ON me.appointment_id = a.appointment_id AND me.user_id = ?
          JOIN users r ON r.user_id = a.requester_id
-         JOIN users i ON i.user_id = a.invitee_id
-         WHERE $where ORDER BY $order LIMIT 200"
+         WHERE {$viewWhere[$view]} ORDER BY $order LIMIT 200"
     );
-    if (in_array($view, ['requests', 'sent'], true)) {
-        $stmt->bind_param('iiis', $uid, $uid, $uid, $now);
-    } else {
-        $stmt->bind_param('iis', $uid, $uid, $now);
-    }
+    $stmt->bind_param('is', $uid, $now);
     $stmt->execute();
-    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $rows = appt_attach_participants($conn, $stmt->get_result()->fetch_all(MYSQLI_ASSOC));
     $stmt->close();
 }
 
 $staff = appt_staff_options($conn, $uid);
 $reminders = appt_reminder_options();
 
-/** Other party's name, from the session user's point of view. */
-$otherName = static fn(array $a): string => (int)$a['requester_id'] === $uid ? (string)$a['invitee_name'] : (string)$a['requester_name'];
+/** Everyone else in the appointment, from the session user's point of view. */
+$othersOf = static fn(array $a): array => appt_people($a, null, $uid);
+$withText = static function (array $a) use ($othersOf): string {
+    $names = array_map(static fn($p) => $p['full_name'], $othersOf($a));
+    return count($names) > 3 ? implode(', ', array_slice($names, 0, 3)) . ' and ' . (count($names) - 3) . ' more' : appt_name_list($othersOf($a));
+};
 $statusBadge = static function (array $a) use ($now): array {
     if ($a['status'] === 'Accepted' && (string)$a['end_at'] <= $now) {
         return ['Completed', 'badge-secondary'];
@@ -178,8 +179,15 @@ $statusBadge = static function (array $a) use ($now): array {
     if ($a['status'] === 'Pending' && (string)$a['start_at'] <= $now) {
         return ['Expired', 'badge-secondary'];
     }
+    if ($a['my_response'] === 'Declined' && in_array($a['status'], ['Pending', 'Accepted'], true)) {
+        return ['You declined', 'badge-danger'];
+    }
+    if ($a['my_response'] === 'Pending' && $a['status'] === 'Accepted') {
+        return ['Confirmed · awaiting you', 'badge-warning'];
+    }
     return [$a['status'], ['Pending' => 'badge-warning', 'Accepted' => 'badge-success', 'Declined' => 'badge-danger', 'Cancelled' => 'badge-secondary'][$a['status']] ?? 'badge-secondary'];
 };
+$responseBadge = ['Accepted' => ['badge-success', 'fa-check'], 'Pending' => ['badge-warning', 'fa-hourglass-half'], 'Declined' => ['badge-danger', 'fa-xmark']];
 
 include 'includes/header.php';
 ?>
@@ -208,6 +216,16 @@ include 'includes/header.php';
 .appt-busy{font-size:12px;margin:-8px 0 14px}
 .appt-modal-sm{max-width:480px}
 .appt-busy li{margin-left:18px}
+.appt-people{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0;padding:0}
+.appt-people .badge{display:inline-flex;align-items:center;gap:4px}
+.appt-picker{max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);margin-top:6px}
+.appt-pick{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;margin:0;font-weight:400}
+.appt-pick:last-child{border-bottom:0}
+.appt-pick:hover{background:var(--surface-hover)}
+.appt-pick[hidden]{display:none}
+.appt-picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.appt-picked .badge{display:inline-flex;align-items:center;gap:6px}
+.appt-picked button{border:0;background:none;color:inherit;cursor:pointer;padding:0;line-height:1}
 @media(max-width:760px){
   .appt-cal{grid-template-columns:1fr}
   .appt-cal-head,.appt-cal-day.is-other:not(.has-items){display:none}
@@ -221,7 +239,7 @@ include 'includes/header.php';
     <div class="page-hero">
         <div>
             <h1><i class="fas fa-handshake" aria-hidden="true"></i> Appointments</h1>
-            <p>Book time with colleagues. Accepted appointments block the slot for both of you and come with reminders.</p>
+            <p>Book time with one or more colleagues. Accepted appointments block the slot for everyone attending and come with reminders.</p>
         </div>
         <div class="hero-actions">
             <button type="button" class="btn btn-primary" onclick="openModal('apptCreateModal')"><i class="fas fa-plus" aria-hidden="true"></i> New appointment</button>
@@ -273,16 +291,17 @@ include 'includes/header.php';
                                 if ($item['status'] === 'Event'): ?>
                                 <span class="appt-chip is-event" title="<?= $escape('Hub event you are staffing · ' . appt_format_range((string)$item['start_at'], (string)$item['end_at'])) ?>"><?= $escape($label) ?></span>
                                 <?php continue; endif;
-                                $pending = $item['status'] === 'Pending';
-                                $tip = $item['title'] . ' with ' . $otherName($item) . ' · ' . appt_format_range((string)$item['start_at'], (string)$item['end_at']) . ($pending ? ' · awaiting response' : '');
+                                $awaitingMe = $item['my_response'] === 'Pending';
+                                $pending = $awaitingMe || $item['status'] === 'Pending';
+                                $tip = $item['title'] . ' with ' . $withText($item) . ' · ' . appt_format_range((string)$item['start_at'], (string)$item['end_at']) . ($awaitingMe ? ' · awaiting your response' : ($pending ? ' · awaiting a response' : ''));
                             ?>
-                                <a class="appt-chip<?= $pending ? ' is-pending' : '' ?>" href="appointments?view=<?= $pending ? (appt_responder_id($item) === $uid ? 'requests' : 'sent') : 'upcoming' ?>" title="<?= $escape($tip) ?>"><?= $escape($label) ?></a>
+                                <a class="appt-chip<?= $pending ? ' is-pending' : '' ?>" href="appointments?view=<?= $awaitingMe ? 'requests' : ($pending ? 'sent' : 'upcoming') ?>" title="<?= $escape($tip) ?>"><?= $escape($label) ?></a>
                             <?php endforeach; ?>
                         </div>
                     <?php endfor; ?>
                 </div>
                 <div class="appt-legend">
-                    <span><span class="appt-chip">Confirmed</span> slot blocked for both</span>
+                    <span><span class="appt-chip">Confirmed</span> slot blocked for you</span>
                     <span><span class="appt-chip is-pending">Pending</span> awaiting a response</span>
                     <span><span class="appt-chip is-event">Event</span> hub event you are staffing</span>
                 </div>
@@ -302,24 +321,41 @@ include 'includes/header.php';
                 <?php endif; ?>
                 <?php foreach ($rows as $a):
                     [$statusLabel, $statusClass] = $statusBadge($a);
-                    $isRequester = (int)$a['requester_id'] === $uid;
-                    $myRemind = (int)($isRequester ? $a['requester_remind_minutes'] : $a['invitee_remind_minutes']);
+                    $organiser = (int)$a['i_organise'] === 1;
+                    $myRemind = (int)$a['my_remind_minutes'];
                     $rescheduled = $a['status'] === 'Pending' && (int)$a['revision'] > 0;
-                    $data = 'data-id="' . (int)$a['appointment_id'] . '" data-title="' . $escape($a['title']) . '" data-other="' . (int)($isRequester ? $a['invitee_id'] : $a['requester_id'])
-                        . '" data-start="' . $escape(substr(str_replace(' ', 'T', (string)$a['start_at']), 0, 16)) . '" data-end="' . $escape(substr(str_replace(' ', 'T', (string)$a['end_at']), 0, 16)) . '"';
+                    $proposer = null;
+                    foreach ($a['participants'] as $p) {
+                        if ($p['user_id'] === appt_proposer_id($a)) $proposer = $p;
+                    }
+                    $stillIn = array_map(static fn($p) => $p['user_id'], appt_people($a, ['Pending', 'Accepted'], $uid));
+                    $data = 'data-id="' . (int)$a['appointment_id'] . '" data-title="' . $escape($a['title']) . '" data-others="' . $escape(implode(',', $stillIn))
+                        . '" data-start="' . $escape(substr(str_replace(' ', 'T', (string)$a['start_at']), 0, 16)) . '" data-end="' . $escape(substr(str_replace(' ', 'T', (string)$a['end_at']), 0, 16)) . '"'
+                        . ' data-group="' . (count($a['participants']) > 2 ? '1' : '0') . '"';
                     $upcomingFuture = $view === 'upcoming' && (string)$a['start_at'] > $now;
                 ?>
                     <article class="appt-row">
                         <div>
-                            <div class="appt-title"><?= $escape($a['title']) ?><?php if ($rescheduled): ?> <span class="badge badge-info"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> New time proposed<?= (int)$a['proposed_by'] === $uid ? ' by you' : '' ?></span><?php endif; ?></div>
+                            <div class="appt-title"><?= $escape($a['title']) ?><?php if ($rescheduled && $proposer): ?> <span class="badge badge-info"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> New time proposed by <?= $proposer['user_id'] === $uid ? 'you' : $escape($proposer['full_name']) ?></span><?php endif; ?></div>
                             <div class="appt-meta">
                                 <i class="fas fa-clock" aria-hidden="true"></i> <?= $escape(appt_format_range((string)$a['start_at'], (string)$a['end_at'])) ?>
-                                · <?= $isRequester ? 'With' : 'From' ?> <?= $escape($otherName($a)) ?>
+                                · <?= $organiser ? 'Organised by you' : 'Organised by ' . $escape($a['requester_name']) ?>
                                 <?php if (!empty($a['location'])): ?> · <i class="fas fa-location-dot" aria-hidden="true"></i> <?= $escape($a['location']) ?><?php endif; ?>
-                                <?php if ($a['status'] === 'Accepted' && $myRemind > 0): ?> · <i class="fas fa-bell" aria-hidden="true"></i> <?= $escape($reminders[$myRemind] ?? $myRemind . ' min before') ?><?php endif; ?>
+                                <?php if ($a['status'] === 'Accepted' && $a['my_response'] === 'Accepted' && $myRemind > 0): ?> · <i class="fas fa-bell" aria-hidden="true"></i> <?= $escape($reminders[$myRemind] ?? $myRemind . ' min before') ?><?php endif; ?>
                                 <?php if (!empty($a['agenda'])): ?><br><?= nl2br($escape($a['agenda'])) ?><?php endif; ?>
                                 <?php if (!empty($a['response_note'])): ?><br><strong>Note:</strong> <?= $escape($a['response_note']) ?><?php endif; ?>
                             </div>
+                            <ul class="appt-people" aria-label="Participants">
+                                <?php foreach ($a['participants'] as $p):
+                                    [$pClass, $pIcon] = $responseBadge[$p['response']] ?? ['badge-secondary', 'fa-circle'];
+                                    $pLabel = $p['is_organiser'] ? 'Organiser' : $p['response'];
+                                ?>
+                                    <li class="badge <?= $p['is_organiser'] ? 'badge-primary' : $pClass ?>" title="<?= $escape($p['full_name'] . ': ' . $pLabel . (!empty($p['response_note']) ? ' · ' . $p['response_note'] : '')) ?>">
+                                        <i class="fas <?= $p['is_organiser'] ? 'fa-user-tie' : $pIcon ?>" aria-hidden="true"></i>
+                                        <?= $escape($p['user_id'] === $uid ? 'You' : $p['full_name']) ?><span class="sr-only"> (<?= $escape($pLabel) ?>)</span>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
                         </div>
                         <div class="appt-actions">
                             <span class="badge <?= $statusClass ?>"><?= $escape($statusLabel) ?></span>
@@ -329,7 +365,11 @@ include 'includes/header.php';
                                 <button type="button" class="btn btn-secondary btn-sm" data-respond="decline" <?= $data ?>><i class="fas fa-xmark" aria-hidden="true"></i> Decline</button>
                             <?php elseif ($view === 'sent' || $upcomingFuture): ?>
                                 <button type="button" class="btn btn-secondary btn-sm" data-reschedule <?= $data ?>><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> <?= $view === 'sent' ? 'Change time' : 'Reschedule' ?></button>
-                                <button type="button" class="btn btn-danger btn-sm" data-respond="cancel" <?= $data ?>><i class="fas fa-ban" aria-hidden="true"></i> <?= $view === 'sent' ? 'Withdraw' : 'Cancel' ?></button>
+                                <?php if ($organiser): ?>
+                                    <button type="button" class="btn btn-danger btn-sm" data-respond="cancel" <?= $data ?>><i class="fas fa-ban" aria-hidden="true"></i> <?= $view === 'sent' ? 'Withdraw' : 'Cancel' ?></button>
+                                <?php else: ?>
+                                    <button type="button" class="btn btn-danger btn-sm" data-respond="leave" <?= $data ?>><i class="fas fa-user-minus" aria-hidden="true"></i> Can't attend</button>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </article>
@@ -354,13 +394,18 @@ include 'includes/header.php';
 
                 <div class="appt-form-grid">
                     <div class="form-group is-wide">
-                        <label for="apptInvitee" class="required">Meet with</label>
-                        <select id="apptInvitee" name="invitee_id" class="form-control" required>
-                            <option value="">Choose a staff member</option>
+                        <label for="apptInviteeSearch" class="required">Meet with</label>
+                        <input id="apptInviteeSearch" type="search" class="form-control" placeholder="Search staff by name or role" autocomplete="off" aria-describedby="apptPickedHint">
+                        <div class="appt-picker" id="apptPicker" role="group" aria-label="Staff to invite">
                             <?php foreach ($staff as $person): ?>
-                                <option value="<?= (int)$person['user_id'] ?>"><?= $escape($person['full_name']) ?> (<?= $escape($person['role']) ?>)</option>
+                                <label class="appt-pick" data-search="<?= $escape(mb_strtolower($person['full_name'] . ' ' . $person['role'])) ?>">
+                                    <input type="checkbox" name="invitee_ids[]" value="<?= (int)$person['user_id'] ?>" data-name="<?= $escape($person['full_name']) ?>">
+                                    <span><?= $escape($person['full_name']) ?> <span class="cell-muted">(<?= $escape($person['role']) ?>)</span></span>
+                                </label>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
+                        <div class="appt-picked" id="apptPicked" aria-live="polite"></div>
+                        <p class="form-hint" id="apptPickedHint">Tick one or more colleagues (up to <?= APPT_MAX_INVITEES ?>). Each person accepts or declines on their own.</p>
                     </div>
                     <div class="form-group is-wide">
                         <label for="apptTitle" class="required">Subject</label>
@@ -390,7 +435,7 @@ include 'includes/header.php';
                     <div class="form-group is-wide">
                         <label for="apptAgenda">Agenda</label>
                         <textarea id="apptAgenda" name="agenda" class="form-control" rows="3" placeholder="What would you like to discuss?"></textarea>
-                        <p class="form-hint">They get a notification and an email. Once they accept, the time is blocked in both calendars.</p>
+                        <p class="form-hint">Everyone invited gets a notification and an email. The appointment is confirmed once at least one person accepts, and the time is blocked for everyone who accepts.</p>
                     </div>
                 </div>
 
@@ -470,7 +515,7 @@ include 'includes/header.php';
                     <div class="form-group is-wide">
                         <label for="apptRescheduleNote">Note (optional)</label>
                         <textarea id="apptRescheduleNote" name="note" class="form-control" rows="2" maxlength="500" placeholder="e.g. Something came up; does Thursday afternoon work?"></textarea>
-                        <p class="form-hint">The other person must accept the new time. If it was already confirmed, the slot is released until they do.</p>
+                        <p class="form-hint">Everyone else must accept the new time. If it was already confirmed, the slot is released until they do.</p>
                     </div>
                 </div>
 
@@ -489,13 +534,14 @@ include 'includes/header.php';
 
     // Respond modal: accept (pick a reminder), decline or cancel (optional reason).
     const copy = {
-        accept: ['Accept appointment', 'Accept “%s”? It will be added to both calendars and the time blocked for both of you.', 'Accept', 'btn btn-primary'],
-        decline: ['Decline appointment', 'Decline “%s”? The requester will be notified.', 'Decline', 'btn btn-danger'],
-        cancel: ['Cancel appointment', 'Cancel “%s”? The other person will be notified and the slot freed.', 'Cancel appointment', 'btn btn-danger'],
+        accept: ['Accept appointment', 'Accept “%s”? Once confirmed it is added to your calendar and the time blocked for you.', 'Accept', 'btn btn-primary'],
+        decline: ['Decline appointment', 'Decline “%s”? The organiser will be notified.', 'Decline', 'btn btn-danger'],
+        cancel: ['Cancel appointment', 'Cancel “%s” for everyone? All participants will be notified and the slot freed.', 'Cancel appointment', 'btn btn-danger'],
+        leave: ['Can’t attend', 'Withdraw from “%s”? The organiser will be notified and your slot freed.', 'Withdraw', 'btn btn-danger'],
     };
     document.querySelectorAll('[data-respond]').forEach(b => b.addEventListener('click', () => {
         const mode = b.dataset.respond, c = copy[mode];
-        document.getElementById('apptRespondAction').value = mode;
+        document.getElementById('apptRespondAction').value = mode === 'leave' ? 'cancel' : mode;
         document.getElementById('apptRespondId').value = b.dataset.id;
         document.getElementById('apptRespondTitle').textContent = c[0];
         document.getElementById('apptRespondMessage').textContent = c[1].replace('%s', b.dataset.title);
@@ -507,18 +553,21 @@ include 'includes/header.php';
         openModal('apptRespondModal');
     }));
 
-    // Default the end to +30 min and list both people's busy times for the chosen day.
+    // Default the end to +30 min and list everyone's busy times for the chosen day.
     const pad = n => String(n).padStart(2, '0');
-    function wireTimes(start, end, busy, otherOf, excludeOf) {
+    function wireTimes(start, end, busy, othersOf, excludeOf) {
+        let seq = 0;
         function loadBusy() {
             busy.textContent = '';
-            const other = otherOf();
-            if (!other || !start.value) return;
-            fetch('appointments?busy=1&user=' + encodeURIComponent(other) + '&date=' + encodeURIComponent(start.value.substring(0, 10)) + '&exclude=' + encodeURIComponent(excludeOf()), { credentials: 'same-origin' })
+            const others = othersOf();
+            if (!others.length || !start.value) return;
+            const mine = ++seq;
+            fetch('appointments?busy=1&users=' + encodeURIComponent(others.join(',')) + '&date=' + encodeURIComponent(start.value.substring(0, 10)) + '&exclude=' + encodeURIComponent(excludeOf()), { credentials: 'same-origin' })
                 .then(r => r.json())
                 .then(data => {
+                    if (mine !== seq) return;
                     if (!data.busy || !data.busy.length) {
-                        busy.innerHTML = '<span class="cell-muted"><i class="fas fa-circle-check" aria-hidden="true"></i> Both of you are free that day.</span>';
+                        busy.innerHTML = '<span class="cell-muted"><i class="fas fa-circle-check" aria-hidden="true"></i> ' + (others.length > 1 ? 'Everyone is' : 'Both of you are') + ' free that day.</span>';
                         return;
                     }
                     const list = document.createElement('ul');
@@ -542,13 +591,50 @@ include 'includes/header.php';
         return loadBusy;
     }
 
-    const invitee = document.getElementById('apptInvitee');
-    const loadCreateBusy = wireTimes(document.getElementById('apptStart'), document.getElementById('apptEnd'), document.getElementById('apptBusy'), () => invitee.value, () => '');
-    invitee.addEventListener('change', loadCreateBusy);
+    // Invitee picker: search filter, chips for the people ticked, at least one required.
+    const picker = document.getElementById('apptPicker');
+    const pickedBox = document.getElementById('apptPicked');
+    const search = document.getElementById('apptInviteeSearch');
+    const boxes = Array.from(picker.querySelectorAll('input[type=checkbox]'));
+    const picked = () => boxes.filter(b => b.checked);
+    const maxInvitees = <?= APPT_MAX_INVITEES ?>;
+    search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        picker.querySelectorAll('.appt-pick').forEach(l => { l.hidden = q !== '' && !l.dataset.search.includes(q); });
+    });
+    search.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    function renderPicked() {
+        pickedBox.textContent = '';
+        picked().forEach(b => {
+            const chip = document.createElement('span');
+            chip.className = 'badge badge-primary';
+            chip.textContent = b.dataset.name;
+            const x = document.createElement('button');
+            x.type = 'button';
+            x.setAttribute('aria-label', 'Remove ' + b.dataset.name);
+            x.innerHTML = '&times;';
+            x.addEventListener('click', () => { b.checked = false; renderPicked(); loadCreateBusy(); });
+            chip.append(x);
+            pickedBox.append(chip);
+        });
+    }
+    picker.closest('form').addEventListener('submit', e => {
+        const n = picked().length;
+        if (n >= 1 && n <= maxInvitees) return;
+        e.preventDefault();
+        const hint = document.getElementById('apptPickedHint');
+        hint.textContent = n ? 'Invite at most ' + maxInvitees + ' people.' : 'Choose at least one colleague to meet with.';
+        hint.style.color = 'var(--red-fg)';
+        search.focus();
+    });
+    boxes.forEach(b => b.addEventListener('change', () => { renderPicked(); loadCreateBusy(); }));
+
+    const loadCreateBusy = wireTimes(document.getElementById('apptStart'), document.getElementById('apptEnd'), document.getElementById('apptBusy'), () => picked().map(b => b.value), () => '');
+    renderPicked();
 
     let rescheduling = null;
     const rStart = document.getElementById('apptRescheduleStart'), rEnd = document.getElementById('apptRescheduleEnd');
-    const loadRescheduleBusy = wireTimes(rStart, rEnd, document.getElementById('apptRescheduleBusy'), () => rescheduling ? rescheduling.other : '', () => rescheduling ? rescheduling.id : '');
+    const loadRescheduleBusy = wireTimes(rStart, rEnd, document.getElementById('apptRescheduleBusy'), () => rescheduling && rescheduling.others ? rescheduling.others.split(',') : [], () => rescheduling ? rescheduling.id : '');
     document.querySelectorAll('[data-reschedule]').forEach(b => b.addEventListener('click', () => {
         rescheduling = b.dataset;
         document.getElementById('apptRescheduleId').value = b.dataset.id;

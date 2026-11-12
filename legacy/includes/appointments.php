@@ -5,20 +5,30 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | STAFF APPOINTMENTS
 |--------------------------------------------------------------------------
-| One staff member (requester) asks another (invitee) for a time slot.
-|   - Pending:  the invitee gets an in-app notification and an email.
-|   - Accepted: the requester is notified, both get an .ics invite so the
-|     appointment lands in their own calendar app, and the slot is blocked
-|     for both: no new appointment may overlap an accepted one for either
-|     person. Other pending requests that overlap are declined automatically.
-|   - Declined / Cancelled: the other party is notified (and, if it had been
-|     accepted, both get a calendar cancellation).
-|   - Rescheduled: either party proposes a new time (proposed_by); it goes
-|     back to Pending and the other party accepts or declines it. Each
+| One staff member (the organiser) asks one or more colleagues (invitees)
+| for a time slot. Everyone involved has a row in
+| staff_appointment_participants with their own response:
+|   - Pending:  each invitee gets an in-app notification and an email, and
+|     accepts or declines on their own.
+|   - Accepted: once the organiser and at least one invitee have accepted the
+|     appointment is confirmed. Everyone who accepted gets an .ics invite and
+|     the slot is blocked for them: no new appointment may overlap it. Their
+|     other pending requests that overlap are declined automatically.
+|   - Declined: an invitee declines (or later withdraws). When every invitee
+|     has declined, or the organiser declines a time someone else proposed,
+|     the appointment is Declined.
+|   - Cancelled: the organiser cancels it for everyone.
+|   - Rescheduled: any participant proposes a new time (proposed_by). It goes
+|     back to Pending and everyone else accepts or declines it again. Each
 |     version of the time gets its own calendar UID (revision).
 | Slots are also blocked by hub events a person is staffed on.
-| Each party picks their own reminder lead time; appt_dispatch_reminders()
-| sends them from cron/task-reminders.php and lazily from the page.
+| Each participant picks their own reminder lead time;
+| appt_dispatch_reminders() sends them from cron/task-reminders.php and
+| lazily from the page.
+|
+| staff_appointments.invitee_id and the requester_/invitee_ reminder columns
+| are from the one-to-one release; they are kept (invitee_id = first invitee)
+| but the participants table is the source of truth.
 |
 | Times are stored as local DATETIME in PHP's default timezone, and "now" is
 | always passed from PHP so PHP and MySQL clocks never disagree.
@@ -27,6 +37,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/event-staff.php'; // ev_ics_escape / ev_ics_param / ev_ics_fold
 
 const APPT_MAX_HOURS = 12;
+const APPT_MAX_INVITEES = 25;
 
 if (!function_exists('appt_ensure_table')) {
     function appt_ensure_table(mysqli $conn): bool
@@ -79,12 +90,61 @@ if (!function_exists('appt_ensure_table')) {
                     $ready = (bool)$conn->query("ALTER TABLE staff_appointments ADD COLUMN $column $definition");
                 }
             }
+
+            $ready = $ready && (bool)$conn->query("
+                CREATE TABLE IF NOT EXISTS staff_appointment_participants (
+                    appointment_id INT UNSIGNED NOT NULL,
+                    user_id INT NOT NULL,
+                    is_organiser TINYINT(1) NOT NULL DEFAULT 0,
+                    response ENUM('Pending','Accepted','Declined') NOT NULL DEFAULT 'Pending',
+                    response_note VARCHAR(500) NULL,
+                    responded_at DATETIME NULL,
+                    remind_minutes SMALLINT UNSIGNED NULL,
+                    remind_at DATETIME NULL,
+                    reminded_at DATETIME NULL,
+                    PRIMARY KEY (appointment_id, user_id),
+                    KEY idx_appt_part_user (user_id, response),
+                    KEY idx_appt_part_remind (response, remind_at, reminded_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            // One-to-one appointments from before the participants table: one row per side.
+            $ready = $ready && (bool)$conn->query(appt_backfill_sql());
         } catch (Throwable $e) {
-            error_log('staff_appointments table unavailable: ' . $e->getMessage());
+            error_log('staff_appointments tables unavailable: ' . $e->getMessage());
             $ready = false;
         }
 
         return $ready;
+    }
+}
+
+/** Copies requester/invitee of appointments that have no participant rows yet (idempotent). */
+if (!function_exists('appt_backfill_sql')) {
+    function appt_backfill_sql(): string
+    {
+        return "
+            INSERT IGNORE INTO staff_appointment_participants
+                (appointment_id, user_id, is_organiser, response, responded_at, remind_minutes, remind_at, reminded_at)
+            SELECT a.appointment_id,
+                   IF(s.side = 0, a.requester_id, a.invitee_id),
+                   IF(s.side = 0, 1, 0),
+                   CASE
+                       WHEN COALESCE(a.proposed_by, a.requester_id) = IF(s.side = 0, a.requester_id, a.invitee_id) THEN 'Accepted'
+                       WHEN a.status = 'Accepted' THEN 'Accepted'
+                       WHEN a.status = 'Declined' THEN 'Declined'
+                       ELSE 'Pending'
+                   END,
+                   a.responded_at,
+                   IF(s.side = 0, a.requester_remind_minutes, a.invitee_remind_minutes),
+                   IF(s.side = 0, a.requester_remind_at, a.invitee_remind_at),
+                   IF(s.side = 0, a.requester_reminded_at, a.invitee_reminded_at)
+            FROM staff_appointments a
+            CROSS JOIN (SELECT 0 AS side UNION ALL SELECT 1) s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM staff_appointment_participants p WHERE p.appointment_id = a.appointment_id
+            )
+        ";
     }
 }
 
@@ -133,32 +193,79 @@ if (!function_exists('appt_staff_options')) {
     }
 }
 
-if (!function_exists('appt_is_staff')) {
-    function appt_is_staff(mysqli $conn, int $userId): bool
+/** The subset of $userIds that are active staff, as user_id => full_name. */
+if (!function_exists('appt_active_staff')) {
+    function appt_active_staff(mysqli $conn, array $userIds): array
     {
-        $stmt = $conn->prepare('SELECT role FROM users WHERE user_id = ? AND is_active = 1 LIMIT 1');
-        if (!$stmt) {
-            return false;
+        $userIds = array_values(array_unique(array_filter(array_map('intval', $userIds), static fn($id) => $id > 0)));
+        if (!$userIds) {
+            return [];
         }
-        $stmt->bind_param('i', $userId);
+        $roles = appt_staff_roles();
+        $stmt = $conn->prepare(
+            'SELECT user_id, full_name FROM users
+             WHERE is_active = 1 AND user_id IN (' . implode(',', array_fill(0, count($userIds), '?')) . ')
+               AND role IN (' . implode(',', array_fill(0, count($roles), '?')) . ')'
+        );
+        if (!$stmt) {
+            return [];
+        }
+        $stmt->bind_param(str_repeat('i', count($userIds)) . str_repeat('s', count($roles)), ...$userIds, ...$roles);
         $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
 
-        return $row && in_array((string)$row['role'], appt_staff_roles(), true);
+        return array_column($rows, 'full_name', 'user_id');
     }
 }
 
-/** One appointment with both parties' names and emails. */
+if (!function_exists('appt_is_staff')) {
+    function appt_is_staff(mysqli $conn, int $userId): bool
+    {
+        return isset(appt_active_staff($conn, [$userId])[$userId]);
+    }
+}
+
+/** Participant rows (with name and email) for each appointment id: id => list. */
+if (!function_exists('appt_participants_for')) {
+    function appt_participants_for(mysqli $conn, array $appointmentIds): array
+    {
+        $appointmentIds = array_values(array_unique(array_map('intval', $appointmentIds)));
+        if (!$appointmentIds) {
+            return [];
+        }
+        $stmt = $conn->prepare(
+            'SELECT p.*, u.full_name, u.email
+             FROM staff_appointment_participants p
+             JOIN users u ON u.user_id = p.user_id
+             WHERE p.appointment_id IN (' . implode(',', array_fill(0, count($appointmentIds), '?')) . ')
+             ORDER BY p.is_organiser DESC, u.full_name'
+        );
+        if (!$stmt) {
+            return [];
+        }
+        $stmt->bind_param(str_repeat('i', count($appointmentIds)), ...$appointmentIds);
+        $stmt->execute();
+        $map = [];
+        foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+            $row['user_id'] = (int)$row['user_id'];
+            $row['is_organiser'] = (int)$row['is_organiser'];
+            $map[(int)$row['appointment_id']][] = $row;
+        }
+        $stmt->close();
+
+        return $map;
+    }
+}
+
+/** One appointment with the organiser's name/email and its participants. */
 if (!function_exists('appt_find')) {
     function appt_find(mysqli $conn, int $appointmentId): ?array
     {
         $stmt = $conn->prepare(
-            'SELECT a.*, r.full_name AS requester_name, r.email AS requester_email,
-                    i.full_name AS invitee_name, i.email AS invitee_email
+            'SELECT a.*, r.full_name AS requester_name, r.email AS requester_email
              FROM staff_appointments a
              JOIN users r ON r.user_id = a.requester_id
-             JOIN users i ON i.user_id = a.invitee_id
              WHERE a.appointment_id = ? LIMIT 1'
         );
         if (!$stmt) {
@@ -169,55 +276,176 @@ if (!function_exists('appt_find')) {
         $row = $stmt->get_result()->fetch_assoc() ?: null;
         $stmt->close();
 
+        if ($row) {
+            $row['participants'] = appt_participants_for($conn, [$appointmentId])[$appointmentId] ?? [];
+        }
+
         return $row;
     }
 }
 
-/** Appointments involving $userId that overlap [from, to), with the other party's name. */
+/** $userId's participant row in $appt, or null when they are not part of it. */
+if (!function_exists('appt_participant')) {
+    function appt_participant(array $appt, int $userId): ?array
+    {
+        foreach ($appt['participants'] ?? [] as $p) {
+            if ((int)$p['user_id'] === $userId) {
+                return $p;
+            }
+        }
+
+        return null;
+    }
+}
+
+/** Participants filtered by response (null = all), optionally leaving out $exceptUserId. */
+if (!function_exists('appt_people')) {
+    function appt_people(array $appt, ?array $responses = null, int $exceptUserId = 0): array
+    {
+        return array_values(array_filter(
+            $appt['participants'] ?? [],
+            static fn($p) => (int)$p['user_id'] !== $exceptUserId
+                && ($responses === null || in_array($p['response'], $responses, true))
+        ));
+    }
+}
+
+/** "Ann, Ben and Cy" */
+if (!function_exists('appt_name_list')) {
+    function appt_name_list(array $people): string
+    {
+        $names = array_map(static fn($p) => (string)$p['full_name'], $people);
+        if (count($names) <= 1) {
+            return (string)($names[0] ?? '');
+        }
+        $last = array_pop($names);
+
+        return implode(', ', $names) . ' and ' . $last;
+    }
+}
+
+/** ['name','email'] recipients for appt_email(). */
+if (!function_exists('appt_recipients')) {
+    function appt_recipients(array $people): array
+    {
+        return array_map(static fn($p) => ['name' => $p['full_name'], 'email' => $p['email']], $people);
+    }
+}
+
+/** Appointment status implied by the participants' responses (Cancelled is never derived). */
+if (!function_exists('appt_derive_status')) {
+    function appt_derive_status(array $participants): string
+    {
+        $organiserResponse = 'Accepted';
+        $invitees = [];
+        foreach ($participants as $p) {
+            if ((int)$p['is_organiser'] === 1) {
+                $organiserResponse = (string)$p['response'];
+            } else {
+                $invitees[] = (string)$p['response'];
+            }
+        }
+
+        if ($organiserResponse === 'Declined' || !$invitees || !array_diff($invitees, ['Declined'])) {
+            return 'Declined';
+        }
+        if ($organiserResponse === 'Accepted' && in_array('Accepted', $invitees, true)) {
+            return 'Accepted';
+        }
+
+        return 'Pending';
+    }
+}
+
+/** Re-read participants and store the derived status. Returns the new status. */
+if (!function_exists('appt_sync_status')) {
+    function appt_sync_status(mysqli $conn, int $appointmentId, string $now): string
+    {
+        $participants = appt_participants_for($conn, [$appointmentId])[$appointmentId] ?? [];
+        $status = appt_derive_status($participants);
+        $stmt = $conn->prepare(
+            "UPDATE staff_appointments
+             SET responded_at = IF(status = ?, responded_at, ?), status = ?
+             WHERE appointment_id = ? AND status IN ('Pending','Accepted')"
+        );
+        if (!$stmt) {
+            throw new RuntimeException($conn->error);
+        }
+        // responded_at first: MySQL applies SET assignments left to right.
+        $stmt->bind_param('sssi', $status, $now, $status, $appointmentId);
+        $stmt->execute();
+        $stmt->close();
+
+        return $status;
+    }
+}
+
+/**
+ * Appointments $userId takes part in that overlap [from, to), with their own
+ * response as my_response / my_remind_minutes and the participants attached.
+ */
 if (!function_exists('appt_for_user')) {
-    function appt_for_user(mysqli $conn, int $userId, string $from, string $to, array $statuses = ['Pending', 'Accepted']): array
+    function appt_for_user(mysqli $conn, int $userId, string $from, string $to, array $statuses = ['Pending', 'Accepted'], bool $includeDeclinedByMe = false): array
     {
         $marks = implode(',', array_fill(0, count($statuses), '?'));
+        $mine = $includeDeclinedByMe ? '' : " AND me.response <> 'Declined'";
         $stmt = $conn->prepare(
-            "SELECT a.*, r.full_name AS requester_name, i.full_name AS invitee_name
+            "SELECT a.*, r.full_name AS requester_name,
+                    me.response AS my_response, me.remind_minutes AS my_remind_minutes, me.is_organiser AS i_organise
              FROM staff_appointments a
+             JOIN staff_appointment_participants me ON me.appointment_id = a.appointment_id AND me.user_id = ?
              JOIN users r ON r.user_id = a.requester_id
-             JOIN users i ON i.user_id = a.invitee_id
-             WHERE (a.requester_id = ? OR a.invitee_id = ?)
-               AND a.start_at < ? AND a.end_at > ?
-               AND a.status IN ($marks)
+             WHERE a.start_at < ? AND a.end_at > ? AND a.status IN ($marks) $mine
              ORDER BY a.start_at"
         );
         if (!$stmt) {
             return [];
         }
-        $stmt->bind_param('iiss' . str_repeat('s', count($statuses)), $userId, $userId, $to, $from, ...$statuses);
+        $stmt->bind_param('iss' . str_repeat('s', count($statuses)), $userId, $to, $from, ...$statuses);
         $stmt->execute();
         $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
+
+        return appt_attach_participants($conn, $rows);
+    }
+}
+
+if (!function_exists('appt_attach_participants')) {
+    function appt_attach_participants(mysqli $conn, array $rows): array
+    {
+        $map = appt_participants_for($conn, array_column($rows, 'appointment_id'));
+        foreach ($rows as &$row) {
+            $row['participants'] = $map[(int)$row['appointment_id']] ?? [];
+        }
+        unset($row);
 
         return $rows;
     }
 }
 
-/** Accepted appointments of any of $userIds overlapping [start, end). */
+/** Confirmed appointments of any of $userIds overlapping [start, end), with whose slot it is. */
 if (!function_exists('appt_conflicts')) {
     function appt_conflicts(mysqli $conn, array $userIds, string $start, string $end, int $excludeId = 0): array
     {
         $userIds = array_values(array_unique(array_map('intval', $userIds)));
+        if (!$userIds) {
+            return [];
+        }
         $marks = implode(',', array_fill(0, count($userIds), '?'));
         $stmt = $conn->prepare(
-            "SELECT appointment_id, requester_id, invitee_id, start_at, end_at
-             FROM staff_appointments
-             WHERE status = 'Accepted' AND appointment_id <> ?
-               AND start_at < ? AND end_at > ?
-               AND (requester_id IN ($marks) OR invitee_id IN ($marks))"
+            "SELECT a.appointment_id, a.start_at, a.end_at, p.user_id, u.full_name
+             FROM staff_appointments a
+             JOIN staff_appointment_participants p ON p.appointment_id = a.appointment_id
+             JOIN users u ON u.user_id = p.user_id
+             WHERE a.status = 'Accepted' AND p.response = 'Accepted' AND a.appointment_id <> ?
+               AND a.start_at < ? AND a.end_at > ?
+               AND p.user_id IN ($marks)
+             ORDER BY a.start_at"
         );
         if (!$stmt) {
             return [];
         }
-        $types = 'iss' . str_repeat('i', count($userIds) * 2);
-        $stmt->bind_param($types, $excludeId, $end, $start, ...$userIds, ...$userIds);
+        $stmt->bind_param('iss' . str_repeat('i', count($userIds)), $excludeId, $end, $start, ...$userIds);
         $stmt->execute();
         $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
@@ -243,9 +471,10 @@ if (!function_exists('appt_hub_event_busy')) {
 
         try {
             $stmt = $conn->prepare(
-                "SELECT s.user_id, e.event_id, e.event_title, e.event_date, e.event_days, e.start_time, e.end_time
+                "SELECT s.user_id, u.full_name, e.event_id, e.event_title, e.event_date, e.event_days, e.start_time, e.end_time
                  FROM hub_event_staff s
                  JOIN hub_events e ON e.event_id = s.event_id
+                 LEFT JOIN users u ON u.user_id = s.user_id
                  WHERE s.user_id IN ($marks) AND e.event_status <> 'Cancelled'
                    AND e.event_date BETWEEN ? AND ?"
             );
@@ -270,7 +499,13 @@ if (!function_exists('appt_hub_event_busy')) {
                     $e = date('Y-m-d H:i:s', strtotime($s) + 3600);
                 }
                 if ($s < $end && $e > $start) {
-                    $busy[] = ['user_id' => (int)$row['user_id'], 'title' => (string)$row['event_title'], 'start_at' => $s, 'end_at' => $e];
+                    $busy[] = [
+                        'user_id' => (int)$row['user_id'],
+                        'full_name' => (string)($row['full_name'] ?? ''),
+                        'title' => (string)$row['event_title'],
+                        'start_at' => $s,
+                        'end_at' => $e,
+                    ];
                 }
             }
         }
@@ -292,11 +527,22 @@ if (!function_exists('appt_slot_problem')) {
         $events = appt_hub_event_busy($conn, $userIds, $start, $end);
         if ($events) {
             $e = $events[0];
-            return ($e['user_id'] === $viewerId ? 'You are' : 'They are') . ' staffing the event "' . $e['title'] . '" '
-                . appt_format_range($e['start_at'], $e['end_at']) . '. Pick another time.';
+            $who = $e['user_id'] === $viewerId ? 'You are' : (($e['full_name'] !== '' ? $e['full_name'] : 'A participant') . ' is');
+            return $who . ' staffing the event "' . $e['title'] . '" ' . appt_format_range($e['start_at'], $e['end_at']) . '. Pick another time.';
         }
 
         return null;
+    }
+}
+
+/** Human-readable conflict text, from $viewerId's point of view. */
+if (!function_exists('appt_conflict_message')) {
+    function appt_conflict_message(array $conflicts, int $viewerId): string
+    {
+        $c = $conflicts[0];
+        $who = (int)$c['user_id'] === $viewerId ? 'You already have' : ((string)$c['full_name'] . ' already has');
+
+        return $who . ' an appointment ' . appt_format_range((string)$c['start_at'], (string)$c['end_at']) . '. Pick another time.';
     }
 }
 
@@ -321,25 +567,11 @@ if (!function_exists('appt_time_problem')) {
     }
 }
 
-/** The party who must accept or decline a pending appointment (not whoever proposed the time). */
-if (!function_exists('appt_responder_id')) {
-    function appt_responder_id(array $appt): int
+/** Who set the current time: the organiser unless someone proposed another. */
+if (!function_exists('appt_proposer_id')) {
+    function appt_proposer_id(array $appt): int
     {
-        $proposer = (int)($appt['proposed_by'] ?? 0) ?: (int)$appt['requester_id'];
-
-        return $proposer === (int)$appt['requester_id'] ? (int)$appt['invitee_id'] : (int)$appt['requester_id'];
-    }
-}
-
-/** 'requester' or 'invitee' for $userId, or null when they are not a party. */
-if (!function_exists('appt_side')) {
-    function appt_side(array $appt, int $userId): ?string
-    {
-        return match ($userId) {
-            (int)$appt['requester_id'] => 'requester',
-            (int)$appt['invitee_id'] => 'invitee',
-            default => null,
-        };
+        return (int)($appt['proposed_by'] ?? 0) ?: (int)$appt['requester_id'];
     }
 }
 
@@ -348,6 +580,9 @@ if (!function_exists('appt_lock_users')) {
     function appt_lock_users(mysqli $conn, array $userIds): void
     {
         $userIds = array_values(array_unique(array_map('intval', $userIds)));
+        if (!$userIds) {
+            return;
+        }
         sort($userIds);
         $marks = implode(',', array_fill(0, count($userIds), '?'));
         $stmt = $conn->prepare("SELECT user_id FROM users WHERE user_id IN ($marks) ORDER BY user_id FOR UPDATE");
@@ -358,20 +593,6 @@ if (!function_exists('appt_lock_users')) {
         $stmt->execute();
         $stmt->get_result()->free();
         $stmt->close();
-    }
-}
-
-/** Human-readable conflict text, from $viewerId's point of view. */
-if (!function_exists('appt_conflict_message')) {
-    function appt_conflict_message(array $conflicts, int $viewerId): string
-    {
-        $c = $conflicts[0];
-        $who = ((int)$c['requester_id'] === $viewerId || (int)$c['invitee_id'] === $viewerId)
-            ? 'You already have'
-            : 'They already have';
-
-        return $who . ' an appointment ' . appt_format_range((string)$c['start_at'], (string)$c['end_at'])
-            . '. Pick another time.';
     }
 }
 
@@ -411,6 +632,103 @@ if (!function_exists('appt_parse_datetime')) {
     }
 }
 
+if (!function_exists('appt_notify')) {
+    function appt_notify(array $userIds, string $title, string $message, string $type, int $appointmentId): void
+    {
+        if (!function_exists('notify_user')) {
+            return;
+        }
+        foreach (array_unique(array_map('intval', $userIds)) as $id) {
+            notify_user($id, $title, $message, $type, $appointmentId, 'appointment');
+        }
+    }
+}
+
+/**
+ * $userIds have just become busy for [start, end) because of $appointmentId.
+ * Decline their response to every other overlapping appointment that is not
+ * already confirmed for them. Returns the affected appointment ids.
+ * Call inside the transaction, with the users locked.
+ */
+if (!function_exists('appt_release_overlaps')) {
+    function appt_release_overlaps(mysqli $conn, array $userIds, int $appointmentId, string $start, string $end, string $now): array
+    {
+        $userIds = array_values(array_unique(array_map('intval', $userIds)));
+        if (!$userIds) {
+            return [];
+        }
+        $marks = implode(',', array_fill(0, count($userIds), '?'));
+        $stmt = $conn->prepare(
+            "SELECT p.appointment_id, p.user_id
+             FROM staff_appointment_participants p
+             JOIN staff_appointments a ON a.appointment_id = p.appointment_id
+             WHERE p.user_id IN ($marks) AND a.appointment_id <> ?
+               AND a.status IN ('Pending','Accepted') AND a.start_at < ? AND a.end_at > ?
+               AND p.response <> 'Declined'
+               AND NOT (a.status = 'Accepted' AND p.response = 'Accepted')"
+        );
+        if (!$stmt) {
+            throw new RuntimeException($conn->error);
+        }
+        $params = [...$userIds, $appointmentId, $end, $start];
+        $stmt->bind_param(str_repeat('i', count($userIds)) . 'iss', ...$params);
+        $stmt->execute();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        if (!$rows) {
+            return [];
+        }
+
+        $note = 'Time slot no longer available.';
+        $decline = $conn->prepare(
+            "UPDATE staff_appointment_participants
+             SET response = 'Declined', response_note = ?, responded_at = ?
+             WHERE appointment_id = ? AND user_id = ?"
+        );
+        if (!$decline) {
+            throw new RuntimeException($conn->error);
+        }
+        $affected = [];
+        foreach ($rows as $row) {
+            $otherId = (int)$row['appointment_id'];
+            $userId = (int)$row['user_id'];
+            $decline->bind_param('ssii', $note, $now, $otherId, $userId);
+            $decline->execute();
+            $affected[$otherId][] = $userId;
+        }
+        $decline->close();
+
+        foreach (array_keys($affected) as $otherId) {
+            appt_sync_status($conn, $otherId, $now);
+        }
+
+        return $affected;
+    }
+}
+
+/** Notify the people affected by appt_release_overlaps() (after commit). */
+if (!function_exists('appt_notify_released')) {
+    function appt_notify_released(mysqli $conn, array $affected): void
+    {
+        foreach ($affected as $otherId => $userIds) {
+            $other = appt_find($conn, (int)$otherId);
+            if (!$other) {
+                continue;
+            }
+            $what = $other['title'] . ' · ' . appt_format_range((string)$other['start_at'], (string)$other['end_at']);
+            $names = appt_name_list(array_values(array_filter($other['participants'], static fn($p) => in_array((int)$p['user_id'], $userIds, true))));
+            $audience = array_map(static fn($p) => (int)$p['user_id'], appt_people($other, ['Pending', 'Accepted']));
+
+            if ($other['status'] === 'Declined') {
+                appt_notify($audience, 'Appointment declined', $what . ' will not go ahead: the time slot is no longer available for ' . $names . '.', 'warning', (int)$otherId);
+            } else {
+                appt_notify($audience, 'Participant unavailable', $names . ' can no longer attend ' . $what . ': the time slot is no longer available.', 'warning', (int)$otherId);
+            }
+        }
+    }
+}
+
 /*
 |--------------------------------------------------------------------------
 | ACTIONS: each returns ['ok' => bool, 'message' => string]
@@ -420,7 +738,11 @@ if (!function_exists('appt_parse_datetime')) {
 if (!function_exists('appt_create')) {
     function appt_create(mysqli $conn, int $requesterId, array $input): array
     {
-        $inviteeId = (int)($input['invitee_id'] ?? 0);
+        $requested = $input['invitee_ids'] ?? ($input['invitee_id'] ?? []);
+        $requested = array_values(array_unique(array_filter(
+            array_map('intval', is_array($requested) ? $requested : [$requested]),
+            static fn($id) => $id > 0 && $id !== $requesterId
+        )));
         $title = trim((string)($input['title'] ?? ''));
         $agenda = trim((string)($input['agenda'] ?? ''));
         $location = trim((string)($input['location'] ?? ''));
@@ -428,8 +750,15 @@ if (!function_exists('appt_create')) {
         $end = appt_parse_datetime((string)($input['end_at'] ?? ''));
         $remind = (int)($input['remind_minutes'] ?? 0);
 
-        if ($inviteeId <= 0 || $inviteeId === $requesterId || !appt_is_staff($conn, $inviteeId)) {
-            return ['ok' => false, 'message' => 'Choose a staff member to meet with.'];
+        if (!$requested) {
+            return ['ok' => false, 'message' => 'Choose at least one staff member to meet with.'];
+        }
+        if (count($requested) > APPT_MAX_INVITEES) {
+            return ['ok' => false, 'message' => 'You can invite at most ' . APPT_MAX_INVITEES . ' people to one appointment.'];
+        }
+        $staff = appt_active_staff($conn, $requested);
+        if (count($staff) !== count($requested)) {
+            return ['ok' => false, 'message' => 'One of the people you chose is no longer an active staff member. Refresh and try again.'];
         }
         if ($title === '' || mb_strlen($title) > 200) {
             return ['ok' => false, 'message' => 'Give the appointment a subject (up to 200 characters).'];
@@ -447,16 +776,19 @@ if (!function_exists('appt_create')) {
         $remindAt = appt_remind_at($start, $remind);
         $agendaValue = $agenda !== '' ? $agenda : null;
         $locationValue = $location !== '' ? $location : null;
+        $everyone = [$requesterId, ...$requested];
 
         $conn->begin_transaction();
         try {
-            appt_lock_users($conn, [$requesterId, $inviteeId]);
+            appt_lock_users($conn, $everyone);
 
-            if ($problem = appt_slot_problem($conn, [$requesterId, $inviteeId], $start, $end, 0, $requesterId)) {
+            if ($problem = appt_slot_problem($conn, $everyone, $start, $end, 0, $requesterId)) {
                 $conn->rollback();
                 return ['ok' => false, 'message' => $problem];
             }
 
+            // invitee_id keeps the first invitee for the one-to-one columns.
+            $firstInvitee = $requested[0];
             $stmt = $conn->prepare(
                 'INSERT INTO staff_appointments
                     (requester_id, invitee_id, proposed_by, title, agenda, location, start_at, end_at,
@@ -466,9 +798,35 @@ if (!function_exists('appt_create')) {
             if (!$stmt) {
                 throw new RuntimeException($conn->error);
             }
-            $stmt->bind_param('iiisssssis', $requesterId, $inviteeId, $requesterId, $title, $agendaValue, $locationValue, $start, $end, $remind, $remindAt);
+            $stmt->bind_param('iiisssssis', $requesterId, $firstInvitee, $requesterId, $title, $agendaValue, $locationValue, $start, $end, $remind, $remindAt);
             $stmt->execute();
             $id = (int)$stmt->insert_id;
+            $stmt->close();
+
+            $now = date('Y-m-d H:i:s');
+            $stmt = $conn->prepare(
+                "INSERT INTO staff_appointment_participants
+                    (appointment_id, user_id, is_organiser, response, responded_at, remind_minutes, remind_at)
+                 VALUES (?, ?, 1, 'Accepted', ?, ?, ?)"
+            );
+            if (!$stmt) {
+                throw new RuntimeException($conn->error);
+            }
+            $stmt->bind_param('iisis', $id, $requesterId, $now, $remind, $remindAt);
+            $stmt->execute();
+            $stmt->close();
+
+            $stmt = $conn->prepare(
+                "INSERT INTO staff_appointment_participants (appointment_id, user_id, is_organiser, response)
+                 VALUES (?, ?, 0, 'Pending')"
+            );
+            if (!$stmt) {
+                throw new RuntimeException($conn->error);
+            }
+            foreach ($requested as $inviteeId) {
+                $stmt->bind_param('ii', $id, $inviteeId);
+                $stmt->execute();
+            }
             $stmt->close();
 
             $conn->commit();
@@ -480,12 +838,12 @@ if (!function_exists('appt_create')) {
 
         $appt = appt_find($conn, $id);
         if ($appt) {
+            $invitees = appt_people($appt, null, $requesterId);
             $when = appt_format_range($start, $end);
-            if (function_exists('notify_user')) {
-                notify_user($inviteeId, 'Appointment request', $appt['requester_name'] . ' asked to meet: ' . $title . ' · ' . $when, 'info', $id, 'appointment');
-            }
+            $group = count($invitees) > 1 ? ' (with ' . count($invitees) . ' invitees)' : '';
+            appt_notify(array_column($invitees, 'user_id'), 'Appointment request', $appt['requester_name'] . ' asked to meet' . $group . ': ' . $title . ' · ' . $when, 'info', $id);
             appt_email(
-                [['name' => $appt['invitee_name'], 'email' => $appt['invitee_email']]],
+                appt_recipients($invitees),
                 'Appointment request: ' . $title,
                 '<p>' . appt_h($appt['requester_name']) . ' would like to meet with you.</p>'
                     . appt_details_html($appt)
@@ -493,7 +851,9 @@ if (!function_exists('appt_create')) {
             );
         }
 
-        return ['ok' => true, 'message' => 'Appointment request sent. You will be notified when they respond.'];
+        $who = count($requested) === 1 ? reset($staff) : count($requested) . ' people';
+
+        return ['ok' => true, 'message' => 'Appointment request sent to ' . $who . '. You will be notified as they respond.'];
     }
 }
 
@@ -505,85 +865,69 @@ if (!function_exists('appt_accept')) {
         }
 
         $appt = appt_find($conn, $appointmentId);
-        if (!$appt || appt_side($appt, $userId) === null) {
+        if (!$appt || appt_participant($appt, $userId) === null) {
             return ['ok' => false, 'message' => 'Appointment not found.'];
         }
 
-        $superseded = [];
+        $released = [];
+        $newlyBusy = [];
+        $wasAccepted = false;
+        $now = date('Y-m-d H:i:s');
         $conn->begin_transaction();
         try {
-            $parties = [(int)$appt['requester_id'], (int)$appt['invitee_id']];
-            appt_lock_users($conn, $parties);
+            appt_lock_users($conn, array_column($appt['participants'], 'user_id'));
 
             // Re-read under the lock: it may have been cancelled or rescheduled meanwhile.
             $appt = appt_find($conn, $appointmentId);
-            if (!$appt || $appt['status'] !== 'Pending' || appt_responder_id($appt) !== $userId) {
+            $me = $appt ? appt_participant($appt, $userId) : null;
+            if (!$appt || !$me || $me['response'] !== 'Pending' || !in_array($appt['status'], ['Pending', 'Accepted'], true)) {
                 $conn->rollback();
                 return ['ok' => false, 'message' => 'This request is no longer waiting for your response.'];
             }
-            if ((string)$appt['start_at'] <= date('Y-m-d H:i:s')) {
+            if ((string)$appt['start_at'] <= $now) {
                 $conn->rollback();
                 return ['ok' => false, 'message' => 'This appointment time has already passed.'];
             }
 
-            $problem = appt_slot_problem($conn, $parties, (string)$appt['start_at'], (string)$appt['end_at'], $appointmentId, $userId);
+            // Who becomes busy: just me if it is already confirmed; everyone who has
+            // accepted (me included) if my answer confirms it; nobody yet otherwise.
+            $wasAccepted = $appt['status'] === 'Accepted';
+            $after = array_map(static function ($p) use ($userId) {
+                if ((int)$p['user_id'] === $userId) {
+                    $p['response'] = 'Accepted';
+                }
+                return $p;
+            }, $appt['participants']);
+            if ($wasAccepted) {
+                $newlyBusy = [$userId];
+            } elseif (appt_derive_status($after) === 'Accepted') {
+                $newlyBusy = array_map(static fn($p) => (int)$p['user_id'], array_filter($after, static fn($p) => $p['response'] === 'Accepted'));
+            }
+
+            $problem = appt_slot_problem($conn, $newlyBusy ?: [$userId], (string)$appt['start_at'], (string)$appt['end_at'], $appointmentId, $userId);
             if ($problem) {
                 $conn->rollback();
                 return ['ok' => false, 'message' => $problem . ' Decline this request or suggest another time.'];
             }
 
-            // The responder sets their own reminder; both are recalculated for the agreed time.
-            $side = appt_side($appt, $userId);
-            $appt[$side . '_remind_minutes'] = $remind;
-            $requesterMinutes = (int)$appt['requester_remind_minutes'];
-            $inviteeMinutes = (int)$appt['invitee_remind_minutes'];
-            $requesterRemindAt = appt_remind_at((string)$appt['start_at'], $requesterMinutes);
-            $inviteeRemindAt = appt_remind_at((string)$appt['start_at'], $inviteeMinutes);
-            $now = date('Y-m-d H:i:s');
+            $remindAt = appt_remind_at((string)$appt['start_at'], $remind);
             $stmt = $conn->prepare(
-                "UPDATE staff_appointments
-                 SET status = 'Accepted', responded_at = ?,
-                     requester_remind_minutes = ?, requester_remind_at = ?, requester_reminded_at = NULL,
-                     invitee_remind_minutes = ?, invitee_remind_at = ?, invitee_reminded_at = NULL
-                 WHERE appointment_id = ? AND status = 'Pending'"
+                "UPDATE staff_appointment_participants
+                 SET response = 'Accepted', responded_at = ?, response_note = NULL,
+                     remind_minutes = ?, remind_at = ?, reminded_at = NULL
+                 WHERE appointment_id = ? AND user_id = ? AND response = 'Pending'"
             );
             if (!$stmt) {
                 throw new RuntimeException($conn->error);
             }
-            $stmt->bind_param('sisisi', $now, $requesterMinutes, $requesterRemindAt, $inviteeMinutes, $inviteeRemindAt, $appointmentId);
+            $stmt->bind_param('sisii', $now, $remind, $remindAt, $appointmentId, $userId);
             $stmt->execute();
             $stmt->close();
 
-            // The slot is now blocked for both: decline other pending requests that overlap it.
-            $stmt = $conn->prepare(
-                "SELECT appointment_id FROM staff_appointments
-                 WHERE status = 'Pending' AND appointment_id <> ?
-                   AND start_at < ? AND end_at > ?
-                   AND (requester_id IN (?, ?) OR invitee_id IN (?, ?))"
-            );
-            if (!$stmt) {
-                throw new RuntimeException($conn->error);
-            }
-            $stmt->bind_param('issiiii', $appointmentId, $appt['end_at'], $appt['start_at'], $parties[0], $parties[1], $parties[0], $parties[1]);
-            $stmt->execute();
-            $superseded = array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'appointment_id'));
-            $stmt->close();
+            appt_sync_status($conn, $appointmentId, $now);
 
-            if ($superseded) {
-                $note = 'Time slot no longer available.';
-                $decline = $conn->prepare(
-                    "UPDATE staff_appointments SET status = 'Declined', responded_at = ?, response_note = ?
-                     WHERE appointment_id = ? AND status = 'Pending'"
-                );
-                if (!$decline) {
-                    throw new RuntimeException($conn->error);
-                }
-                foreach ($superseded as $otherId) {
-                    $decline->bind_param('ssi', $now, $note, $otherId);
-                    $decline->execute();
-                }
-                $decline->close();
-            }
+            // The slot is now blocked for them: release their other overlapping requests.
+            $released = appt_release_overlaps($conn, $newlyBusy, $appointmentId, (string)$appt['start_at'], (string)$appt['end_at'], $now);
 
             $conn->commit();
         } catch (Throwable $e) {
@@ -593,24 +937,27 @@ if (!function_exists('appt_accept')) {
         }
 
         $appt = appt_find($conn, $appointmentId) ?? $appt;
-        $isRequester = $userId === (int)$appt['requester_id'];
-        $proposerId = $isRequester ? (int)$appt['invitee_id'] : (int)$appt['requester_id'];
-        $acceptor = $isRequester ? $appt['requester_name'] : $appt['invitee_name'];
+        $me = appt_participant($appt, $userId);
         $when = appt_format_range((string)$appt['start_at'], (string)$appt['end_at']);
-        if (function_exists('notify_user')) {
-            notify_user($proposerId, 'Appointment accepted', $acceptor . ' accepted: ' . $appt['title'] . ' · ' . $when, 'success', $appointmentId, 'appointment');
-        }
-        appt_email_invite($appt, 'REQUEST');
 
-        foreach ($superseded as $otherId) {
-            $other = appt_find($conn, $otherId);
-            if ($other && function_exists('notify_user')) {
-                $otherProposer = (int)($other['proposed_by'] ?? 0) ?: (int)$other['requester_id'];
-                notify_user($otherProposer, 'Appointment declined', $other['title'] . ' · ' . appt_format_range((string)$other['start_at'], (string)$other['end_at']) . ' was declined automatically: the time slot is no longer available.', 'warning', $otherId, 'appointment');
+        // Tell whoever set this time, and the organiser.
+        $tell = array_diff([appt_proposer_id($appt), (int)$appt['requester_id']], [$userId]);
+        appt_notify($tell, 'Appointment accepted', $me['full_name'] . ' accepted: ' . $appt['title'] . ' · ' . $when, 'success', $appointmentId);
+
+        if ($appt['status'] === 'Accepted') {
+            // Calendar invites to those who have just become busy.
+            $people = array_values(array_filter($appt['participants'], static fn($p) => in_array((int)$p['user_id'], $newlyBusy, true)));
+            appt_email_invite($appt, 'REQUEST', $people);
+            if (!$wasAccepted) {
+                $others = array_column(appt_people($appt, ['Accepted'], $userId), 'user_id');
+                appt_notify($others, 'Appointment confirmed', $appt['title'] . ' · ' . $when . ' is confirmed.', 'success', $appointmentId);
             }
         }
+        appt_notify_released($conn, $released);
 
-        return ['ok' => true, 'message' => 'Appointment accepted and added to both calendars.'];
+        return ['ok' => true, 'message' => $appt['status'] === 'Accepted'
+            ? 'Appointment accepted and added to your calendar.'
+            : 'Accepted. It will be confirmed once the organiser agrees to the time.'];
     }
 }
 
@@ -618,54 +965,65 @@ if (!function_exists('appt_decline')) {
     function appt_decline(mysqli $conn, int $userId, int $appointmentId, string $note): array
     {
         $appt = appt_find($conn, $appointmentId);
-        if (!$appt || $appt['status'] !== 'Pending' || appt_responder_id($appt) !== $userId) {
+        $me = $appt ? appt_participant($appt, $userId) : null;
+        if (!$appt || !$me || $me['response'] !== 'Pending' || !in_array($appt['status'], ['Pending', 'Accepted'], true)) {
             return ['ok' => false, 'message' => 'This request is no longer waiting for your response.'];
         }
 
         $note = mb_substr(trim($note), 0, 500);
         $noteValue = $note !== '' ? $note : null;
         $now = date('Y-m-d H:i:s');
-        $proposedBy = (int)($appt['proposed_by'] ?? 0) ?: (int)$appt['requester_id'];
+        $revision = (int)$appt['revision'];
 
-        // Guard on the proposer too, so a reschedule that lands meanwhile is not declined unseen.
-        $stmt = $conn->prepare(
-            "UPDATE staff_appointments SET status = 'Declined', responded_at = ?, response_note = ?
-             WHERE appointment_id = ? AND status = 'Pending' AND COALESCE(proposed_by, requester_id) = ?"
-        );
-        if (!$stmt) {
+        $conn->begin_transaction();
+        try {
+            // Guard on the revision too, so a new time that lands meanwhile is not declined unseen.
+            $stmt = $conn->prepare(
+                "UPDATE staff_appointment_participants p
+                 JOIN staff_appointments a ON a.appointment_id = p.appointment_id
+                 SET p.response = 'Declined', p.response_note = ?, p.responded_at = ?, p.remind_at = NULL
+                 WHERE p.appointment_id = ? AND p.user_id = ? AND p.response = 'Pending'
+                   AND a.revision = ? AND a.status IN ('Pending','Accepted')"
+            );
+            if (!$stmt) {
+                throw new RuntimeException($conn->error);
+            }
+            $stmt->bind_param('ssiii', $noteValue, $now, $appointmentId, $userId, $revision);
+            $stmt->execute();
+            $changed = $stmt->affected_rows;
+            $stmt->close();
+
+            if ($changed !== 1) {
+                $conn->rollback();
+                return ['ok' => false, 'message' => 'This request has already changed. Refresh and try again.'];
+            }
+            $status = appt_sync_status($conn, $appointmentId, $now);
+            $conn->commit();
+        } catch (Throwable $e) {
+            $conn->rollback();
+            error_log('appt_decline: ' . $e->getMessage());
             return ['ok' => false, 'message' => 'Could not decline the appointment.'];
         }
-        $stmt->bind_param('ssii', $now, $noteValue, $appointmentId, $proposedBy);
-        $stmt->execute();
-        $changed = $stmt->affected_rows;
-        $stmt->close();
 
-        if ($changed !== 1) {
-            return ['ok' => false, 'message' => 'This request has already changed. Refresh and try again.'];
+        $appt = appt_find($conn, $appointmentId) ?? $appt;
+        $what = $appt['title'] . ' · ' . appt_format_range((string)$appt['start_at'], (string)$appt['end_at']);
+        $reason = $note !== '' ? "\nReason: " . $note : '';
+        $tell = array_diff([appt_proposer_id($appt), (int)$appt['requester_id']], [$userId]);
+        appt_notify($tell, 'Appointment declined', $me['full_name'] . ' declined: ' . $what . $reason, 'warning', $appointmentId);
+
+        if ($status === 'Declined') {
+            $rest = array_diff(array_column(appt_people($appt, ['Pending', 'Accepted'], $userId), 'user_id'), $tell);
+            appt_notify($rest, 'Appointment declined', $what . ' will not go ahead.' . $reason, 'warning', $appointmentId);
         }
 
-        $isRequester = $userId === (int)$appt['requester_id'];
-        $decliner = $isRequester ? $appt['requester_name'] : $appt['invitee_name'];
-        $proposer = $isRequester ? $appt['invitee_name'] : $appt['requester_name'];
-        if (function_exists('notify_user')) {
-            notify_user(
-                $proposedBy,
-                'Appointment declined',
-                $decliner . ' declined: ' . $appt['title'] . ' · ' . appt_format_range((string)$appt['start_at'], (string)$appt['end_at']) . ($note !== '' ? "\nReason: " . $note : ''),
-                'warning',
-                $appointmentId,
-                'appointment'
-            );
-        }
-
-        return ['ok' => true, 'message' => 'Appointment declined. ' . $proposer . ' has been notified.'];
+        return ['ok' => true, 'message' => 'Appointment declined. The organiser has been notified.'];
     }
 }
 
 /**
- * Either party proposes a new time for a pending or accepted appointment. It
- * goes back to Pending for the other party to accept; an accepted slot is
- * released (and removed from calendars) until then.
+ * Any participant who has not declined proposes a new time for a pending or
+ * accepted appointment. Everyone else must accept it again; a confirmed slot
+ * is released (and removed from calendars) until they do.
  */
 if (!function_exists('appt_reschedule')) {
     function appt_reschedule(mysqli $conn, int $userId, int $appointmentId, array $input): array
@@ -680,21 +1038,26 @@ if (!function_exists('appt_reschedule')) {
         }
 
         $appt = appt_find($conn, $appointmentId);
-        if (!$appt || appt_side($appt, $userId) === null) {
+        if (!$appt || appt_participant($appt, $userId) === null) {
             return ['ok' => false, 'message' => 'Appointment not found.'];
         }
 
+        $now = date('Y-m-d H:i:s');
         $conn->begin_transaction();
         try {
-            $parties = [(int)$appt['requester_id'], (int)$appt['invitee_id']];
-            appt_lock_users($conn, $parties);
+            appt_lock_users($conn, array_column($appt['participants'], 'user_id'));
 
             $appt = appt_find($conn, $appointmentId);
-            if (!$appt || !in_array($appt['status'], ['Pending', 'Accepted'], true)) {
+            $me = $appt ? appt_participant($appt, $userId) : null;
+            if (!$appt || !$me || !in_array($appt['status'], ['Pending', 'Accepted'], true)) {
                 $conn->rollback();
                 return ['ok' => false, 'message' => 'Only pending or accepted appointments can be rescheduled.'];
             }
-            if ((string)$appt['end_at'] <= date('Y-m-d H:i:s')) {
+            if ($me['response'] === 'Declined' && !$me['is_organiser']) {
+                $conn->rollback();
+                return ['ok' => false, 'message' => 'You have declined this appointment.'];
+            }
+            if ((string)$appt['end_at'] <= $now) {
                 $conn->rollback();
                 return ['ok' => false, 'message' => 'This appointment has already taken place.'];
             }
@@ -703,28 +1066,24 @@ if (!function_exists('appt_reschedule')) {
                 return ['ok' => false, 'message' => 'Choose a different time from the current one.'];
             }
 
-            if ($problem = appt_slot_problem($conn, $parties, $start, $end, $appointmentId, $userId)) {
+            $stillIn = array_map(static fn($p) => (int)$p['user_id'], appt_people($appt, ['Pending', 'Accepted']));
+            if ($problem = appt_slot_problem($conn, [$userId, ...$stillIn], $start, $end, $appointmentId, $userId)) {
                 $conn->rollback();
                 return ['ok' => false, 'message' => $problem];
             }
 
-            // The proposer's reminder follows the new time; the other party picks theirs on accepting.
-            $side = appt_side($appt, $userId);
-            $remindAt = appt_remind_at($start, (int)$appt[$side . '_remind_minutes']);
             $status = (string)$appt['status'];
+            $revision = (int)$appt['revision'];
             $stmt = $conn->prepare(
                 "UPDATE staff_appointments
                  SET start_at = ?, end_at = ?, status = 'Pending', proposed_by = ?, revision = revision + 1,
-                     response_note = ?, responded_at = NULL,
-                     requester_remind_at = NULL, invitee_remind_at = NULL,
-                     requester_reminded_at = NULL, invitee_reminded_at = NULL,
-                     {$side}_remind_at = ?
-                 WHERE appointment_id = ? AND status = ?"
+                     response_note = ?, responded_at = NULL
+                 WHERE appointment_id = ? AND status = ? AND revision = ?"
             );
             if (!$stmt) {
                 throw new RuntimeException($conn->error);
             }
-            $stmt->bind_param('ssissis', $start, $end, $userId, $noteValue, $remindAt, $appointmentId, $status);
+            $stmt->bind_param('ssisisi', $start, $end, $userId, $noteValue, $appointmentId, $status, $revision);
             $stmt->execute();
             $changed = $stmt->affected_rows;
             $stmt->close();
@@ -734,6 +1093,32 @@ if (!function_exists('appt_reschedule')) {
                 return ['ok' => false, 'message' => 'This appointment has already changed. Refresh and try again.'];
             }
 
+            // Everyone else answers again; the proposer's reminder follows the new time.
+            $stmt = $conn->prepare(
+                "UPDATE staff_appointment_participants
+                 SET response = 'Pending', response_note = NULL, responded_at = NULL, remind_at = NULL, reminded_at = NULL
+                 WHERE appointment_id = ? AND user_id <> ?"
+            );
+            if (!$stmt) {
+                throw new RuntimeException($conn->error);
+            }
+            $stmt->bind_param('ii', $appointmentId, $userId);
+            $stmt->execute();
+            $stmt->close();
+
+            $remindAt = appt_remind_at($start, (int)$me['remind_minutes']);
+            $stmt = $conn->prepare(
+                "UPDATE staff_appointment_participants
+                 SET response = 'Accepted', responded_at = ?, response_note = NULL, remind_at = ?, reminded_at = NULL
+                 WHERE appointment_id = ? AND user_id = ?"
+            );
+            if (!$stmt) {
+                throw new RuntimeException($conn->error);
+            }
+            $stmt->bind_param('ssii', $now, $remindAt, $appointmentId, $userId);
+            $stmt->execute();
+            $stmt->close();
+
             $conn->commit();
         } catch (Throwable $e) {
             $conn->rollback();
@@ -741,86 +1126,120 @@ if (!function_exists('appt_reschedule')) {
             return ['ok' => false, 'message' => 'Could not reschedule the appointment. Please try again.'];
         }
 
-        // Remove the old confirmed time from both calendars; acceptance sends the new one.
+        // Remove the old confirmed time from calendars; acceptance sends the new one.
         if ($appt['status'] === 'Accepted') {
-            appt_email_invite($appt, 'CANCEL');
+            appt_email_invite($appt, 'CANCEL', appt_people($appt, ['Accepted']));
         }
 
-        $isRequester = $side === 'requester';
-        $otherId = $isRequester ? (int)$appt['invitee_id'] : (int)$appt['requester_id'];
-        $actor = $isRequester ? $appt['requester_name'] : $appt['invitee_name'];
-        $other = $isRequester ? $appt['invitee_name'] : $appt['requester_name'];
-        $otherEmail = $isRequester ? $appt['invitee_email'] : $appt['requester_email'];
         $fresh = appt_find($conn, $appointmentId) ?? $appt;
-        if (function_exists('notify_user')) {
-            notify_user($otherId, 'New time proposed', $actor . ' proposed a new time for ' . $appt['title'] . ': ' . appt_format_range($start, $end) . ($note !== '' ? "\nNote: " . $note : ''), 'info', $appointmentId, 'appointment');
-        }
+        $others = appt_people($fresh, null, $userId);
+        appt_notify(
+            array_column($others, 'user_id'),
+            'New time proposed',
+            $me['full_name'] . ' proposed a new time for ' . $appt['title'] . ': ' . appt_format_range($start, $end) . ($note !== '' ? "\nNote: " . $note : ''),
+            'info',
+            $appointmentId
+        );
         appt_email(
-            [['name' => $other, 'email' => $otherEmail]],
+            appt_recipients($others),
             'New time proposed: ' . $appt['title'],
-            '<p>' . appt_h($actor) . ' proposed a new time for your appointment.</p>'
+            '<p>' . appt_h($me['full_name']) . ' proposed a new time for your appointment.</p>'
                 . appt_details_html($fresh)
                 . ($note !== '' ? '<p><strong>Note:</strong> ' . nl2br(appt_h($note)) . '</p>' : '')
                 . '<p>Open <strong>Appointments</strong> in the IMS to accept or decline.</p>'
         );
 
-        return ['ok' => true, 'message' => 'New time sent to ' . $other . ' for confirmation.'];
+        return ['ok' => true, 'message' => 'New time sent to ' . appt_name_list($others) . ' for confirmation.'];
     }
 }
 
-/** The proposer may withdraw a pending request; either party may cancel an accepted one. */
+/**
+ * The organiser cancels a pending or accepted appointment for everyone.
+ * An invitee who has accepted withdraws only themselves; when nobody else is
+ * still invited, the appointment is cancelled.
+ */
 if (!function_exists('appt_cancel')) {
     function appt_cancel(mysqli $conn, int $userId, int $appointmentId, string $note): array
     {
         $appt = appt_find($conn, $appointmentId);
-        if (!$appt) {
-            return ['ok' => false, 'message' => 'Appointment not found.'];
+        $me = $appt ? appt_participant($appt, $userId) : null;
+        if (!$appt || !$me || !in_array($appt['status'], ['Pending', 'Accepted'], true)) {
+            return ['ok' => false, 'message' => 'This appointment cannot be cancelled.'];
         }
 
-        $side = appt_side($appt, $userId);
-        $wasAccepted = $appt['status'] === 'Accepted';
-        $isProposer = $side !== null && appt_responder_id($appt) !== $userId;
-        $allowed = ($appt['status'] === 'Pending' && $isProposer) || ($wasAccepted && $side !== null);
-        if (!$allowed) {
-            return ['ok' => false, 'message' => 'This appointment cannot be cancelled.'];
+        $isOrganiser = (int)$me['is_organiser'] === 1;
+        if (!$isOrganiser && $me['response'] !== 'Accepted') {
+            return ['ok' => false, 'message' => 'Decline the request instead.'];
         }
 
         $note = mb_substr(trim($note), 0, 500);
         $noteValue = $note !== '' ? $note : null;
+        $reason = $note !== '' ? "\nReason: " . $note : '';
         $status = (string)$appt['status'];
-        $stmt = $conn->prepare(
-            "UPDATE staff_appointments SET status = 'Cancelled', cancelled_by = ?, response_note = ?
-             WHERE appointment_id = ? AND status = ?"
-        );
-        if (!$stmt) {
+        $wasAccepted = $status === 'Accepted';
+        $what = $appt['title'] . ' · ' . appt_format_range((string)$appt['start_at'], (string)$appt['end_at']);
+        $now = date('Y-m-d H:i:s');
+
+        // Invitees still in apart from me: if none, withdrawing ends the appointment.
+        $remaining = array_filter(appt_people($appt, ['Pending', 'Accepted'], $userId), static fn($p) => !(int)$p['is_organiser']);
+        $cancelAll = $isOrganiser || !$remaining;
+
+        $conn->begin_transaction();
+        try {
+            if ($cancelAll) {
+                $stmt = $conn->prepare(
+                    "UPDATE staff_appointments SET status = 'Cancelled', cancelled_by = ?, response_note = ?
+                     WHERE appointment_id = ? AND status = ?"
+                );
+                if (!$stmt) {
+                    throw new RuntimeException($conn->error);
+                }
+                $stmt->bind_param('isis', $userId, $noteValue, $appointmentId, $status);
+            } else {
+                $stmt = $conn->prepare(
+                    "UPDATE staff_appointment_participants
+                     SET response = 'Declined', response_note = ?, responded_at = ?, remind_at = NULL
+                     WHERE appointment_id = ? AND user_id = ? AND response = 'Accepted'"
+                );
+                if (!$stmt) {
+                    throw new RuntimeException($conn->error);
+                }
+                $stmt->bind_param('ssii', $noteValue, $now, $appointmentId, $userId);
+            }
+            $stmt->execute();
+            $changed = $stmt->affected_rows;
+            $stmt->close();
+
+            if ($changed !== 1) {
+                $conn->rollback();
+                return ['ok' => false, 'message' => 'This appointment has already changed. Refresh and try again.'];
+            }
+            if (!$cancelAll) {
+                appt_sync_status($conn, $appointmentId, $now);
+            }
+            $conn->commit();
+        } catch (Throwable $e) {
+            $conn->rollback();
+            error_log('appt_cancel: ' . $e->getMessage());
             return ['ok' => false, 'message' => 'Could not cancel the appointment.'];
         }
-        $stmt->bind_param('isis', $userId, $noteValue, $appointmentId, $status);
-        $stmt->execute();
-        $changed = $stmt->affected_rows;
-        $stmt->close();
 
-        if ($changed !== 1) {
-            return ['ok' => false, 'message' => 'This appointment has already changed. Refresh and try again.'];
+        if ($cancelAll) {
+            appt_notify(array_column(appt_people($appt, ['Pending', 'Accepted'], $userId), 'user_id'), 'Appointment cancelled', $me['full_name'] . ' cancelled: ' . $what . $reason, 'warning', $appointmentId);
+            if ($wasAccepted) {
+                appt_email_invite($appt, 'CANCEL', appt_people($appt, ['Accepted']));
+            }
+
+            return ['ok' => true, 'message' => $wasAccepted ? 'Appointment cancelled and removed from calendars.' : 'Request withdrawn.'];
         }
 
-        $otherId = $side === 'requester' ? (int)$appt['invitee_id'] : (int)$appt['requester_id'];
-        $actor = $side === 'requester' ? $appt['requester_name'] : $appt['invitee_name'];
-        if (function_exists('notify_user')) {
-            notify_user(
-                $otherId,
-                'Appointment cancelled',
-                $actor . ' cancelled: ' . $appt['title'] . ' · ' . appt_format_range((string)$appt['start_at'], (string)$appt['end_at']) . ($note !== '' ? "\nReason: " . $note : ''),
-                'warning',
-                $appointmentId,
-                'appointment'
-            );
-        }
+        $fresh = appt_find($conn, $appointmentId) ?? $appt;
+        appt_notify(array_column(appt_people($fresh, ['Pending', 'Accepted']), 'user_id'), 'Participant withdrew', $me['full_name'] . ' can no longer attend ' . $what . $reason, 'warning', $appointmentId);
         if ($wasAccepted) {
-            appt_email_invite($appt, 'CANCEL');
+            appt_email_invite($appt, 'CANCEL', [$me]);
         }
 
-        return ['ok' => true, 'message' => $wasAccepted ? 'Appointment cancelled and removed from both calendars.' : 'Request withdrawn.'];
+        return ['ok' => true, 'message' => 'You have withdrawn from this appointment. The organiser has been notified.'];
     }
 }
 
@@ -841,53 +1260,56 @@ if (!function_exists('appt_dispatch_reminders')) {
         $now = date('Y-m-d H:i:s');
         $limit = max(1, min(1000, $limit));
         $stmt = $conn->prepare(
-            "SELECT appointment_id FROM staff_appointments
-             WHERE status = 'Accepted' AND start_at > ?
-               AND ((requester_remind_at <= ? AND requester_reminded_at IS NULL)
-                 OR (invitee_remind_at <= ? AND invitee_reminded_at IS NULL))
-             ORDER BY start_at LIMIT " . $limit
+            "SELECT p.appointment_id, p.user_id
+             FROM staff_appointment_participants p
+             JOIN staff_appointments a ON a.appointment_id = p.appointment_id
+             WHERE a.status = 'Accepted' AND p.response = 'Accepted' AND a.start_at > ?
+               AND p.remind_at <= ? AND p.reminded_at IS NULL
+             ORDER BY a.start_at LIMIT " . $limit
         );
         if (!$stmt) {
             return 0;
         }
-        $stmt->bind_param('sss', $now, $now, $now);
+        $stmt->bind_param('ss', $now, $now);
         $stmt->execute();
-        $ids = array_map('intval', array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'appointment_id'));
+        $due = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
 
         $sent = 0;
-        foreach ($ids as $id) {
-            foreach (['requester', 'invitee'] as $side) {
-                // Claim first so overlapping runs never send twice.
-                $claim = $conn->prepare(
-                    "UPDATE staff_appointments SET {$side}_reminded_at = ?
-                     WHERE appointment_id = ? AND status = 'Accepted' AND start_at > ?
-                       AND {$side}_remind_at <= ? AND {$side}_reminded_at IS NULL"
-                );
-                if (!$claim) {
-                    continue;
-                }
-                $claim->bind_param('siss', $now, $id, $now, $now);
-                $claim->execute();
-                $claimed = $claim->affected_rows === 1;
-                $claim->close();
+        foreach ($due as $row) {
+            $id = (int)$row['appointment_id'];
+            $userId = (int)$row['user_id'];
 
-                if (!$claimed || !($appt = appt_find($conn, $id))) {
-                    continue;
-                }
-
-                $other = $side === 'requester' ? $appt['invitee_name'] : $appt['requester_name'];
-                $when = appt_format_range((string)$appt['start_at'], (string)$appt['end_at']);
-                if (function_exists('notify_user')) {
-                    notify_user((int)$appt[$side . '_id'], 'Appointment reminder', $appt['title'] . ' with ' . $other . ' · ' . $when, 'warning', $id, 'appointment');
-                }
-                appt_email(
-                    [['name' => $appt[$side . '_name'], 'email' => $appt[$side . '_email']]],
-                    'Reminder: ' . $appt['title'] . ' (' . date('D j M, H:i', strtotime((string)$appt['start_at'])) . ')',
-                    '<p>This is a reminder of your appointment with ' . appt_h($other) . '.</p>' . appt_details_html($appt)
-                );
-                $sent++;
+            // Claim first so overlapping runs never send twice.
+            $claim = $conn->prepare(
+                "UPDATE staff_appointment_participants p
+                 JOIN staff_appointments a ON a.appointment_id = p.appointment_id
+                 SET p.reminded_at = ?
+                 WHERE p.appointment_id = ? AND p.user_id = ? AND p.reminded_at IS NULL
+                   AND p.response = 'Accepted' AND p.remind_at <= ?
+                   AND a.status = 'Accepted' AND a.start_at > ?"
+            );
+            if (!$claim) {
+                continue;
             }
+            $claim->bind_param('siiss', $now, $id, $userId, $now, $now);
+            $claim->execute();
+            $claimed = $claim->affected_rows === 1;
+            $claim->close();
+
+            if (!$claimed || !($appt = appt_find($conn, $id)) || !($me = appt_participant($appt, $userId))) {
+                continue;
+            }
+
+            $with = appt_name_list(appt_people($appt, ['Accepted'], $userId));
+            $when = appt_format_range((string)$appt['start_at'], (string)$appt['end_at']);
+            appt_notify([$userId], 'Appointment reminder', $appt['title'] . ($with !== '' ? ' with ' . $with : '') . ' · ' . $when, 'warning', $id);
+            appt_email(
+                appt_recipients([$me]),
+                'Reminder: ' . $appt['title'] . ' (' . date('D j M, H:i', strtotime((string)$appt['start_at'])) . ')',
+                '<p>This is a reminder of your appointment' . ($with !== '' ? ' with ' . appt_h($with) : '') . '.</p>' . appt_details_html($appt)
+            );
+            $sent++;
         }
 
         return $sent;
@@ -910,10 +1332,16 @@ if (!function_exists('appt_h')) {
 if (!function_exists('appt_details_html')) {
     function appt_details_html(array $appt): string
     {
+        $people = '';
+        foreach ($appt['participants'] ?? [] as $p) {
+            $tag = (int)$p['is_organiser'] ? 'organiser' : strtolower((string)$p['response']);
+            $people .= ($people !== '' ? '<br>' : '') . appt_h($p['full_name']) . ' <span style="color:#6b7280">(' . appt_h($tag) . ')</span>';
+        }
+
         return '<table cellpadding="6" style="border-collapse:collapse">'
             . '<tr><td><strong>Subject</strong></td><td>' . appt_h($appt['title']) . '</td></tr>'
             . '<tr><td><strong>When</strong></td><td>' . appt_h(appt_format_range((string)$appt['start_at'], (string)$appt['end_at'])) . ' (' . appt_h(date_default_timezone_get()) . ')</td></tr>'
-            . '<tr><td><strong>With</strong></td><td>' . appt_h($appt['requester_name']) . ' and ' . appt_h($appt['invitee_name']) . '</td></tr>'
+            . '<tr><td style="vertical-align:top"><strong>Who</strong></td><td>' . $people . '</td></tr>'
             . (!empty($appt['location']) ? '<tr><td><strong>Where</strong></td><td>' . appt_h($appt['location']) . '</td></tr>' : '')
             . '</table>'
             . (!empty($appt['agenda']) ? '<p>' . nl2br(appt_h($appt['agenda'])) . '</p>' : '');
@@ -938,7 +1366,7 @@ if (!function_exists('appt_email')) {
             $html = '<p>Hello ' . appt_h($person['name'] ?? '') . ',</p>' . $content;
             $body = function_exists('email_wrapper') ? email_wrapper($html) : $html;
             try {
-                $result = sendEmail($email, $subject, $body, trim(strip_tags(str_replace(['</p>', '</tr>'], "\n", $html))), [], [], $attachments);
+                $result = sendEmail($email, $subject, $body, trim(strip_tags(str_replace(['</p>', '</tr>', '<br>'], "\n", $html))), [], [], $attachments);
             } catch (Throwable $e) {
                 $result = $e->getMessage();
             }
@@ -954,7 +1382,7 @@ if (!function_exists('appt_email')) {
 }
 
 if (!function_exists('appt_build_ics')) {
-    function appt_build_ics(array $appt, string $method, string $organizerEmail, string $organizerName): string
+    function appt_build_ics(array $appt, string $method, string $organizerEmail, string $organizerName, int $alarmMinutes = 0): string
     {
         $host = preg_replace('/[^a-z0-9.-]/i', '', (string)($_SERVER['HTTP_HOST'] ?? 'ims.local')) ?: 'ims.local';
         $cancel = $method === 'CANCEL';
@@ -962,7 +1390,7 @@ if (!function_exists('appt_build_ics')) {
         $local = new DateTimeZone(date_default_timezone_get());
         $start = (new DateTimeImmutable((string)$appt['start_at'], $local))->setTimezone($utc);
         $end = (new DateTimeImmutable((string)$appt['end_at'], $local))->setTimezone($utc);
-        $alarm = max((int)($appt['requester_remind_minutes'] ?? 0), (int)($appt['invitee_remind_minutes'] ?? 0));
+        $attendees = appt_people($appt, ['Accepted']);
 
         $lines = [
             'BEGIN:VCALENDAR',
@@ -982,23 +1410,25 @@ if (!function_exists('appt_build_ics')) {
         if (!empty($appt['location'])) {
             $lines[] = 'LOCATION:' . ev_ics_escape((string)$appt['location']);
         }
-        $description = 'Appointment between ' . $appt['requester_name'] . ' and ' . $appt['invitee_name'] . '.';
+        $description = 'Appointment organised by ' . $appt['requester_name'] . ' with ' . appt_name_list(appt_people($appt, null, (int)$appt['requester_id'])) . '.';
         if (!empty($appt['agenda'])) {
             $description .= "\n\n" . $appt['agenda'];
         }
         $lines[] = 'DESCRIPTION:' . ev_ics_escape($description);
         $lines[] = 'ORGANIZER;CN="' . ev_ics_param($organizerName) . '":mailto:' . $organizerEmail;
-        foreach (['requester', 'invitee'] as $side) {
-            $lines[] = 'ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="'
-                . ev_ics_param((string)$appt[$side . '_name']) . '":mailto:' . $appt[$side . '_email'];
+        foreach ($attendees as $p) {
+            if (filter_var((string)$p['email'], FILTER_VALIDATE_EMAIL)) {
+                $lines[] = 'ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN="'
+                    . ev_ics_param((string)$p['full_name']) . '":mailto:' . $p['email'];
+            }
         }
         $lines[] = 'STATUS:' . ($cancel ? 'CANCELLED' : 'CONFIRMED');
         $lines[] = 'TRANSP:OPAQUE';
-        if (!$cancel && $alarm > 0) {
+        if (!$cancel && $alarmMinutes > 0) {
             $lines[] = 'BEGIN:VALARM';
             $lines[] = 'ACTION:DISPLAY';
             $lines[] = 'DESCRIPTION:Reminder';
-            $lines[] = 'TRIGGER:-PT' . $alarm . 'M';
+            $lines[] = 'TRIGGER:-PT' . $alarmMinutes . 'M';
             $lines[] = 'END:VALARM';
         }
         $lines[] = 'END:VEVENT';
@@ -1008,43 +1438,42 @@ if (!function_exists('appt_build_ics')) {
     }
 }
 
-/** Email both parties a calendar invite (REQUEST) or cancellation (CANCEL). */
+/** Email each of $people a calendar invite (REQUEST) or cancellation (CANCEL), with their own alarm. */
 if (!function_exists('appt_email_invite')) {
-    function appt_email_invite(array $appt, string $method): int
+    function appt_email_invite(array $appt, string $method, array $people): int
     {
+        if (!$people) {
+            return 0;
+        }
         require_once __DIR__ . '/mail-function.php';
         $settings = function_exists('getEmailSettings') ? (getEmailSettings() ?: []) : [];
         $fromEmail = trim((string)($settings['from_email'] ?? ''));
         $fromName = trim((string)($settings['from_name'] ?? '')) ?: (defined('SITE_NAME') ? SITE_NAME : 'IMS');
         $cancel = $method === 'CANCEL';
+        $subject = ($cancel ? 'Cancelled: ' : 'Confirmed: ') . $appt['title'] . ' (' . date('j M Y, H:i', strtotime((string)$appt['start_at'])) . ')';
 
-        $file = null;
-        $dir = null;
-        if ($fromEmail !== '') {
-            $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'ims-ics-' . bin2hex(random_bytes(6));
-            if (@mkdir($dir, 0700) || is_dir($dir)) {
-                $file = $dir . DIRECTORY_SEPARATOR . ($cancel ? 'cancel.ics' : 'invite.ics');
-                file_put_contents($file, appt_build_ics($appt, $method, $fromEmail, $fromName));
+        $sent = 0;
+        foreach ($people as $person) {
+            $file = null;
+            $dir = null;
+            if ($fromEmail !== '') {
+                $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'ims-ics-' . bin2hex(random_bytes(6));
+                if (@mkdir($dir, 0700) || is_dir($dir)) {
+                    $file = $dir . DIRECTORY_SEPARATOR . ($cancel ? 'cancel.ics' : 'invite.ics');
+                    file_put_contents($file, appt_build_ics($appt, $method, $fromEmail, $fromName, (int)($person['remind_minutes'] ?? 0)));
+                }
             }
-        }
 
-        $intro = $cancel
-            ? '<p>The following appointment has been <strong>cancelled</strong>' . ($file ? '; open the attachment to remove it from your calendar' : '') . '.</p>'
-            : '<p>The following appointment is <strong>confirmed</strong>' . ($file ? '. Open the attached invite to add it to your calendar' : '') . '.</p>';
+            $intro = $cancel
+                ? '<p>The following appointment has been <strong>cancelled</strong> for you' . ($file ? '; open the attachment to remove it from your calendar' : '') . '.</p>'
+                : '<p>The following appointment is <strong>confirmed</strong>' . ($file ? '. Open the attached invite to add it to your calendar' : '') . '.</p>';
 
-        $sent = appt_email(
-            [
-                ['name' => $appt['requester_name'], 'email' => $appt['requester_email']],
-                ['name' => $appt['invitee_name'], 'email' => $appt['invitee_email']],
-            ],
-            ($cancel ? 'Cancelled: ' : 'Confirmed: ') . $appt['title'] . ' (' . date('j M Y, H:i', strtotime((string)$appt['start_at'])) . ')',
-            $intro . appt_details_html($appt),
-            $file ? [$file] : []
-        );
+            $sent += appt_email(appt_recipients([$person]), $subject, $intro . appt_details_html($appt), $file ? [$file] : []);
 
-        if ($file) {
-            @unlink($file);
-            @rmdir((string)$dir);
+            if ($file) {
+                @unlink($file);
+                @rmdir((string)$dir);
+            }
         }
 
         return $sent;
