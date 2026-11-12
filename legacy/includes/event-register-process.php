@@ -29,6 +29,7 @@ $typeMap = [
     'Participant' => 'Beneficiary',
     'Beneficiary' => 'Beneficiary',
     'Startup'     => 'Startup',
+    'Staff'       => 'Staff',
     'Guest'        => 'Guest',
 ];
 
@@ -87,6 +88,40 @@ try {
                 'attendee_name' => (string)$row['attendee_name'],
                 'organization'  => (string)$row['organization'],
                 'sub_label'     => (string)$row['sub_label'],
+            ];
+        }
+
+        jsonOut($results);
+    }
+
+    if ($type === 'Staff') {
+        // Active staff accounts only; name and role are returned, contact
+        // details are filled in server-side by event-register.php.
+        $stmt = $conn->prepare("
+            SELECT user_id AS id, full_name, role
+            FROM users
+            WHERE is_active = 1
+              AND role NOT IN ('Member', 'Applicant', 'Donor/Partner')
+              AND (full_name LIKE ? OR email = ?)
+            ORDER BY full_name ASC
+            LIMIT 10
+        ");
+
+        $stmt->bind_param("ss", $like, $q);
+        $stmt->execute();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        $orgName = function_exists('ims_brand_name') ? ims_brand_name() : '';
+
+        foreach ($rows as $row) {
+            $role = trim((string)($row['role'] ?? ''));
+            $results[] = [
+                'id'            => (int)$row['id'],
+                'record_type'   => 'Staff',
+                'attendee_name' => trim((string)$row['full_name']),
+                'organization'  => $orgName,
+                'sub_label'     => 'Staff' . ($role !== '' ? ' | ' . $role : ''),
             ];
         }
 

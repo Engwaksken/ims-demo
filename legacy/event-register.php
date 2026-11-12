@@ -122,6 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         $beneficiary_id = $tmp > 0 ? $tmp : null;
     }
 
+    $staff_user_id = $record_type === 'Staff' ? (int)($_POST['staff_user_id'] ?? 0) : 0;
+
     /*
       Do not trust posted date blindly.
       Force attendance date to the smart selected date.
@@ -147,6 +149,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         }
     }
     $photo_consent = !empty($_POST['photo_consent']) ? 1 : 0;
+
+    // Staff picked from the lookup: use the email/phone on their account.
+    if ($staff_user_id > 0 && ($email === '' || $phone === '' || $organization === '')) {
+        $staffStmt = $conn->prepare("
+            SELECT COALESCE(email, '') AS email, COALESCE(phone, '') AS phone
+            FROM users
+            WHERE user_id = ?
+              AND is_active = 1
+              AND role NOT IN ('Member', 'Applicant', 'Donor/Partner')
+            LIMIT 1
+        ");
+        if ($staffStmt) {
+            $staffStmt->bind_param('i', $staff_user_id);
+            $staffStmt->execute();
+            $staffRow = $staffStmt->get_result()->fetch_assoc() ?: [];
+            $staffStmt->close();
+            if ($staffRow) {
+                if ($email === '') $email = trim((string)$staffRow['email']);
+                if ($phone === '') $phone = trim((string)$staffRow['phone']);
+                if ($organization === '') $organization = ims_brand_name();
+            }
+        }
+    }
 
     // The public lookup no longer sends contact details to the browser, so
     // fill blank email/phone from the selected record here.
@@ -372,6 +397,7 @@ setTimeout(function () {
             <input type="hidden" name="register" value="1">
             <input type="hidden" name="member_id" id="member_id" value="">
             <input type="hidden" name="beneficiary_id" id="beneficiary_id" value="">
+            <input type="hidden" name="staff_user_id" id="staff_user_id" value="">
             <input type="hidden" name="attendance_date" value="<?= e($selectedEventDate) ?>">
 
             <div class="form-section">Event day</div>
@@ -400,6 +426,14 @@ setTimeout(function () {
                         <?= ($_POST['record_type'] ?? '') === 'Startup' ? 'checked' : '' ?>>
                     <label for="type_startup" class="type-label">
                         <i class="fas fa-building-user"></i> Startup
+                    </label>
+                </span>
+
+                <span>
+                    <input type="radio" name="record_type" id="type_staff" value="Staff" class="type-opt"
+                        <?= ($_POST['record_type'] ?? '') === 'Staff' ? 'checked' : '' ?>>
+                    <label for="type_staff" class="type-label">
+                        <i class="fas fa-user-tie"></i> Staff
                     </label>
                 </span>
 
@@ -581,6 +615,7 @@ const lookupInput = document.getElementById('lookupInput');
 const lookupResults = document.getElementById('lookupResults');
 const memberIdInput = document.getElementById('member_id');
 const beneficiaryIdInput = document.getElementById('beneficiary_id');
+const staffIdInput = document.getElementById('staff_user_id');
 const prefilledNote = document.getElementById('prefilledNote');
 
 let lookupTimer = null;
@@ -595,7 +630,7 @@ function updateTypeUI() {
     clearLinkedRecord();
 
     if (lookupSection) {
-        lookupSection.style.display = (type === 'Member' || type === 'Beneficiary' || type === 'Startup')
+        lookupSection.style.display = (type === 'Member' || type === 'Beneficiary' || type === 'Startup' || type === 'Staff')
             ? 'block'
             : 'none';
     }
@@ -694,7 +729,7 @@ function prefillFromRecord(item) {
 
     // Contact details are not sent to the browser; for linked records the
     // server uses the email/phone on file when these are left blank.
-    const onFile = type === 'Member' || type === 'Beneficiary';
+    const onFile = type === 'Member' || type === 'Beneficiary' || type === 'Staff';
     if (emailInput) {
         emailInput.required = !onFile;
         emailInput.placeholder = onFile ? 'Leave blank to use the email on file' : 'you@example.com';
@@ -707,6 +742,10 @@ function prefillFromRecord(item) {
 
     if (beneficiaryIdInput) {
         beneficiaryIdInput.value = type === 'Beneficiary' ? (item.id || '') : '';
+    }
+
+    if (staffIdInput) {
+        staffIdInput.value = type === 'Staff' ? (item.id || '') : '';
     }
 
     if (lookupInput) {
@@ -723,6 +762,7 @@ function prefillFromRecord(item) {
 function clearLinkedRecord() {
     if (memberIdInput) memberIdInput.value = '';
     if (beneficiaryIdInput) beneficiaryIdInput.value = '';
+    if (staffIdInput) staffIdInput.value = '';
 
     const emailInput = document.getElementById('email');
     if (emailInput) {

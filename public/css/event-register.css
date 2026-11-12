@@ -137,7 +137,7 @@ body {
 /* -- Attendee type toggle tiles --------------------------------- */
 .type-toggle {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 4px;
 }
@@ -412,7 +412,12 @@ select.form-control {
     }
 
     .type-toggle {
-        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .type-label {
+        padding: 10px 4px;
+        font-size: 11px;
     }
 }
 
