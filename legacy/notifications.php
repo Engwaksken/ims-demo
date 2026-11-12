@@ -256,6 +256,8 @@ require_once __DIR__ . '/includes/header.php';
                                 <a href="appointments">Open appointments</a>
                             <?php elseif ($refType === 'it_support' && $refId > 0): ?>
                                 <a href="it-support?id=<?= (int)$refId ?>">Open request</a>
+                            <?php elseif ($refType === 'event_registration' && $refId > 0): ?>
+                                <a href="event-confirm?rid=<?= (int)$refId ?>">Confirm attendance</a>
                             <?php endif; ?>
                             <?php if (!$isUnread && !empty($n['read_at'])): ?>
                                 <span>Read <?= h(date('d M Y, H:i', (int)strtotime((string)$n['read_at']))) ?></span>

@@ -30,6 +30,10 @@ $menu_items = [];
 if (isset($conn) && $conn instanceof mysqli) {
     require_once __DIR__ . '/menu-defaults.php';
     ims_ensure_default_menu_items($conn);
+
+    // Event attendance reminders when cron is not scheduled (throttled, runs after the page is sent).
+    require_once __DIR__ . '/event-reminders.php';
+    evr_dispatch_lazily();
 }
 
 try {
