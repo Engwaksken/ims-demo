@@ -109,7 +109,7 @@ button.is-suggested{outline:3px solid var(--ink);outline-offset:2px}
     </div>
 
     <?php if ($response !== ''): ?>
-        <p><span class="current"><i class="fas fa-circle-info" aria-hidden="true"></i> Your answer: <?= $e($response === 'Attended' ? 'Attending' : 'Not attending') ?></span></p>
+        <p><span class="current"><i class="fas fa-circle-info" aria-hidden="true"></i> Your answer: <?= $e($response === 'Attending' ? 'Attending' : 'Not attending') ?></span></p>
     <?php endif; ?>
 
     <?php if ($canAnswer): ?>

@@ -56,6 +56,17 @@ function attendance_event(mysqli $conn, int $event_id): ?array
     return $event ?: null;
 }
 
+function attendance_has_started(mysqli $conn, int $event_id, string $day): bool
+{
+    $stmt = $conn->prepare('SELECT start_time FROM hub_events WHERE event_id = ? LIMIT 1');
+    $stmt->bind_param('i', $event_id);
+    $stmt->execute();
+    $event = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    $time = substr((string)($event['start_time'] ?? '00:00:00'), 0, 8);
+    return strtotime($day . ' ' . $time) <= time();
+}
+
 function attendance_rows(mysqli $conn, int $event_id, string $attendance_date): array
 {
     $rows = [];
@@ -241,6 +252,10 @@ if (isset($_GET['export'])) {
 }
 
 if (isset($_POST['bulk_mark_selected_attended']) || isset($_POST['bulk_mark_all_attended'])) {
+    if (!attendance_has_started($conn, $event_id, $attendance_date)) {
+        send_notification($_SESSION['user_id'] ?? 0, 'Attendance can only be marked once the event has started.', 'warning');
+        redirect_attendance($event_id, $attendance_date);
+    }
     $status = 'Attended';
 
     if (isset($_POST['bulk_mark_all_attended'])) {
@@ -381,6 +396,10 @@ if (isset($_POST['update_status'])) {
 
     if ($registration_id <= 0 || !in_array($registration_status, $valid_statuses, true)) {
         send_notification($_SESSION['user_id'] ?? 0, 'Invalid attendee or status selected.', 'danger');
+        redirect_attendance($event_id, $attendance_date);
+    }
+    if ($registration_status === 'Attended' && !attendance_has_started($conn, $event_id, $attendance_date)) {
+        send_notification($_SESSION['user_id'] ?? 0, 'Attendance can only be marked once the event has started.', 'warning');
         redirect_attendance($event_id, $attendance_date);
     }
     if ($feedback_score !== null && ($feedback_score < 1 || $feedback_score > 5)) {

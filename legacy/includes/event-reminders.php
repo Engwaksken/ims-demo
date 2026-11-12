@@ -8,7 +8,7 @@ declare(strict_types=1);
 | Every registration for an event day gets a reminder 30, 20 and 10 minutes
 | before the day's start time and one at the start, each asking the person
 | to confirm their attendance through a signed link (event-confirm.php):
-|   - "Yes"  -> registration_status = 'Attended'
+|   - "Yes"  -> registration_status = 'Confirmed'
 |   - "No"   -> registration_status = 'No Show'
 | so the existing attendance page, counts and actual_participants pick the
 | answer up; confirmation_response / confirmed_at record that the person
@@ -182,9 +182,9 @@ if (!function_exists('evr_record_response')) {
             return ['ok' => false, 'message' => 'Choose whether you are attending.'];
         }
 
-        $response = $answer === 'yes' ? 'Attended' : 'Not Attending';
+        $response = $answer === 'yes' ? 'Attending' : 'Not Attending';
         // A check-in at the venue is stronger evidence than a "no" click.
-        $status = $answer === 'yes' ? 'Attended' : (($row['attendance_status'] ?? '') === 'Checked In' ? 'Attended' : 'No Show');
+        $status = $answer === 'yes' ? 'Confirmed' : (($row['attendance_status'] ?? '') === 'Checked In' ? 'Attended' : 'No Show');
         $now = date('Y-m-d H:i:s');
 
         $stmt = $conn->prepare(
