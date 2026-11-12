@@ -157,6 +157,18 @@
         (document.head || root).appendChild(link);
     })();
 
+    // Show/hide eye buttons on every password field (js/password-toggle.js).
+    (function injectPasswordToggle() {
+        if (window.IMSPasswordToggle || document.querySelector('script[data-ims-pw-js]')) return;
+        var me = document.currentScript;
+        var src = me && me.src ? me.src : '';
+        var script = document.createElement('script');
+        script.src = src ? src.replace(/accessibility\.js(\?.*)?$/, 'password-toggle.js$1') : '/js/password-toggle.js';
+        script.defer = true;
+        script.setAttribute('data-ims-pw-js', '');
+        (document.head || root).appendChild(script);
+    })();
+
     /* ---- Text to speech ----------------------------------------------- */
     var synth = window.speechSynthesis || null;
     var speakingEl = null;
