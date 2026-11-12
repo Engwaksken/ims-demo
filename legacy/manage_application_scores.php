@@ -365,7 +365,7 @@ function pgUrl(int $p): string {
                 <!-- Search -->
                 <div class="search-input-wrap">
                     <i class="fas fa-search" aria-hidden="true"></i>
-                    <input type="search" name="q" id="qInput" value="<?= e($q) ?>" class="form-control"
+                    <input type="search" name="q" id="qInput" data-live-search="#scoresResults" value="<?= e($q) ?>" class="form-control"
                            placeholder="Startup, reviewer, recommendation..." autocomplete="off">
                 </div>
 
@@ -388,6 +388,7 @@ function pgUrl(int $p): string {
             </form>
         </div>
 
+        <div id="scoresResults" aria-live="polite">
         <!-- Active filter chips -->
         <?php if ($f_type||$f_rev||$f_app||$q): ?>
         <div class="mas-chips">
@@ -548,6 +549,7 @@ function pgUrl(int $p): string {
             </div>
         </div>
         <?php endif; ?>
+        </div><!-- /#scoresResults -->
 
     </div><!-- /.panel scores tab -->
 
@@ -658,20 +660,5 @@ function pgUrl(int $p): string {
     <?php endif; ?>
 
 </div><!-- /.page-stack -->
-
-<script>
-/* Debounce search input */
-(function() {
-    var inp = document.getElementById('qInput');
-    if (!inp) return;
-    var timer;
-    inp.addEventListener('input', function() {
-        clearTimeout(timer);
-        timer = setTimeout(function() {
-            document.getElementById('filterForm').submit();
-        }, 420);
-    });
-})();
-</script>
 
 <?php require_once 'includes/footer.php'; ?>

@@ -234,6 +234,7 @@ $isFiltered = ($search !== '' || $filter_role !== '' || $filter_status !== '');
                         value="<?= e($search) ?>"
                         autocomplete="off"
                         id="searchInput"
+                        data-live-search="#permissionsResults"
                     >
                     <?php if ($search !== ''): ?>
                         <a href="<?= e(perm_url(['search' => '', 'page' => 1])) ?>" class="search-clear" title="Clear search" aria-label="Clear search">
@@ -269,6 +270,7 @@ $isFiltered = ($search !== '' || $filter_role !== '' || $filter_status !== '');
             </form>
         </div>
 
+        <div id="permissionsResults" aria-live="polite">
         <!-- Results meta -->
         <div class="results-meta">
             <span class="results-count">
@@ -454,6 +456,7 @@ $isFiltered = ($search !== '' || $filter_role !== '' || $filter_status !== '');
             <?php endif; ?>
         </nav>
         <?php endif; ?>
+        </div><!-- /#permissionsResults -->
 
     </div><!-- /.panel -->
 
@@ -526,18 +529,6 @@ function resetPassword(userId, username) {
     openModal('resetPasswordModal');
 }
 
-// Debounce search: submit after 450 ms idle
-(function () {
-    var input = document.getElementById('searchInput');
-    if (!input) return;
-    var timer;
-    input.addEventListener('input', function () {
-        clearTimeout(timer);
-        timer = setTimeout(function () {
-            document.getElementById('filterForm').submit();
-        }, 450);
-    });
-})();
 
 <?php if ($edit_user): ?>
 window.addEventListener('DOMContentLoaded', function () { openModal('editPermissionsModal'); });

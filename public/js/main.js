@@ -1043,3 +1043,54 @@ function makeTableRowsClickable() {
     `;
     document.head.appendChild(styleEl);
 })();
+
+// ---------------------------------------------------------------------------
+// Live search for server-filtered lists
+// ---------------------------------------------------------------------------
+// <input type="search" data-live-search="#resultsId"> inside a GET form:
+// while typing, the page is fetched with the form's values and only the
+// results block is swapped, so the box keeps focus and what was typed.
+// (Submitting the whole form on a timer reloaded the page and lost both.)
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('input[data-live-search]').forEach(function (input) {
+        var form = input.form;
+        var results = document.querySelector(input.dataset.liveSearch);
+        if (!form || !results || !window.fetch || !window.DOMParser) return;
+
+        var timer;
+        var controller = null;
+        var selector = input.dataset.liveSearch;
+
+        function refresh() {
+            var params = new URLSearchParams(new FormData(form));
+            var url = (form.getAttribute('action') || window.location.pathname) + '?' + params.toString();
+            if (controller) controller.abort();
+            controller = window.AbortController ? new AbortController() : null;
+            results.setAttribute('aria-busy', 'true');
+
+            fetch(url, { credentials: 'same-origin', signal: controller ? controller.signal : undefined })
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+                .then(function (html) {
+                    var fresh = new DOMParser().parseFromString(html, 'text/html').querySelector(selector);
+                    if (!fresh) throw new Error('results block missing');
+                    results.innerHTML = fresh.innerHTML;
+                    results.removeAttribute('aria-busy');
+                    history.replaceState(null, '', url);
+                    results.dispatchEvent(new CustomEvent('livesearch:updated', { bubbles: true }));
+                    if (typeof scheduleTableWrap === 'function') scheduleTableWrap();
+                })
+                .catch(function (err) {
+                    if (err && err.name === 'AbortError') return;
+                    form.submit(); // fall back to a normal search
+                });
+        }
+
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(refresh, 300);
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); refresh(); }
+        });
+    });
+});
