@@ -26,6 +26,12 @@ $user_name    = (string)($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Use
 
 $menu_items = [];
 
+// Entries for newer modules (Appointments, IT Support) even if their migration was never run.
+if (isset($conn) && $conn instanceof mysqli) {
+    require_once __DIR__ . '/menu-defaults.php';
+    ims_ensure_default_menu_items($conn);
+}
+
 try {
     if (isset($conn) && $conn instanceof mysqli && $user_role !== '') {
         $stmt = $conn->prepare("
