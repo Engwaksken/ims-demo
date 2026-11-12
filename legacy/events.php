@@ -1120,6 +1120,45 @@ if ($result) {
 }
 
 
+$eventTypeChoices = [];
+foreach (array_merge(
+    ['Meeting', 'Board Meeting', 'Training', 'Workshop', 'Seminar', 'Webinar', 'Conference', 'Networking', 'Bootcamp', 'Pitch Event', 'Exhibition'],
+    $eventTypes
+) as $typeName) {
+    $typeName = trim((string)$typeName);
+    if ($typeName !== '' && !isset($eventTypeChoices[strtolower($typeName)])) {
+        $eventTypeChoices[strtolower($typeName)] = $typeName;
+    }
+}
+$meetingTypeChoices = array_values(array_filter($eventTypeChoices, 'ev_is_meeting_type'));
+$otherTypeChoices = array_values(array_filter($eventTypeChoices, static fn($t) => !ev_is_meeting_type($t)));
+sort($otherTypeChoices, SORT_NATURAL | SORT_FLAG_CASE);
+
+/** Event type dropdown, plus a text box shown for "Other". */
+function ev_render_type_select(string $prefix, array $meetingTypes, array $otherTypes): void
+{
+    $p = ev_h($prefix);
+    ?>
+    <select name="event_type" id="<?= $p ?>EventType" class="form-control" required onchange="toggleEventTypeFields('<?= $p ?>')">
+        <option value="">Select event type...</option>
+        <optgroup label="Meetings - a meeting link is generated">
+            <?php foreach ($meetingTypes as $type): ?>
+                <option value="<?= ev_h($type) ?>"><?= ev_h($type) ?></option>
+            <?php endforeach; ?>
+        </optgroup>
+        <optgroup label="Events - registration link &amp; QR code">
+            <?php foreach ($otherTypes as $type): ?>
+                <option value="<?= ev_h($type) ?>"><?= ev_h($type) ?></option>
+            <?php endforeach; ?>
+        </optgroup>
+        <option value="__other__">Other (type it in)...</option>
+    </select>
+    <input type="text" name="event_type_other" id="<?= $p ?>EventTypeOther" class="form-control ev-type-other"
+           placeholder="Enter event type" maxlength="100" hidden oninput="toggleEventTypeFields('<?= $p ?>')">
+    <?php
+}
+
+
 $eventStatuses = [
     'Planned',
     'Ongoing',
@@ -1586,6 +1625,8 @@ body.ev-modal-open { overflow: hidden; }
 .ev-staff-hint { display: block; margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-300); }
 
 .ev-type-panel[hidden] { display: none; }
+.ev-type-other { margin-top: 7px; }
+.ev-type-other[hidden] { display: none; }
 .ev-type-hint { display: block; margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-300); }
 .ev-type-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--brand-200); border-radius: var(--radius-sm); background: var(--brand-50); color: var(--brand-700); font-size: var(--fs-sm); }
 .ev-type-note i { margin-top: 3px; }
@@ -2779,7 +2820,7 @@ body.ev-modal-open { overflow: hidden; }
                     </div>
                     <div>
                         <label class="form-label required">Event Type</label>
-                        <input type="text" name="event_type" id="addEventType" class="form-control" list="eventTypeOptions" required oninput="toggleEventTypeFields('add')" onchange="toggleEventTypeFields('add')">
+                        <?php ev_render_type_select('add', $meetingTypeChoices, $otherTypeChoices); ?>
                     </div>
                     <div>
                         <label class="form-label required">Status</label>
@@ -2880,7 +2921,7 @@ body.ev-modal-open { overflow: hidden; }
                     </div>
                     <div>
                         <label class="form-label required">Event Type</label>
-                        <input type="text" name="event_type" id="editEventType" class="form-control" list="eventTypeOptions" required oninput="toggleEventTypeFields('edit')" onchange="toggleEventTypeFields('edit')">
+                        <?php ev_render_type_select('edit', $meetingTypeChoices, $otherTypeChoices); ?>
                     </div>
                     <div>
                         <label class="form-label required">Status</label>
@@ -3020,16 +3061,6 @@ body.ev-modal-open { overflow: hidden; }
     </div>
 </div>
 
-<datalist id="eventTypeOptions">
-    <?php foreach ($eventTypes as $eventType): ?>
-        <option value="<?= ev_h($eventType) ?>"></option>
-    <?php endforeach; ?>
-    <option value="Meeting"></option>
-    <option value="Training"></option>
-    <option value="Workshop"></option>
-    <option value="Networking"></option>
-    <option value="Conference"></option>
-</datalist>
 
 <div
     class="modal-overlay ev-modal-details"
@@ -3293,8 +3324,41 @@ function isMeetingType(type) {
     return /\bmeetings?\b/i.test(type || '');
 }
 
+function selectedEventType(prefix) {
+    const select = document.getElementById(prefix + 'EventType');
+    const other = document.getElementById(prefix + 'EventTypeOther');
+    const isOther = select?.value === '__other__';
+    if (other) {
+        other.hidden = !isOther;
+        other.required = isOther;
+    }
+    return (isOther ? (other?.value || '') : (select?.value || '')).trim();
+}
+
+/** Select a saved type, adding it to the list first if it is not there. */
+function setEventTypeValue(prefix, value) {
+    const select = document.getElementById(prefix + 'EventType');
+    const other = document.getElementById(prefix + 'EventTypeOther');
+    if (!select) return;
+    value = (value || '').trim();
+    if (other) other.value = '';
+    if (value === '') {
+        select.value = '';
+        return;
+    }
+    const match = Array.from(select.options).find(o => o.value.toLowerCase() === value.toLowerCase());
+    if (match) {
+        select.value = match.value;
+    } else {
+        const option = new Option(value, value);
+        const group = select.querySelector(isMeetingType(value) ? 'optgroup:first-of-type' : 'optgroup:last-of-type');
+        (group || select).appendChild(option);
+        select.value = value;
+    }
+}
+
 function toggleEventTypeFields(prefix) {
-    const type = (document.getElementById(prefix + 'EventType')?.value || '').trim();
+    const type = selectedEventType(prefix);
     const meeting = isMeetingType(type);
     const meetingPanel = document.getElementById(prefix + 'MeetingPanel');
     const registerPanel = document.getElementById(prefix + 'RegisterPanel');
@@ -3400,7 +3464,7 @@ function openEditEventModal(id) {
 
     setField('editEventId', event.event_id);
     setField('editEventTitle', event.event_title);
-    setField('editEventType', event.event_type);
+    setEventTypeValue('edit', event.event_type);
     setField('editEventStatus', event.event_status);
     setField('editStartTime', event.start_time ? String(event.start_time).substring(0,5) : '');
     setField('editEndTime', event.end_time ? String(event.end_time).substring(0,5) : '');

@@ -27,6 +27,15 @@ function notify_and_redirect(string $message, string $type = 'danger', string $q
     redirect_events($query);
 }
 
+/** Event type from the dropdown, or the typed-in value when "Other" is chosen. */
+function posted_event_type(): string {
+    $type = clean_post('event_type');
+    if ($type === '__other__') {
+        $type = clean_post('event_type_other');
+    }
+    return mb_substr($type, 0, 100);
+}
+
 function nullable_time(string $key): ?string {
     $value = trim((string)($_POST[$key] ?? ''));
     return $value !== '' ? sanitize_input($value) : null;
@@ -232,7 +241,7 @@ function sync_event_and_invite(mysqli $conn, int $event_id, array $staff_changes
 ========================= */
 if (isset($_POST['add_event'])) {
     $event_title = clean_post('event_title');
-    $event_type  = clean_post('event_type');
+    $event_type  = posted_event_type();
 
     $event_days = get_event_days();
     $event_date = $event_days[0] ?? '';
@@ -342,7 +351,7 @@ if (isset($_POST['edit_event'])) {
     }
 
     $event_title = clean_post('event_title');
-    $event_type  = clean_post('event_type');
+    $event_type  = posted_event_type();
 
     $event_days = get_event_days();
     $event_date = $event_days[0] ?? '';
