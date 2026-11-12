@@ -36,6 +36,8 @@ final class ModuleRegistry
         'application-opportunities.php' => 'application-opportunities.php',
         'appointments' => 'appointments.php',
         'appointments.php' => 'appointments.php',
+        'it-support' => 'it-support.php',
+        'it-support.php' => 'it-support.php',
         'application-process' => 'includes/submit-application-process.php',
         'application-process.php' => 'includes/submit-application-process.php',
         'submit-application-process' => 'includes/submit-application-process.php',

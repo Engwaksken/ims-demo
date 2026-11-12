@@ -300,6 +300,20 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
                 [$userId, dl_like_contains(basename($relative))]
             );
 
+        // uploads/it-support/{ticket_id}/... (it-support.php): IT staff and
+        // the staff member who raised the request.
+        case 'it-support':
+            if (ims_allowed('downloads.it_support', ['Administrator', 'IT Officer'], 'Download any IT support request attachment')) {
+                return true;
+            }
+
+            return $ownerSegment > 0 && dl_exists(
+                $conn,
+                'SELECT 1 FROM it_support_tickets WHERE ticket_id = ? AND requester_id = ? LIMIT 1',
+                'ii',
+                [$ownerSegment, $userId]
+            );
+
         // Partner recommendation letters (donors-partners.php roles).
         case 'recommendations':
             return ims_allowed('downloads.recommendation_letters', ['Administrator', 'Executive Director', 'Operations/Admin', 'IT Officer', 'Programs Lead', 'Program Director', 'MEAL Lead'], 'Download partner recommendation letters');
