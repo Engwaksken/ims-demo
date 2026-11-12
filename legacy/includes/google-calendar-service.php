@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/event-staff.php';
+require_once __DIR__ . '/event-links.php';
 
 if (!function_exists('gcal_setting')) {
     function gcal_setting(
@@ -747,8 +748,13 @@ if (!function_exists('gcal_hub_event_payload')) {
             ],
         ];
 
+        // Only meetings get a video room; other events use registration links.
+        // Keep a link the organiser pasted (Zoom, Teams, ...) instead of a Meet.
+        $existingLink = (string)($event['meeting_link'] ?? '');
         if (
-            gcal_setting(
+            ev_is_meeting_type((string)($event['event_type'] ?? ''))
+            && ($existingLink === '' || stripos($existingLink, 'meet.google.com') !== false)
+            && gcal_setting(
                 $GLOBALS['conn'],
                 'google_create_meet',
                 '1'
@@ -1073,7 +1079,7 @@ if (!function_exists('gcal_sync_hub_event')) {
                 SET
                     google_event_id = NULLIF(?, ''),
                     google_html_link = NULLIF(?, ''),
-                    meeting_link = NULLIF(?, ''),
+                    meeting_link = COALESCE(NULLIF(?, ''), meeting_link),
                     google_sync_status = ?,
                     google_sync_error = ?,
                     google_last_synced_at = NOW()

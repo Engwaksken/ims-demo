@@ -254,7 +254,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                             <tr>
                                 <td><input type="checkbox" name="registration_ids[]" value="<?= (int)$record['registration_id'] ?>" class="attendance-checkbox"></td>
                                 <td><?= $count++ ?></td>
-                                <td><strong><?= e($record['attendee_name']) ?></strong><?php if (!empty($record['is_beneficiary'])): ?><br><span class="badge badge-info ea-tag-sm">Participant</span><?php endif; ?></td>
+                                <td><strong><?= e($record['attendee_name']) ?></strong><?php if (!empty($record['is_beneficiary'])): ?><br><span class="badge badge-info ea-tag-sm">Participant</span><?php endif; ?><?php if (!empty($record['is_pwd'])): ?><br><span class="badge badge-warning ea-tag-sm" title="Person with a disability"><i class="fas fa-wheelchair" aria-hidden="true"></i> PWD<?= !empty($record['pwd_type']) ? ': ' . e($record['pwd_type']) : '' ?></span><?php endif; ?><?php if (array_key_exists('photo_consent', $record)): ?><br><span class="badge <?= !empty($record['photo_consent']) ? 'badge-success' : 'badge-secondary' ?> ea-tag-sm"><i class="fas fa-camera" aria-hidden="true"></i> <?= !empty($record['photo_consent']) ? 'Photo consent' : 'No photo consent' ?></span><?php endif; ?></td>
                                 <td><?= e(date('d M Y', strtotime($record['attendance_date'] ?: $selected_day))) ?></td>
                                 <td>
                                     <?php if (!empty($record['phone'])): ?><i class="fas fa-phone"></i> <?= e($record['phone']) ?><br><?php endif; ?>

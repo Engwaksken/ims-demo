@@ -7,6 +7,8 @@ require_once __DIR__ . '/google-calendar-service.php';
 
 check_role(IMS_PROGRAMME_ROLES);
 
+ev_links_ensure_schema($conn);
+
 function clean_post(string $key): string {
     return sanitize_input((string)($_POST[$key] ?? ''));
 }
@@ -124,6 +126,39 @@ function load_event_row(mysqli $conn, int $event_id): ?array {
     $row = $stmt->get_result()->fetch_assoc() ?: null;
     $stmt->close();
     return $row;
+}
+
+/**
+ * Meeting-type events get a meeting link: the one the organiser pasted, else
+ * a Google Meet created by the calendar sync, else a generated Jitsi room.
+ * Other event types do not keep a meeting link (they share a registration
+ * link and QR code instead). Runs before the sync so invites carry the link.
+ */
+function apply_meeting_link(mysqli $conn, int $event_id, string $event_type, string $event_title): void {
+    if (!ev_is_meeting_type($event_type)) {
+        ev_set_meeting_link($conn, $event_id, null);
+        return;
+    }
+
+    $posted = ev_clean_meeting_link((string)($_POST['meeting_link'] ?? ''));
+    if ($posted !== '') {
+        ev_set_meeting_link($conn, $event_id, $posted);
+        return;
+    }
+
+    $google_meet = gcal_is_connected($conn) && gcal_setting($conn, 'google_create_meet', '1') === '1';
+    ev_set_meeting_link($conn, $event_id, $google_meet ? null : ev_generate_meeting_link($event_title));
+}
+
+/** If the Google sync did not produce a Meet link, fall back to a generated room. */
+function ensure_meeting_link(mysqli $conn, int $event_id, string $event_type, string $event_title): void {
+    if (!ev_is_meeting_type($event_type)) {
+        return;
+    }
+    $row = load_event_row($conn, $event_id);
+    if ($row && trim((string)($row['meeting_link'] ?? '')) === '') {
+        ev_set_meeting_link($conn, $event_id, ev_generate_meeting_link($event_title));
+    }
 }
 
 /**
@@ -271,8 +306,13 @@ if (isset($_POST['add_event'])) {
             "Added event: {$event_title}"
         );
 
+        apply_meeting_link($conn, $new_event_id, $event_type, $event_title);
         $staff_changes = ev_staff_save($conn, $new_event_id, ev_staff_posted_ids(), (int)($_SESSION['user_id'] ?? 0));
         $summary = sync_event_and_invite($conn, $new_event_id, $staff_changes);
+        ensure_meeting_link($conn, $new_event_id, $event_type, $event_title);
+        $summary = trim((ev_is_meeting_type($event_type)
+            ? 'Meeting link generated.'
+            : 'Registration link and QR code are ready to share.') . ' ' . $summary);
 
         send_notification(
             $_SESSION['user_id'] ?? 0,
@@ -284,7 +324,8 @@ if (isset($_POST['add_event'])) {
     }
 
     $stmt->close();
-    redirect_events();
+    // Open the share panel (meeting link, or registration link + QR code).
+    redirect_events(isset($new_event_id) ? 'share=' . $new_event_id : '');
 }
 
 /* =========================
@@ -377,8 +418,10 @@ if (isset($_POST['edit_event'])) {
             "Updated event: {$event_title}"
         );
 
+        apply_meeting_link($conn, $event_id, $event_type, $event_title);
         $staff_changes = ev_staff_save($conn, $event_id, ev_staff_posted_ids(), (int)($_SESSION['user_id'] ?? 0));
         $summary = sync_event_and_invite($conn, $event_id, $staff_changes, $old_event);
+        ensure_meeting_link($conn, $event_id, $event_type, $event_title);
 
         send_notification(
             $_SESSION['user_id'] ?? 0,

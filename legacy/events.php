@@ -339,6 +339,9 @@ $googleStatusSelect =
         : "'Not Synced' AS google_sync_status";
 
 
+ev_links_ensure_schema($conn);
+
+
 $googleErrorSelect =
     ev_column_exists(
         $conn,
@@ -1379,7 +1382,54 @@ foreach ($imsEvents as $event) {
         'description' => (string)($event['description'] ?? ''),
         'event_status' => (string)($event['event_status'] ?? 'Planned'),
         'staff_ids' => $eventStaffMap[(int)$event['event_id']] ?? [],
+        'is_meeting' => ev_is_meeting_type((string)($event['event_type'] ?? '')),
+        'meeting_link' => (string)($event['meeting_link'] ?? ''),
+        'registration_url' => ev_registration_url((int)$event['event_id']),
     ];
+}
+
+// After saving a new event the page opens its share panel (?share=ID); the
+// event may fall outside the current filters, so load what the panel needs.
+$shareEventId = (int)($_GET['share'] ?? 0);
+if ($shareEventId > 0 && !isset($eventActionData[(string)$shareEventId])) {
+    $shareLinkCol = ev_has_column($conn, 'hub_events', 'meeting_link') ? 'meeting_link' : "'' AS meeting_link";
+    $shareStmt = $conn->prepare("SELECT event_id, event_title, event_type, {$shareLinkCol} FROM hub_events WHERE event_id = ? LIMIT 1");
+    if ($shareStmt) {
+        $shareStmt->bind_param('i', $shareEventId);
+        $shareStmt->execute();
+        $shareRow = $shareStmt->get_result()->fetch_assoc();
+        $shareStmt->close();
+        if ($shareRow) {
+            $eventActionData[(string)$shareEventId] = [
+                'event_id' => $shareEventId,
+                'event_title' => (string)$shareRow['event_title'],
+                'event_type' => (string)$shareRow['event_type'],
+                'is_meeting' => ev_is_meeting_type((string)$shareRow['event_type']),
+                'meeting_link' => (string)($shareRow['meeting_link'] ?? ''),
+                'registration_url' => ev_registration_url($shareEventId),
+            ];
+        }
+    }
+}
+
+/** Type-dependent fields: meeting link for meetings, registration note otherwise. */
+function ev_render_type_panels(string $prefix): void
+{
+    $p = ev_h($prefix);
+    ?>
+    <div class="full ev-type-panel" id="<?= $p ?>MeetingPanel" hidden>
+        <label class="form-label" for="<?= $p ?>MeetingLink"><i class="fas fa-video"></i> Meeting Link</label>
+        <input type="url" name="meeting_link" id="<?= $p ?>MeetingLink" class="form-control" maxlength="500"
+               placeholder="Leave blank to generate one automatically">
+        <small class="ev-type-hint">Paste a Zoom or Teams link, or leave blank and IMS generates one (Google Meet when Google Calendar is connected, otherwise a Jitsi room). Invited staff get it in their calendar invite.</small>
+    </div>
+    <div class="full ev-type-panel" id="<?= $p ?>RegisterPanel" hidden>
+        <div class="ev-type-note">
+            <i class="fas fa-qrcode" aria-hidden="true"></i>
+            <span>Participants register through a public registration link and QR code, ready to share once the event is saved. The form asks about disability (PWD) needs and photo consent.</span>
+        </div>
+    </div>
+    <?php
 }
 
 /** Searchable checklist of staff; posts staff_ids[]. $prefix is "add" or "edit". */
@@ -1534,6 +1584,16 @@ body.ev-modal-open { overflow: hidden; }
 .ev-staff-text small { font-size: var(--fs-xs); color: var(--ink-300); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-staff-empty { margin: 0; padding: 12px; font-size: var(--fs-xs); color: var(--ink-300); }
 .ev-staff-hint { display: block; margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-300); }
+
+.ev-type-panel[hidden] { display: none; }
+.ev-type-hint { display: block; margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-300); }
+.ev-type-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--brand-200); border-radius: var(--radius-sm); background: var(--brand-50); color: var(--brand-700); font-size: var(--fs-sm); }
+.ev-type-note i { margin-top: 3px; }
+.ev-share-intro { margin: 0 0 var(--space-3); color: var(--ink-400); font-size: var(--fs-sm); }
+.ev-share-qr { display: flex; justify-content: center; margin: 0 auto var(--space-3); padding: 12px; width: max-content; max-width: 100%; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.ev-share-qr img, .ev-share-qr canvas { display: block; max-width: 100%; }
+.ev-share-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-2); }
+.ev-share-section[hidden] { display: none; }
 
 @media (max-width: 720px) {
     .ev-form-grid { grid-template-columns: 1fr; }
@@ -2506,6 +2566,17 @@ body.ev-modal-open { overflow: hidden; }
                                                 <i class="fas fa-edit"></i>
                                             </button>
 
+                                            <?php $isMeetingRow = ev_is_meeting_type((string)($event['event_type'] ?? '')); ?>
+                                            <button
+                                                type="button"
+                                                class="btn btn-primary btn-sm"
+                                                title="<?= $isMeetingRow ? 'Share meeting link' : 'Registration link &amp; QR code' ?>"
+                                                aria-label="<?= $isMeetingRow ? 'Share meeting link' : 'Registration link and QR code' ?>"
+                                                onclick="openShareEventModal(<?= (int)$event['event_id'] ?>)"
+                                            >
+                                                <i class="fas <?= $isMeetingRow ? 'fa-share-nodes' : 'fa-qrcode' ?>"></i>
+                                            </button>
+
                                             <?php if ($canDeleteEvents): ?>
                                                 <button
                                                     type="button"
@@ -2708,7 +2779,7 @@ body.ev-modal-open { overflow: hidden; }
                     </div>
                     <div>
                         <label class="form-label required">Event Type</label>
-                        <input type="text" name="event_type" id="addEventType" class="form-control" list="eventTypeOptions" required>
+                        <input type="text" name="event_type" id="addEventType" class="form-control" list="eventTypeOptions" required oninput="toggleEventTypeFields('add')" onchange="toggleEventTypeFields('add')">
                     </div>
                     <div>
                         <label class="form-label required">Status</label>
@@ -2718,6 +2789,7 @@ body.ev-modal-open { overflow: hidden; }
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php ev_render_type_panels('add'); ?>
                     <div class="full">
                         <label class="form-label required">Event Date(s)</label>
                         <div class="ev-date-list" id="addEventDates"></div>
@@ -2808,7 +2880,7 @@ body.ev-modal-open { overflow: hidden; }
                     </div>
                     <div>
                         <label class="form-label required">Event Type</label>
-                        <input type="text" name="event_type" id="editEventType" class="form-control" list="eventTypeOptions" required>
+                        <input type="text" name="event_type" id="editEventType" class="form-control" list="eventTypeOptions" required oninput="toggleEventTypeFields('edit')" onchange="toggleEventTypeFields('edit')">
                     </div>
                     <div>
                         <label class="form-label required">Status</label>
@@ -2818,6 +2890,7 @@ body.ev-modal-open { overflow: hidden; }
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php ev_render_type_panels('edit'); ?>
                     <div class="full">
                         <label class="form-label required">Event Date(s)</label>
                         <div class="ev-date-list" id="editEventDates"></div>
@@ -2907,6 +2980,43 @@ body.ev-modal-open { overflow: hidden; }
                 </div>
             </div>
         </form>
+    </div>
+</div>
+
+<div class="ev-modal modal-overlay" id="shareEventModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-dialog-header">
+            <h3 class="modal-dialog-title"><i class="fas fa-share-nodes"></i> <span id="shareEventTitle">Share Event</span></h3>
+            <button type="button" class="modal-dialog-close" aria-label="Close" onclick="closeCrudModal('shareEventModal')">&times;</button>
+        </div>
+        <div class="modal-dialog-body">
+            <div class="ev-share-section" id="shareMeetingSection" hidden>
+                <p class="ev-share-intro">Share this link with participants so they can join the meeting.</p>
+                <label class="form-label" for="shareMeetingLink">Meeting link</label>
+                <input type="text" id="shareMeetingLink" class="form-control" readonly onclick="this.select()">
+                <div class="ev-share-actions">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="copyShareValue('shareMeetingLink', this)"><i class="fas fa-copy"></i> Copy link</button>
+                    <a id="shareMeetingOpen" class="btn btn-secondary btn-sm" href="#" target="_blank" rel="noopener"><i class="fas fa-video"></i> Join meeting</a>
+                </div>
+            </div>
+            <div class="alert alert-warning ev-share-section" id="shareMeetingMissing" hidden>
+                This meeting has no link yet. Edit the event and save it to generate one.
+            </div>
+            <div class="ev-share-section" id="shareRegisterSection" hidden>
+                <p class="ev-share-intro">Participants scan the QR code or open the link to register.</p>
+                <div class="ev-share-qr" id="shareQr" role="img" aria-label="Registration QR code"></div>
+                <label class="form-label" for="shareRegisterLink">Registration link</label>
+                <input type="text" id="shareRegisterLink" class="form-control" readonly onclick="this.select()">
+                <div class="ev-share-actions">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="copyShareValue('shareRegisterLink', this)"><i class="fas fa-copy"></i> Copy link</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="downloadShareQr()"><i class="fas fa-download"></i> Download QR</button>
+                    <a id="shareRegisterOpen" class="btn btn-secondary btn-sm" href="#" target="_blank" rel="noopener"><i class="fas fa-up-right-from-square"></i> Open form</a>
+                </div>
+            </div>
+            <div class="ev-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCrudModal('shareEventModal')">Done</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -3034,6 +3144,7 @@ body.ev-modal-open { overflow: hidden; }
 </div>
 
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 
 const IMS_EVENT_ACTIONS =
@@ -3178,11 +3289,102 @@ function setStaffSelection(prefix, ids) {
     updateStaffPicker(prefix);
 }
 
+function isMeetingType(type) {
+    return /\bmeetings?\b/i.test(type || '');
+}
+
+function toggleEventTypeFields(prefix) {
+    const type = (document.getElementById(prefix + 'EventType')?.value || '').trim();
+    const meeting = isMeetingType(type);
+    const meetingPanel = document.getElementById(prefix + 'MeetingPanel');
+    const registerPanel = document.getElementById(prefix + 'RegisterPanel');
+    if (meetingPanel) meetingPanel.hidden = !meeting;
+    if (registerPanel) registerPanel.hidden = meeting || type === '';
+}
+
+let shareEventSlug = 'event';
+
+function openShareEventModal(id) {
+    const event = getImsEvent(id);
+    if (!event) return;
+
+    const meeting = !!event.is_meeting;
+    const link = event.meeting_link || '';
+    shareEventSlug = (event.event_title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'event';
+
+    document.getElementById('shareEventTitle').textContent = event.event_title || 'Share Event';
+    document.getElementById('shareMeetingSection').hidden = !meeting || !link;
+    document.getElementById('shareMeetingMissing').hidden = !meeting || !!link;
+    document.getElementById('shareRegisterSection').hidden = meeting;
+
+    if (meeting && link) {
+        setField('shareMeetingLink', link);
+        document.getElementById('shareMeetingOpen').href = /^https?:\/\//i.test(link) ? link : '#';
+    }
+    if (!meeting) {
+        setField('shareRegisterLink', event.registration_url || '');
+        document.getElementById('shareRegisterOpen').href = event.registration_url || '#';
+        renderShareQr(event.registration_url || '');
+    }
+
+    openCrudModal('shareEventModal');
+}
+
+function renderShareQr(url) {
+    const box = document.getElementById('shareQr');
+    if (!box) return;
+    box.innerHTML = '';
+    if (!url) return;
+    if (typeof QRCode === 'undefined') {
+        box.textContent = 'The QR code could not load. Share the link below instead.';
+        return;
+    }
+    new QRCode(box, {
+        text: url,
+        width: 220,
+        height: 220,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+
+function downloadShareQr() {
+    const box = document.getElementById('shareQr');
+    const canvas = box?.querySelector('canvas');
+    const img = box?.querySelector('img');
+    const src = canvas ? canvas.toDataURL('image/png') : (img?.src || '');
+    if (!src) return;
+    const a = document.createElement('a');
+    a.href = src;
+    a.download = shareEventSlug + '-registration-qr.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+}
+
+function copyShareValue(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (!input || !input.value) return;
+    const original = button.innerHTML;
+    const done = () => {
+        button.innerHTML = '<i class="fas fa-check"></i> Copied';
+        setTimeout(() => { button.innerHTML = original; }, 1600);
+    };
+    const fallback = () => { input.select(); document.execCommand('copy'); done(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(input.value).then(done).catch(fallback);
+    } else {
+        fallback();
+    }
+}
+
 function openAddEventModal() {
     const dates = document.getElementById('addEventDates');
     if (dates && !dates.children.length) {
         addEventDateRow('addEventDates');
     }
+    toggleEventTypeFields('add');
     toggleEventLinkFields('add');
     updateStaffPicker('add');
     openCrudModal('addEventModal');
@@ -3209,7 +3411,9 @@ function openEditEventModal(id) {
     setField('editProgramId', event.program_id || '');
     setField('editExpectedParticipants', event.expected_participants || '');
     setField('editDescription', event.description);
+    setField('editMeetingLink', event.meeting_link || '');
     populateEventDates('editEventDates', event.event_days || []);
+    toggleEventTypeFields('edit');
     toggleEventLinkFields('edit');
     setStaffSelection('edit', event.staff_ids || []);
     openCrudModal('editEventModal');
@@ -3409,39 +3613,34 @@ function openEventDetails(
         '';
 
 
-    if (
-        event.google_link
-    ) {
+    const addLink = (href, cls, icon, label) => {
+        if (!/^https?:\/\//i.test(href || '')) return;
+        const a = document.createElement('a');
+        a.href = href;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.className = 'btn ' + cls + ' btn-sm';
+        a.innerHTML = '<i class="' + icon + '"></i> ';
+        a.appendChild(document.createTextNode(label));
+        links.appendChild(a);
+    };
 
-        links.innerHTML += `
-            <a
-                href="${event.google_link}"
-                target="_blank"
-                rel="noopener"
-                class="btn btn-secondary btn-sm"
-            >
-                <i class="fab fa-google"></i>
-                Google Calendar
-            </a>
-        `;
-    }
+    addLink(event.google_link, 'btn-secondary', 'fab fa-google', 'Google Calendar');
+    addLink(event.meeting_link, 'btn-info', 'fas fa-video', 'Join meeting');
 
-
-    if (
-        event.meeting_link
-    ) {
-
-        links.innerHTML += `
-            <a
-                href="${event.meeting_link}"
-                target="_blank"
-                rel="noopener"
-                class="btn btn-info btn-sm"
-            >
-                <i class="fas fa-video"></i>
-                Google Meet
-            </a>
-        `;
+    const imsEvent = event.source === 'ims' ? getImsEvent(event.id) : null;
+    if (imsEvent) {
+        const share = document.createElement('button');
+        share.type = 'button';
+        share.className = 'btn btn-primary btn-sm';
+        share.innerHTML = imsEvent.is_meeting
+            ? '<i class="fas fa-share-nodes"></i> Share meeting link'
+            : '<i class="fas fa-qrcode"></i> Registration link &amp; QR';
+        share.addEventListener('click', function() {
+            closeEventDetails();
+            openShareEventModal(imsEvent.event_id);
+        });
+        links.appendChild(share);
     }
 
 
@@ -3756,6 +3955,18 @@ document.addEventListener(
             openEditEventModal(
                 Number(editId)
             );
+        }
+
+        const shareId =
+            new URLSearchParams(
+                window.location.search
+            ).get('share');
+
+        if (shareId) {
+            openShareEventModal(Number(shareId));
+            const cleanUrl = new URL(window.location.href);
+            cleanUrl.searchParams.delete('share');
+            history.replaceState(null, '', cleanUrl);
         }
 
         const detailsModal =

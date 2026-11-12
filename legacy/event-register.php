@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/mail-function.php';
+require_once __DIR__ . '/includes/event-links.php';
+
+$pwdColumns = ev_links_ensure_schema($conn) || ev_has_column($conn, 'event_registrations', 'is_pwd');
 
 if (!function_exists('e')) {
     function e($v): string
@@ -131,6 +134,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
     $organization = trim((string)($_POST['organization'] ?? ''));
     $special_requirements = trim((string)($_POST['special_requirements'] ?? ''));
 
+    // Disability (PWD) status and photo consent.
+    $is_pwd = !empty($_POST['is_pwd']) ? 1 : 0;
+    $pwd_type = $is_pwd ? trim((string)($_POST['pwd_type'] ?? '')) : '';
+    if (!in_array($pwd_type, ev_pwd_types(), true)) {
+        $pwd_type = '';
+    }
+    if ($pwd_type === 'Other') {
+        $pwd_other = trim((string)($_POST['pwd_type_other'] ?? ''));
+        if ($pwd_other !== '') {
+            $pwd_type = substr('Other: ' . $pwd_other, 0, 100);
+        }
+    }
+    $photo_consent = !empty($_POST['photo_consent']) ? 1 : 0;
+
     // The public lookup no longer sends contact details to the browser, so
     // fill blank email/phone from the selected record here.
     if (($email === '' || $phone === '') && ($member_id || $beneficiary_id)) {
@@ -161,6 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
         $error = 'Email address is required.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
+    } elseif ($is_pwd && $pwd_type === '') {
+        $error = 'Please select the type of disability.';
     }
 
     if ($error === '') {
@@ -198,15 +217,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
                 payment_status,
                 payment_reference,
                 special_requirements,
+                " . ($pwdColumns ? "is_pwd, pwd_type, photo_consent," : "") . "
                 registered_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " . ($pwdColumns ? "?, NULLIF(?, ''), ?, " : "") . "NOW())
         ");
 
         if (!$ins) {
             $error = 'Registration failed: could not prepare registration.';
         } else {
-            $ins->bind_param(
-                "isiisssssssss",
+            $params = [
                 $event_id,
                 $attendanceDate,
                 $beneficiary_id,
@@ -219,8 +238,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['register'])) {
                 $registration_status,
                 $payment_status,
                 $payment_reference,
-                $special_requirements
-            );
+                $special_requirements,
+            ];
+            $types = "isiisssssssss";
+            if ($pwdColumns) {
+                array_push($params, $is_pwd, $pwd_type, $photo_consent);
+                $types .= "isi";
+            }
+            $ins->bind_param($types, ...$params);
 
             if ($ins->execute()) {
                 $registration_id = (int)$ins->insert_id;
@@ -469,6 +494,45 @@ setTimeout(function () {
             <div class="form-section">Additional information</div>
 
             <div class="form-group">
+                <label class="check-row" for="is_pwd">
+                    <input type="checkbox" name="is_pwd" id="is_pwd" value="1" <?= !empty($_POST['is_pwd']) ? 'checked' : '' ?>>
+                    <span>I am a person with a disability (PWD)</span>
+                </label>
+            </div>
+
+            <div class="form-group" id="pwdTypeGroup" <?= !empty($_POST['is_pwd']) ? '' : 'hidden' ?>>
+                <label class="form-label" for="pwd_type">
+                    Type of disability <sup style="color:#b91c1c">*</sup>
+                </label>
+                <select name="pwd_type" id="pwd_type" class="form-control">
+                    <option value="">Select type...</option>
+                    <?php $postedPwd = (string)($_POST['pwd_type'] ?? ''); ?>
+                    <?php foreach (ev_pwd_types() as $pwdOption): ?>
+                        <option value="<?= e($pwdOption) ?>" <?= $postedPwd === $pwdOption ? 'selected' : '' ?>><?= e($pwdOption) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <input
+                    type="text"
+                    name="pwd_type_other"
+                    id="pwd_type_other"
+                    class="form-control"
+                    style="margin-top:8px;"
+                    maxlength="90"
+                    placeholder="Please specify"
+                    value="<?= e($_POST['pwd_type_other'] ?? '') ?>"
+                    <?= $postedPwd === 'Other' ? '' : 'hidden' ?>
+                >
+                <small class="field-hint">This helps us arrange accessibility support. Add any specific needs under Special Requirements.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="check-row" for="photo_consent">
+                    <input type="checkbox" name="photo_consent" id="photo_consent" value="1" <?= !empty($_POST['photo_consent']) ? 'checked' : '' ?>>
+                    <span>I consent to being photographed or filmed at this event, and to those images being used in the organisation's reports and communications.</span>
+                </label>
+            </div>
+
+            <div class="form-group">
                 <label class="form-label" for="special_requirements">Special Requirements</label>
                 <textarea
                     id="special_requirements"
@@ -493,6 +557,24 @@ setTimeout(function () {
 <?php endif; ?>
 
 <script>
+(function () {
+    const pwdBox = document.getElementById('is_pwd');
+    const pwdGroup = document.getElementById('pwdTypeGroup');
+    const pwdType = document.getElementById('pwd_type');
+    const pwdOther = document.getElementById('pwd_type_other');
+    if (!pwdBox || !pwdGroup || !pwdType) return;
+
+    function syncPwd() {
+        pwdGroup.hidden = !pwdBox.checked;
+        pwdType.required = pwdBox.checked;
+        if (pwdOther) pwdOther.hidden = !(pwdBox.checked && pwdType.value === 'Other');
+    }
+
+    pwdBox.addEventListener('change', syncPwd);
+    pwdType.addEventListener('change', syncPwd);
+    syncPwd();
+})();
+
 const typeInputs = document.querySelectorAll('input[name="record_type"]');
 const lookupSection = document.getElementById('lookupSection');
 const lookupInput = document.getElementById('lookupInput');
