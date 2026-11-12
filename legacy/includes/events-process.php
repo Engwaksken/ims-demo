@@ -279,7 +279,7 @@ if (isset($_POST['add_event'])) {
     }
 
     $stmt->bind_param(
-        "sssssssiiisss",
+        "sssssssiisiss",
         $event_title,
         $event_type,
         $event_date,
@@ -392,7 +392,7 @@ if (isset($_POST['edit_event'])) {
     }
 
     $stmt->bind_param(
-        "sssssssiiisssi",
+        "sssssssiisissi",
         $event_title,
         $event_type,
         $event_date,
