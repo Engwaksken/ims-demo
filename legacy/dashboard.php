@@ -226,31 +226,31 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
 
     <div class="dash-grid-2">
         <!-- Program status donut -->
-        <div class="panel dash-collapsible" data-collapse-key="program-status">
+        <div class="panel dash-collapsible is-collapsed" data-collapse-key="program-status">
             <div class="panel-head">
                 <h3>
-                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-program-status">
+                    <button type="button" class="dash-collapse-btn" aria-expanded="false" aria-controls="dashBody-program-status">
                         <i class="fas fa-sitemap" style="color:var(--brand-500)" aria-hidden="true"></i> Program Status
                         <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
                     </button>
                 </h3>
             </div>
-            <div class="panel-body" id="dashBody-program-status">
+            <div class="panel-body" id="dashBody-program-status" hidden>
                 <div class="chart-wrap"><canvas id="programStatusChart"></canvas></div>
             </div>
         </div>
 
         <!-- Project status donut -->
-        <div class="panel dash-collapsible" data-collapse-key="project-status">
+        <div class="panel dash-collapsible is-collapsed" data-collapse-key="project-status">
             <div class="panel-head">
                 <h3>
-                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-project-status">
+                    <button type="button" class="dash-collapse-btn" aria-expanded="false" aria-controls="dashBody-project-status">
                         <i class="fas fa-project-diagram" style="color:var(--blue-fg)" aria-hidden="true"></i> Project Status
                         <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
                     </button>
                 </h3>
             </div>
-            <div class="panel-body" id="dashBody-project-status">
+            <div class="panel-body" id="dashBody-project-status" hidden>
                 <div class="chart-wrap"><canvas id="projectStatusChart"></canvas></div>
             </div>
         </div>
@@ -259,17 +259,17 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
     <!-- -- Overview quick-lists ------------------------------ -->
     <div class="dash-grid-2">
         <!-- Recent programs list -->
-        <div class="panel dash-collapsible" data-collapse-key="recent-programs">
+        <div class="panel dash-collapsible is-collapsed" data-collapse-key="recent-programs">
             <div class="panel-head">
                 <h3>
-                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-recent-programs">
+                    <button type="button" class="dash-collapse-btn" aria-expanded="false" aria-controls="dashBody-recent-programs">
                         <i class="fas fa-sitemap" style="color:var(--brand-500)" aria-hidden="true"></i> Recent Programs <span class="badge badge-light dash-collapse-count"><?= count($recent_programs) ?></span>
                         <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
                     </button>
                 </h3>
                 <a href="programs" class="btn btn-sm btn-soft">View All</a>
             </div>
-            <div class="panel-body no-pad" id="dashBody-recent-programs">
+            <div class="panel-body no-pad" id="dashBody-recent-programs" hidden>
                 <?php if (empty($recent_programs)): ?>
                     <div class="dash-empty"><i class="fas fa-sitemap"></i><p>No programs found</p></div>
                 <?php else: ?>
@@ -298,17 +298,17 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
         </div>
 
         <!-- Recent projects list -->
-        <div class="panel dash-collapsible" data-collapse-key="recent-projects">
+        <div class="panel dash-collapsible is-collapsed" data-collapse-key="recent-projects">
             <div class="panel-head">
                 <h3>
-                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-recent-projects">
+                    <button type="button" class="dash-collapse-btn" aria-expanded="false" aria-controls="dashBody-recent-projects">
                         <i class="fas fa-project-diagram" style="color:var(--blue-fg)" aria-hidden="true"></i> Recent Projects <span class="badge badge-light dash-collapse-count"><?= count($recent_projects) ?></span>
                         <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
                     </button>
                 </h3>
                 <a href="projects" class="btn btn-sm btn-soft">View All</a>
             </div>
-            <div class="panel-body no-pad" id="dashBody-recent-projects">
+            <div class="panel-body no-pad" id="dashBody-recent-projects" hidden>
                 <?php if (empty($recent_projects)): ?>
                     <div class="dash-empty"><i class="fas fa-project-diagram"></i><p>No projects found</p></div>
                 <?php else: ?>
@@ -653,7 +653,7 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
 </div><!-- /.assets-wrap -->
 
 <script>
-/* Collapsible overview panels: state remembered per browser. */
+/* Collapsible overview panels: collapsed by default; state remembered per browser. */
 (function () {
     var panels = Array.prototype.slice.call(document.querySelectorAll('.dash-collapsible'));
     if (!panels.length) return;
@@ -672,8 +672,8 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
     }
 
     panels.forEach(function (panel) {
-        var collapsed = false;
-        try { collapsed = localStorage.getItem(storeKey(panel)) === '1'; } catch (e) {}
+        var collapsed = true;
+        try { collapsed = localStorage.getItem(storeKey(panel)) !== '0'; } catch (e) {}
         setOpen(panel, !collapsed, false);
         panel.querySelector('.dash-collapse-btn').addEventListener('click', function () {
             setOpen(panel, this.getAttribute('aria-expanded') !== 'true', true);
