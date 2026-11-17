@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/documents-library.php';
+
 function doc_table_exists(mysqli $conn, string $table): bool
 {
     $res = $conn->query(
@@ -299,6 +301,10 @@ function doc_get_folder(
         return null;
     }
 
+    if (!empty($row['deleted_at']) || doc_lib_folder_in_bin($conn, $folderId)) {
+        return null;
+    }
+
     if (!doc_can($conn, 'folder', $folderId, $userId, $role, 'view')) {
         return null;
     }
@@ -356,6 +362,7 @@ function doc_recursive_folder_file_counts(mysqli $conn): array
             folder_id,
             COALESCE(parent_folder_id, 0) AS parent_folder_id
         FROM document_folders
+        WHERE 1=1" . doc_live_sql($conn, '', 'document_folders') . "
     ");
 
     if ($res) {
@@ -374,7 +381,7 @@ function doc_recursive_folder_file_counts(mysqli $conn): array
             folder_id,
             COUNT(*) AS cnt
         FROM documents
-        WHERE folder_id IS NOT NULL
+        WHERE folder_id IS NOT NULL" . doc_live_sql($conn) . "
         GROUP BY folder_id
     ");
 
@@ -458,7 +465,7 @@ function doc_get_folders(
         FROM document_folders f
         LEFT JOIN users u
             ON u.user_id = f.created_by
-        WHERE COALESCE(f.parent_folder_id, 0) = ?
+        WHERE COALESCE(f.parent_folder_id, 0) = ?" . doc_live_sql($conn, 'f', 'document_folders') . "
     ";
 
     $types = 'i';
@@ -560,7 +567,7 @@ function doc_get_documents(
             ON pr.id = d.program_id
         LEFT JOIN users u
             ON u.user_id = d.uploaded_by
-        WHERE COALESCE(d.folder_id, 0) = ?
+        WHERE COALESCE(d.folder_id, 0) = ?" . doc_live_sql($conn, 'd') . "
     ";
 
     $types = 'i';
@@ -681,7 +688,7 @@ function doc_get_movable_folder_options(
     mysqli $conn,
     int $userId,
     string $role,
-    int $excludeFolderId = 0
+    int|array $excludeFolderId = 0
 ): array {
     $options = [
         [
@@ -704,6 +711,7 @@ function doc_get_movable_folder_options(
             COALESCE(parent_folder_id, 0) AS parent_folder_id,
             folder_name
         FROM document_folders
+        WHERE 1=1" . doc_live_sql($conn, '', 'document_folders') . "
         ORDER BY folder_name
     ");
 
@@ -721,8 +729,8 @@ function doc_get_movable_folder_options(
 
     $excluded = [];
 
-    if ($excludeFolderId > 0) {
-        $stack = [$excludeFolderId];
+    if ($excludeFolderId) {
+        $stack = array_map('intval', (array)$excludeFolderId);
 
         while ($stack) {
             $current = array_pop($stack);
@@ -908,6 +916,7 @@ function doc_repository_stats(
         $res = $conn->query("
             SELECT folder_id
             FROM document_folders
+            WHERE 1=1" . doc_live_sql($conn, '', 'document_folders') . "
         ");
 
         if ($res) {
@@ -936,6 +945,7 @@ function doc_repository_stats(
             file_size,
             uploaded_by
         FROM documents
+        WHERE 1=1" . doc_live_sql($conn) . "
     ");
 
     if ($res) {

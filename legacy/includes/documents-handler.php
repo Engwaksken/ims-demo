@@ -229,6 +229,9 @@ $action = trim((string)(
     ?? ''
 ));
 
+// Library features (recycle bin, favourites, versions, check-out, activity).
+require __DIR__ . '/documents-library-actions.php';
+
 if ($action === 'create_folder') {
     $parentFolderId = (int)($_POST['parent_folder_id'] ?? 0);
 

@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/includes/documents-library.php'; // doc_live_sql(): hide recycle-bin files
 
 /*
  * view-report.php
@@ -230,7 +231,7 @@ switch ($report_type) {
                 d.donor_name,
                 (SELECT COUNT(*) FROM programs_beneficiaries pb WHERE pb.program_id = p.id) AS beneficiary_count,
                 (SELECT COUNT(*) FROM indicators i WHERE i.program_id = p.id) AS indicator_count,
-                (SELECT COUNT(*) FROM documents doc WHERE doc.program_id = p.id) AS document_count,
+                (SELECT COUNT(*) FROM documents doc WHERE doc.program_id = p.id" . doc_live_sql($conn, 'doc') . ") AS document_count,
                 (
                     SELECT AVG(
                         CASE 
@@ -264,7 +265,7 @@ switch ($report_type) {
                 d.donor_name,
                 (SELECT COUNT(*) FROM project_beneficiaries pb WHERE pb.project_id = p.project_id) AS beneficiary_count,
                 (SELECT COUNT(*) FROM indicators i WHERE i.project_id = p.project_id) AS indicator_count,
-                (SELECT COUNT(*) FROM documents doc WHERE doc.project_id = p.project_id) AS document_count,
+                (SELECT COUNT(*) FROM documents doc WHERE doc.project_id = p.project_id" . doc_live_sql($conn, 'doc') . ") AS document_count,
                 (
                     SELECT AVG(
                         CASE 

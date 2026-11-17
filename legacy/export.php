@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/documents-library.php'; // doc_live_sql(): hide recycle-bin files
 
 check_login();
 
@@ -84,7 +85,7 @@ switch ($type) {
                 d.donor_name,
                 (SELECT COUNT(*) FROM programs_beneficiaries pb WHERE pb.program_id = p.id) AS participant_count,
                 (SELECT COUNT(*) FROM indicators i     WHERE i.program_id   = p.id) AS indicator_count,
-                (SELECT COUNT(*) FROM documents doc    WHERE doc.program_id = p.id) AS document_count
+                (SELECT COUNT(*) FROM documents doc    WHERE doc.program_id = p.id" . doc_live_sql($conn, 'doc') . ") AS document_count
             FROM programs p
             LEFT JOIN donors d ON d.donor_id = p.donor_id
             {$where}
@@ -116,7 +117,7 @@ switch ($type) {
                 d.donor_name,
                 (SELECT COUNT(*) FROM project_beneficiaries pb WHERE pb.project_id = p.project_id) AS participant_count,
                 (SELECT COUNT(*) FROM indicators i  WHERE i.project_id   = p.project_id) AS indicator_count,
-                (SELECT COUNT(*) FROM documents doc WHERE doc.project_id = p.project_id) AS document_count
+                (SELECT COUNT(*) FROM documents doc WHERE doc.project_id = p.project_id" . doc_live_sql($conn, 'doc') . ") AS document_count
             FROM projects p
             LEFT JOIN donors d ON d.donor_id = p.donor_id
             {$where}
@@ -320,7 +321,7 @@ switch ($type) {
             LEFT JOIN projects p  ON p.project_id  = d.project_id
             LEFT JOIN programs pr ON pr.id           = d.program_id
             LEFT JOIN users u     ON u.user_id       = d.uploaded_by
-            WHERE 1=1 {$scope}
+            WHERE 1=1 {$scope}" . doc_live_sql($conn, 'd') . "
             ORDER BY d.upload_date DESC
         ");
         while ($r = $res->fetch_assoc()) {

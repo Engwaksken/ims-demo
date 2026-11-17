@@ -1,6 +1,7 @@
 <?php
 $page_title = 'Program Details';
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/documents-library.php'; // doc_live_sql(): hide recycle-bin files
 
 check_role(['Administrator', 'Programs Lead', 'MEAL Lead', 'Project Officer', 'Staff']);
 
@@ -69,7 +70,7 @@ while ($row = $result->fetch_assoc()) { $beneficiaries[] = $row; }
 
 /* -- Documents (latest 5) --------------------------------------------- */
 $documents = [];
-$result = $conn->query("SELECT * FROM documents WHERE program_id = $program_id ORDER BY upload_date DESC LIMIT 5");
+$result = $conn->query("SELECT * FROM documents WHERE program_id = $program_id" . doc_live_sql($conn) . " ORDER BY upload_date DESC LIMIT 5");
 while ($row = $result->fetch_assoc()) { $documents[] = $row; }
 
 /* -- Progress updates (latest 3) ------------------------------------- */
@@ -80,7 +81,7 @@ while ($row = $result->fetch_assoc()) { $progress_updates[] = $row; }
 /* -- Counts & calculations -------------------------------------------- */
 $total_beneficiaries  = (int) $conn->query("SELECT COUNT(*) AS c FROM programs_beneficiaries WHERE program_id = $program_id")->fetch_assoc()['c'];
 $active_beneficiaries = (int) $conn->query("SELECT COUNT(*) AS c FROM programs_beneficiaries WHERE program_id = $program_id AND status = 'Active'")->fetch_assoc()['c'];
-$total_documents      = (int) $conn->query("SELECT COUNT(*) AS c FROM documents WHERE program_id = $program_id")->fetch_assoc()['c'];
+$total_documents      = (int) $conn->query("SELECT COUNT(*) AS c FROM documents WHERE program_id = $program_id" . doc_live_sql($conn))->fetch_assoc()['c'];
 
 $total_indicators     = count($indicators);
 $achieved_indicators  = count(array_filter($indicators, fn($i) => $i['achievement_percentage'] >= 100));
