@@ -346,6 +346,7 @@ include 'includes/header.php';
         <div class="hero-actions">
             <a href="events" class="btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> Events</a>
             <a href="event-attendance?id=<?= $eventId ?>" class="btn btn-secondary"><i class="fas fa-user-check" aria-hidden="true"></i> Mark attendance</a>
+            <a href="event-outreach?id=<?= $eventId ?>" class="btn btn-secondary"><i class="fas fa-envelope-open-text" aria-hidden="true"></i> Invite &amp; thank</a>
             <a href="<?= $h($query(['export' => 'csv'])) ?>" class="btn btn-secondary"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
             <a href="<?= $h($query(['export' => 'pdf'])) ?>" class="btn btn-primary"><i class="fas fa-file-pdf" aria-hidden="true"></i> PDF</a>
         </div>

@@ -116,6 +116,8 @@ final class ModuleRegistry
         'event-checkin.php' => 'event-checkin.php',
         'event-confirm' => 'event-confirm.php',
         'event-confirm.php' => 'event-confirm.php',
+        'event-outreach' => 'event-outreach.php',
+        'event-outreach.php' => 'event-outreach.php',
         'event-report' => 'event-report.php',
         'event-report.php' => 'event-report.php',
         'event-register' => 'event-register.php',

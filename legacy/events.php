@@ -2629,6 +2629,14 @@ body.ev-modal-open { overflow: hidden; }
                                                 >
                                                     <i class="fas fa-chart-column"></i>
                                                 </a>
+                                            <a
+                                                    href="event-outreach?id=<?= (int)$event['event_id'] ?>"
+                                                    class="btn btn-soft btn-sm"
+                                                    title="Invite people &amp; thank attendees"
+                                                    aria-label="Invite people and thank attendees"
+                                                >
+                                                    <i class="fas fa-envelope-open-text"></i>
+                                                </a>
                                             <?php endif; ?>
 
                                             <?php if ($canDeleteEvents): ?>
