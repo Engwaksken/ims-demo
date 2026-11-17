@@ -252,3 +252,70 @@
 @media (max-width: 400px) {
     .dash-stats { grid-template-columns: 1fr; }
 }
+
+/* --------------------------------------------------------------------------
+   Collapsible overview panels (Program/Project Status, Recent lists)
+   -------------------------------------------------------------------------- */
+
+.dash-collapse-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 8px);
+    margin-bottom: calc(var(--space-2, 8px) * -1);
+}
+
+.dash-collapsible .panel-head h3 {
+    flex: 1;
+    min-width: 0;
+}
+
+.dash-collapse-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.dash-collapse-btn:focus-visible {
+    outline: none;
+    border-radius: var(--radius-sm, 6px);
+    box-shadow: var(--focus-ring, 0 0 0 3px var(--brand-200));
+}
+
+.dash-collapse-icon {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--ink-400);
+    transition: transform .2s;
+}
+
+.dash-collapse-btn[aria-expanded="false"] .dash-collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.dash-collapse-count {
+    font-size: 11px;
+}
+
+.dash-collapsible.is-collapsed .panel-head {
+    border-bottom: 0;
+}
+
+.dash-grid-2:has(.dash-collapsible) {
+    align-items: start;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dash-collapse-icon { transition: none; }
+}
+
+.dash-collapsible .panel-body[hidden] {
+    display: none !important;
+}

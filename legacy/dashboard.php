@@ -215,23 +215,42 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
     ----------------------------------------------------------- -->
     <?php if ($active_tab === 'overview'): ?>
 
+    <div class="dash-collapse-bar">
+        <button type="button" class="btn btn-sm btn-soft" data-dash-collapse-all="expand">
+            <i class="fas fa-up-right-and-down-left-from-center" aria-hidden="true"></i> Expand all
+        </button>
+        <button type="button" class="btn btn-sm btn-soft" data-dash-collapse-all="collapse">
+            <i class="fas fa-down-left-and-up-right-to-center" aria-hidden="true"></i> Collapse all
+        </button>
+    </div>
+
     <div class="dash-grid-2">
         <!-- Program status donut -->
-        <div class="panel">
+        <div class="panel dash-collapsible" data-collapse-key="program-status">
             <div class="panel-head">
-                <h3><i class="fas fa-sitemap" style="color:var(--brand-500)"></i> Program Status</h3>
+                <h3>
+                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-program-status">
+                        <i class="fas fa-sitemap" style="color:var(--brand-500)" aria-hidden="true"></i> Program Status
+                        <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
+                    </button>
+                </h3>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" id="dashBody-program-status">
                 <div class="chart-wrap"><canvas id="programStatusChart"></canvas></div>
             </div>
         </div>
 
         <!-- Project status donut -->
-        <div class="panel">
+        <div class="panel dash-collapsible" data-collapse-key="project-status">
             <div class="panel-head">
-                <h3><i class="fas fa-project-diagram" style="color:var(--blue-fg)"></i> Project Status</h3>
+                <h3>
+                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-project-status">
+                        <i class="fas fa-project-diagram" style="color:var(--blue-fg)" aria-hidden="true"></i> Project Status
+                        <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
+                    </button>
+                </h3>
             </div>
-            <div class="panel-body">
+            <div class="panel-body" id="dashBody-project-status">
                 <div class="chart-wrap"><canvas id="projectStatusChart"></canvas></div>
             </div>
         </div>
@@ -240,12 +259,17 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
     <!-- -- Overview quick-lists ------------------------------ -->
     <div class="dash-grid-2">
         <!-- Recent programs list -->
-        <div class="panel">
+        <div class="panel dash-collapsible" data-collapse-key="recent-programs">
             <div class="panel-head">
-                <h3><i class="fas fa-sitemap" style="color:var(--brand-500)"></i> Recent Programs</h3>
+                <h3>
+                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-recent-programs">
+                        <i class="fas fa-sitemap" style="color:var(--brand-500)" aria-hidden="true"></i> Recent Programs <span class="badge badge-light dash-collapse-count"><?= count($recent_programs) ?></span>
+                        <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
+                    </button>
+                </h3>
                 <a href="programs" class="btn btn-sm btn-soft">View All</a>
             </div>
-            <div class="panel-body no-pad">
+            <div class="panel-body no-pad" id="dashBody-recent-programs">
                 <?php if (empty($recent_programs)): ?>
                     <div class="dash-empty"><i class="fas fa-sitemap"></i><p>No programs found</p></div>
                 <?php else: ?>
@@ -274,12 +298,17 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
         </div>
 
         <!-- Recent projects list -->
-        <div class="panel">
+        <div class="panel dash-collapsible" data-collapse-key="recent-projects">
             <div class="panel-head">
-                <h3><i class="fas fa-project-diagram" style="color:var(--blue-fg)"></i> Recent Projects</h3>
+                <h3>
+                    <button type="button" class="dash-collapse-btn" aria-expanded="true" aria-controls="dashBody-recent-projects">
+                        <i class="fas fa-project-diagram" style="color:var(--blue-fg)" aria-hidden="true"></i> Recent Projects <span class="badge badge-light dash-collapse-count"><?= count($recent_projects) ?></span>
+                        <i class="fas fa-chevron-down dash-collapse-icon" aria-hidden="true"></i>
+                    </button>
+                </h3>
                 <a href="projects" class="btn btn-sm btn-soft">View All</a>
             </div>
-            <div class="panel-body no-pad">
+            <div class="panel-body no-pad" id="dashBody-recent-projects">
                 <?php if (empty($recent_projects)): ?>
                     <div class="dash-empty"><i class="fas fa-project-diagram"></i><p>No projects found</p></div>
                 <?php else: ?>
@@ -624,6 +653,41 @@ if (!isset($visible_tabs[$active_tab])) $active_tab = $first_tab;
 </div><!-- /.assets-wrap -->
 
 <script>
+/* Collapsible overview panels: state remembered per browser. */
+(function () {
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.dash-collapsible'));
+    if (!panels.length) return;
+
+    function storeKey(panel) { return 'ims.dashboard.collapsed.' + panel.dataset.collapseKey; }
+
+    function setOpen(panel, open, remember) {
+        var btn = panel.querySelector('.dash-collapse-btn');
+        var body = document.getElementById(btn.getAttribute('aria-controls'));
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        panel.classList.toggle('is-collapsed', !open);
+        if (body) body.hidden = !open;
+        if (remember) {
+            try { localStorage.setItem(storeKey(panel), open ? '0' : '1'); } catch (e) {}
+        }
+    }
+
+    panels.forEach(function (panel) {
+        var collapsed = false;
+        try { collapsed = localStorage.getItem(storeKey(panel)) === '1'; } catch (e) {}
+        setOpen(panel, !collapsed, false);
+        panel.querySelector('.dash-collapse-btn').addEventListener('click', function () {
+            setOpen(panel, this.getAttribute('aria-expanded') !== 'true', true);
+        });
+    });
+
+    document.querySelectorAll('[data-dash-collapse-all]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var open = btn.dataset.dashCollapseAll === 'expand';
+            panels.forEach(function (panel) { setOpen(panel, open, true); });
+        });
+    });
+})();
+
 Chart.defaults.font.family = getComputedStyle(document.documentElement).getPropertyValue('--font-body') || 'DM Sans, sans-serif';
 Chart.defaults.font.size   = 12;
 Chart.defaults.color       = '#374151';
