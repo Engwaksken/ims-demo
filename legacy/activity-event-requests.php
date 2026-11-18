@@ -195,6 +195,35 @@ function aer_h($v):string{return htmlspecialchars((string)$v,ENT_QUOTES,'UTF-8')
 @media(max-width:700px){.aer-page{padding:14px}.aer-page section,.aer-request{padding:16px}.aer-page button,.aer-button{width:100%}.aer-tab-panel{grid-template-columns:1fr}.aer-tab-panel .aer-wide{grid-column:auto}.aer-tab-nav button,.aer-step-actions button{width:auto}.aer-tab-nav{flex-wrap:wrap}}
 </style>
 <style>
+/* Standard-width concept form */
+#requestModal{width:min(760px,calc(100vw - 32px));padding:0;border:1px solid var(--line,#dce3ea);border-radius:14px}
+#requestModal .aer-dialog-head{position:sticky;top:0;z-index:2;padding:18px 24px;background:var(--surface,#fff);border-bottom:1px solid var(--line,#dce3ea)}
+#requestModal .aer-dialog-head h2{margin:0;font-size:1.15rem}
+#requestModal .aer-dialog-head button{min-height:34px;padding:6px 12px;font-size:.85rem}
+#requestModal form{margin:0;padding:18px 24px 22px;gap:16px}
+#requestModal .aer-tab-nav{gap:4px;padding-bottom:0}
+#requestModal .aer-tab-nav button{min-height:38px;padding:8px 14px;font-size:.88rem;border-radius:8px 8px 0 0;border-bottom:2px solid transparent}
+#requestModal .aer-tab-nav button[aria-selected="true"]{background:transparent;color:var(--brand-600,#1769aa);border-bottom-color:var(--brand-600,#1769aa)}
+#requestModal .aer-tab-panel{gap:14px 18px}
+#requestModal label{font-size:.875rem;gap:6px}
+#requestModal input,#requestModal select,#requestModal textarea{min-height:40px;padding:8px 12px;font-size:.92rem}
+#requestModal textarea{min-height:96px;resize:vertical}
+#requestModal input:focus,#requestModal select:focus,#requestModal textarea:focus{outline:none;border-color:var(--brand-600,#1769aa);box-shadow:0 0 0 3px #1769aa26}
+#requestModal button{min-height:38px;padding:8px 14px;font-size:.88rem}
+#requestModal .aer-step-actions{padding-top:14px;border-top:1px solid var(--line,#dce3ea)}
+#requestModal .aer-signature-canvas{width:100%;max-width:440px}
+#budgetItemsTable{min-width:0;table-layout:fixed}
+#budgetItemsTable th,#budgetItemsTable td{padding:8px 6px;vertical-align:middle}
+#budgetItemsTable th:nth-child(1){width:40%}#budgetItemsTable th:nth-child(2){width:13%}#budgetItemsTable th:nth-child(3){width:19%}#budgetItemsTable th:nth-child(4){width:16%}#budgetItemsTable th:nth-child(5){width:12%}
+#budgetItemsTable .budget-line-total{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+#budgetItemsTable .remove-budget-item{padding:6px 8px;font-size:.8rem;width:100%}
+@media(max-width:760px){
+#requestModal .aer-dialog-head,#requestModal form{padding-left:16px;padding-right:16px}
+#budgetItemsTable td:nth-child(1)::before{content:'Item'}#budgetItemsTable td:nth-child(2)::before{content:'Quantity'}#budgetItemsTable td:nth-child(3)::before{content:'Unit cost'}#budgetItemsTable td:nth-child(4)::before{content:'Total'}#budgetItemsTable td:nth-child(5)::before{content:''}
+#budgetItemsTable th,#budgetItemsTable td{width:auto}
+}
+</style>
+<style>
 .aer-truncate{display:inline-block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}.aer-request-title{max-width:210px;font-weight:700}.aer-activity-title{max-width:165px}
 @media(max-width:760px){.aer-request-title{max-width:calc(100vw - 230px)}.aer-activity-title{max-width:calc(100vw - 245px)}}
 </style>
