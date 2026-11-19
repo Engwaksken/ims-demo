@@ -20,6 +20,12 @@ check_role(IMS_ALL_ROLES);
 
 $can_open_member_folders = ims_allowed('members.folder_view', ['Administrator', 'Operations/Admin', 'Finance', 'Accountant', 'Executive Director'], 'View and export member folders (contracts, receipts, documents)');
 
+// Workspace packages (seat limits) and team members: see hub-team.php.
+require_once __DIR__ . '/includes/hub-network.php';
+$hub_team_ready = hubnet_ensure_schema($conn);
+$hub_packages = $hub_team_ready ? hubnet_packages($conn) : [];
+$can_view_team = ims_allowed('hub_team.view', ['Administrator', 'Operations/Admin', 'IT Officer'], 'View hub team members and internet access');
+
 // Get active tab
 $active_tab = isset($_GET['tab']) ? sanitize_input($_GET['tab']) : 'members';
 
@@ -250,10 +256,18 @@ if (isset($_GET['edit_receipt'])) {
     }
     
     $members = [];
-    $query = "SELECT m.*, u.full_name, u.email 
-              FROM members m 
-              LEFT JOIN users u ON m.user_id = u.user_id 
-              WHERE $filter 
+    $query = $hub_team_ready
+        ? "SELECT m.*, u.full_name, u.email, p.name AS package_name, p.max_seats,
+                  1 + (SELECT COUNT(*) FROM hub_team_members t WHERE t.member_id = m.member_id AND t.status = 'Active') AS seats_used
+           FROM members m
+           LEFT JOIN users u ON m.user_id = u.user_id
+           LEFT JOIN hub_space_packages p ON p.package_id = m.space_package_id
+           WHERE $filter
+           ORDER BY m.created_at DESC"
+        : "SELECT m.*, u.full_name, u.email
+              FROM members m
+              LEFT JOIN users u ON m.user_id = u.user_id
+              WHERE $filter
               ORDER BY m.created_at DESC";
     $result = $conn->query($query);
     while ($row = $result->fetch_assoc()) {
@@ -366,7 +380,14 @@ if (isset($_GET['edit_receipt'])) {
                                         <?php echo hub_e($member['member_type']); ?>
                                     </span>
                                 </td>
-                                <td><?php echo hub_e($member['subscription_plan']); ?></td>
+                                <td>
+                                    <?php echo hub_e($member['subscription_plan']); ?>
+                                    <?php if (!empty($member['package_name'])): ?>
+                                        <?php $seats_over = (int)$member['seats_used'] > (int)$member['max_seats']; ?>
+                                        <small class="cell-muted"><?php echo hub_e($member['package_name']); ?>
+                                            &middot; <span class="<?php echo $seats_over ? 'ho-expiry-note' : ''; ?>"><?php echo (int)$member['seats_used']; ?>/<?php echo (int)$member['max_seats']; ?> seats</span></small>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo format_currency($member['subscription_amount']); ?></td>
                                 <td><?php echo $member['subscription_start_date'] ? date('d M Y', strtotime($member['subscription_start_date'])) : 'N/A'; ?></td>
                                 <td><?php echo $member['subscription_end_date'] ? date('d M Y', strtotime($member['subscription_end_date'])) : 'N/A'; ?></td>
@@ -395,6 +416,12 @@ if (isset($_GET['edit_receipt'])) {
                                            class="btn btn-warning btn-sm" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        <?php if ($can_view_team && $hub_team_ready): ?>
+                                            <a href="hub-team?member_id=<?php echo (int)$member['member_id']; ?>"
+                                               class="btn btn-success btn-sm" title="Team members &amp; internet">
+                                                <i class="fas fa-users" aria-hidden="true"></i><span class="sr-only">Team</span>
+                                            </a>
+                                        <?php endif; ?>
                                         <?php if ($can_open_member_folders): ?>
                                             <a href="member-folder?id=<?php echo (int)$member['member_id']; ?>"
                                                class="btn btn-primary btn-sm" title="Folder: contracts, receipts &amp; documents">
@@ -1497,6 +1524,25 @@ new Chart(revenueTrendCtx, {
                     </div>
                 </div>
                 
+                <?php if ($hub_team_ready): ?>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="space_package_id">Workspace package</label>
+                        <select id="space_package_id" name="space_package_id" class="form-control">
+                            <option value="">Not set</option>
+                            <?php foreach ($hub_packages as $package): ?>
+                                <?php if (empty($package['is_active']) && (int)($edit_member['space_package_id'] ?? 0) !== (int)$package['package_id']) continue; ?>
+                                <option value="<?php echo (int)$package['package_id']; ?>"
+                                    <?php echo (int)($edit_member['space_package_id'] ?? 0) === (int)$package['package_id'] ? 'selected' : ''; ?>>
+                                    <?php echo hub_e($package['name']); ?> (max <?php echo (int)$package['max_seats']; ?> <?php echo (int)$package['max_seats'] === 1 ? 'person' : 'people'; ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="cell-muted">Sets how many people (including this member) can be registered. Team members are added after saving.</small>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="subscription_plan" class="required">Subscription Plan</label>

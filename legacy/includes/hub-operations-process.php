@@ -8,6 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/mail-function.php';
+require_once __DIR__ . '/hub-network.php';
 
 if (
     !isset($_SESSION['user_id'])
@@ -63,6 +64,20 @@ function posti(string $key, int $default = 0): int
 function geti(string $key, int $default = 0): int
 {
     return (int)($_GET[$key] ?? $default);
+}
+
+/** Selected workspace package id, or null for none / unknown. */
+function hub_package_from_post(mysqli $conn): ?int
+{
+    $packageId = (int)($_POST['space_package_id'] ?? 0);
+
+    if ($packageId <= 0 || !hubnet_ensure_schema($conn)) {
+        return null;
+    }
+
+    return fetch_one($conn, 'SELECT package_id FROM hub_space_packages WHERE package_id = ? LIMIT 1', 'i', [$packageId])
+        ? $packageId
+        : null;
 }
 
 function null_if_empty(string $value): ?string
@@ -294,6 +309,14 @@ if (isset($_POST['add_member'])) {
         );
         $stmt->close();
 
+        $new_member_id = (int)$conn->insert_id;
+        $package_id = hub_package_from_post($conn);
+
+        if ($package_id !== null) {
+            $stmt = execute_stmt($conn, 'UPDATE members SET space_package_id = ? WHERE member_id = ?', 'ii', [$package_id, $new_member_id]);
+            $stmt->close();
+        }
+
         logActivity($conn, $user_id, 'Add Member', "Added member $membership_no", $ip);
 
         $conn->commit();
@@ -309,7 +332,19 @@ if (isset($_POST['add_member'])) {
             );
         }
 
-        redirect_tab('members', null, "Member added successfully! #: $membership_no. Login details were emailed to the member.");
+        $success = "Member added successfully! #: $membership_no. Login details were emailed to the member.";
+
+        // Next step: register the company's team within its package seats.
+        if (
+            $package_id !== null
+            && ims_allowed('hub_team.manage', ['Administrator', 'Operations/Admin'], 'Register and edit hub team members and their devices')
+        ) {
+            $_SESSION['success'] = $success . ' Now add the team members and their devices.';
+            header('Location: ../hub-team?member_id=' . $new_member_id);
+            exit();
+        }
+
+        redirect_tab('members', null, $success);
     } catch (Exception $e) {
         $conn->rollback();
         redirect_tab('members', $e->getMessage());
@@ -414,10 +449,26 @@ if (isset($_POST['edit_member'])) {
         );
         $stmt->close();
 
+        if (array_key_exists('space_package_id', $_POST) && hubnet_ensure_schema($conn)) {
+            $package_id = hub_package_from_post($conn);
+            $stmt = execute_stmt($conn, 'UPDATE members SET space_package_id = ? WHERE member_id = ?', 'ii', [$package_id, $member_id]);
+            $stmt->close();
+        }
+
         logActivity($conn, $user_id, 'Edit Member', "Updated member: $membership_number", $ip);
 
         $conn->commit();
-        redirect_tab('members', null, 'Member updated successfully!');
+
+        // Status / end date changes connect or disconnect the company's devices.
+        $network_note = '';
+        if (hubnet_ensure_schema($conn) && hubnet_settings($conn)['enabled']) {
+            $network = hubnet_apply_member($conn, $member_id, $user_id, 'member-edit');
+            if ($network['applied'] > 0 || $network['failed'] > 0) {
+                $network_note = ' ' . $network['message'];
+            }
+        }
+
+        redirect_tab('members', null, 'Member updated successfully!' . $network_note);
     } catch (Exception $e) {
         $conn->rollback();
         redirect_tab('members', 'Error updating member: ' . $e->getMessage());
@@ -454,9 +505,24 @@ if (isset($_GET['delete_member']) && ims_allowed('members.delete', ['Administrat
     $member_user_id    = (int)($member['user_id'] ?? 0);
     $full_name         = (string)($member['full_name'] ?? '');
 
+    // Take the company's devices off pfSense before their records go.
+    if (hubnet_ensure_schema($conn)) {
+        $member_devices = hubnet_devices_where($conn, 'd.member_id = ?', 'i', [$member_id]);
+        if ($member_devices !== []) {
+            hubnet_apply($conn, $member_devices, $user_id, 'member-delete', 'remove');
+        }
+    }
+
     $conn->begin_transaction();
 
     try {
+        if (hubnet_ensure_schema($conn)) {
+            $stmt = execute_stmt($conn, "DELETE FROM hub_network_devices WHERE member_id = ?", "i", [$member_id]);
+            $stmt->close();
+            $stmt = execute_stmt($conn, "DELETE FROM hub_team_members WHERE member_id = ?", "i", [$member_id]);
+            $stmt->close();
+        }
+
         $stmt = execute_stmt($conn, "DELETE FROM members WHERE member_id = ?", "i", [$member_id]);
         $stmt->close();
 

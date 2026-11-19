@@ -21,6 +21,10 @@ emails and PDF/print views.
 5. Optional daily cron for automatic reminders to applicants with unsubmitted draft applications
    (days before the deadline set under Manage Applications > Draft reminders):
    `0 8 * * * php /path/to/legacy/cron/application-draft-reminders.php`
+6. Optional cron for automatic hub internet enforcement on pfSense (disconnect expired /
+   suspended members, reconnect active ones). Needs `tools/pfsense/ims-cp-agent.php` installed
+   on the firewall and configured under Hub Team & Internet > Packages & pfSense:
+   `*/5 * * * * php /path/to/legacy/cron/hub-internet-sync.php`
 
 ## Notes
 
