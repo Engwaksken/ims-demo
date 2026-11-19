@@ -109,6 +109,8 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
 .ht-check-list { display: grid; gap: 8px; }
 .ht-check-list label { display: flex; gap: 8px; align-items: flex-start; font-weight: 500; }
 .ht-placeholders code { font-size: 11px; margin-right: 4px; }
+.ht-quick-filter { max-width: 260px; }
+.ht-seat-meter .meter { max-width: 140px; }
 .ht-due-soon { color: var(--amber-fg); font-weight: 600; }
 .ht-overdue { color: var(--red-fg); font-weight: 600; }
 </style>
@@ -189,7 +191,7 @@ if ($view === 'settings'):
         $reminderLog = $logResult ? $logResult->fetch_all(MYSQLI_ASSOC) : [];
     }
 ?>
-<div class="tab-shell" id="settingsTabs">
+<div class="tab-shell" id="settingsTabs" data-ht-tabs>
     <div class="tab-nav" role="tablist" aria-label="Hub settings">
         <?php foreach ($settingsTabs as $key => [$icon, $label]): ?>
             <button type="button" class="tab-btn <?= $key === $activeSettingsTab ? 'active' : '' ?>" role="tab"
@@ -483,37 +485,6 @@ if ($view === 'settings'):
 <?php endif; ?>
 
 <script>
-(function () {
-    const shell = document.getElementById('settingsTabs');
-    if (!shell) return;
-    const buttons = Array.from(shell.querySelectorAll('.tab-btn'));
-
-    function activate(key, push) {
-        buttons.forEach(function (button) {
-            const on = button.dataset.tab === key;
-            button.classList.toggle('active', on);
-            button.setAttribute('aria-selected', on ? 'true' : 'false');
-            const panel = document.getElementById('panel-' + button.dataset.tab);
-            if (panel) panel.classList.toggle('active', on);
-        });
-        if (push) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', key);
-            history.replaceState(null, '', url.toString());
-        }
-    }
-
-    buttons.forEach(function (button) {
-        button.addEventListener('click', function () { activate(button.dataset.tab, true); });
-        button.addEventListener('keydown', function (event) {
-            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
-            const index = buttons.indexOf(button) + (event.key === 'ArrowRight' ? 1 : -1);
-            const next = buttons[(index + buttons.length) % buttons.length];
-            next.focus();
-            activate(next.dataset.tab, true);
-        });
-    });
-})();
 
 function openPackageModal(pkg) {
     document.getElementById('packageModalTitle').textContent = pkg ? 'Edit package' : 'Add package';
@@ -892,6 +863,15 @@ else:
     );
     $companyRows = $companies ? $companies->fetch_all(MYSQLI_ASSOC) : [];
 ?>
+<?php
+    $hasDeviceFilter = $search !== '' || $stateFilter !== '';
+    $dashboardTab = (string)($_GET['tab'] ?? ($hasDeviceFilter ? 'devices' : 'companies'));
+    if (!in_array($dashboardTab, ['companies', 'devices'], true)) {
+        $dashboardTab = 'companies';
+    }
+    $overSeats = count(array_filter($companyRows, static fn(array $c): bool =>
+        $c['max_seats'] !== null && (int)$c['seats_used'] > (int)$c['max_seats']));
+?>
 <div class="stats-grid reports-stats">
     <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-users" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Registered people (active)</span><span class="stat-value"><?= $counts['people'] ?></span></div></div>
     <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-laptop" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Devices</span><span class="stat-value"><?= $counts['devices'] ?></span></div></div>
@@ -899,81 +879,114 @@ else:
     <div class="stat-card"><div class="stat-icon bg-red"><i class="fas fa-ban" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Disconnected / blocked</span><span class="stat-value"><?= $counts['offline'] ?></span></div></div>
 </div>
 
-<div class="card">
-    <div class="card-header"><h3><i class="fas fa-building" aria-hidden="true"></i> Companies &amp; seats</h3></div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead><tr><th>Company / member</th><th>Package</th><th>Seats</th><th>Status</th><th></th></tr></thead>
-                <tbody>
-                <?php if ($companyRows === []): ?>
-                    <tr><td colspan="5"><div class="empty-state"><i class="fas fa-building" aria-hidden="true"></i><p>No active members yet.</p></div></td></tr>
-                <?php endif; ?>
-                <?php foreach ($companyRows as $company):
-                    $max = $company['max_seats'] !== null ? (int)$company['max_seats'] : null;
-                    $used = (int)$company['seats_used'];
-                ?>
-                    <tr>
-                        <td><strong><?= ht_e($company['company_name'] ?: $company['full_name']) ?></strong><small class="cell-muted"><?= ht_e($company['membership_number']) ?><?= $company['company_name'] ? ' &middot; ' . ht_e($company['full_name']) : '' ?></small></td>
-                        <td><?= $company['package_name'] ? ht_e($company['package_name']) : '<span class="cell-muted">Not set</span>' ?></td>
-                        <td class="<?= $max !== null && $used > $max ? 'ht-over' : '' ?>"><?= $used ?> / <?= $max ?? '-' ?></td>
-                        <td><?= ht_e($company['membership_status']) ?></td>
-                        <td><a class="btn btn-sm btn-primary" href="hub-team?member_id=<?= (int)$company['member_id'] ?>"><i class="fas fa-users" aria-hidden="true"></i> Team</a></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+<div class="tab-shell" data-ht-tabs>
+    <div class="tab-nav" role="tablist" aria-label="Hub team and internet">
+        <button type="button" class="tab-btn <?= $dashboardTab === 'companies' ? 'active' : '' ?>" role="tab"
+                id="tab-companies" aria-controls="panel-companies" data-tab="companies"
+                aria-selected="<?= $dashboardTab === 'companies' ? 'true' : 'false' ?>">
+            <i class="fas fa-building" aria-hidden="true"></i> Companies &amp; seats
+            <span class="badge"><?= count($companyRows) ?></span>
+        </button>
+        <button type="button" class="tab-btn <?= $dashboardTab === 'devices' ? 'active' : '' ?>" role="tab"
+                id="tab-devices" aria-controls="panel-devices" data-tab="devices"
+                aria-selected="<?= $dashboardTab === 'devices' ? 'true' : 'false' ?>">
+            <i class="fas fa-network-wired" aria-hidden="true"></i> Devices &amp; internet access
+            <span class="badge"><?= count($devices) ?></span>
+        </button>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-header"><h3><i class="fas fa-network-wired" aria-hidden="true"></i> Devices &amp; internet access</h3></div>
-    <div class="card-body">
-        <form method="get" action="hub-team" class="filters-bar" role="search">
-            <input type="text" name="q" class="form-control filters-grow" value="<?= ht_e($search) ?>" placeholder="Search company, person, membership # or MAC...">
-            <select name="state" class="form-control" aria-label="Internet state">
-                <option value="">All states</option>
-                <?php foreach (['connected' => 'Connected', 'disconnected' => 'Disconnected', 'blocked' => 'Blocked', 'error' => 'Sync error', 'unknown' => 'Not synced'] as $value => $label): ?>
-                    <option value="<?= $value ?>" <?= $stateFilter === $value ? 'selected' : '' ?>><?= $label ?></option>
-                <?php endforeach; ?>
-            </select>
-            <button type="submit" class="btn btn-secondary"><i class="fas fa-search" aria-hidden="true"></i> Filter</button>
-        </form>
+    <div class="tab-panels">
+        <!-- Companies & seats -->
+        <section class="tab-panel <?= $dashboardTab === 'companies' ? 'active' : '' ?>" id="panel-companies" role="tabpanel" aria-labelledby="tab-companies">
+            <div class="ht-panel-head">
+                <div>
+                    <h3>Companies &amp; seats</h3>
+                    <p class="ht-help">Active, pending and suspended members. The primary member takes one seat.<?= $overSeats > 0 ? ' <span class="ht-over">' . $overSeats . ' over their package limit.</span>' : '' ?></p>
+                </div>
+                <input type="search" class="form-control ht-quick-filter" data-filter-table="companiesTable"
+                       placeholder="Filter companies..." aria-label="Filter companies">
+            </div>
+            <div class="table-responsive">
+                <table class="table" id="companiesTable">
+                    <thead><tr><th>Company / member</th><th>Package</th><th>Seats</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                    <?php if ($companyRows === []): ?>
+                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-building" aria-hidden="true"></i><p>No active members yet.</p></div></td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($companyRows as $company):
+                        $max = $company['max_seats'] !== null ? (int)$company['max_seats'] : null;
+                        $used = (int)$company['seats_used'];
+                        $percent = $max ? min(100, (int)round($used / $max * 100)) : 0;
+                    ?>
+                        <tr>
+                            <td><strong><?= ht_e($company['company_name'] ?: $company['full_name']) ?></strong><small class="cell-muted"><?= ht_e($company['membership_number']) ?><?= $company['company_name'] ? ' &middot; ' . ht_e($company['full_name']) : '' ?></small></td>
+                            <td><?= $company['package_name'] ? ht_e($company['package_name']) : '<span class="cell-muted">Not set</span>' ?></td>
+                            <td>
+                                <div class="ht-seat-meter">
+                                    <span class="<?= $max !== null && $used > $max ? 'ht-over' : '' ?>"><?= $used ?> / <?= $max ?? '-' ?></span>
+                                    <?php if ($max): ?><div class="meter" aria-hidden="true"><div class="meter-fill <?= $used > $max ? 'tone-red' : ($used === $max ? 'tone-amber' : 'tone-green') ?>" style="width:<?= $percent ?>%"></div></div><?php endif; ?>
+                                </div>
+                            </td>
+                            <td><?= ht_e($company['membership_status']) ?></td>
+                            <td><a class="btn btn-sm btn-primary" href="hub-team?member_id=<?= (int)$company['member_id'] ?>"><i class="fas fa-users" aria-hidden="true"></i> Team</a></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-        <div class="table-responsive">
-            <table class="table">
-                <thead><tr><th>Person</th><th>Company</th><th>Device</th><th>Mode</th><th>pfSense</th><th>Actions</th></tr></thead>
-                <tbody>
-                <?php if ($devices === []): ?>
-                    <tr><td colspan="6"><div class="empty-state"><i class="fas fa-laptop" aria-hidden="true"></i><p>No devices registered<?= $search !== '' || $stateFilter !== '' ? ' match the filter' : ' yet. Open a company\'s Team page to add people and devices' ?>.</p></div></td></tr>
+        <!-- Devices & internet access -->
+        <section class="tab-panel <?= $dashboardTab === 'devices' ? 'active' : '' ?>" id="panel-devices" role="tabpanel" aria-labelledby="tab-devices">
+            <form method="get" action="hub-team" class="filters-bar" role="search">
+                <input type="hidden" name="tab" value="devices">
+                <input type="text" name="q" class="form-control filters-grow" value="<?= ht_e($search) ?>" placeholder="Search company, person, membership # or MAC...">
+                <select name="state" class="form-control" aria-label="Internet state">
+                    <option value="">All states</option>
+                    <?php foreach (['connected' => 'Connected', 'disconnected' => 'Disconnected', 'blocked' => 'Blocked', 'error' => 'Sync error', 'unknown' => 'Not synced'] as $value => $label): ?>
+                        <option value="<?= $value ?>" <?= $stateFilter === $value ? 'selected' : '' ?>><?= $label ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit" class="btn btn-secondary"><i class="fas fa-search" aria-hidden="true"></i> Filter</button>
+                <?php if ($hasDeviceFilter): ?>
+                    <a href="hub-team?tab=devices" class="btn btn-soft"><i class="fas fa-times" aria-hidden="true"></i> Clear</a>
                 <?php endif; ?>
-                <?php foreach ($devices as $device): $expected = hubnet_state_for_mode(hubnet_desired_mode($device)); ?>
-                    <tr>
-                        <td><strong><?= ht_e($device['person_name']) ?></strong><?= empty($device['team_member_id']) ? '<small class="cell-muted">Primary member</small>' : (($device['team_status'] ?? '') !== 'Active' ? '<small class="cell-muted">Suspended</small>' : '') ?></td>
-                        <td><a href="hub-team?member_id=<?= (int)$device['member_id'] ?>"><?= ht_e($device['company_name'] ?: $device['primary_name']) ?></a><small class="cell-muted"><?= ht_e($device['membership_status']) ?></small></td>
-                        <td><code><?= ht_e($device['mac_address']) ?></code><?= !empty($device['label']) ? '<small class="cell-muted">' . ht_e($device['label']) . '</small>' : '' ?></td>
-                        <td><?= ht_e(ht_mode_label((string)$device['access_mode'])) ?></td>
-                        <td><?= ht_state_badge($device) ?><?= $device['pf_state'] !== $expected ? '<small class="cell-muted">Should be ' . ht_e($expected) . '</small>' : '' ?></td>
-                        <td>
-                            <div class="ht-actions">
-                            <?php if ($canControl): ?>
-                                <?php if ($device['access_mode'] !== 'block'): ?>
-                                    <?= ht_access_form('device', (int)$device['device_id'], 'block', 'Disconnect', 'fa-ban', 'btn-danger', (int)$device['member_id'], true) ?>
-                                <?php else: ?>
-                                    <?= ht_access_form('device', (int)$device['device_id'], 'auto', 'Reconnect', 'fa-wifi', 'btn-success', (int)$device['member_id'], true) ?>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Person</th><th>Company</th><th>Device</th><th>Mode</th><th>pfSense</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    <?php if ($devices === []): ?>
+                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-laptop" aria-hidden="true"></i><p>No devices registered<?= $hasDeviceFilter ? ' match the filter' : ' yet. Open a company\'s Team page to add people and devices' ?>.</p></div></td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($devices as $device): $expected = hubnet_state_for_mode(hubnet_desired_mode($device)); ?>
+                        <tr>
+                            <td><strong><?= ht_e($device['person_name']) ?></strong><?= empty($device['team_member_id']) ? '<small class="cell-muted">Primary member</small>' : (($device['team_status'] ?? '') !== 'Active' ? '<small class="cell-muted">Suspended</small>' : '') ?></td>
+                            <td><a href="hub-team?member_id=<?= (int)$device['member_id'] ?>"><?= ht_e($device['company_name'] ?: $device['primary_name']) ?></a><small class="cell-muted"><?= ht_e($device['membership_status']) ?></small></td>
+                            <td><code><?= ht_e($device['mac_address']) ?></code><?= !empty($device['label']) ? '<small class="cell-muted">' . ht_e($device['label']) . '</small>' : '' ?></td>
+                            <td><?= ht_e(ht_mode_label((string)$device['access_mode'])) ?></td>
+                            <td><?= ht_state_badge($device) ?><?= $device['pf_state'] !== $expected ? '<small class="cell-muted">Should be ' . ht_e($expected) . '</small>' : '' ?></td>
+                            <td>
+                                <div class="ht-actions">
+                                <?php if ($canControl): ?>
+                                    <?php if ($device['access_mode'] !== 'block'): ?>
+                                        <?= ht_access_form('device', (int)$device['device_id'], 'block', 'Disconnect', 'fa-ban', 'btn-danger', (int)$device['member_id'], true) ?>
+                                    <?php else: ?>
+                                        <?= ht_access_form('device', (int)$device['device_id'], 'auto', 'Reconnect', 'fa-wifi', 'btn-success', (int)$device['member_id'], true) ?>
+                                    <?php endif; ?>
+                                    <?php if ($device['access_mode'] !== 'allow'): ?>
+                                        <?= ht_access_form('device', (int)$device['device_id'], 'allow', 'Always on', 'fa-check', 'btn-soft', (int)$device['member_id'], true) ?>
+                                    <?php endif; ?>
                                 <?php endif; ?>
-                                <?php if ($device['access_mode'] !== 'allow'): ?>
-                                    <?= ht_access_form('device', (int)$device['device_id'], 'allow', 'Always on', 'fa-check', 'btn-soft', (int)$device['member_id'], true) ?>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </div>
 <?php endif; ?>
@@ -1054,5 +1067,52 @@ window.addEventListener('DOMContentLoaded', function () { openReminderModal([<?=
 
 <?php endif; ?>
 </div><!-- /.page-stack -->
+
+<script>
+/* Tabs: any .tab-shell[data-ht-tabs]; the open tab is kept in ?tab= so reloads and redirects return to it. */
+document.querySelectorAll('.tab-shell[data-ht-tabs]').forEach(function (shell) {
+    const buttons = Array.from(shell.querySelectorAll('.tab-btn[data-tab]'));
+
+    function activate(key) {
+        buttons.forEach(function (button) {
+            const on = button.dataset.tab === key;
+            button.classList.toggle('active', on);
+            button.setAttribute('aria-selected', on ? 'true' : 'false');
+            button.tabIndex = on ? 0 : -1;
+            const panel = document.getElementById('panel-' + button.dataset.tab);
+            if (panel) panel.classList.toggle('active', on);
+        });
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', key);
+        history.replaceState(null, '', url.toString());
+    }
+
+    buttons.forEach(function (button) {
+        button.tabIndex = button.classList.contains('active') ? 0 : -1;
+        button.addEventListener('click', function () { activate(button.dataset.tab); });
+        button.addEventListener('keydown', function (event) {
+            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+            event.preventDefault();
+            const index = buttons.indexOf(button) + (event.key === 'ArrowRight' ? 1 : -1);
+            const next = buttons[(index + buttons.length) % buttons.length];
+            next.focus();
+            activate(next.dataset.tab);
+        });
+    });
+});
+
+/* Quick filter: <input data-filter-table="tableId"> hides rows that do not contain the text. */
+document.querySelectorAll('[data-filter-table]').forEach(function (input) {
+    const table = document.getElementById(input.dataset.filterTable);
+    if (!table) return;
+    input.addEventListener('input', function () {
+        const needle = input.value.trim().toLowerCase();
+        table.querySelectorAll('tbody tr').forEach(function (row) {
+            if (row.querySelector('.empty-state')) return;
+            row.hidden = needle !== '' && !row.textContent.toLowerCase().includes(needle);
+        });
+    });
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>

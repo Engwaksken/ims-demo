@@ -384,7 +384,7 @@ try {
 
             $message = count($devices) . ' device(s) ' . $label . '.' . ht_net_note($net);
             ht_back(
-                $toDashboard ? '' : ht_member_query($memberId),
+                $toDashboard ? 'tab=devices' : ht_member_query($memberId),
                 $net['ok'] ? null : $message,
                 $net['ok'] ? $message : null
             );
