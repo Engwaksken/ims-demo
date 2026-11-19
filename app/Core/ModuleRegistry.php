@@ -165,6 +165,8 @@ final class ModuleRegistry
         'hub-events.php' => 'hub-events.php',
         'hub-operations' => 'hub-operations.php',
         'hub-operations.php' => 'hub-operations.php',
+        'hub-network-agent' => 'hub-network-agent.php',
+        'hub-network-agent.php' => 'hub-network-agent.php',
         'hub-team' => 'hub-team.php',
         'hub-team.php' => 'hub-team.php',
         'hub-visitors' => 'hub-visitors.php',

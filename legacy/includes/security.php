@@ -422,6 +422,11 @@ if (!function_exists('ims_csrf_auto_enforce')) {
             return;
         }
 
+        // pfSense hub internet agent: HMAC-signed body (legacy/hub-network-agent.php).
+        if (ims_script_name() === 'hub-network-agent.php') {
+            return;
+        }
+
         csrf_protect();
     }
 }

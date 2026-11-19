@@ -116,13 +116,34 @@ if (!function_exists('hubnet_ensure_schema')) {
                 }
             }
 
-            $hasColumn = $conn->query("SHOW COLUMNS FROM members LIKE 'space_package_id'");
+            $addColumns = [
+                ['members', 'space_package_id', 'INT UNSIGNED NULL'],
+                // Pull mode (pfSense polls the IMS): see hub-network-agent.php.
+                ['hub_network_settings', 'mode', "VARCHAR(10) NOT NULL DEFAULT 'pull'"],
+                ['hub_network_settings', 'last_checkin_at', 'DATETIME NULL'],
+                ['hub_network_settings', 'last_checkin_info', 'TEXT NULL'],
+            ];
 
-            if ($hasColumn && $hasColumn->num_rows === 0) {
-                if (!$conn->query('ALTER TABLE members ADD COLUMN space_package_id INT UNSIGNED NULL')) {
-                    error_log('[hub-network] members.space_package_id: ' . $conn->error);
+            foreach ($addColumns as [$table, $column, $definition]) {
+                $hasColumn = $conn->query("SHOW COLUMNS FROM `$table` LIKE '$column'");
+
+                if ($hasColumn && $hasColumn->num_rows === 0
+                    && !$conn->query("ALTER TABLE `$table` ADD COLUMN `$column` $definition")) {
+                    error_log("[hub-network] $table.$column: " . $conn->error);
                     return $ready = false;
                 }
+            }
+
+            if (!$conn->query(
+                "CREATE TABLE IF NOT EXISTS hub_agent_nonces (
+                    nonce CHAR(24) NOT NULL,
+                    seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (nonce),
+                    KEY idx_hub_agent_nonce_seen (seen_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            )) {
+                error_log('[hub-network] hub_agent_nonces: ' . $conn->error);
+                return $ready = false;
             }
 
             return $ready = true;
@@ -299,6 +320,10 @@ if (!function_exists('hubnet_settings')) {
             'auto_enforce' => !array_key_exists('auto_enforce', $row) || !empty($row['auto_enforce']),
             'verify_tls' => !empty($row['verify_tls']),
             'updated_at' => $row['updated_at'] ?? null,
+            // pull: pfSense polls the IMS (works from shared hosting); push: the IMS calls pfSense.
+            'mode' => ($row['mode'] ?? 'pull') === 'push' ? 'push' : 'pull',
+            'last_checkin_at' => $row['last_checkin_at'] ?? null,
+            'last_checkin_info' => json_decode((string)($row['last_checkin_info'] ?? ''), true) ?: [],
         ];
     }
 }
@@ -409,6 +434,18 @@ if (!function_exists('hubnet_apply')) {
             ];
         }
 
+        if ($settings['mode'] === 'pull') {
+            // pfSense collects the desired state on its next check-in
+            // (devices being deleted simply drop out of the feed).
+            return [
+                'ok' => true,
+                'message' => 'Queued: pfSense applies it at its next check-in (within about a minute).',
+                'applied' => 0,
+                'failed' => 0,
+                'queued' => count($devices),
+            ];
+        }
+
         $items = [];
         $byMac = [];
 
@@ -423,8 +460,7 @@ if (!function_exists('hubnet_apply')) {
             $items[] = [
                 'mac' => $mac,
                 'mode' => $mode,
-                'descr' => mb_substr('IMS ' . ($device['membership_number'] ?? '') . ' ' . ($device['person_name'] ?? '') .
-                    (!empty($device['label']) ? ' (' . $device['label'] . ')' : ''), 0, 120),
+                'descr' => hubnet_device_descr($device),
             ];
             $byMac[$mac] = ['device' => $device, 'mode' => $mode];
         }
@@ -510,6 +546,15 @@ if (!function_exists('hubnet_sync_all')) {
      */
     function hubnet_sync_all(mysqli $conn, int $userId = 0, bool $force = false): array
     {
+        if (hubnet_settings($conn)['mode'] === 'pull') {
+            return [
+                'ok' => true,
+                'message' => 'pfSense polls the IMS every minute and applies every device on its next check-in.',
+                'applied' => 0,
+                'failed' => 0,
+            ];
+        }
+
         $devices = hubnet_devices_where($conn, '1=1');
 
         if (!$force) {
@@ -519,5 +564,178 @@ if (!function_exists('hubnet_sync_all')) {
         }
 
         return hubnet_apply($conn, $devices, $userId, $force ? 'sync-all' : 'auto');
+    }
+}
+
+/* ---------------------------------------------------------------------
+| Pull mode: pfSense polls the IMS (legacy/hub-network-agent.php)
+--------------------------------------------------------------------- */
+
+const HUBNET_DESCR_PREFIX = 'IMS ';
+const HUBNET_CHECKIN_STALE_SECONDS = 300;
+
+if (!function_exists('hubnet_device_descr')) {
+    /** Captive portal entry description; the agent treats the "IMS " prefix as IMS-managed. */
+    function hubnet_device_descr(array $device): string
+    {
+        $text = HUBNET_DESCR_PREFIX . ($device['membership_number'] ?? '') . ' ' . ($device['person_name'] ?? '')
+            . (!empty($device['label']) ? ' (' . $device['label'] . ')' : '');
+
+        return mb_substr((string)preg_replace('/[^\w .@()\-]/u', '', $text), 0, 120);
+    }
+}
+
+if (!function_exists('hubnet_agent_verify')) {
+    /**
+     * Checks a request from the pfSense agent: HMAC-SHA256 of the raw body
+     * with the shared secret, a timestamp within 5 minutes and an unused nonce.
+     *
+     * @return array{0:?array,1:string} [decoded request or null, error]
+     */
+    function hubnet_agent_verify(mysqli $conn, array $settings, string $raw, string $signature): array
+    {
+        if ($settings['secret'] === '') {
+            return [null, 'not_configured'];
+        }
+
+        if ($raw === '' || !hash_equals(hash_hmac('sha256', $raw, $settings['secret']), trim($signature))) {
+            return [null, 'bad_signature'];
+        }
+
+        $request = json_decode($raw, true);
+
+        if (!is_array($request)) {
+            return [null, 'bad_json'];
+        }
+
+        if (abs(time() - (int)($request['ts'] ?? 0)) > 300) {
+            return [null, 'expired'];
+        }
+
+        $nonce = (string)($request['nonce'] ?? '');
+
+        if (!preg_match('/^[a-f0-9]{24}$/', $nonce)) {
+            return [null, 'bad_nonce'];
+        }
+
+        $conn->query('DELETE FROM hub_agent_nonces WHERE seen_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE)');
+        $stmt = $conn->prepare('INSERT IGNORE INTO hub_agent_nonces (nonce) VALUES (?)');
+
+        if (!$stmt) {
+            return [null, 'server_error'];
+        }
+
+        $stmt->bind_param('s', $nonce);
+        $stmt->execute();
+        $fresh = $stmt->affected_rows === 1;
+        $stmt->close();
+
+        return $fresh ? [$request, ''] : [null, 'replayed'];
+    }
+}
+
+if (!function_exists('hubnet_feed')) {
+    /**
+     * Desired state of every registered device.
+     *
+     * @return list<array{mac:string,mode:string,descr:string}>
+     */
+    function hubnet_feed(mysqli $conn): array
+    {
+        $items = [];
+
+        foreach (hubnet_devices_where($conn, '1=1') as $device) {
+            $mac = hubnet_normalize_mac((string)$device['mac_address']);
+
+            if ($mac !== '') {
+                $items[] = ['mac' => $mac, 'mode' => hubnet_desired_mode($device), 'descr' => hubnet_device_descr($device)];
+            }
+        }
+
+        return $items;
+    }
+}
+
+if (!function_exists('hubnet_record_report')) {
+    /**
+     * Stores what pfSense applied. Only changes are written and logged, so a
+     * check-in every minute does not flood the log.
+     *
+     * @param array<string,array{ok?:bool,mode?:string,message?:string}> $results keyed by MAC
+     */
+    function hubnet_record_report(mysqli $conn, array $results): int
+    {
+        $changed = 0;
+        $select = $conn->prepare('SELECT device_id, pf_state, pf_last_error FROM hub_network_devices WHERE mac_address = ? LIMIT 1');
+        $update = $conn->prepare('UPDATE hub_network_devices SET pf_state = ?, pf_last_error = ?, pf_synced_at = NOW() WHERE device_id = ?');
+        $touch = $conn->prepare('UPDATE hub_network_devices SET pf_synced_at = NOW() WHERE device_id = ?');
+
+        if (!$select || !$update || !$touch) {
+            return 0;
+        }
+
+        foreach (array_slice($results, 0, 5000, true) as $mac => $result) {
+            $mac = hubnet_normalize_mac((string)$mac);
+
+            if ($mac === '' || !is_array($result)) {
+                continue;
+            }
+
+            $select->bind_param('s', $mac);
+            $select->execute();
+            $device = $select->get_result()->fetch_assoc();
+
+            if (!$device) {
+                continue; // deleted in the IMS; the agent has removed its entry
+            }
+
+            $ok = !empty($result['ok']);
+            $mode = in_array($result['mode'] ?? '', ['pass', 'block', 'remove'], true) ? (string)$result['mode'] : 'remove';
+            $state = $ok ? hubnet_state_for_mode($mode) : 'error';
+            $error = $ok ? null : mb_substr((string)($result['message'] ?? 'pfSense could not apply this device.'), 0, 255);
+            $deviceId = (int)$device['device_id'];
+
+            if ($state === $device['pf_state'] && $error === $device['pf_last_error']) {
+                $touch->bind_param('i', $deviceId);
+                $touch->execute();
+                continue;
+            }
+
+            $update->bind_param('ssi', $state, $error, $deviceId);
+            $update->execute();
+            hubnet_log($conn, $deviceId, $mac, 'pull:' . $mode, $ok, $ok ? $state : (string)$error, 0);
+            $changed++;
+        }
+
+        $select->close();
+        $update->close();
+        $touch->close();
+
+        return $changed;
+    }
+}
+
+if (!function_exists('hubnet_record_checkin')) {
+    function hubnet_record_checkin(mysqli $conn, array $info): void
+    {
+        $json = json_encode(array_intersect_key($info, array_flip([
+            'version', 'zone', 'mac_filtering', 'sessions', 'mac_entries', 'ip', 'error',
+        ])), JSON_UNESCAPED_SLASHES);
+
+        $stmt = $conn->prepare('UPDATE hub_network_settings SET last_checkin_at = NOW(), last_checkin_info = ? WHERE id = 1');
+
+        if ($stmt) {
+            $stmt->bind_param('s', $json);
+            $stmt->execute();
+            $stmt->close();
+        }
+    }
+}
+
+if (!function_exists('hubnet_agent_online')) {
+    function hubnet_agent_online(array $settings): bool
+    {
+        return !empty($settings['last_checkin_at'])
+            && (time() - (int)strtotime((string)$settings['last_checkin_at'])) <= HUBNET_CHECKIN_STALE_SECONDS;
     }
 }

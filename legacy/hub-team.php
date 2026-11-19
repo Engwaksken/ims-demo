@@ -252,7 +252,7 @@ if ($view === 'settings'):
             <div class="ht-panel-head">
                 <div>
                     <h3>pfSense connection</h3>
-                    <p class="ht-help">Install <code>tools/pfsense/ims-cp-agent.php</code> on the firewall (instructions at the top of that file) and use the same shared secret here.</p>
+                    <p class="ht-help">Install <code>tools/pfsense/ims-cp-agent.php</code> on the firewall (step-by-step instructions at the top of that file) and use the same shared secret here.</p>
                 </div>
                 <div class="ht-actions">
                     <form method="post" action="includes/hub-team-process.php" class="ht-inline">
@@ -263,15 +263,50 @@ if ($view === 'settings'):
                     <button type="button" class="btn btn-primary" onclick="openModal('pfsenseModal')"><i class="fas fa-pen" aria-hidden="true"></i> Edit connection</button>
                 </div>
             </div>
+<?php
+                $isPull = $settings['mode'] === 'pull';
+                $online = hubnet_agent_online($settings);
+                $checkin = $settings['last_checkin_info'];
+                $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $host = preg_replace('/[^A-Za-z0-9.\-:]/', '', (string)($_SERVER['HTTP_HOST'] ?? '')) ?: 'your-ims-domain';
+                $feedUrl = $scheme . '://' . $host . '/hub-network-agent';
+?>
             <div class="detail-grid">
-                <div><div class="detail-label">Status</div><div class="detail-value"><?= $settings['enabled'] ? '<span class="badge badge-success">On</span>' : '<span class="badge badge-secondary">Off</span>' ?></div></div>
+                <div><div class="detail-label">Control</div><div class="detail-value"><?= $settings['enabled'] ? '<span class="badge badge-success">On</span>' : '<span class="badge badge-secondary">Off</span>' ?></div></div>
+                <div><div class="detail-label">Connection</div><div class="detail-value"><?= $isPull ? 'pfSense checks in (pull)' : 'IMS calls pfSense (push)' ?></div></div>
+                <?php if ($isPull): ?>
+                <div>
+                    <div class="detail-label">Last check-in</div>
+                    <div class="detail-value">
+                        <?php if ($settings['last_checkin_at']): ?>
+                            <span class="badge badge-<?= $online ? 'success' : 'danger' ?>"><?= $online ? 'Online' : 'Not checking in' ?></span>
+                            <?= ht_e(date('d M Y H:i:s', strtotime((string)$settings['last_checkin_at']))) ?>
+                            <?= !empty($checkin['ip']) ? '<small class="cell-muted">from ' . ht_e($checkin['ip']) . ' &middot; agent ' . ht_e($checkin['version'] ?? '?') . ' &middot; ' . (int)($checkin['sessions'] ?? 0) . ' sessions</small>' : '' ?>
+                            <?php if (array_key_exists('mac_filtering', $checkin) && !$checkin['mac_filtering']): ?>
+                                <small class="ht-overdue">MAC filtering is off on this zone: pass/block entries have no effect.</small>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <span class="badge badge-secondary">Never</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div><div class="detail-label">Feed URL (IMS_FEED_URL on pfSense)</div><div class="detail-value"><code><?= ht_e($feedUrl) ?></code></div></div>
+                <?php else: ?>
                 <div><div class="detail-label">Agent URL</div><div class="detail-value"><?= $settings['agent_url'] !== '' ? '<code>' . ht_e($settings['agent_url']) . '</code>' : 'Not set' ?></div></div>
+                <?php endif; ?>
                 <div><div class="detail-label">Captive portal zone</div><div class="detail-value"><code><?= ht_e($settings['cp_zone']) ?></code></div></div>
                 <div><div class="detail-label">Shared secret</div><div class="detail-value"><?= $settings['has_secret'] ? 'Saved' : 'Not set' ?></div></div>
-                <div><div class="detail-label">Automatic enforcement</div><div class="detail-value"><?= $settings['auto_enforce'] ? 'On' : 'Off' ?></div></div>
                 <div><div class="detail-label">Last changed</div><div class="detail-value"><?= $settings['updated_at'] ? ht_e(date('d M Y H:i', strtotime((string)$settings['updated_at']))) : '-' ?></div></div>
             </div>
-            <p class="ht-help" style="margin-top:14px">Scheduled task (every 5 minutes): <code>*/5 * * * * php /path/to/legacy/cron/hub-internet-sync.php</code></p>
+            <?php if ($isPull): ?>
+            <p class="ht-help" style="margin-top:14px">
+                On pfSense, Services &gt; Cron, every minute as root:
+                <code>/usr/local/bin/php -f /root/ims-cp-agent.php pull</code>.
+                Expired and suspended members are disconnected automatically at the next check-in; no cron job is needed on the IMS server.
+            </p>
+            <?php else: ?>
+            <p class="ht-help" style="margin-top:14px">IMS server cron (every 5 minutes): <code>*/5 * * * * php /path/to/legacy/cron/hub-internet-sync.php</code></p>
+            <?php endif; ?>
         </section>
     <?php endif; ?>
 
@@ -400,8 +435,21 @@ if ($view === 'settings'):
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="save_network_settings">
                 <div class="form-group">
-                    <label for="agent_url">Agent URL</label>
-                    <input id="agent_url" class="form-control" name="agent_url" value="<?= ht_e($settings['agent_url']) ?>" placeholder="https://192.168.1.1/ims-cp-agent.php">
+                    <label for="net_mode">Connection</label>
+                    <select id="net_mode" class="form-control" name="mode" onchange="document.getElementById('pushOnly').hidden = this.value !== 'push'">
+                        <option value="pull" <?= $settings['mode'] === 'pull' ? 'selected' : '' ?>>pfSense checks in every minute (pull) - use this on shared hosting</option>
+                        <option value="push" <?= $settings['mode'] === 'push' ? 'selected' : '' ?>>IMS calls pfSense directly (push) - IMS server must reach the firewall</option>
+                    </select>
+                </div>
+                <div id="pushOnly" <?= $settings['mode'] === 'push' ? '' : 'hidden' ?>>
+                    <div class="form-group">
+                        <label for="agent_url">Agent URL (push)</label>
+                        <input id="agent_url" class="form-control" name="agent_url" value="<?= ht_e($settings['agent_url']) ?>" placeholder="https://192.168.1.1/ims-cp-agent.php">
+                    </div>
+                    <div class="ht-check-list" style="margin-bottom:12px">
+                        <label><input type="checkbox" name="auto_enforce" value="1" <?= $settings['auto_enforce'] ? 'checked' : '' ?>> Automatic enforcement from the IMS server cron (pull mode always enforces at each check-in)</label>
+                        <label><input type="checkbox" name="verify_tls" value="1" <?= $settings['verify_tls'] ? 'checked' : '' ?>> Verify the firewall's HTTPS certificate (leave off for pfSense's self-signed certificate)</label>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -415,9 +463,7 @@ if ($view === 'settings'):
                     </div>
                 </div>
                 <div class="ht-check-list">
-                    <label><input type="checkbox" name="enabled" value="1" <?= $settings['enabled'] ? 'checked' : '' ?>> Send connect / disconnect changes to pfSense</label>
-                    <label><input type="checkbox" name="auto_enforce" value="1" <?= $settings['auto_enforce'] ? 'checked' : '' ?>> Automatic: disconnect when a membership expires or is suspended, reconnect when it is active again</label>
-                    <label><input type="checkbox" name="verify_tls" value="1" <?= $settings['verify_tls'] ? 'checked' : '' ?>> Verify the firewall's HTTPS certificate (leave off for pfSense's self-signed certificate)</label>
+                    <label><input type="checkbox" name="enabled" value="1" <?= $settings['enabled'] ? 'checked' : '' ?>> Control internet access on pfSense (when off, pfSense still checks in but nothing is changed)</label>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('pfsenseModal')">Cancel</button>

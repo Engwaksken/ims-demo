@@ -433,6 +433,7 @@ try {
             $enabled = !empty($_POST['enabled']) ? 1 : 0;
             $autoEnforce = !empty($_POST['auto_enforce']) ? 1 : 0;
             $verifyTls = !empty($_POST['verify_tls']) ? 1 : 0;
+            $mode = (string)($_POST['mode'] ?? 'pull') === 'push' ? 'push' : 'pull';
 
             if ($url !== '' && !preg_match('#^https?://[^\s]+$#i', $url)) {
                 throw new InvalidArgumentException('The agent URL must start with http:// or https://.');
@@ -442,8 +443,12 @@ try {
                 throw new InvalidArgumentException('Use a shared secret of at least 24 characters.');
             }
 
-            if ($enabled && ($url === '' || ($secret === '' && !hubnet_settings($conn)['has_secret']))) {
-                throw new InvalidArgumentException('Enter the agent URL and shared secret before switching pfSense control on.');
+            if ($enabled && $secret === '' && !hubnet_settings($conn)['has_secret']) {
+                throw new InvalidArgumentException('Enter the shared secret before switching pfSense control on.');
+            }
+
+            if ($enabled && $mode === 'push' && $url === '') {
+                throw new InvalidArgumentException('Enter the agent URL (push mode) before switching pfSense control on.');
             }
 
             if ($secret !== '') {
@@ -464,10 +469,39 @@ try {
             $stmt->execute();
             $stmt->close();
 
+            $stmt = $conn->prepare('UPDATE hub_network_settings SET mode = ? WHERE id = 1');
+            $stmt->bind_param('s', $mode);
+            $stmt->execute();
+            $stmt->close();
+
             ht_back('view=settings&tab=pfsense', null, 'pfSense settings saved.');
 
         case 'test_connection':
-            $result = hubnet_call(hubnet_settings($conn), 'ping');
+            $netSettings = hubnet_settings($conn);
+
+            if ($netSettings['mode'] === 'pull') {
+                $info = $netSettings['last_checkin_info'];
+
+                if (!$netSettings['last_checkin_at']) {
+                    ht_back('view=settings&tab=pfsense', 'pfSense has not checked in yet. Run "/usr/local/bin/php -f /root/ims-cp-agent.php pull" on the firewall and check its output.');
+                }
+
+                $ago = time() - (int)strtotime((string)$netSettings['last_checkin_at']);
+                $summary = 'Last check-in ' . ($ago < 120 ? $ago . ' seconds' : round($ago / 60) . ' minutes') . ' ago from ' .
+                    ($info['ip'] ?? 'unknown address') . ' (zone ' . ($info['zone'] ?? '?') . ', ' . (int)($info['sessions'] ?? 0) . ' active sessions).';
+
+                if (array_key_exists('mac_filtering', $info) && !$info['mac_filtering']) {
+                    $summary .= ' Warning: MAC filtering is off on this zone, so pass/block entries will not take effect.';
+                }
+
+                ht_back(
+                    'view=settings&tab=pfsense',
+                    hubnet_agent_online($netSettings) ? null : 'pfSense is not checking in. ' . $summary . ' Check the Cron entry on the firewall.',
+                    hubnet_agent_online($netSettings) ? 'pfSense is checking in. ' . $summary : null
+                );
+            }
+
+            $result = hubnet_call($netSettings, 'ping');
             $extra = '';
 
             if ($result['ok'] && array_key_exists('mac_filtering', $result['data']) && !$result['data']['mac_filtering']) {
