@@ -25,6 +25,7 @@ require_once __DIR__ . '/includes/hub-network.php';
 $hub_team_ready = hubnet_ensure_schema($conn);
 $hub_packages = $hub_team_ready ? hubnet_packages($conn) : [];
 $can_view_team = ims_allowed('hub_team.view', ['Administrator', 'Operations/Admin', 'IT Officer'], 'View hub team members and internet access');
+$can_remind_members = ims_allowed('hub_reminders.send', ['Administrator', 'Operations/Admin'], 'Send subscription reminders to hub members');
 
 // Get active tab
 $active_tab = isset($_GET['tab']) ? sanitize_input($_GET['tab']) : 'members';
@@ -420,6 +421,12 @@ if (isset($_GET['edit_receipt'])) {
                                             <a href="hub-team?member_id=<?php echo (int)$member['member_id']; ?>"
                                                class="btn btn-success btn-sm" title="Team members &amp; internet">
                                                 <i class="fas fa-users" aria-hidden="true"></i><span class="sr-only">Team</span>
+                                            </a>
+                                        <?php endif; ?>
+                                        <?php if ($can_remind_members && $can_view_team && $hub_team_ready): ?>
+                                            <a href="hub-team?member_id=<?php echo (int)$member['member_id']; ?>&amp;remind=1"
+                                               class="btn btn-secondary btn-sm" title="Send subscription reminder">
+                                                <i class="fas fa-bell" aria-hidden="true"></i><span class="sr-only">Remind</span>
                                             </a>
                                         <?php endif; ?>
                                         <?php if ($can_open_member_folders): ?>

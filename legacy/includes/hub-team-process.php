@@ -14,6 +14,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/hub-network.php';
+require_once __DIR__ . '/hub-reminders.php';
 
 function ht_back(string $query = '', ?string $error = null, ?string $success = null): never
 {
@@ -112,7 +113,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || empty($_SESSION['user_id'])
     ht_back('', 'Unauthorized request.');
 }
 
-if (!isset($conn) || !($conn instanceof mysqli) || !hubnet_ensure_schema($conn)) {
+if (!isset($conn) || !($conn instanceof mysqli) || !hubnet_ensure_schema($conn) || !hubrem_ensure_schema($conn)) {
     ht_back('', 'Hub team tables are not available. Apply database/migrations/2026_11_19_hub_teams_network.sql.');
 }
 
@@ -125,6 +126,20 @@ $memberId = ht_int('member_id');
 $canManage = ims_allowed('hub_team.manage', ['Administrator', 'Operations/Admin'], 'Register and edit hub team members and their devices');
 $canControl = ims_allowed('hub_network.control', ['Administrator', 'Operations/Admin', 'IT Officer'], 'Connect and disconnect hub members from the internet (pfSense)');
 $canSettings = ims_allowed('hub_network.settings', ['Administrator', 'IT Officer'], 'Configure hub workspace packages and the pfSense connection');
+$canRemind = ims_allowed('hub_reminders.send', ['Administrator', 'Operations/Admin'], 'Send subscription reminders to hub members');
+$canReminderSettings = ims_allowed('hub_reminders.settings', ['Administrator', 'Operations/Admin'], 'Configure automatic hub member reminders');
+
+/** Where to return: a settings tab, a company page, or the dashboard. */
+function ht_return_query(int $memberId, string $defaultTab = ''): string
+{
+    $tab = preg_replace('/[^a-z]/', '', (string)($_POST['return_tab'] ?? $defaultTab)) ?? '';
+
+    if ((string)($_POST['return_view'] ?? '') === 'settings' || ($memberId <= 0 && $tab !== '')) {
+        return 'view=settings' . ($tab !== '' ? '&tab=' . $tab : '');
+    }
+
+    return ht_member_query($memberId);
+}
 
 $needs = [
     'add_team_member' => $canManage,
@@ -137,6 +152,9 @@ $needs = [
     'save_package' => $canSettings,
     'save_network_settings' => $canSettings,
     'test_connection' => $canSettings,
+    'send_reminder' => $canRemind,
+    'run_reminders_now' => $canRemind,
+    'save_reminder_settings' => $canReminderSettings,
 ];
 
 if (!array_key_exists($action, $needs)) {
@@ -405,7 +423,7 @@ try {
             $stmt->execute();
             $stmt->close();
 
-            ht_back('view=settings', null, 'Package "' . $name . '" saved (maximum ' . $maxSeats . ' seat' . ($maxSeats === 1 ? '' : 's') . ').');
+            ht_back('view=settings&tab=packages', null, 'Package "' . $name . '" saved (maximum ' . $maxSeats . ' seat' . ($maxSeats === 1 ? '' : 's') . ').');
 
         /* ---------------- pfSense settings ---------------- */
         case 'save_network_settings':
@@ -446,7 +464,7 @@ try {
             $stmt->execute();
             $stmt->close();
 
-            ht_back('view=settings', null, 'pfSense settings saved.');
+            ht_back('view=settings&tab=pfsense', null, 'pfSense settings saved.');
 
         case 'test_connection':
             $result = hubnet_call(hubnet_settings($conn), 'ping');
@@ -457,10 +475,92 @@ try {
             }
 
             ht_back(
-                'view=settings',
+                'view=settings&tab=pfsense',
                 $result['ok'] ? null : 'Test failed: ' . $result['message'],
                 $result['ok'] ? $result['message'] . ' Active sessions: ' . (int)($result['data']['sessions'] ?? 0) . '.' . $extra : null
             );
+
+        /* ---------------- Reminders ---------------- */
+        case 'send_reminder':
+            $memberIds = array_map('intval', (array)($_POST['member_ids'] ?? []));
+            if ($memberId > 0) {
+                $memberIds[] = $memberId;
+            }
+            $memberIds = array_values(array_unique(array_filter($memberIds, static fn(int $id): bool => $id > 0)));
+
+            $subject = trim((string)($_POST['subject'] ?? ''));
+            $message = trim((string)($_POST['message'] ?? ''));
+
+            if ($memberIds === []) {
+                throw new InvalidArgumentException('Choose at least one member to remind.');
+            }
+
+            if ($subject === '' || $message === '') {
+                throw new InvalidArgumentException('Enter the reminder subject and message.');
+            }
+
+            $result = hubrem_send_manual(
+                $conn,
+                $memberIds,
+                mb_substr($subject, 0, 190),
+                mb_substr($message, 0, 5000),
+                $userId,
+                !empty($_POST['send_email']),
+                !empty($_POST['include_team'])
+            );
+
+            $summary = 'Reminder sent to ' . $result['sent'] . ' member' . ($result['sent'] === 1 ? '' : 's') . '.';
+            if ($result['errors'] !== []) {
+                $summary .= ' ' . implode(' ', array_slice($result['errors'], 0, 3)) . (count($result['errors']) > 3 ? ' ...' : '');
+            }
+
+            ht_back(
+                ht_return_query(count($memberIds) === 1 ? $memberIds[0] : 0, 'reminders'),
+                $result['sent'] === 0 ? $summary : null,
+                $result['sent'] > 0 ? $summary : null
+            );
+
+        case 'run_reminders_now':
+            $result = hubrem_dispatch($conn, $userId, true);
+            ht_back(
+                'view=settings&tab=reminders',
+                null,
+                $result['sent'] === 0 && $result['failed'] === 0
+                    ? 'No automatic reminders are due today (each one is sent only once).'
+                    : 'Due reminders sent: ' . $result['sent'] . ($result['failed'] > 0 ? ', failed: ' . $result['failed'] : '') . '.'
+            );
+
+        case 'save_reminder_settings':
+            $days = array_values(array_unique(array_filter(
+                array_map('intval', preg_split('/[\s,;]+/', (string)($_POST['days_before'] ?? '')) ?: []),
+                static fn(int $d): bool => $d > 0 && $d <= 365
+            )));
+            rsort($days);
+            $daysText = implode(',', $days);
+            $subject = mb_substr(trim((string)($_POST['subject'] ?? '')), 0, 190);
+            $message = mb_substr(trim((string)($_POST['message'] ?? '')), 0, 5000);
+            $enabled = !empty($_POST['enabled']) ? 1 : 0;
+            $onExpiry = !empty($_POST['on_expiry']) ? 1 : 0;
+            $every = max(0, min(90, ht_int('overdue_every_days')));
+            $max = max(0, min(24, ht_int('overdue_max')));
+            $sendEmail = !empty($_POST['send_email']) ? 1 : 0;
+            $includeTeam = !empty($_POST['include_team']) ? 1 : 0;
+
+            if ($subject === '' || $message === '') {
+                throw new InvalidArgumentException('Enter the reminder subject and message.');
+            }
+
+            $stmt = $conn->prepare(
+                'UPDATE hub_reminder_settings
+                 SET enabled = ?, days_before = ?, on_expiry = ?, overdue_every_days = ?, overdue_max = ?,
+                     send_email = ?, include_team = ?, subject = ?, message = ?, updated_by = ?, updated_at = NOW()
+                 WHERE id = 1'
+            );
+            $stmt->bind_param('isiiiiissi', $enabled, $daysText, $onExpiry, $every, $max, $sendEmail, $includeTeam, $subject, $message, $userId);
+            $stmt->execute();
+            $stmt->close();
+
+            ht_back('view=settings&tab=reminders', null, 'Reminder settings saved.');
     }
 } catch (Throwable $e) {
     try {
@@ -476,5 +576,12 @@ try {
         ? $e->getMessage()
         : (str_contains($e->getMessage(), 'Duplicate') ? 'That entry already exists.' : 'Could not complete the request. Please try again.');
 
-    ht_back(ht_member_query($memberId) ?: ($action === 'save_package' || $action === 'save_network_settings' ? 'view=settings' : ''), $message);
+    $settingsTab = match ($action) {
+        'save_package' => 'packages',
+        'save_network_settings', 'test_connection' => 'pfsense',
+        'save_reminder_settings', 'run_reminders_now' => 'reminders',
+        default => '',
+    };
+
+    ht_back(ht_return_query($memberId, $settingsTab), $message);
 }

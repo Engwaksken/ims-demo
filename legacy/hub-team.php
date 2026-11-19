@@ -23,20 +23,37 @@ $canView = ims_allowed('hub_team.view', ['Administrator', 'Operations/Admin', 'I
 $canManage = ims_allowed('hub_team.manage', ['Administrator', 'Operations/Admin'], 'Register and edit hub team members and their devices');
 $canControl = ims_allowed('hub_network.control', ['Administrator', 'Operations/Admin', 'IT Officer'], 'Connect and disconnect hub members from the internet (pfSense)');
 $canSettings = ims_allowed('hub_network.settings', ['Administrator', 'IT Officer'], 'Configure hub workspace packages and the pfSense connection');
+$canRemind = ims_allowed('hub_reminders.send', ['Administrator', 'Operations/Admin'], 'Send subscription reminders to hub members');
+$canReminderSettings = ims_allowed('hub_reminders.settings', ['Administrator', 'Operations/Admin'], 'Configure automatic hub member reminders');
+$canOpenSettings = $canSettings || $canRemind || $canReminderSettings;
 
 $successMessage = (string)($_SESSION['success'] ?? '');
 $errorMessage = (string)($_SESSION['error'] ?? '');
 unset($_SESSION['success'], $_SESSION['error']);
 
-$ready = isset($conn) && $conn instanceof mysqli && hubnet_ensure_schema($conn);
+require_once __DIR__ . '/includes/hub-reminders.php';
+
+$ready = isset($conn) && $conn instanceof mysqli && hubnet_ensure_schema($conn) && hubrem_ensure_schema($conn);
 $view = (string)($_GET['view'] ?? '');
 $memberId = (int)($_GET['member_id'] ?? 0);
 
-if ($view === 'settings' && !$canSettings) {
+if ($view === 'settings' && !$canOpenSettings) {
     $view = '';
 }
 
+// Settings tabs: Packages and pfSense (IT/admin), Reminders (Operations/admin).
+$settingsTabs = array_filter([
+    'packages' => $canSettings ? ['fa-chair', 'Packages'] : null,
+    'pfsense' => $canSettings ? ['fa-shield-halved', 'pfSense'] : null,
+    'reminders' => ($canRemind || $canReminderSettings) ? ['fa-bell', 'Reminders'] : null,
+]);
+$activeSettingsTab = (string)($_GET['tab'] ?? '');
+if (!isset($settingsTabs[$activeSettingsTab])) {
+    $activeSettingsTab = (string)array_key_first($settingsTabs);
+}
+
 $settings = $ready ? hubnet_settings($conn) : null;
+$reminderSettings = $ready ? hubrem_settings($conn) : null;
 
 /** Small helpers for the access buttons. */
 function ht_state_badge(array $device): string
@@ -87,6 +104,13 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
 .ht-settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: var(--space-5, 20px); align-items: start; }
 .ht-package-row input.form-control { min-width: 0; }
 .ht-help { font-size: 12px; color: var(--ink-400); margin-top: 4px; }
+.ht-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.ht-panel-head h3 { margin: 0; font-size: 15px; }
+.ht-check-list { display: grid; gap: 8px; }
+.ht-check-list label { display: flex; gap: 8px; align-items: flex-start; font-weight: 500; }
+.ht-placeholders code { font-size: 11px; margin-right: 4px; }
+.ht-due-soon { color: var(--amber-fg); font-weight: 600; }
+.ht-overdue { color: var(--red-fg); font-weight: 600; }
 </style>
 
 <div class="page-stack">
@@ -124,85 +148,252 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
 <?php if (!$settings['enabled']): ?>
 <div class="alert alert-warning"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
     pfSense control is off: people and devices are registered, but nothing is sent to the firewall.
-    <?= $canSettings ? '<a href="hub-team?view=settings">Set up the pfSense connection</a>.' : 'Ask an administrator to set up the pfSense connection.' ?>
+    <?= $canSettings ? '<a href="hub-team?view=settings&amp;tab=pfsense">Set up the pfSense connection</a>.' : 'Ask an administrator to set up the pfSense connection.' ?>
 </div>
 <?php endif; ?>
 
 <div class="ht-tabs">
     <a href="hub-team" class="btn <?= $view === '' && $memberId === 0 ? 'btn-primary' : 'btn-soft' ?>"><i class="fas fa-network-wired" aria-hidden="true"></i> Internet dashboard</a>
-    <?php if ($canSettings): ?>
-    <a href="hub-team?view=settings" class="btn <?= $view === 'settings' ? 'btn-primary' : 'btn-soft' ?>"><i class="fas fa-sliders" aria-hidden="true"></i> Packages &amp; pfSense</a>
+    <?php if ($canOpenSettings): ?>
+    <a href="hub-team?view=settings" class="btn <?= $view === 'settings' ? 'btn-primary' : 'btn-soft' ?>"><i class="fas fa-sliders" aria-hidden="true"></i> Settings &amp; reminders</a>
     <?php endif; ?>
 </div>
 
 <?php
 /* =====================================================================
-   SETTINGS: packages and pfSense
+   SETTINGS: tabs for packages, pfSense and reminders
 ===================================================================== */
 if ($view === 'settings'):
-    $packages = hubnet_packages($conn);
+    $packages = $canSettings ? hubnet_packages($conn) : [];
     $usage = [];
-    $usageResult = $conn->query('SELECT space_package_id, COUNT(*) AS c FROM members WHERE space_package_id IS NOT NULL GROUP BY space_package_id');
-    while ($usageResult && ($u = $usageResult->fetch_assoc())) {
-        $usage[(int)$u['space_package_id']] = (int)$u['c'];
+    if ($canSettings) {
+        $usageResult = $conn->query('SELECT space_package_id, COUNT(*) AS c FROM members WHERE space_package_id IS NOT NULL GROUP BY space_package_id');
+        while ($usageResult && ($u = $usageResult->fetch_assoc())) {
+            $usage[(int)$u['space_package_id']] = (int)$u['c'];
+        }
+    }
+
+    $dueMembers = [];
+    $reminderLog = [];
+    if (isset($settingsTabs['reminders'])) {
+        $dueMembers = hubrem_candidates($conn, 30, 60);
+        $logResult = $conn->query(
+            "SELECT l.*, m.company_name, m.membership_number, u.full_name, s.full_name AS sender
+             FROM hub_reminder_log l
+             JOIN members m ON m.member_id = l.member_id
+             LEFT JOIN users u ON u.user_id = m.user_id
+             LEFT JOIN users s ON s.user_id = l.sent_by
+             ORDER BY l.sent_at DESC
+             LIMIT 25"
+        );
+        $reminderLog = $logResult ? $logResult->fetch_all(MYSQLI_ASSOC) : [];
     }
 ?>
-<div class="ht-settings-grid">
-    <div class="card">
-        <div class="card-header"><h3><i class="fas fa-chair" aria-hidden="true"></i> Workspace packages</h3></div>
-        <div class="card-body">
-            <p class="ht-help">Maximum seats includes the primary member. Changing a maximum does not remove anyone; companies above the new limit are flagged and cannot add more people.</p>
+<div class="tab-shell" id="settingsTabs">
+    <div class="tab-nav" role="tablist" aria-label="Hub settings">
+        <?php foreach ($settingsTabs as $key => [$icon, $label]): ?>
+            <button type="button" class="tab-btn <?= $key === $activeSettingsTab ? 'active' : '' ?>" role="tab"
+                    id="tab-<?= $key ?>" aria-controls="panel-<?= $key ?>" data-tab="<?= $key ?>"
+                    aria-selected="<?= $key === $activeSettingsTab ? 'true' : 'false' ?>">
+                <i class="fas <?= $icon ?>" aria-hidden="true"></i> <?= ht_e($label) ?>
+                <?php if ($key === 'reminders' && $dueMembers !== []): ?><span class="badge"><?= count($dueMembers) ?></span><?php endif; ?>
+            </button>
+        <?php endforeach; ?>
+    </div>
+
+    <div class="tab-panels">
+    <?php if (isset($settingsTabs['packages'])): ?>
+        <!-- Packages -->
+        <section class="tab-panel <?= $activeSettingsTab === 'packages' ? 'active' : '' ?>" id="panel-packages" role="tabpanel" aria-labelledby="tab-packages">
+            <div class="ht-panel-head">
+                <div>
+                    <h3>Workspace packages</h3>
+                    <p class="ht-help">Maximum seats includes the primary member. Lowering a maximum removes nobody; companies above it are flagged and cannot add more people.</p>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="openPackageModal(null)"><i class="fas fa-plus" aria-hidden="true"></i> Add package</button>
+            </div>
             <div class="table-responsive">
                 <table class="table">
-                    <thead><tr><th>Package</th><th style="width:90px">Max seats</th><th style="width:70px">Order</th><th style="width:70px">Active</th><th>Members</th><th></th></tr></thead>
+                    <thead><tr><th>Package</th><th>Max seats</th><th>Members</th><th>Status</th><th></th></tr></thead>
                     <tbody>
-                    <?php foreach ($packages as $package): $formId = 'pkg' . (int)$package['package_id']; ?>
-                        <tr class="ht-package-row">
-                            <td>
-                                <input form="<?= $formId ?>" class="form-control" name="name" value="<?= ht_e($package['name']) ?>" required aria-label="Package name">
-                                <input form="<?= $formId ?>" class="form-control" name="description" value="<?= ht_e($package['description']) ?>" placeholder="Description" aria-label="Description" style="margin-top:6px">
-                            </td>
-                            <td><input form="<?= $formId ?>" class="form-control" type="number" min="1" max="500" name="max_seats" value="<?= (int)$package['max_seats'] ?>" required aria-label="Maximum seats"></td>
-                            <td><input form="<?= $formId ?>" class="form-control" type="number" name="sort_order" value="<?= (int)$package['sort_order'] ?>" aria-label="Sort order"></td>
-                            <td><input form="<?= $formId ?>" type="checkbox" name="is_active" value="1" <?= !empty($package['is_active']) ? 'checked' : '' ?> aria-label="Active"></td>
+                    <?php if ($packages === []): ?>
+                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-chair" aria-hidden="true"></i><p>No packages yet.</p></div></td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($packages as $package): ?>
+                        <tr>
+                            <td><strong><?= ht_e($package['name']) ?></strong><?= $package['description'] ? '<small class="cell-muted">' . ht_e($package['description']) . '</small>' : '' ?></td>
+                            <td><?= (int)$package['max_seats'] ?> <?= (int)$package['max_seats'] === 1 ? 'person' : 'people' ?></td>
                             <td><?= $usage[(int)$package['package_id']] ?? 0 ?></td>
+                            <td><span class="badge badge-<?= !empty($package['is_active']) ? 'success' : 'secondary' ?>"><?= !empty($package['is_active']) ? 'Active' : 'Hidden' ?></span></td>
                             <td>
-                                <form id="<?= $formId ?>" method="post" action="includes/hub-team-process.php" class="ht-inline">
-                                    <?= csrf_field() ?>
-                                    <input type="hidden" name="action" value="save_package">
-                                    <input type="hidden" name="package_id" value="<?= (int)$package['package_id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save</button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-warning" title="Edit package"
+                                        onclick='openPackageModal(<?= json_encode([
+                                            'package_id' => (int)$package['package_id'],
+                                            'name' => $package['name'],
+                                            'max_seats' => (int)$package['max_seats'],
+                                            'description' => (string)$package['description'],
+                                            'sort_order' => (int)$package['sort_order'],
+                                            'is_active' => !empty($package['is_active']),
+                                        ], JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'>
+                                    <i class="fas fa-edit" aria-hidden="true"></i> Edit
+                                </button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
+        </section>
 
-            <h4 style="margin-top:18px">Add a package</h4>
+        <!-- pfSense -->
+        <section class="tab-panel <?= $activeSettingsTab === 'pfsense' ? 'active' : '' ?>" id="panel-pfsense" role="tabpanel" aria-labelledby="tab-pfsense">
+            <div class="ht-panel-head">
+                <div>
+                    <h3>pfSense connection</h3>
+                    <p class="ht-help">Install <code>tools/pfsense/ims-cp-agent.php</code> on the firewall (instructions at the top of that file) and use the same shared secret here.</p>
+                </div>
+                <div class="ht-actions">
+                    <form method="post" action="includes/hub-team-process.php" class="ht-inline">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="action" value="test_connection">
+                        <button type="submit" class="btn btn-soft"><i class="fas fa-plug" aria-hidden="true"></i> Test connection</button>
+                    </form>
+                    <button type="button" class="btn btn-primary" onclick="openModal('pfsenseModal')"><i class="fas fa-pen" aria-hidden="true"></i> Edit connection</button>
+                </div>
+            </div>
+            <div class="detail-grid">
+                <div><div class="detail-label">Status</div><div class="detail-value"><?= $settings['enabled'] ? '<span class="badge badge-success">On</span>' : '<span class="badge badge-secondary">Off</span>' ?></div></div>
+                <div><div class="detail-label">Agent URL</div><div class="detail-value"><?= $settings['agent_url'] !== '' ? '<code>' . ht_e($settings['agent_url']) . '</code>' : 'Not set' ?></div></div>
+                <div><div class="detail-label">Captive portal zone</div><div class="detail-value"><code><?= ht_e($settings['cp_zone']) ?></code></div></div>
+                <div><div class="detail-label">Shared secret</div><div class="detail-value"><?= $settings['has_secret'] ? 'Saved' : 'Not set' ?></div></div>
+                <div><div class="detail-label">Automatic enforcement</div><div class="detail-value"><?= $settings['auto_enforce'] ? 'On' : 'Off' ?></div></div>
+                <div><div class="detail-label">Last changed</div><div class="detail-value"><?= $settings['updated_at'] ? ht_e(date('d M Y H:i', strtotime((string)$settings['updated_at']))) : '-' ?></div></div>
+            </div>
+            <p class="ht-help" style="margin-top:14px">Scheduled task (every 5 minutes): <code>*/5 * * * * php /path/to/legacy/cron/hub-internet-sync.php</code></p>
+        </section>
+    <?php endif; ?>
+
+    <?php if (isset($settingsTabs['reminders'])): ?>
+        <!-- Reminders -->
+        <section class="tab-panel <?= $activeSettingsTab === 'reminders' ? 'active' : '' ?>" id="panel-reminders" role="tabpanel" aria-labelledby="tab-reminders">
+            <div class="ht-panel-head">
+                <div>
+                    <h3>Subscription reminders</h3>
+                    <p class="ht-help">
+                        Automatic reminders are <strong><?= $reminderSettings['enabled'] ? 'on' : 'off' ?></strong>:
+                        <?= $reminderSettings['days_before'] !== [] ? ht_e(implode(', ', array_reverse($reminderSettings['days_before']))) . ' day(s) before' : 'none before' ?><?= $reminderSettings['on_expiry'] ? ', on the end date' : '' ?><?= $reminderSettings['overdue_every_days'] > 0 && $reminderSettings['overdue_max'] > 0 ? ', then every ' . (int)$reminderSettings['overdue_every_days'] . ' days up to ' . (int)$reminderSettings['overdue_max'] . ' times' : '' ?>.
+                        In-app notification<?= $reminderSettings['send_email'] ? ' and email' : '' ?><?= $reminderSettings['include_team'] ? ', copied to team members' : '' ?>.
+                    </p>
+                </div>
+                <div class="ht-actions">
+                    <?php if ($canReminderSettings): ?>
+                        <button type="button" class="btn btn-soft" onclick="openModal('reminderSettingsModal')"><i class="fas fa-gear" aria-hidden="true"></i> Automatic reminders</button>
+                    <?php endif; ?>
+                    <?php if ($canRemind): ?>
+                        <form method="post" action="includes/hub-team-process.php" class="ht-inline" onsubmit="return confirm('Send every automatic reminder that is due today?')">
+                            <?= csrf_field() ?>
+                            <input type="hidden" name="action" value="run_reminders_now">
+                            <button type="submit" class="btn btn-soft"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send due reminders now</button>
+                        </form>
+                        <button type="button" class="btn btn-primary" onclick="openReminderModal('bulk')" id="bulkRemindBtn" disabled>
+                            <i class="fas fa-bell" aria-hidden="true"></i> Remind selected (<span id="selectedRemindCount">0</span>)
+                        </button>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <h4>Ending in the next 30 days or ended in the last 60</h4>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr>
+                        <?php if ($canRemind): ?><th style="width:40px"><input type="checkbox" id="remindSelectAll" aria-label="Select all"></th><?php endif; ?>
+                        <th>Member</th><th>Plan</th><th>End date</th><th>Last reminder</th><?php if ($canRemind): ?><th></th><?php endif; ?>
+                    </tr></thead>
+                    <tbody>
+                    <?php if ($dueMembers === []): ?>
+                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-calendar-check" aria-hidden="true"></i><p>No subscriptions ending soon.</p></div></td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($dueMembers as $due): $daysLeft = (int)$due['days_left']; ?>
+                        <tr>
+                            <?php if ($canRemind): ?><td><input type="checkbox" class="remind-check" value="<?= (int)$due['member_id'] ?>" aria-label="Select <?= ht_e($due['full_name']) ?>"></td><?php endif; ?>
+                            <td><strong><?= ht_e($due['company_name'] ?: $due['full_name']) ?></strong><small class="cell-muted"><?= ht_e($due['membership_number']) ?> &middot; <?= ht_e($due['email'] ?: 'no email') ?></small></td>
+                            <td><?= ht_e($due['subscription_plan']) ?><?= $due['package_name'] ? '<small class="cell-muted">' . ht_e($due['package_name']) . '</small>' : '' ?></td>
+                            <td>
+                                <?= ht_e(date('d M Y', strtotime((string)$due['subscription_end_date']))) ?>
+                                <small class="<?= $daysLeft < 0 ? 'ht-overdue' : ($daysLeft <= 7 ? 'ht-due-soon' : 'cell-muted') ?>"><?= ht_e(ucfirst(hubrem_status_text($daysLeft))) ?></small>
+                            </td>
+                            <td><?= $due['last_reminder_at'] ? ht_e(date('d M Y H:i', strtotime((string)$due['last_reminder_at']))) : '<span class="cell-muted">Never</span>' ?></td>
+                            <?php if ($canRemind): ?>
+                            <td><button type="button" class="btn btn-sm btn-primary" onclick="openReminderModal([<?= (int)$due['member_id'] ?>], <?= ht_e(json_encode((string)($due['company_name'] ?: $due['full_name']))) ?>)"><i class="fas fa-bell" aria-hidden="true"></i> Remind</button></td>
+                            <?php endif; ?>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 style="margin-top:18px">Recently sent</h4>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Sent</th><th>Member</th><th>Type</th><th>Subject</th><th>Delivered</th></tr></thead>
+                    <tbody>
+                    <?php if ($reminderLog === []): ?>
+                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-bell-slash" aria-hidden="true"></i><p>No reminders sent yet.</p></div></td></tr>
+                    <?php endif; ?>
+                    <?php foreach ($reminderLog as $log): ?>
+                        <tr>
+                            <td><?= ht_e(date('d M Y H:i', strtotime((string)$log['sent_at']))) ?></td>
+                            <td><?= ht_e($log['company_name'] ?: $log['full_name']) ?><small class="cell-muted"><?= ht_e($log['membership_number']) ?></small></td>
+                            <td><?= $log['kind'] === 'manual' ? 'Manual' . ($log['sender'] ? ' &middot; ' . ht_e($log['sender']) : '') : 'Automatic' ?></td>
+                            <td><?= ht_e($log['subject']) ?></td>
+                            <td><?= (int)$log['emailed'] ?> email(s)<?= $log['error'] ? '<small class="ht-overdue" title="' . ht_e($log['error']) . '">' . ht_e(mb_strimwidth((string)$log['error'], 0, 60, '...')) . '</small>' : '' ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    <?php endif; ?>
+    </div>
+</div>
+
+<?php if ($canSettings): ?>
+<!-- Add / edit package -->
+<div id="packageModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="packageModalTitle">Add package</h3>
+            <span class="close" onclick="closeModal('packageModal')">&times;</span>
+        </div>
+        <div class="modal-body">
             <form method="post" action="includes/hub-team-process.php">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="save_package">
-                <input type="hidden" name="is_active" value="1">
+                <input type="hidden" name="package_id" id="pkg_id" value="0">
+                <div class="form-group"><label for="pkg_name" class="required">Name</label><input id="pkg_name" class="form-control" name="name" required maxlength="100" placeholder="e.g. Dedicated table for 8"></div>
                 <div class="form-row">
-                    <div class="form-group"><label for="new_pkg_name" class="required">Name</label><input id="new_pkg_name" class="form-control" name="name" required placeholder="e.g. Dedicated table for 8"></div>
-                    <div class="form-group"><label for="new_pkg_seats" class="required">Max seats</label><input id="new_pkg_seats" class="form-control" type="number" min="1" max="500" name="max_seats" value="1" required></div>
-                    <div class="form-group"><label for="new_pkg_order">Order</label><input id="new_pkg_order" class="form-control" type="number" name="sort_order" value="60"></div>
+                    <div class="form-group"><label for="pkg_seats" class="required">Maximum seats</label><input id="pkg_seats" class="form-control" type="number" min="1" max="500" name="max_seats" value="1" required><div class="ht-help">Including the primary member.</div></div>
+                    <div class="form-group"><label for="pkg_order">Display order</label><input id="pkg_order" class="form-control" type="number" name="sort_order" value="60"></div>
                 </div>
-                <div class="form-group"><label for="new_pkg_desc">Description</label><input id="new_pkg_desc" class="form-control" name="description"></div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add package</button>
+                <div class="form-group"><label for="pkg_desc">Description</label><input id="pkg_desc" class="form-control" name="description" maxlength="255"></div>
+                <div class="form-group"><label><input type="checkbox" name="is_active" value="1" id="pkg_active" checked> Offer this package when adding or editing members</label></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('packageModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save package</button>
+                </div>
             </form>
         </div>
     </div>
+</div>
 
-    <div class="card">
-        <div class="card-header"><h3><i class="fas fa-shield-halved" aria-hidden="true"></i> pfSense connection</h3></div>
-        <div class="card-body">
-            <p class="ht-help">
-                Install <code>tools/pfsense/ims-cp-agent.php</code> on the firewall (see the instructions at the top of that file),
-                set the same shared secret there and here, then test the connection.
-            </p>
+<!-- pfSense connection -->
+<div id="pfsenseModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>pfSense connection</h3>
+            <span class="close" onclick="closeModal('pfsenseModal')">&times;</span>
+        </div>
+        <div class="modal-body">
             <form method="post" action="includes/hub-team-process.php">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="save_network_settings">
@@ -221,24 +412,144 @@ if ($view === 'settings'):
                         <input id="cp_zone" class="form-control" name="cp_zone" value="<?= ht_e($settings['cp_zone']) ?>">
                     </div>
                 </div>
-                <div class="form-group">
+                <div class="ht-check-list">
                     <label><input type="checkbox" name="enabled" value="1" <?= $settings['enabled'] ? 'checked' : '' ?>> Send connect / disconnect changes to pfSense</label>
-                    <label><input type="checkbox" name="auto_enforce" value="1" <?= $settings['auto_enforce'] ? 'checked' : '' ?>> Automatic: disconnect when a membership expires or is suspended, reconnect when it is active again (runs from the scheduled task)</label>
+                    <label><input type="checkbox" name="auto_enforce" value="1" <?= $settings['auto_enforce'] ? 'checked' : '' ?>> Automatic: disconnect when a membership expires or is suspended, reconnect when it is active again</label>
                     <label><input type="checkbox" name="verify_tls" value="1" <?= $settings['verify_tls'] ? 'checked' : '' ?>> Verify the firewall's HTTPS certificate (leave off for pfSense's self-signed certificate)</label>
                 </div>
-                <div class="ht-actions">
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save settings</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('pfsenseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save connection</button>
                 </div>
             </form>
-            <form method="post" action="includes/hub-team-process.php" style="margin-top:10px">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="test_connection">
-                <button type="submit" class="btn btn-soft"><i class="fas fa-plug" aria-hidden="true"></i> Test connection</button>
-            </form>
-            <p class="ht-help">Scheduled task (every 5 minutes): <code>*/5 * * * * php /path/to/legacy/cron/hub-internet-sync.php</code></p>
         </div>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if ($canReminderSettings): ?>
+<!-- Automatic reminder settings -->
+<div id="reminderSettingsModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Automatic reminders</h3>
+            <span class="close" onclick="closeModal('reminderSettingsModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="includes/hub-team-process.php">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="save_reminder_settings">
+                <div class="ht-check-list">
+                    <label><input type="checkbox" name="enabled" value="1" <?= $reminderSettings['enabled'] ? 'checked' : '' ?>> Send reminders automatically</label>
+                </div>
+                <div class="form-row" style="margin-top:12px">
+                    <div class="form-group">
+                        <label for="rs_days">Days before the end date</label>
+                        <input id="rs_days" class="form-control" name="days_before" value="<?= ht_e(implode(', ', array_reverse($reminderSettings['days_before']))) ?>" placeholder="14, 7, 3, 1">
+                        <div class="ht-help">Comma separated. Leave empty for none.</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="rs_every">After it ends: every (days)</label>
+                        <input id="rs_every" class="form-control" type="number" min="0" max="90" name="overdue_every_days" value="<?= (int)$reminderSettings['overdue_every_days'] ?>">
+                    </div>
+                    <div class="form-group">
+                        <label for="rs_max">At most (times)</label>
+                        <input id="rs_max" class="form-control" type="number" min="0" max="24" name="overdue_max" value="<?= (int)$reminderSettings['overdue_max'] ?>">
+                    </div>
+                </div>
+                <div class="ht-check-list">
+                    <label><input type="checkbox" name="on_expiry" value="1" <?= $reminderSettings['on_expiry'] ? 'checked' : '' ?>> Remind on the end date</label>
+                    <label><input type="checkbox" name="send_email" value="1" <?= $reminderSettings['send_email'] ? 'checked' : '' ?>> Email as well as the in-app notification</label>
+                    <label><input type="checkbox" name="include_team" value="1" <?= $reminderSettings['include_team'] ? 'checked' : '' ?>> Copy the email to the company's active team members</label>
+                </div>
+                <div class="form-group" style="margin-top:12px">
+                    <label for="rs_subject" class="required">Subject</label>
+                    <input id="rs_subject" class="form-control" name="subject" required maxlength="190" value="<?= ht_e($reminderSettings['subject']) ?>">
+                </div>
+                <div class="form-group">
+                    <label for="rs_message" class="required">Message</label>
+                    <textarea id="rs_message" class="form-control" name="message" rows="7" required><?= ht_e($reminderSettings['message']) ?></textarea>
+                    <div class="ht-help ht-placeholders">Placeholders: <?php foreach (HUBREM_PLACEHOLDERS as $placeholder): ?><code><?= ht_e($placeholder) ?></code><?php endforeach; ?></div>
+                </div>
+                <p class="ht-help">Scheduled task (daily): <code>0 8 * * * php /path/to/legacy/cron/hub-member-reminders.php</code></p>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('reminderSettingsModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
+<script>
+(function () {
+    const shell = document.getElementById('settingsTabs');
+    if (!shell) return;
+    const buttons = Array.from(shell.querySelectorAll('.tab-btn'));
+
+    function activate(key, push) {
+        buttons.forEach(function (button) {
+            const on = button.dataset.tab === key;
+            button.classList.toggle('active', on);
+            button.setAttribute('aria-selected', on ? 'true' : 'false');
+            const panel = document.getElementById('panel-' + button.dataset.tab);
+            if (panel) panel.classList.toggle('active', on);
+        });
+        if (push) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', key);
+            history.replaceState(null, '', url.toString());
+        }
+    }
+
+    buttons.forEach(function (button) {
+        button.addEventListener('click', function () { activate(button.dataset.tab, true); });
+        button.addEventListener('keydown', function (event) {
+            if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+            const index = buttons.indexOf(button) + (event.key === 'ArrowRight' ? 1 : -1);
+            const next = buttons[(index + buttons.length) % buttons.length];
+            next.focus();
+            activate(next.dataset.tab, true);
+        });
+    });
+})();
+
+function openPackageModal(pkg) {
+    document.getElementById('packageModalTitle').textContent = pkg ? 'Edit package' : 'Add package';
+    document.getElementById('pkg_id').value = pkg ? pkg.package_id : 0;
+    document.getElementById('pkg_name').value = pkg ? pkg.name : '';
+    document.getElementById('pkg_seats').value = pkg ? pkg.max_seats : 1;
+    document.getElementById('pkg_order').value = pkg ? pkg.sort_order : 60;
+    document.getElementById('pkg_desc').value = pkg ? pkg.description : '';
+    document.getElementById('pkg_active').checked = pkg ? !!pkg.is_active : true;
+    openModal('packageModal');
+}
+
+(function () {
+    const all = document.getElementById('remindSelectAll');
+    const checks = Array.from(document.querySelectorAll('.remind-check'));
+    const button = document.getElementById('bulkRemindBtn');
+    const count = document.getElementById('selectedRemindCount');
+    if (!button) return;
+
+    function update() {
+        const selected = checks.filter(function (c) { return c.checked; }).length;
+        count.textContent = String(selected);
+        button.disabled = selected === 0;
+        if (all) {
+            all.checked = checks.length > 0 && selected === checks.length;
+            all.indeterminate = selected > 0 && selected < checks.length;
+        }
+    }
+
+    checks.forEach(function (c) { c.addEventListener('change', update); });
+    if (all) all.addEventListener('change', function () { checks.forEach(function (c) { c.checked = all.checked; }); update(); });
+    window.selectedReminderMembers = function () {
+        return checks.filter(function (c) { return c.checked; }).map(function (c) { return Number(c.value); });
+    };
+})();
+</script>
 
 <?php
 /* =====================================================================
@@ -306,6 +617,9 @@ elseif ($memberId > 0):
             <?php endif; ?>
             <?php if ($canManage): ?>
                 <button type="button" class="btn" onclick="openModal('addDeviceModal')"><i class="fas fa-laptop" aria-hidden="true"></i> Add device</button>
+            <?php endif; ?>
+            <?php if ($canRemind): ?>
+                <button type="button" class="btn" onclick="openReminderModal([<?= $memberId ?>], <?= ht_e(json_encode((string)($member['company_name'] ?: $member['full_name']))) ?>)"><i class="fas fa-bell" aria-hidden="true"></i> Send reminder</button>
             <?php endif; ?>
             <?php if ($canControl): ?>
                 <?= ht_access_form('member', $memberId, 'block', 'Disconnect whole company', 'fa-ban', 'btn-danger', $memberId) ?>
@@ -662,6 +976,80 @@ else:
         </div>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if ($canRemind && ($view === 'settings' || $memberId > 0)): ?>
+<!-- Send a reminder (Operations / Administrators) -->
+<div id="reminderModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="reminderModalTitle">Send reminder</h3>
+            <span class="close" onclick="closeModal('reminderModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="includes/hub-team-process.php" id="reminderForm">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="send_reminder">
+                <?php if ($view === 'settings'): ?>
+                    <input type="hidden" name="return_view" value="settings">
+                    <input type="hidden" name="return_tab" value="reminders">
+                <?php else: ?>
+                    <input type="hidden" name="member_id" value="<?= $memberId ?>">
+                <?php endif; ?>
+                <div id="reminderRecipients"></div>
+                <p class="ht-help" id="reminderTo"></p>
+                <div class="form-group">
+                    <label for="rm_subject" class="required">Subject</label>
+                    <input id="rm_subject" class="form-control" name="subject" required maxlength="190" value="<?= ht_e($reminderSettings['subject']) ?>">
+                </div>
+                <div class="form-group">
+                    <label for="rm_message" class="required">Message</label>
+                    <textarea id="rm_message" class="form-control" name="message" rows="7" required><?= ht_e($reminderSettings['message']) ?></textarea>
+                    <div class="ht-help ht-placeholders">Filled in for each member: <?php foreach (HUBREM_PLACEHOLDERS as $placeholder): ?><code><?= ht_e($placeholder) ?></code><?php endforeach; ?></div>
+                </div>
+                <div class="ht-check-list">
+                    <label><input type="checkbox" name="send_email" value="1" checked> Email as well as the in-app notification</label>
+                    <label><input type="checkbox" name="include_team" value="1" <?= $reminderSettings['include_team'] ? 'checked' : '' ?>> Copy the email to the company's active team members</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('reminderModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send reminder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ids: array of member ids, or 'bulk' for the ticked rows; name: shown when one member. */
+function openReminderModal(ids, name) {
+    if (ids === 'bulk') {
+        ids = typeof window.selectedReminderMembers === 'function' ? window.selectedReminderMembers() : [];
+    }
+    ids = Array.isArray(ids) ? ids : [];
+
+    const box = document.getElementById('reminderRecipients');
+    box.innerHTML = '';
+    ids.forEach(function (id) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'member_ids[]';
+        input.value = String(id);
+        box.appendChild(input);
+    });
+
+    const single = ids.length === 1 && name;
+    document.getElementById('reminderModalTitle').textContent = single ? 'Send reminder to ' + name : 'Send reminder';
+    document.getElementById('reminderTo').textContent = ids.length > 1
+        ? 'To ' + ids.length + ' members. Placeholders are filled in for each one.'
+        : (ids.length === 0 ? 'To this member.' : '');
+    openModal('reminderModal');
+}
+
+<?php if ($memberId > 0 && isset($_GET['remind'])): ?>
+window.addEventListener('DOMContentLoaded', function () { openReminderModal([<?= $memberId ?>], ''); });
+<?php endif; ?>
+</script>
 <?php endif; ?>
 
 <?php endif; ?>
