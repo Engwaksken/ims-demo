@@ -1176,6 +1176,39 @@ if ($dataStmt) {
 .pv-pager .pagination { margin-top: 0; flex-wrap: wrap; }
 .pv-pager .pagination a.disabled { opacity: .35; pointer-events: none; }
 
+/* Voucher form: standard field sizes in an 800px dialog. */
+.page-payment-voucher .pv-form-dialog { max-width: 820px; }
+.page-payment-voucher .modal .pv-form .pv-form-section { margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--ink-100); font-size: 12px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-500, #64748b); }
+.page-payment-voucher .modal .pv-form .pv-form-section:first-of-type { margin-top: 0; }
+.page-payment-voucher .pv-grid { display: grid; gap: 12px 14px; }
+.page-payment-voucher .pv-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.page-payment-voucher .pv-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.page-payment-voucher .pv-grid-sign { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; }
+.page-payment-voucher .pv-span-2 { grid-column: span 2; }
+.page-payment-voucher .pv-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.page-payment-voucher .modal .pv-form label:not(.form-check-label) { margin: 0; font-size: 12px; font-weight: 600; color: var(--ink-600, #475569); text-transform: none; letter-spacing: 0; }
+.page-payment-voucher .pv-req { color: var(--red-fg, #b91c1c); }
+.page-payment-voucher .modal .pv-form .form-control,
+.page-payment-voucher .modal .pv-form .form-select { height: 38px; padding: 6px 11px; font-size: 13px; line-height: 1.4; border: 1px solid var(--ink-200, #cbd5e1); border-radius: var(--radius-sm, 8px); }
+.page-payment-voucher .modal .pv-form .form-select { padding-right: 32px; background-position: right 10px center; }
+.page-payment-voucher .modal .pv-form .form-control-sm { height: 32px; padding: 4px 8px; font-size: 12px; }
+.page-payment-voucher .modal .pv-form .it-input { height: 34px; padding: 5px 8px; font-size: 13px; }
+.page-payment-voucher .pv-items-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; }
+.page-payment-voucher .pv-total { font-size: 13px; color: var(--ink-500, #64748b); }
+.page-payment-voucher .pv-total strong { margin-left: 6px; font-size: 15px; color: var(--ink-900, #0f172a); }
+.page-payment-voucher .pv-approval-fields { display: grid; gap: 12px; }
+.page-payment-voucher .modal .pv-form .pv-sign-canvas { max-width: 100%; height: 110px; }
+@media (max-width: 720px) {
+    .page-payment-voucher .pv-grid-3,
+    .page-payment-voucher .pv-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .page-payment-voucher .pv-grid-sign { grid-template-columns: 1fr; }
+}
+@media (max-width: 460px) {
+    .page-payment-voucher .pv-grid-3,
+    .page-payment-voucher .pv-grid-4 { grid-template-columns: 1fr; }
+    .page-payment-voucher .pv-span-2 { grid-column: auto; }
+}
+
 /* Bootstrap modals (scoped stylesheet above).
    The app's own .modal / .modal-dialog / .modal-content rules (style.css,
    reports.css) also match these elements and used to leak in: a second white
@@ -1611,26 +1644,27 @@ $endRow = min($offset + $perPage, $totalRows);
 </div>
 
 <!-- Create/Edit modal -->
-<div class="modal fade" id="voucherModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+<div class="modal fade" id="voucherModal" tabindex="-1" aria-hidden="true" aria-labelledby="voucherModalTitle">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable pv-form-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="voucherModalTitle">
                     <i class="fas fa-file-invoice me-2"></i>New Voucher
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body">
                 <div id="modalAlert"></div>
 
-                <form id="voucherForm" enctype="multipart/form-data">
+                <form id="voucherForm" class="pv-form" enctype="multipart/form-data">
                     <input type="hidden" name="action" value="save_voucher">
                     <input type="hidden" name="id" id="pv_id">
 
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Voucher Series</label>
+                    <div class="pv-form-section">Voucher details</div>
+                    <div class="pv-grid pv-grid-3">
+                        <div class="pv-field">
+                            <label for="voucher_series">Series</label>
                             <select class="form-select" name="voucher_series" id="voucher_series"
                                     onchange="onSeriesChange(this.value)">
                                 <?php foreach ($seriesList as $series): ?>
@@ -1638,147 +1672,135 @@ $endRow = min($offset + $perPage, $totalRows);
                                 <?php endforeach; ?>
                             </select>
                         </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Voucher Number</label>
+                        <div class="pv-field">
+                            <label for="voucher_no">Voucher number <span class="pv-req">*</span></label>
                             <input type="text" class="form-control" name="voucher_no"
                                    id="voucher_no" required value="<?= pvEsc($autoVoucherNumber) ?>">
                         </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Voucher Date</label>
+                        <div class="pv-field">
+                            <label for="voucher_date">Date <span class="pv-req">*</span></label>
                             <input type="date" class="form-control" name="voucher_date"
                                    id="voucher_date" required value="<?= date('Y-m-d') ?>">
                         </div>
-
-                        <div class="col-12">
-                            <label class="form-label">Supplier / Receiver</label>
-                            <input type="text" class="form-control" name="supplier"
-                                   id="supplier" required>
+                        <div class="pv-field pv-span-2">
+                            <label for="supplier">Supplier / receiver <span class="pv-req">*</span></label>
+                            <input type="text" class="form-control" name="supplier" id="supplier" required>
                         </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Currency</label>
+                        <div class="pv-field">
+                            <label for="currency">Currency</label>
                             <select class="form-select" name="currency" id="currency">
                                 <?php foreach (['UGX','USD','EUR','KES','GBP','TZS'] as $currencyOption): ?>
                                     <option value="<?= $currencyOption ?>"><?= $currencyOption ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Exchange Rate</label>
-                            <input type="text" class="form-control" name="exchange_rate" id="exchange_rate">
+                        <div class="pv-field">
+                            <label for="exchange_rate">Exchange rate</label>
+                            <input type="text" class="form-control" name="exchange_rate" id="exchange_rate" inputmode="decimal">
                         </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Equivalent Amount</label>
-                            <input type="text" class="form-control" name="total_usd" id="total_usd">
+                        <div class="pv-field">
+                            <label for="total_usd">Equivalent amount</label>
+                            <input type="text" class="form-control" name="total_usd" id="total_usd" inputmode="decimal">
                         </div>
+                    </div>
 
-                        <div class="col-md-3">
-                            <label class="form-label">Account Code</label>
+                    <div class="pv-form-section">Codes &amp; references</div>
+                    <div class="pv-grid pv-grid-4">
+                        <div class="pv-field">
+                            <label for="account_code">Account code</label>
                             <input type="text" class="form-control" name="account_code" id="account_code">
                         </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Project Code</label>
+                        <div class="pv-field">
+                            <label for="project_code">Project code</label>
                             <input type="text" class="form-control" name="project_code" id="project_code">
                         </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">JNL Reference</label>
+                        <div class="pv-field">
+                            <label for="jnl_ref">JNL reference</label>
                             <input type="text" class="form-control" name="jnl_ref" id="jnl_ref">
                         </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Cheque Reference</label>
+                        <div class="pv-field">
+                            <label for="cheque_ref">Cheque reference</label>
                             <input type="text" class="form-control" name="cheque_ref" id="cheque_ref">
                         </div>
                     </div>
 
-                    <div class="section-title">Line items</div>
-
+                    <div class="pv-form-section">Line items</div>
                     <div class="items-wrap">
                         <table class="items-table">
                             <thead>
                             <tr>
-                                <th>#</th>
+                                <th style="width:32px">#</th>
                                 <th>Description</th>
-                                <th>Qty</th>
-                                <th>Unit Price</th>
-                                <th>Total</th>
-                                <th>Budget Line</th>
-                                <th></th>
+                                <th style="width:80px">Qty</th>
+                                <th style="width:120px">Unit price</th>
+                                <th style="width:120px">Total</th>
+                                <th style="width:130px">Budget line</th>
+                                <th style="width:40px"></th>
                             </tr>
                             </thead>
                             <tbody id="itemsBody"></tbody>
                         </table>
                     </div>
-
-                    <div class="d-flex justify-content-between align-items-center mt-2">
+                    <div class="pv-items-foot">
                         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addItemRow()">
-                            <i class="fas fa-plus me-1"></i>Add Row
+                            <i class="fas fa-plus me-1"></i>Add row
                         </button>
-
-                        <strong id="totalDisplay">UGX 0.00</strong>
+                        <span class="pv-total">Total <strong id="totalDisplay">UGX 0.00</strong></span>
                     </div>
 
                     <?php if ($pvApprovalReady): ?>
-                    <div class="section-title">Admin/Finance signature &amp; approval</div>
-
+                    <div class="pv-form-section">Admin/Finance signature &amp; approval</div>
                     <div id="pvApprovalNote" class="alert alert-info py-2 small" style="display:none"></div>
 
-                    <div class="row g-3">
-                        <div class="col-lg-7">
-                            <div class="pv-sign-box" data-sign-box
-                                 data-field="prepared_signature_data"
-                                 data-profile="<?= pvEsc($pvMySignatureUri) ?>">
-                                <strong class="small">Your signature</strong>
-                                <img class="pv-signed-img" data-sign-preview alt="Your signature" style="display:none">
-                                <canvas class="pv-sign-canvas" width="440" height="130" data-sign-canvas
-                                        aria-label="Draw your signature" style="display:none"></canvas>
-                                <input type="hidden" name="prepared_signature_data" data-sign-value>
-                                <input type="hidden" name="use_profile_signature" value="0" data-sign-use-profile>
-                                <div class="pv-sign-tools">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-profile
-                                            <?= $pvMySignatureUri === '' ? 'disabled' : '' ?>>
-                                        <i class="fas fa-id-card me-1"></i>Use profile signature
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-draw>
-                                        <i class="fas fa-pen me-1"></i>Draw new
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-clear>
-                                        <i class="fas fa-eraser me-1"></i>Clear
-                                    </button>
-                                    <input type="file" class="form-control form-control-sm" name="prepared_signature_file"
-                                           accept="image/png,image/jpeg" data-sign-file aria-label="Upload signature image">
-                                </div>
-                                <span class="pv-sign-hint" data-sign-hint>
-                                    <?= $pvMySignatureUri !== ''
-                                        ? 'Your profile signature is attached. Draw or upload to replace it for this voucher.'
-                                        : 'No signature on your profile yet (My Profile &gt; Certification). Draw or upload one.' ?>
-                                </span>
+                    <div class="pv-grid pv-grid-sign">
+                        <div class="pv-sign-box" data-sign-box
+                             data-field="prepared_signature_data"
+                             data-profile="<?= pvEsc($pvMySignatureUri) ?>">
+                            <strong class="small">Your signature</strong>
+                            <img class="pv-signed-img" data-sign-preview alt="Your signature" style="display:none">
+                            <canvas class="pv-sign-canvas" width="440" height="130" data-sign-canvas
+                                    aria-label="Draw your signature" style="display:none"></canvas>
+                            <input type="hidden" name="prepared_signature_data" data-sign-value>
+                            <input type="hidden" name="use_profile_signature" value="0" data-sign-use-profile>
+                            <div class="pv-sign-tools">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-profile
+                                        <?= $pvMySignatureUri === '' ? 'disabled' : '' ?>>
+                                    <i class="fas fa-id-card me-1"></i>Profile signature
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-draw>
+                                    <i class="fas fa-pen me-1"></i>Draw
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-clear>
+                                    <i class="fas fa-eraser me-1"></i>Clear
+                                </button>
                             </div>
+                            <input type="file" class="form-control form-control-sm" name="prepared_signature_file"
+                                   accept="image/png,image/jpeg" data-sign-file aria-label="Upload signature image">
+                            <span class="pv-sign-hint" data-sign-hint>
+                                <?= $pvMySignatureUri !== ''
+                                    ? 'Your profile signature is attached. Draw or upload to replace it for this voucher.'
+                                    : 'No signature on your profile yet (My Profile &gt; Certification). Draw or upload one.' ?>
+                            </span>
                         </div>
 
-                        <div class="col-lg-5">
-                            <label class="form-label" for="approver_id">Approver (Senior Finance / HOD)</label>
-                            <select class="form-select" name="approver_id" id="approver_id">
-                                <option value="">Select approver...</option>
-                                <?php foreach ($pvApprovers as $approver): ?>
-                                    <option value="<?= (int)$approver['user_id'] ?>"
-                                        <?= $approver['user_id'] === $pvDefaultApprover ? 'selected' : '' ?>>
-                                        <?= pvEsc($approver['full_name']) ?> &middot; <?= pvEsc($approver['role']) ?><?= $approver['department'] !== '' ? ' (' . pvEsc($approver['department']) . ')' : '' ?><?= $approver['user_id'] === $pvDefaultApprover ? ' - your HOD' : '' ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-
-                            <div class="form-check mt-3">
+                        <div class="pv-approval-fields">
+                            <div class="pv-field">
+                                <label for="approver_id">Approver (Senior Finance / HOD)</label>
+                                <select class="form-select" name="approver_id" id="approver_id">
+                                    <option value="">Select approver...</option>
+                                    <?php foreach ($pvApprovers as $approver): ?>
+                                        <option value="<?= (int)$approver['user_id'] ?>"
+                                            <?= $approver['user_id'] === $pvDefaultApprover ? 'selected' : '' ?>>
+                                            <?= pvEsc($approver['full_name']) ?> &middot; <?= pvEsc($approver['role']) ?><?= $approver['department'] !== '' ? ' (' . pvEsc($approver['department']) . ')' : '' ?><?= $approver['user_id'] === $pvDefaultApprover ? ' - your HOD' : '' ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-check">
                                 <input class="form-check-input" type="checkbox" value="1"
                                        name="submit_for_approval" id="submit_for_approval" checked>
                                 <label class="form-check-label small" for="submit_for_approval">
-                                    Send to the approver now (they get a notification and email to review and sign)
+                                    Send to the approver now (notification and email to review and sign)
                                 </label>
                             </div>
                         </div>
