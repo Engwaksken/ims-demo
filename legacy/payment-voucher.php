@@ -15,6 +15,9 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 
 $conn->set_charset('utf8mb4');
 
+require_once __DIR__ . '/includes/voucher-approval.php';
+$pvApprovalReady = pva_ensure_schema($conn);
+
 $selfPath = parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
 $selfPath = is_string($selfPath) && $selfPath !== ''
     ? $selfPath
@@ -461,7 +464,11 @@ if (
             project_code,
             jnl_ref,
             cheque_ref,
-            items_json
+            items_json" .
+            ($pvApprovalReady
+                ? ', approval_status, prepared_by, prepared_signature, prepared_signature_mime, prepared_signed_at,
+                   approver_id, approved_signature, approved_signature_mime, approved_at'
+                : '') . "
          FROM payment_vouchers
          WHERE id IN ($placeholders)
          ORDER BY voucher_date ASC, id ASC"
@@ -923,7 +930,7 @@ table {
                     '</thead>' .
                     '<tbody>' .
                     '<tr>' .
-                        '<td></td><td></td><td></td>' .
+                        pva_signature_cells($conn, $voucher, 'pvEsc', 'max-width:100%;max-height:11mm;') .
                     '</tr>' .
                     '</tbody>' .
                 '</table>' .
@@ -1042,6 +1049,38 @@ foreach ($seriesList as $series) {
 $defaultSeries = $seriesList[0];
 $autoVoucherNumber = $nextVoucherNumbers[$defaultSeries];
 
+$currentUserId = (int)($_SESSION['user_id'] ?? 0);
+$canManageVouchers = ims_allowed('vouchers.manage', ['Administrator', 'Finance', 'Accountant'], 'Create, edit, delete and import payment vouchers');
+$pvApprovers = $pvApprovalReady ? pva_approvers($conn, $currentUserId) : [];
+$pvDefaultApprover = $pvApprovalReady ? pva_default_approver($conn, $currentUserId) : 0;
+$pvMySignature = $pvApprovalReady ? pva_profile_signature($conn, $currentUserId) : null;
+$pvMySignatureUri = $pvMySignature ? pva_data_uri($pvMySignature['data'], $pvMySignature['mime']) : '';
+unset($pvMySignature);
+
+$pvAwaitingMe = [];
+
+if ($pvApprovalReady) {
+    $awaitStmt = $conn->prepare(
+        "SELECT id, voucher_no, supplier, currency, total_amount, submitted_at
+         FROM payment_vouchers
+         WHERE approval_status = 'Pending Approval' AND approver_id = ?
+         ORDER BY submitted_at ASC
+         LIMIT 50"
+    );
+
+    if ($awaitStmt) {
+        $awaitStmt->bind_param('i', $currentUserId);
+        $awaitStmt->execute();
+        $awaitResult = $awaitStmt->get_result();
+
+        while ($awaitRow = $awaitResult->fetch_assoc()) {
+            $pvAwaitingMe[] = $awaitRow;
+        }
+
+        $awaitStmt->close();
+    }
+}
+
 $allowedPerPage = [10, 15, 25, 50, 100];
 $requestedPerPage = (int)($_GET['per_page'] ?? 15);
 $perPage = in_array($requestedPerPage, $allowedPerPage, true)
@@ -1082,7 +1121,8 @@ $offset = ($currentPage - 1) * $perPage;
 
 $dataSql =
     'SELECT id, voucher_no, voucher_date, supplier, currency,
-            total_amount, project_code, created_at
+            total_amount, project_code, created_at' .
+            ($pvApprovalReady ? ', approval_status, approver_id' : '') . '
      FROM payment_vouchers ' .
     $where .
     ' ORDER BY voucher_date DESC, id DESC
@@ -1136,7 +1176,34 @@ if ($dataStmt) {
 .pv-pager .pagination { margin-top: 0; flex-wrap: wrap; }
 .pv-pager .pagination a.disabled { opacity: .35; pointer-events: none; }
 
-/* Bootstrap modals (scoped stylesheet above). */
+/* Bootstrap modals (scoped stylesheet above).
+   The app's own .modal / .modal-dialog / .modal-content rules (style.css,
+   reports.css) also match these elements and used to leak in: a second white
+   dialog box behind the content, a blurred overlay at z-index 9999 and a
+   flex-column layout. Reset everything Bootstrap itself does not set. */
+.page-payment-voucher { background: transparent; }
+.page-payment-voucher .modal { background: transparent; padding: 0; animation: none; backdrop-filter: none; -webkit-backdrop-filter: none; z-index: 1055; }
+.page-payment-voucher .modal-dialog { background: transparent; box-shadow: none; border-radius: 0; max-height: none; flex-direction: row; animation: none; }
+.page-payment-voucher .modal-dialog:not(.modal-dialog-centered) { display: block; }
+.page-payment-voucher .modal-dialog-scrollable { height: calc(100% - 3.5rem); }
+.page-payment-voucher .modal-dialog-scrollable .modal-content { max-height: 100%; }
+.page-payment-voucher .modal-content { margin: 0; width: 100%; max-width: none; animation: none; background: var(--surface-card, #fff); overflow: hidden; }
+.page-payment-voucher .modal-body { background: transparent; }
+body > .modal-backdrop { position: fixed; inset: 0; z-index: 1050; width: 100vw; height: 100vh; background: #0f172a; }
+body > .modal-backdrop.fade { opacity: 0; transition: opacity .15s linear; }
+body > .modal-backdrop.show { opacity: .55; }
+.page-payment-voucher .modal .form-select { cursor: pointer; pointer-events: auto; background-color: var(--surface-card, #fff); }
+.pv-status { display: inline-flex; padding: 3px 9px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; white-space: nowrap; }
+.pv-status-draft { background: var(--ink-50); color: var(--ink-600, #475569); }
+.pv-status-pending-approval { background: var(--amber-bg); color: var(--amber-fg); }
+.pv-status-approved { background: var(--green-bg); color: var(--green-fg); }
+.pv-status-returned { background: var(--red-bg); color: var(--red-fg); }
+.page-payment-voucher .pv-sign-box { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--ink-200, #cbd5e1); border-radius: var(--radius-lg); background: var(--ink-50, #f8fafc); }
+.page-payment-voucher .pv-sign-canvas { display: block; width: 100%; max-width: 440px; height: 130px; border: 1px solid var(--ink-100); border-radius: var(--radius-sm); background: #fff; touch-action: none; cursor: crosshair; }
+.page-payment-voucher .pv-sign-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.page-payment-voucher .pv-sign-tools input[type=file] { max-width: 260px; font-size: 12px; }
+.page-payment-voucher .pv-sign-hint { font-size: 12px; color: var(--ink-400); }
+.page-payment-voucher .pv-signed-img { max-width: 220px; max-height: 80px; object-fit: contain; background: #fff; border: 1px solid var(--ink-100); border-radius: var(--radius-sm); padding: 4px; }
 .page-payment-voucher .btn-orange { background: var(--brand-500); border-color: var(--brand-500); color: var(--ink-0); font-weight: 600; }
 .page-payment-voucher .btn-orange:hover { background: var(--brand-700); border-color: var(--brand-700); color: var(--ink-0); }
 .page-payment-voucher .modal-content { border-radius: var(--radius-xl); border: 0; box-shadow: var(--shadow-xl); }
@@ -1169,6 +1236,7 @@ if ($dataStmt) {
         <h1><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Payment Vouchers</h1>
         <p>Create, edit, print, bulk upload, and export selected vouchers to PDF.</p>
     </div>
+    <?php if ($canManageVouchers): ?>
     <div class="hero-actions">
         <button type="button"
                 class="btn"
@@ -1194,6 +1262,7 @@ if ($dataStmt) {
             <i class="fas fa-plus" aria-hidden="true"></i> New Voucher
         </button>
     </div>
+    <?php endif; ?>
 </div>
 
 <?php if ($successMessage !== ''): ?>
@@ -1202,6 +1271,40 @@ if ($dataStmt) {
 
 <?php if ($errorMessage !== ''): ?>
 <div class="alert alert-danger"><i class="fas fa-exclamation-circle" aria-hidden="true"></i><?= pvEsc($errorMessage) ?></div>
+<?php endif; ?>
+
+<?php if (!$pvApprovalReady): ?>
+<div class="alert alert-warning"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>Voucher signatures and approvals are not set up yet. Ask an administrator to apply <code>database/migrations/2026_11_19_voucher_approvals.sql</code>.</div>
+<?php endif; ?>
+
+<?php if ($pvAwaitingMe !== []): ?>
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-signature" aria-hidden="true"></i> Awaiting your approval (<?= count($pvAwaitingMe) ?>)</h3></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead><tr><th>Voucher No</th><th>Supplier</th><th>Total</th><th>Submitted</th><th></th></tr></thead>
+                <tbody>
+                <?php foreach ($pvAwaitingMe as $pending): ?>
+                    <tr>
+                        <td><span class="pv-vno"><?= pvEsc($pending['voucher_no']) ?></span></td>
+                        <td><?= pvEsc($pending['supplier']) ?></td>
+                        <td><?= pvEsc($pending['currency']) ?> <?= number_format((float)$pending['total_amount'], 2) ?></td>
+                        <td><?= !empty($pending['submitted_at']) ? pvEsc(date('d M Y H:i', strtotime((string)$pending['submitted_at']))) : '-' ?></td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary"
+                                    data-bs-toggle="modal" data-bs-target="#approvalModal"
+                                    onclick="openApproval(<?= (int)$pending['id'] ?>)">
+                                <i class="fas fa-file-signature" aria-hidden="true"></i> Review &amp; sign
+                            </button>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 <?php endif; ?>
 
 <div class="card">
@@ -1262,13 +1365,14 @@ if ($dataStmt) {
                 <th style="width:90px">Currency</th>
                 <th style="width:155px">Total</th>
                 <th style="width:130px">Project</th>
+                <th style="width:130px">Approval</th>
                 <th style="width:160px">Actions</th>
             </tr>
             </thead>
             <tbody>
             <?php if ($vouchers === []): ?>
                 <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                         <div class="empty-state">
                             <i class="fas fa-file-invoice" aria-hidden="true"></i>
                             <p><?= $query !== ''
@@ -1304,7 +1408,21 @@ if ($dataStmt) {
                         <td><?= pvEsc($currency) ?> <?= number_format((float)($voucher['total_amount'] ?? 0), 2) ?></td>
                         <td><?= pvEsc($voucher['project_code'] ?? '-') ?></td>
                         <td>
+                            <?php $approvalStatus = (string)($voucher['approval_status'] ?? 'Draft'); ?>
+                            <span class="pv-status pv-status-<?= pvEsc(strtolower(str_replace(' ', '-', $approvalStatus))) ?>">
+                                <?= pvEsc($approvalStatus) ?>
+                            </span>
+                        </td>
+                        <td>
                             <div class="pv-row-actions">
+                                <?php if ($pvApprovalReady && pva_can_approve($voucher, $currentUserId)): ?>
+                                <button type="button" class="btn btn-sm btn-primary"
+                                        title="Review and sign"
+                                        data-bs-toggle="modal" data-bs-target="#approvalModal"
+                                        onclick="openApproval(<?= $id ?>)">
+                                    <i class="fas fa-file-signature"></i>
+                                </button>
+                                <?php endif; ?>
                                 <button type="button" class="btn btn-sm btn-soft"
                                         title="View"
                                         data-bs-toggle="modal" data-bs-target="#viewModal"
@@ -1319,12 +1437,14 @@ if ($dataStmt) {
                                     <i class="fas fa-print"></i>
                                 </a>
 
+                                <?php if ($canManageVouchers): ?>
                                 <button type="button" class="btn btn-sm btn-primary"
                                         title="Edit"
                                         data-bs-toggle="modal" data-bs-target="#voucherModal"
                                         onclick="editVoucher(<?= $id ?>)">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <?php endif; ?>
                             </div>
                         </td>
                     </tr>
@@ -1531,18 +1651,10 @@ $endRow = min($offset + $perPage, $totalRows);
                                    id="voucher_date" required value="<?= date('Y-m-d') ?>">
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-12">
                             <label class="form-label">Supplier / Receiver</label>
                             <input type="text" class="form-control" name="supplier"
                                    id="supplier" required>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Voucher Logo</label>
-                            <div class="form-control bg-light d-flex align-items-center gap-2">
-                                <i class="fas fa-image text-muted"></i>
-                                <span>The shared voucher logo configured above is used on all vouchers.</span>
-                            </div>
                         </div>
 
                         <div class="col-md-4">
@@ -1611,6 +1723,67 @@ $endRow = min($offset + $perPage, $totalRows);
 
                         <strong id="totalDisplay">UGX 0.00</strong>
                     </div>
+
+                    <?php if ($pvApprovalReady): ?>
+                    <div class="section-title">Admin/Finance signature &amp; approval</div>
+
+                    <div id="pvApprovalNote" class="alert alert-info py-2 small" style="display:none"></div>
+
+                    <div class="row g-3">
+                        <div class="col-lg-7">
+                            <div class="pv-sign-box" data-sign-box
+                                 data-field="prepared_signature_data"
+                                 data-profile="<?= pvEsc($pvMySignatureUri) ?>">
+                                <strong class="small">Your signature</strong>
+                                <img class="pv-signed-img" data-sign-preview alt="Your signature" style="display:none">
+                                <canvas class="pv-sign-canvas" width="440" height="130" data-sign-canvas
+                                        aria-label="Draw your signature" style="display:none"></canvas>
+                                <input type="hidden" name="prepared_signature_data" data-sign-value>
+                                <input type="hidden" name="use_profile_signature" value="0" data-sign-use-profile>
+                                <div class="pv-sign-tools">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-profile
+                                            <?= $pvMySignatureUri === '' ? 'disabled' : '' ?>>
+                                        <i class="fas fa-id-card me-1"></i>Use profile signature
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-draw>
+                                        <i class="fas fa-pen me-1"></i>Draw new
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-clear>
+                                        <i class="fas fa-eraser me-1"></i>Clear
+                                    </button>
+                                    <input type="file" class="form-control form-control-sm" name="prepared_signature_file"
+                                           accept="image/png,image/jpeg" data-sign-file aria-label="Upload signature image">
+                                </div>
+                                <span class="pv-sign-hint" data-sign-hint>
+                                    <?= $pvMySignatureUri !== ''
+                                        ? 'Your profile signature is attached. Draw or upload to replace it for this voucher.'
+                                        : 'No signature on your profile yet (My Profile &gt; Certification). Draw or upload one.' ?>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-5">
+                            <label class="form-label" for="approver_id">Approver (Senior Finance / HOD)</label>
+                            <select class="form-select" name="approver_id" id="approver_id">
+                                <option value="">Select approver...</option>
+                                <?php foreach ($pvApprovers as $approver): ?>
+                                    <option value="<?= (int)$approver['user_id'] ?>"
+                                        <?= $approver['user_id'] === $pvDefaultApprover ? 'selected' : '' ?>>
+                                        <?= pvEsc($approver['full_name']) ?> &middot; <?= pvEsc($approver['role']) ?><?= $approver['department'] !== '' ? ' (' . pvEsc($approver['department']) . ')' : '' ?><?= $approver['user_id'] === $pvDefaultApprover ? ' - your HOD' : '' ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" value="1"
+                                       name="submit_for_approval" id="submit_for_approval" checked>
+                                <label class="form-check-label small" for="submit_for_approval">
+                                    Send to the approver now (they get a notification and email to review and sign)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </form>
             </div>
 
@@ -1633,6 +1806,72 @@ $endRow = min($offset + $perPage, $totalRows);
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="viewBox">Loading...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Approval modal (Senior Finance / HOD) -->
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-signature me-2"></i>Review &amp; sign voucher</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="approvalAlert"></div>
+                <div id="approvalSummary">Loading...</div>
+
+                <form id="approvalForm" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="approve_voucher">
+                    <input type="hidden" name="id" id="approval_id">
+                    <input type="hidden" name="decision" id="approval_decision" value="approve">
+
+                    <div class="section-title">Your signature (H.O.Dept / Senior Finance)</div>
+                    <div class="pv-sign-box" data-sign-box
+                         data-field="approver_signature_data"
+                         data-profile="<?= pvEsc($pvMySignatureUri) ?>">
+                        <img class="pv-signed-img" data-sign-preview alt="Your signature" style="display:none">
+                        <canvas class="pv-sign-canvas" width="440" height="130" data-sign-canvas
+                                aria-label="Draw your signature" style="display:none"></canvas>
+                        <input type="hidden" name="approver_signature_data" data-sign-value>
+                        <input type="hidden" name="use_profile_signature" value="0" data-sign-use-profile>
+                        <div class="pv-sign-tools">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-profile
+                                    <?= $pvMySignatureUri === '' ? 'disabled' : '' ?>>
+                                <i class="fas fa-id-card me-1"></i>Use profile signature
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-draw>
+                                <i class="fas fa-pen me-1"></i>Draw new
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-sign-clear>
+                                <i class="fas fa-eraser me-1"></i>Clear
+                            </button>
+                            <input type="file" class="form-control form-control-sm" name="approver_signature_file"
+                                   accept="image/png,image/jpeg" data-sign-file aria-label="Upload signature image">
+                        </div>
+                        <span class="pv-sign-hint" data-sign-hint>
+                            <?= $pvMySignatureUri !== ''
+                                ? 'Your profile signature is attached. Draw or upload to replace it for this voucher.'
+                                : 'No signature on your profile yet (My Profile &gt; Certification). Draw or upload one.' ?>
+                        </span>
+                    </div>
+
+                    <label class="form-label mt-3" for="approval_comments">Comments (required when returning)</label>
+                    <textarea class="form-control" name="comments" id="approval_comments" rows="3"></textarea>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-outline-danger" id="returnVoucherBtn" onclick="submitApproval('return')">
+                    <i class="fas fa-undo me-1"></i>Return to preparer
+                </button>
+                <button type="button" class="btn btn-orange" id="approveVoucherBtn" onclick="submitApproval('approve')">
+                    <i class="fas fa-check me-1"></i>Approve &amp; sign
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -1674,10 +1913,148 @@ $endRow = min($offset + $perPage, $totalRows);
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
+/* Bootstrap appends its backdrop to <body>. Keep the modals there too so the
+   modal always stacks above its backdrop, whatever stacking contexts the app
+   layout creates (a backdrop above the dialog blocked clicks on its fields,
+   including the Voucher Series dropdown). */
+(function () {
+    const modalRoot = document.querySelector('.page-payment-voucher');
+    if (modalRoot && modalRoot.parentElement !== document.body) {
+        document.body.appendChild(modalRoot);
+    }
+})();
+
 const nextVoucherNumbers = <?= json_encode($nextVoucherNumbers, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 const defaultSeries = <?= json_encode($defaultSeries) ?>;
 const defaultVoucherNumber = <?= json_encode($autoVoucherNumber) ?>;
 const todayValue = <?= json_encode(date('Y-m-d')) ?>;
+const approvalsEnabled = <?= $pvApprovalReady ? 'true' : 'false' ?>;
+const defaultApproverId = <?= json_encode($pvDefaultApprover > 0 ? (string)$pvDefaultApprover : '') ?>;
+let editingOriginal = null; // {series, number} of the voucher being edited
+
+/* Signature boxes: profile signature by default, or draw / upload a new one. */
+function initSignBox(box) {
+    const canvas = box.querySelector('[data-sign-canvas]');
+    const preview = box.querySelector('[data-sign-preview]');
+    const value = box.querySelector('[data-sign-value]');
+    const useProfileInput = box.querySelector('[data-sign-use-profile]');
+    const file = box.querySelector('[data-sign-file]');
+    const hint = box.querySelector('[data-sign-hint]');
+    const profile = box.dataset.profile || '';
+    const context = canvas.getContext('2d');
+    let drawing = false;
+    let drawn = false;
+
+    context.lineWidth = 2.5;
+    context.lineCap = 'round';
+    context.strokeStyle = '#111827';
+
+    function point(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * canvas.width / rect.width,
+            y: (event.clientY - rect.top) * canvas.height / rect.height
+        };
+    }
+
+    canvas.addEventListener('pointerdown', function (event) {
+        drawing = true;
+        canvas.setPointerCapture(event.pointerId);
+        const p = point(event);
+        context.beginPath();
+        context.moveTo(p.x, p.y);
+    });
+
+    canvas.addEventListener('pointermove', function (event) {
+        if (!drawing) return;
+        const p = point(event);
+        context.lineTo(p.x, p.y);
+        context.stroke();
+        drawn = true;
+    });
+
+    function endStroke() {
+        if (!drawing) return;
+        drawing = false;
+        if (drawn) {
+            value.value = canvas.toDataURL('image/png');
+            useProfileInput.value = '0';
+            box.dataset.existing = '0';
+        }
+    }
+
+    canvas.addEventListener('pointerup', endStroke);
+    canvas.addEventListener('pointercancel', endStroke);
+
+    function showImage(src, text) {
+        preview.src = src || '';
+        preview.style.display = src ? '' : 'none';
+        canvas.style.display = 'none';
+        hint.textContent = text;
+    }
+
+    function startDrawing() {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        drawn = false;
+        value.value = '';
+        useProfileInput.value = '0';
+        box.dataset.existing = '0';
+        file.value = '';
+        preview.style.display = 'none';
+        canvas.style.display = 'block';
+        hint.textContent = 'Draw your signature in the box, or upload a PNG/JPEG image (max 2 MB).';
+    }
+
+    const api = {
+        useProfile: function () {
+            if (!profile) {
+                startDrawing();
+                hint.textContent = 'No signature on your profile yet (My Profile > Certification). Draw or upload one.';
+                return;
+            }
+            value.value = profile;
+            useProfileInput.value = '1';
+            box.dataset.existing = '0';
+            file.value = '';
+            showImage(profile, 'Your profile signature is attached. Draw or upload to replace it for this voucher.');
+        },
+        showExisting: function (src) {
+            value.value = '';
+            useProfileInput.value = '0';
+            box.dataset.existing = '1';
+            file.value = '';
+            showImage(src, 'The signature already on this voucher is kept. Use your profile signature, draw or upload to replace it.');
+        },
+        reset: function () {
+            api.useProfile();
+        },
+        hasSignature: function () {
+            return value.value !== '' || file.files.length > 0 || box.dataset.existing === '1';
+        }
+    };
+
+    box.querySelector('[data-sign-profile]').addEventListener('click', api.useProfile);
+    box.querySelector('[data-sign-draw]').addEventListener('click', startDrawing);
+    box.querySelector('[data-sign-clear]').addEventListener('click', startDrawing);
+    file.addEventListener('change', function () {
+        if (!file.files.length) return;
+        value.value = '';
+        useProfileInput.value = '0';
+        box.dataset.existing = '0';
+        showImage(URL.createObjectURL(file.files[0]), 'The uploaded image will be used as your signature.');
+    });
+
+    box.signApi = api;
+    api.reset();
+    return api;
+}
+
+document.querySelectorAll('[data-sign-box]').forEach(initSignBox);
+
+function signApiFor(form) {
+    const box = form.querySelector('[data-sign-box]');
+    return box ? box.signApi : null;
+}
 
 function escapeHtml(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
@@ -1942,18 +2319,41 @@ function recalculateTotals() {
 
 document.getElementById('currency').addEventListener('change', recalculateTotals);
 
+/* Changing the series gives the next number in that series. When editing,
+   switching back to the voucher's own series restores its original number. */
 function onSeriesChange(series) {
-    if (document.getElementById('pv_id').value !== '') {
+    const numberInput = document.getElementById('voucher_no');
+
+    if (editingOriginal && series === editingOriginal.series) {
+        numberInput.value = editingOriginal.number;
         return;
     }
 
-    document.getElementById('voucher_no').value = nextVoucherNumbers[series] || '';
+    numberInput.value = nextVoucherNumbers[series] || '';
+}
+
+function setApprovalNote(html) {
+    const note = document.getElementById('pvApprovalNote');
+    if (!note) return;
+    note.innerHTML = html || '';
+    note.style.display = html ? '' : 'none';
+}
+
+function resetApprovalFields() {
+    if (!approvalsEnabled) return;
+    const form = document.getElementById('voucherForm');
+    const sign = signApiFor(form);
+    if (sign) sign.reset();
+    document.getElementById('approver_id').value = defaultApproverId;
+    document.getElementById('submit_for_approval').checked = true;
+    setApprovalNote('');
 }
 
 function openCreateModal() {
     document.getElementById('voucherModalTitle').innerHTML =
         '<i class="fas fa-plus-circle me-2"></i>New Voucher';
 
+    editingOriginal = null;
     document.getElementById('voucherForm').reset();
     document.getElementById('pv_id').value = '';
     document.getElementById('voucher_series').disabled = false;
@@ -1962,6 +2362,7 @@ function openCreateModal() {
     document.getElementById('voucher_date').value = todayValue;
     document.getElementById('currency').value = 'UGX';
     document.getElementById('modalAlert').innerHTML = '';
+    resetApprovalFields();
 
     clearItems();
     addItemRow();
@@ -1999,15 +2400,56 @@ function editVoucher(id) {
             document.getElementById('cheque_ref').value = voucher.cheque_ref || '';
 
             const seriesSelect = document.getElementById('voucher_series');
-            seriesSelect.disabled = true;
+            seriesSelect.disabled = false;
 
-            Object.keys(nextVoucherNumbers).some(function (series) {
-                if (String(voucher.voucher_no || '').indexOf(series + '-') === 0) {
-                    seriesSelect.value = series;
-                    return true;
+            // Try longer series names first so one that starts with another still matches correctly.
+            const matchedSeries = Object.keys(nextVoucherNumbers)
+                .sort(function (a, b) { return b.length - a.length; })
+                .find(function (series) {
+                    return String(voucher.voucher_no || '').indexOf(series + '-') === 0;
+                }) || '';
+
+            if (matchedSeries) {
+                seriesSelect.value = matchedSeries;
+            } else {
+                seriesSelect.selectedIndex = -1;
+            }
+
+            editingOriginal = { series: matchedSeries, number: voucher.voucher_no || '' };
+
+            if (approvalsEnabled) {
+                const sign = signApiFor(document.getElementById('voucherForm'));
+                const status = voucher.approval_status || 'Draft';
+                const submitBox = document.getElementById('submit_for_approval');
+
+                if (sign) {
+                    if (voucher.prepared_signature_uri) {
+                        sign.showExisting(voucher.prepared_signature_uri);
+                    } else {
+                        sign.reset();
+                    }
                 }
-                return false;
-            });
+
+                document.getElementById('approver_id').value =
+                    voucher.approver_id ? String(voucher.approver_id) : defaultApproverId;
+
+                if (status === 'Pending Approval') {
+                    submitBox.checked = false;
+                    setApprovalNote('Waiting for <strong>' + escapeHtml(voucher.approver_name || 'the approver') +
+                        '</strong> to approve. Tick "Send to the approver now" to notify them again or change the approver.');
+                } else if (status === 'Approved') {
+                    submitBox.checked = false;
+                    setApprovalNote('Approved by <strong>' + escapeHtml(voucher.approver_name || '') +
+                        '</strong>. Saving changes removes that approval; tick "Send to the approver now" to request it again.');
+                } else if (status === 'Returned') {
+                    submitBox.checked = true;
+                    setApprovalNote('Returned by <strong>' + escapeHtml(voucher.approver_name || 'the approver') + '</strong>' +
+                        (voucher.approval_comments ? ': ' + escapeHtml(voucher.approval_comments) : '.'));
+                } else {
+                    submitBox.checked = true;
+                    setApprovalNote('');
+                }
+            }
 
             const items = Array.isArray(voucher.items) ? voucher.items : [];
 
@@ -2027,6 +2469,7 @@ function editVoucher(id) {
 
 document.getElementById('voucherModal').addEventListener('hidden.bs.modal', function () {
     document.getElementById('voucher_series').disabled = false;
+    editingOriginal = null;
 });
 
 function submitVoucher() {
@@ -2039,6 +2482,22 @@ function submitVoucher() {
     if (!document.querySelector('#itemsBody tr')) {
         alert('Add at least one line item.');
         return;
+    }
+
+    if (approvalsEnabled && document.getElementById('submit_for_approval').checked) {
+        const sign = signApiFor(form);
+
+        if (!document.getElementById('approver_id').value) {
+            document.getElementById('modalAlert').innerHTML =
+                '<div class="alert alert-danger">Choose the Senior Finance / HOD who should approve this voucher, or untick "Send to the approver now".</div>';
+            return;
+        }
+
+        if (sign && !sign.hasSignature()) {
+            document.getElementById('modalAlert').innerHTML =
+                '<div class="alert alert-danger">Sign the voucher (use your profile signature, draw or upload) before sending it for approval.</div>';
+            return;
+        }
     }
 
     const button = document.getElementById('saveVoucherBtn');
@@ -2057,7 +2516,9 @@ function submitVoucher() {
                 throw new Error(data.message || 'Unable to save voucher.');
             }
 
-            window.location.reload();
+            document.getElementById('modalAlert').innerHTML =
+                '<div class="alert alert-success">' + escapeHtml(data.message || 'Voucher saved.') + '</div>';
+            setTimeout(function () { window.location.reload(); }, 900);
         })
         .catch(function (error) {
             document.getElementById('modalAlert').innerHTML =
@@ -2109,10 +2570,123 @@ function viewVoucher(id) {
                 '<div class="table-responsive"><table class="table table-sm">' +
                     '<thead><tr><th>#</th><th>Description</th><th>Qty</th><th class="text-end">Unit Price</th><th class="text-end">Total</th></tr></thead>' +
                     '<tbody>' + (itemRows || '<tr><td colspan="5">No line items.</td></tr>') + '</tbody>' +
-                '</table></div>';
+                '</table></div>' +
+                approvalSummaryHtml(voucher);
         })
         .catch(function (error) {
             box.innerHTML = '<div class="alert alert-danger">' + escapeHtml(error.message) + '</div>';
+        });
+}
+
+function signatureFigure(label, uri, name, date) {
+    return '<div><div class="dk">' + escapeHtml(label) + '</div>' +
+        (uri ? '<img class="pv-signed-img mt-1" alt="' + escapeHtml(label) + '" src="' + escapeHtml(uri) + '">' : '<div class="dv">Not signed</div>') +
+        (name ? '<div class="dv">' + escapeHtml(name) + (date ? ' &middot; ' + escapeHtml(date) : '') + '</div>' : '') +
+        '</div>';
+}
+
+function approvalSummaryHtml(voucher) {
+    if (!approvalsEnabled) return '';
+    const status = voucher.approval_status || 'Draft';
+    return '<div class="section-title">Signatures &amp; approval</div>' +
+        '<p><span class="pv-status pv-status-' + escapeHtml(status.toLowerCase().replace(/ /g, '-')) + '">' + escapeHtml(status) + '</span>' +
+        (voucher.approver_name ? ' <span class="small text-muted">Approver: ' + escapeHtml(voucher.approver_name) + '</span>' : '') + '</p>' +
+        (voucher.approval_comments ? '<p class="small"><strong>Comment:</strong> ' + escapeHtml(voucher.approval_comments) + '</p>' : '') +
+        '<div class="detail-grid">' +
+            signatureFigure('Admin/Finance', voucher.prepared_signature_uri, voucher.prepared_by_name, voucher.prepared_signed_at) +
+            signatureFigure('H.O.Dept / Senior Finance', status === 'Approved' ? voucher.approved_signature_uri : '',
+                status === 'Approved' ? voucher.approver_name : '', status === 'Approved' ? voucher.approved_at : '') +
+        '</div>';
+}
+
+/* Approval (Senior Finance / HOD) */
+function openApproval(id) {
+    const form = document.getElementById('approvalForm');
+    const summary = document.getElementById('approvalSummary');
+
+    form.reset();
+    document.getElementById('approval_id').value = String(id);
+    document.getElementById('approvalAlert').innerHTML = '';
+    summary.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+
+    const sign = signApiFor(form);
+    if (sign) sign.reset();
+
+    fetch('includes/get_voucher.php?id=' + encodeURIComponent(id))
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (!data.success) {
+                throw new Error(data.message || 'Unable to load voucher.');
+            }
+
+            const voucher = data.voucher || {};
+            const items = Array.isArray(voucher.items) ? voucher.items : [];
+
+            summary.innerHTML =
+                '<div class="detail-grid">' +
+                    '<div><div class="dk">Voucher Number</div><div class="dv">' + escapeHtml(voucher.voucher_no || '-') + '</div></div>' +
+                    '<div><div class="dk">Date</div><div class="dv">' + escapeHtml(voucher.voucher_date || '-') + '</div></div>' +
+                    '<div><div class="dk">Supplier</div><div class="dv">' + escapeHtml(voucher.supplier || '-') + '</div></div>' +
+                    '<div><div class="dk">Total</div><div class="dv">' + escapeHtml(voucher.currency || 'UGX') + ' ' +
+                        Number(voucher.total_amount || 0).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
+                '</div>' +
+                '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Description</th><th>Qty</th><th class="text-end">Total</th></tr></thead><tbody>' +
+                (items.map(function (item) {
+                    return '<tr><td>' + escapeHtml(item.item || '-') + '</td><td>' + escapeHtml(item.qty || '-') +
+                        '</td><td class="text-end">' + escapeHtml(item.total_price || '-') + '</td></tr>';
+                }).join('') || '<tr><td colspan="3">No line items.</td></tr>') +
+                '</tbody></table></div>' +
+                approvalSummaryHtml(voucher);
+
+            const canApprove = !!voucher.can_approve;
+            document.getElementById('approveVoucherBtn').disabled = !canApprove;
+            document.getElementById('returnVoucherBtn').disabled = !canApprove;
+
+            if (!canApprove) {
+                document.getElementById('approvalAlert').innerHTML =
+                    '<div class="alert alert-warning">This voucher is not waiting for your approval.</div>';
+            }
+        })
+        .catch(function (error) {
+            summary.innerHTML = '<div class="alert alert-danger">' + escapeHtml(error.message) + '</div>';
+        });
+}
+
+function submitApproval(decision) {
+    const form = document.getElementById('approvalForm');
+    const alertBox = document.getElementById('approvalAlert');
+    const sign = signApiFor(form);
+
+    if (decision === 'approve' && sign && !sign.hasSignature()) {
+        alertBox.innerHTML = '<div class="alert alert-danger">Sign (use your profile signature, draw or upload) to approve.</div>';
+        return;
+    }
+
+    if (decision === 'return' && document.getElementById('approval_comments').value.trim() === '') {
+        alertBox.innerHTML = '<div class="alert alert-danger">Add a comment explaining what needs to change.</div>';
+        return;
+    }
+
+    document.getElementById('approval_decision').value = decision;
+
+    const button = document.getElementById(decision === 'approve' ? 'approveVoucherBtn' : 'returnVoucherBtn');
+    const original = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+    fetch('includes/process_voucher.php', { method: 'POST', body: new FormData(form) })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (!data.success) {
+                throw new Error(data.message || 'Unable to save the decision.');
+            }
+            alertBox.innerHTML = '<div class="alert alert-success">' + escapeHtml(data.message || 'Saved.') + '</div>';
+            setTimeout(function () { window.location.reload(); }, 700);
+        })
+        .catch(function (error) {
+            alertBox.innerHTML = '<div class="alert alert-danger">' + escapeHtml(error.message) + '</div>';
+            button.disabled = false;
+            button.innerHTML = original;
         });
 }
 

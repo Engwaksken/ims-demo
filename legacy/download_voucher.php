@@ -288,6 +288,13 @@ if ($id <= 0) {
 | Fetch only the fields required by the PDF
 |--------------------------------------------------------------------------
 */
+require_once __DIR__ . '/includes/voucher-approval.php';
+
+$approvalColumns = pva_ensure_schema($conn)
+    ? ', approval_status, prepared_by, prepared_signature, prepared_signature_mime, prepared_signed_at,
+        approver_id, approved_signature, approved_signature_mime, approved_at'
+    : '';
+
 $stmt = $conn->prepare(
     "SELECT
         voucher_no,
@@ -302,6 +309,7 @@ $stmt = $conn->prepare(
         jnl_ref,
         cheque_ref,
         items_json
+        {$approvalColumns}
      FROM payment_vouchers
      WHERE id = ?
      LIMIT 1"
@@ -731,11 +739,7 @@ table {
 </tr>
 </thead>
 <tbody>
-<tr>
-    <td></td>
-    <td></td>
-    <td></td>
-</tr>
+<tr>' . pva_signature_cells($conn, $voucher, 'dvEsc', 'max-width:100%;max-height:11mm;') . '</tr>
 </tbody>
 </table>
 

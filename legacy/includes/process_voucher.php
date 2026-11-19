@@ -833,7 +833,14 @@ if (empty($_SESSION['user_id'])) {
     pvJson(false, 'Not authenticated. Please log in again.');
 }
 
-if (!ims_allowed('vouchers.manage', ['Administrator', 'Finance', 'Accountant'], 'Create, edit, delete and import payment vouchers')) {
+$action = trim((string)($_POST['action'] ?? ''));
+
+// Approvers (Senior Finance / HOD) need not manage vouchers: the approval
+// handlers check that the voucher is assigned to them instead.
+if (
+    !in_array($action, ['approve_voucher', 'my_signature'], true)
+    && !ims_allowed('vouchers.manage', ['Administrator', 'Finance', 'Accountant'], 'Create, edit, delete and import payment vouchers')
+) {
     http_response_code(403);
     pvJson(false, 'Access denied.');
 }
@@ -845,7 +852,7 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 
 $conn->set_charset('utf8mb4');
 
-$action = trim((string)($_POST['action'] ?? ''));
+require_once __DIR__ . '/voucher-approval.php';
 
 try {
     switch ($action) {
@@ -867,6 +874,14 @@ try {
 
         case 'remove_voucher_logo':
             pvHandleRemoveVoucherLogo($conn);
+            break;
+
+        case 'approve_voucher':
+            pvHandleApproval($conn);
+            break;
+
+        case 'my_signature':
+            pvHandleMySignature($conn);
             break;
 
         default:
@@ -952,16 +967,47 @@ function pvHandleSave(mysqli $conn): never
     $chequeRef = pvNullable($_POST['cheque_ref'] ?? '');
     $userId = (int)$_SESSION['user_id'];
 
+    // Signature and approval (validated before anything is written).
+    $approvalReady = pva_ensure_schema($conn);
+    $submitForApproval = $approvalReady && !empty($_POST['submit_for_approval']);
+    $approverId = (int)($_POST['approver_id'] ?? 0);
+    $preparedSignature = $approvalReady
+        ? pva_read_signature_input('prepared_signature_data', 'prepared_signature_file')
+        : null;
+
+    if ($approvalReady && $preparedSignature === null && !empty($_POST['use_profile_signature'])) {
+        $preparedSignature = pva_profile_signature($conn, $userId);
+    }
+
+    if ($submitForApproval) {
+        if ($approverId <= 0 || $approverId === $userId) {
+            throw new InvalidArgumentException(
+                'Choose the Senior Finance / Head of Department who should approve this voucher (not yourself).'
+            );
+        }
+
+        $validApprover = array_filter(
+            pva_approvers($conn, $userId),
+            static fn(array $row): bool => $row['user_id'] === $approverId
+        );
+
+        if ($validApprover === []) {
+            throw new InvalidArgumentException('The selected approver is not an active staff member.');
+        }
+    }
+
     $conn->begin_transaction();
 
     $newLogo = null;
     $existingLogo = null;
+    $existingApproval = [];
 
     try {
         if ($id > 0) {
             $check = pvRequireStatement(
                 $conn,
-                'SELECT logo_filename
+                'SELECT logo_filename' .
+                ($approvalReady ? ', approval_status, approver_id, (prepared_signature IS NOT NULL) AS has_prepared_signature' : '') . '
                  FROM payment_vouchers
                  WHERE id = ?
                  LIMIT 1
@@ -984,6 +1030,7 @@ function pvHandleSave(mysqli $conn): never
             }
 
             $existingLogo = $record['logo_filename'] ?? null;
+            $existingApproval = $record;
         }
 
         $duplicate = pvRequireStatement(
@@ -1110,7 +1157,35 @@ function pvHandleSave(mysqli $conn): never
             : (int)$stmt->insert_id;
 
         $stmt->close();
+
+        $notifyApprover = false;
+
+        if ($approvalReady) {
+            $notifyApprover = pvApplyPreparerApproval(
+                $conn,
+                $savedId,
+                $userId,
+                $preparedSignature,
+                $submitForApproval,
+                $approverId,
+                $existingApproval
+            );
+        }
+
         $conn->commit();
+
+        if ($notifyApprover) {
+            pva_notify(
+                $conn,
+                $approverId,
+                'Payment voucher awaiting your approval',
+                'Voucher ' . $voucherNo . ' (' . $supplier . ', ' . $currency . ' ' .
+                    number_format($totalAmount, 2) . ') was signed by ' .
+                    pva_user_name($conn, $userId) . ' and needs your approval and signature.',
+                'warning',
+                $savedId
+            );
+        }
 
         if (
             $newLogo !== null &&
@@ -1129,9 +1204,11 @@ function pvHandleSave(mysqli $conn): never
 
         pvJson(
             true,
-            $id > 0
-                ? 'Voucher updated successfully.'
-                : 'Voucher created successfully.',
+            $notifyApprover
+                ? 'Voucher saved, signed and sent to ' . pva_user_name($conn, $approverId) . ' for approval.'
+                : ($id > 0
+                    ? 'Voucher updated successfully.'
+                    : 'Voucher created successfully.'),
             [
                 'id' => $savedId,
             ]
@@ -1159,6 +1236,201 @@ function pvHandleSave(mysqli $conn): never
 | Delete voucher
 |--------------------------------------------------------------------------
 */
+/**
+ * Applies the preparer's signature and, when asked, submits the voucher to
+ * the approver. Returns true when the approver should be notified.
+ *
+ * - A new signature replaces the stored preparer signature.
+ * - Editing an approved voucher sends it back to Draft (the approval no
+ *   longer matches the content) unless it is resubmitted straight away.
+ */
+function pvApplyPreparerApproval(
+    mysqli $conn,
+    int $voucherId,
+    int $userId,
+    ?array $signature,
+    bool $submit,
+    int $approverId,
+    array $existing
+): bool {
+    if ($signature !== null) {
+        $stmt = pvRequireStatement(
+            $conn,
+            'UPDATE payment_vouchers
+             SET prepared_by = ?, prepared_signature = ?, prepared_signature_mime = ?, prepared_signed_at = NOW()
+             WHERE id = ?'
+        );
+        $stmt->bind_param('issi', $userId, $signature['data'], $signature['mime'], $voucherId);
+        $stmt->execute();
+        $stmt->close();
+    } elseif ($existing === []) {
+        // New voucher without a signature: still record who prepared it.
+        $stmt = pvRequireStatement($conn, 'UPDATE payment_vouchers SET prepared_by = ? WHERE id = ?');
+        $stmt->bind_param('ii', $userId, $voucherId);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    $status = (string)($existing['approval_status'] ?? 'Draft');
+
+    if ($submit) {
+        $hasSignature = $signature !== null || !empty($existing['has_prepared_signature']);
+
+        if (!$hasSignature) {
+            throw new InvalidArgumentException(
+                'Sign the voucher (or save a signature on your profile) before sending it for approval.'
+            );
+        }
+
+        $alreadyPendingWithSameApprover = $status === 'Pending Approval'
+            && (int)($existing['approver_id'] ?? 0) === $approverId;
+
+        $stmt = pvRequireStatement(
+            $conn,
+            "UPDATE payment_vouchers
+             SET approval_status = 'Pending Approval', approver_id = ?, submitted_at = NOW(),
+                 approved_signature = NULL, approved_signature_mime = NULL, approved_at = NULL,
+                 approval_comments = NULL
+             WHERE id = ?"
+        );
+        $stmt->bind_param('ii', $approverId, $voucherId);
+        $stmt->execute();
+        $stmt->close();
+
+        return !$alreadyPendingWithSameApprover || $signature !== null;
+    }
+
+    if ($status === 'Approved') {
+        $stmt = pvRequireStatement(
+            $conn,
+            "UPDATE payment_vouchers
+             SET approval_status = 'Draft', approved_signature = NULL, approved_signature_mime = NULL,
+                 approved_at = NULL
+             WHERE id = ?"
+        );
+        $stmt->bind_param('i', $voucherId);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    return false;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Approve or return a voucher (assigned approver)
+|--------------------------------------------------------------------------
+*/
+function pvHandleApproval(mysqli $conn): never
+{
+    if (!pva_ensure_schema($conn)) {
+        throw new RuntimeException('Voucher approvals are not set up. Apply database/migrations/2026_11_19_voucher_approvals.sql.');
+    }
+
+    $id = (int)($_POST['id'] ?? 0);
+    $decision = (string)($_POST['decision'] ?? '');
+    $comments = trim(mb_substr((string)($_POST['comments'] ?? ''), 0, 2000));
+    $userId = (int)$_SESSION['user_id'];
+
+    if ($id <= 0 || !in_array($decision, ['approve', 'return'], true)) {
+        throw new InvalidArgumentException('Invalid approval request.');
+    }
+
+    if ($decision === 'return' && $comments === '') {
+        throw new InvalidArgumentException('Add a comment explaining what needs to change.');
+    }
+
+    $signature = pva_read_signature_input('approver_signature_data', 'approver_signature_file');
+
+    if ($signature === null && !empty($_POST['use_profile_signature'])) {
+        $signature = pva_profile_signature($conn, $userId);
+    }
+
+    if ($decision === 'approve' && $signature === null) {
+        throw new InvalidArgumentException('Sign (or use your profile signature) to approve this voucher.');
+    }
+
+    $conn->begin_transaction();
+
+    try {
+        $stmt = pvRequireStatement(
+            $conn,
+            'SELECT id, voucher_no, supplier, approval_status, approver_id, prepared_by, created_by
+             FROM payment_vouchers WHERE id = ? LIMIT 1 FOR UPDATE'
+        );
+        $stmt->bind_param('i', $id);
+        $stmt->execute();
+        $voucher = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        if (!$voucher) {
+            throw new RuntimeException('Voucher not found.');
+        }
+
+        if (!pva_can_approve($voucher, $userId)) {
+            http_response_code(403);
+            throw new RuntimeException('This voucher is not waiting for your approval.');
+        }
+
+        if ($decision === 'approve') {
+            $stmt = pvRequireStatement(
+                $conn,
+                "UPDATE payment_vouchers
+                 SET approval_status = 'Approved', approver_id = ?, approved_signature = ?,
+                     approved_signature_mime = ?, approved_at = NOW(), approval_comments = NULLIF(?, '')
+                 WHERE id = ?"
+            );
+            $stmt->bind_param('isssi', $userId, $signature['data'], $signature['mime'], $comments, $id);
+        } else {
+            $stmt = pvRequireStatement(
+                $conn,
+                "UPDATE payment_vouchers
+                 SET approval_status = 'Returned', approval_comments = ?
+                 WHERE id = ?"
+            );
+            $stmt->bind_param('si', $comments, $id);
+        }
+
+        $stmt->execute();
+        $stmt->close();
+        $conn->commit();
+    } catch (Throwable $e) {
+        $conn->rollback();
+        throw $e;
+    }
+
+    $preparer = (int)($voucher['prepared_by'] ?: $voucher['created_by']);
+
+    if ($preparer !== $userId) {
+        pva_notify(
+            $conn,
+            $preparer,
+            $decision === 'approve' ? 'Payment voucher approved' : 'Payment voucher returned',
+            'Voucher ' . $voucher['voucher_no'] . ' (' . $voucher['supplier'] . ') was ' .
+                ($decision === 'approve' ? 'approved and signed' : 'returned') . ' by ' .
+                pva_user_name($conn, $userId) . '.' . ($comments !== '' ? ' Comment: ' . $comments : ''),
+            $decision === 'approve' ? 'success' : 'warning',
+            $id
+        );
+    }
+
+    pvJson(true, $decision === 'approve' ? 'Voucher approved and signed.' : 'Voucher returned to the preparer.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| Current user's profile signature (prefills the signature boxes)
+|--------------------------------------------------------------------------
+*/
+function pvHandleMySignature(mysqli $conn): never
+{
+    $signature = pva_profile_signature($conn, (int)$_SESSION['user_id']);
+
+    pvJson(true, $signature ? 'OK' : 'No profile signature.', [
+        'signature' => $signature ? pva_data_uri($signature['data'], $signature['mime']) : '',
+    ]);
+}
+
 function pvHandleDelete(mysqli $conn): never
 {
     $id = (int)($_POST['id'] ?? 0);

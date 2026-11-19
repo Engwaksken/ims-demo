@@ -163,6 +163,9 @@ function vpResolveLogo(mysqli $conn): string
         base64_encode($contents);
 }
 
+require_once __DIR__ . '/includes/voucher-approval.php';
+pva_ensure_schema($conn);
+
 $id = (int)($_GET['id'] ?? 0);
 
 if ($id <= 0) {
@@ -827,11 +830,7 @@ body {
         </thead>
 
         <tbody>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
+        <tr><?= pva_signature_cells($conn, $voucher, 'vpEsc') ?></tr>
         </tbody>
     </table>
 
