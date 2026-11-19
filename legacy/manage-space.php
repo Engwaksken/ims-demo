@@ -57,13 +57,18 @@ if (isset($_GET['edit'])) {
 
 <link rel="stylesheet" href="css/assets.css">
 <style>
-/* Manage spaces: space card grid, pricing block, amenities and availability switch. */
+/* Manage spaces: 3-per-row cards that collapse to a summary and expand to full details. */
 .ms-filters { margin-bottom: 0; }
+
+.ms-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.ms-toolbar .ms-count { font-size: var(--fs-sm); color: var(--ink-400); }
+.ms-toolbar-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
 .ms-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5);
+    align-items: start; /* expanding one card does not stretch its row neighbours */
 }
 
 .ms-card {
@@ -72,176 +77,120 @@ if (isset($_GET['edit'])) {
     border-radius: var(--radius-xl);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: box-shadow .2s, border-color .2s;
 }
 
-.ms-card:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md);
-}
-
-.ms-card.unavailable {
-    opacity: 0.7;
-}
+.ms-card:hover { box-shadow: var(--shadow-md); }
+.ms-card.is-open { border-color: var(--brand-200); box-shadow: var(--shadow-md); }
+.ms-card.unavailable .ms-image,
+.ms-card.unavailable .ms-summary { opacity: .7; }
 
 .ms-image {
     display: block;
     width: 100%;
-    height: 200px;
+    height: 150px;
     object-fit: cover;
     background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-400) 100%);
 }
 
-.ms-content {
-    padding: var(--space-6);
-}
-
-.ms-title h3 {
-    font-size: var(--fs-xl);
-    color: var(--ink-900);
-    margin: 0 0 var(--space-1);
-}
-
-.ms-info {
+/* Summary: always visible; the whole bar toggles the details. */
+.ms-summary {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-3);
-    margin: var(--space-5) 0;
+    width: 100%;
+    padding: var(--space-4) var(--space-5);
+    background: none;
+    border: 0;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
 }
 
-.ms-info-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--fs-sm);
+.ms-summary:focus-visible { outline: none; box-shadow: inset var(--focus-ring); }
+
+.ms-summary-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.ms-summary-title { min-width: 0; }
+.ms-summary-title h3 {
+    margin: 0 0 var(--space-1);
+    font-size: var(--fs-lg);
+    color: var(--ink-900);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.ms-info-item i {
-    color: var(--brand-500);
-    width: 20px;
+.ms-chevron {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--ink-50);
+    color: var(--ink-500, #64748b);
+    transition: transform .2s, background .2s;
 }
 
-.ms-info-item .is-available   { color: var(--green-fg); }
-.ms-info-item .is-unavailable { color: var(--red-fg); }
+.ms-card.is-open .ms-chevron { transform: rotate(180deg); background: var(--brand-50); color: var(--brand-600); }
+
+.ms-summary-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); font-size: var(--fs-sm); }
+.ms-summary-meta i { color: var(--brand-500); margin-right: 4px; }
+.ms-summary-meta .is-available   { color: var(--green-fg); font-weight: 600; }
+.ms-summary-meta .is-unavailable { color: var(--red-fg); font-weight: 600; }
+.ms-summary-meta .is-available i,
+.ms-summary-meta .is-unavailable i { color: inherit; }
+.ms-rate { margin-left: auto; font-weight: 700; color: var(--green-fg); white-space: nowrap; }
+.ms-rate small { font-weight: 500; color: var(--ink-400); }
+.ms-rate.is-missing { color: var(--red-fg); font-weight: 600; }
+
+/* Details: hidden until expanded. */
+.ms-details {
+    padding: 0 var(--space-5) var(--space-5);
+    border-top: 1px solid var(--ink-50);
+}
+.ms-details[hidden] { display: none; }
 
 .ms-pricing {
     background: var(--ink-50);
-    padding: var(--space-4);
+    padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
     margin: var(--space-4) 0;
 }
 
-.ms-pricing-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: var(--space-2);
-    font-size: var(--fs-sm);
-}
+.ms-pricing-row { display: flex; justify-content: space-between; margin-bottom: var(--space-2); font-size: var(--fs-sm); }
+.ms-pricing-row:last-child { margin-bottom: 0; }
+.ms-pricing-row .label { color: var(--ink-400); }
+.ms-pricing-row .label.is-missing { color: var(--red-fg); }
+.ms-pricing-row .value { font-weight: 600; color: var(--green-fg); }
 
-.ms-pricing-row:last-child {
-    margin-bottom: 0;
-}
-
-.ms-pricing-row .label {
-    color: var(--ink-300);
-}
-
-.ms-pricing-row .label.is-missing {
-    color: var(--red-fg);
-}
-
-.ms-pricing-row .value {
-    font-weight: 600;
-    color: var(--green-fg);
-}
-
-/* Monthly-only pricing display */
-.ms-monthly {
-    background: var(--green-bg);
-    border: 1px solid var(--green-border);
-    color: var(--green-fg);
-    padding: var(--space-5);
-    border-radius: var(--radius-md);
-    margin: var(--space-4) 0;
-    text-align: center;
-}
-
-.ms-monthly .label {
-    font-size: var(--fs-xs);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: var(--space-1);
-}
-
-.ms-monthly .value {
-    font-size: var(--fs-2xl);
-    font-weight: 700;
-}
-
-.ms-monthly .period {
-    font-size: var(--fs-sm);
-    margin-top: var(--space-1);
-}
-
-.ms-amenities {
-    margin: var(--space-4) 0;
-}
-
-.ms-amenities-label {
-    display: block;
-    margin-bottom: var(--space-1);
-    font-size: var(--fs-xs);
-    color: var(--ink-300);
-    text-transform: uppercase;
-}
-
-.ms-amenities-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-top: var(--space-2);
-}
-
-.ms-actions {
-    display: flex;
-    gap: var(--space-2);
-    margin-top: var(--space-5);
-    flex-wrap: wrap;
-}
+.ms-amenities { margin: var(--space-4) 0; }
+.ms-amenities-label { display: block; font-size: var(--fs-xs); color: var(--ink-400); text-transform: uppercase; letter-spacing: .04em; }
+.ms-amenities-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 
 .ms-availability {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-3);
     background: var(--ink-50);
     border-radius: var(--radius-md);
     margin-top: var(--space-4);
 }
 
+.ms-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
+
 /* Availability switch (no global switch component yet). */
-.ms-switch {
-    position: relative;
-    width: 50px;
-    height: 24px;
-    flex-shrink: 0;
-}
-
-.ms-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
+.ms-switch { position: relative; width: 46px; height: 24px; flex-shrink: 0; }
+.ms-switch input { opacity: 0; width: 0; height: 0; }
 .ms-switch-slider {
     position: absolute;
     cursor: pointer;
     inset: 0;
     background-color: var(--ink-100);
-    transition: .4s;
+    transition: .3s;
     border-radius: var(--radius-pill);
 }
-
 .ms-switch-slider:before {
     position: absolute;
     content: "";
@@ -250,17 +199,12 @@ if (isset($_GET['edit'])) {
     left: 3px;
     bottom: 3px;
     background-color: var(--ink-0);
-    transition: .4s;
+    transition: .3s;
     border-radius: 50%;
 }
-
-.ms-switch input:checked + .ms-switch-slider {
-    background-color: var(--green-fg);
-}
-
-.ms-switch input:checked + .ms-switch-slider:before {
-    transform: translateX(26px);
-}
+.ms-switch input:checked + .ms-switch-slider { background-color: var(--green-fg); }
+.ms-switch input:checked + .ms-switch-slider:before { transform: translateX(22px); }
+.ms-switch input:focus-visible + .ms-switch-slider { box-shadow: var(--focus-ring); }
 
 .ms-modal { max-width: 900px; }
 
@@ -271,18 +215,18 @@ if (isset($_GET['edit'])) {
     border-bottom: 2px solid var(--ink-100);
 }
 
-.ms-help {
-    display: block;
-    margin-top: var(--space-1);
-    font-size: var(--fs-xs);
-    color: var(--ink-300);
+.ms-help { display: block; margin-top: var(--space-1); font-size: var(--fs-xs); color: var(--ink-300); }
+
+@media (max-width: 1100px) {
+    .ms-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (max-width: 768px) {
-    .ms-grid,
-    .ms-info {
-        grid-template-columns: 1fr;
-    }
+@media (max-width: 680px) {
+    .ms-grid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ms-card, .ms-chevron, .ms-switch-slider, .ms-switch-slider:before { transition: none; }
 }
 </style>
 
@@ -398,124 +342,135 @@ if (isset($_GET['edit'])) {
         </div>
     </div>
 <?php else: ?>
+    <div class="ms-toolbar">
+        <span class="ms-count"><?php echo count($spaces); ?> space<?php echo count($spaces) === 1 ? '' : 's'; ?></span>
+        <div class="ms-toolbar-actions">
+            <button type="button" class="btn btn-sm btn-soft" onclick="setAllSpaces(true)">
+                <i class="fas fa-angles-down" aria-hidden="true"></i> Expand all
+            </button>
+            <button type="button" class="btn btn-sm btn-soft" onclick="setAllSpaces(false)">
+                <i class="fas fa-angles-up" aria-hidden="true"></i> Collapse all
+            </button>
+        </div>
+    </div>
+
     <div class="ms-grid">
-        <?php foreach ($spaces as $space): 
-            // Determine if this space type should show only monthly rate
+        <?php foreach ($spaces as $space):
+            // Desks and private offices are rented monthly; other spaces by the hour/day.
             $monthly_only_types = ['Private Office', 'Hot Desk', 'Dedicated Desk'];
-            $show_monthly_only = in_array($space['space_type'], $monthly_only_types);
+            $show_monthly_only = in_array($space['space_type'], $monthly_only_types, true);
+            $space_id = (int)$space['availability_id'];
+            $has_monthly = isset($space['monthly_rate']) && (float)$space['monthly_rate'] > 0;
         ?>
-        <div class="ms-card <?php echo !$space['is_available'] ? 'unavailable' : ''; ?>">
+        <article class="ms-card <?php echo !$space['is_available'] ? 'unavailable' : ''; ?>" data-space-id="<?php echo $space_id; ?>">
             <?php if ($space['space_image']): ?>
-                <img src="<?php echo htmlspecialchars(ims_upload_url($space['space_image'])); ?>" alt="Space Image" class="ms-image">
+                <img src="<?php echo htmlspecialchars(ims_upload_url($space['space_image'])); ?>" alt="<?php echo htmlspecialchars($space['space_name']); ?>" class="ms-image" loading="lazy">
             <?php else: ?>
-                <div class="ms-image"></div>
+                <div class="ms-image" aria-hidden="true"></div>
             <?php endif; ?>
-            
-            <div class="ms-content">
-                <div class="ms-title">
-                    <h3><?php echo htmlspecialchars($space['space_name']); ?></h3>
-                    <span class="badge badge-info">
-                        <?php echo htmlspecialchars($space['space_type']); ?>
+
+            <button type="button" class="ms-summary" aria-expanded="false" aria-controls="space-details-<?php echo $space_id; ?>">
+                <span class="ms-summary-top">
+                    <span class="ms-summary-title">
+                        <h3><?php echo htmlspecialchars($space['space_name']); ?></h3>
+                        <span class="badge badge-info"><?php echo htmlspecialchars($space['space_type']); ?></span>
                     </span>
-                </div>
-                
-                <div class="ms-info">
-                    <div class="ms-info-item">
-                        <i class="fas fa-users"></i>
-                        <span><strong><?php echo $space['capacity']; ?></strong> people</span>
-                    </div>
-                    
-                    <div class="ms-info-item">
-                        <i class="fas fa-<?php echo $space['is_available'] ? 'check-circle' : 'times-circle'; ?>"></i>
-                        <span class="<?php echo $space['is_available'] ? 'is-available' : 'is-unavailable'; ?>">
-                            <strong><?php echo $space['is_available'] ? 'Available' : 'Unavailable'; ?></strong>
-                        </span>
-                    </div>
-                </div>
-                
-                <?php if ($show_monthly_only): ?>
-                    <!-- Monthly-only pricing for Private Office, Hot Desk, Dedicated Desk -->
-                    <?php if (isset($space['monthly_rate']) && $space['monthly_rate'] > 0): ?>
-                        <div class="ms-monthly">
-                            <div class="label">Monthly Rate</div>
-                            <div class="value"><?php echo format_currency($space['monthly_rate']); ?></div>
-                            <div class="period">per month</div>
-                        </div>
+                    <span class="ms-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                </span>
+                <span class="ms-summary-meta">
+                    <span><i class="fas fa-users" aria-hidden="true"></i><strong><?php echo (int)$space['capacity']; ?></strong> people</span>
+                    <span class="<?php echo $space['is_available'] ? 'is-available' : 'is-unavailable'; ?>">
+                        <i class="fas fa-<?php echo $space['is_available'] ? 'check-circle' : 'times-circle'; ?>" aria-hidden="true"></i><?php echo $space['is_available'] ? 'Available' : 'Unavailable'; ?>
+                    </span>
+                    <?php if ($show_monthly_only): ?>
+                        <?php if ($has_monthly): ?>
+                            <span class="ms-rate"><?php echo format_currency($space['monthly_rate']); ?> <small>/ month</small></span>
+                        <?php else: ?>
+                            <span class="ms-rate is-missing"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i>No monthly rate</span>
+                        <?php endif; ?>
                     <?php else: ?>
-                        <div class="ms-pricing">
-                            <div class="ms-pricing-row">
-                                <span class="label is-missing">
-                                    <i class="fas fa-exclamation-triangle"></i> No monthly rate set
-                                </span>
-                            </div>
-                        </div>
+                        <span class="ms-rate"><?php echo format_currency($space['hourly_rate']); ?> <small>/ hour</small></span>
                     <?php endif; ?>
+                </span>
+            </button>
+
+            <div class="ms-details" id="space-details-<?php echo $space_id; ?>" hidden>
+                <?php if ($show_monthly_only): ?>
+                    <div class="ms-pricing">
+                        <?php if ($has_monthly): ?>
+                            <div class="ms-pricing-row">
+                                <span class="label">Monthly rate:</span>
+                                <span class="value"><?php echo format_currency($space['monthly_rate']); ?></span>
+                            </div>
+                        <?php else: ?>
+                            <div class="ms-pricing-row">
+                                <span class="label is-missing"><i class="fas fa-exclamation-triangle"></i> No monthly rate set - edit the space to add one</span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
                 <?php else: ?>
-                    <!-- Standard hourly/daily pricing for other space types -->
                     <div class="ms-pricing">
                         <div class="ms-pricing-row">
-                            <span class="label">Hourly Rate:</span>
+                            <span class="label">Hourly rate:</span>
                             <span class="value"><?php echo format_currency($space['hourly_rate']); ?></span>
                         </div>
                         <div class="ms-pricing-row">
-                            <span class="label">Half Day:</span>
+                            <span class="label">Half day:</span>
                             <span class="value"><?php echo format_currency($space['half_day_rate']); ?></span>
                         </div>
                         <div class="ms-pricing-row">
-                            <span class="label">Full Day:</span>
+                            <span class="label">Full day:</span>
                             <span class="value"><?php echo format_currency($space['full_day_rate']); ?></span>
                         </div>
                     </div>
                 <?php endif; ?>
-                
+
                 <?php if ($space['amenities']): ?>
                 <div class="ms-amenities">
                     <span class="ms-amenities-label">Amenities</span>
                     <div class="ms-amenities-list">
-                        <?php
-                        $amenities = explode("\n", $space['amenities']);
-                        foreach ($amenities as $amenity):
+                        <?php foreach (explode("\n", (string)$space['amenities']) as $amenity):
                             $amenity = trim($amenity);
-                            if (!empty($amenity)):
+                            if ($amenity === '') {
+                                continue;
+                            }
                         ?>
                             <span class="badge badge-secondary"><?php echo htmlspecialchars($amenity); ?></span>
-                        <?php 
-                            endif;
-                        endforeach; 
-                        ?>
+                        <?php endforeach; ?>
                     </div>
                 </div>
                 <?php endif; ?>
-                
-                <!-- Quick Availability Toggle -->
+
+                <!-- Quick availability toggle -->
                 <div class="ms-availability">
                     <label class="ms-switch">
-                        <input type="checkbox" 
+                        <input type="checkbox"
+                               aria-label="Available for booking"
                                <?php echo $space['is_available'] ? 'checked' : ''; ?>
-                               onchange="toggleAvailability(<?php echo $space['availability_id']; ?>, this.checked)">
+                               onchange="toggleAvailability(<?php echo $space_id; ?>, this)">
                         <span class="ms-switch-slider"></span>
                     </label>
-                    <span class="cell-muted">Quick toggle availability</span>
+                    <span class="cell-muted">Available for booking</span>
                 </div>
-                
+
                 <div class="ms-actions">
-                    <a href="?edit=<?php echo $space['availability_id']; ?>" class="btn btn-warning btn-sm">
+                    <a href="?edit=<?php echo $space_id; ?>" class="btn btn-warning btn-sm">
                         <i class="fas fa-edit"></i> Edit
                     </a>
-                    
-                    <a href="view-space-bookings?space_id=<?php echo $space['availability_id']; ?>" class="btn btn-info btn-sm">
+
+                    <a href="view-space-bookings?space_id=<?php echo $space_id; ?>" class="btn btn-info btn-sm">
                         <i class="fas fa-calendar"></i> Bookings
                     </a>
-                    
+
                     <?php if (ims_allowed('spaces.delete', ['Administrator'], 'Delete spaces')): ?>
-                    <button onclick="confirmDelete(<?php echo $space['availability_id']; ?>, <?= htmlspecialchars(json_encode((string)($space['space_name'])), ENT_QUOTES, 'UTF-8') ?>)" 
+                    <button type="button" onclick="confirmDelete(<?php echo $space_id; ?>, <?= htmlspecialchars(json_encode((string)($space['space_name'])), ENT_QUOTES, 'UTF-8') ?>)"
                             class="btn btn-danger btn-sm">
                         <i class="fas fa-trash"></i> Delete
                     </button>
                     <?php endif; ?>
                 </div>
             </div>
-        </div>
+        </article>
         <?php endforeach; ?>
     </div>
 <?php endif; ?>
@@ -714,16 +669,73 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Toggle availability
-function toggleAvailability(spaceId, isAvailable) {
+function toggleAvailability(spaceId, checkbox) {
+    const isAvailable = checkbox.checked;
     const status = isAvailable ? 1 : 0;
-    
+
     if (confirm(`Are you sure you want to ${isAvailable ? 'enable' : 'disable'} this space?`)) {
         window.location.href = `includes/process-space.php?toggle_availability=${encodeURIComponent(spaceId)}&status=${encodeURIComponent(status)}&csrf_token=<?= h(csrf_token()) ?>`;
     } else {
-        // Revert checkbox if cancelled
-        event.target.checked = !isAvailable;
+        checkbox.checked = !isAvailable; // revert when cancelled
     }
 }
+
+/* Collapse / expand space cards. Open cards are remembered in this browser. */
+const SPACE_OPEN_KEY = 'manageSpace.openCards';
+
+function readOpenSpaces() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(SPACE_OPEN_KEY) || '[]');
+        return Array.isArray(saved) ? saved.map(String) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveOpenSpaces() {
+    const open = Array.from(document.querySelectorAll('.ms-card.is-open')).map(function (card) {
+        return card.dataset.spaceId;
+    });
+    try {
+        localStorage.setItem(SPACE_OPEN_KEY, JSON.stringify(open));
+    } catch (e) {
+        /* storage unavailable: state just is not remembered */
+    }
+}
+
+function setSpaceOpen(card, open) {
+    const button = card.querySelector('.ms-summary');
+    const details = card.querySelector('.ms-details');
+    if (!button || !details) return;
+    card.classList.toggle('is-open', open);
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    details.hidden = !open;
+}
+
+function setAllSpaces(open) {
+    document.querySelectorAll('.ms-card').forEach(function (card) {
+        setSpaceOpen(card, open);
+    });
+    saveOpenSpaces();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const remembered = readOpenSpaces();
+
+    document.querySelectorAll('.ms-card').forEach(function (card) {
+        if (remembered.indexOf(card.dataset.spaceId) !== -1) {
+            setSpaceOpen(card, true);
+        }
+
+        const button = card.querySelector('.ms-summary');
+        if (button) {
+            button.addEventListener('click', function () {
+                setSpaceOpen(card, !card.classList.contains('is-open'));
+                saveOpenSpaces();
+            });
+        }
+    });
+});
 
 // Confirm delete
 function confirmDelete(spaceId, spaceName) {
