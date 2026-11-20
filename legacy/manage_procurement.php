@@ -405,7 +405,7 @@ $stats = [
         </div>
 
         <div class="table-wrap">
-            <table class="table">
+            <table class="table" data-bulk-delete="manage_procurement" data-bulk-delete-fields='{"action":"delete_request","procurement_id":"{id}"}' data-bulk-delete-label="procurement request|procurement requests">
                 <thead>
                     <tr>
                         <th>Ref</th>
@@ -433,8 +433,10 @@ $stats = [
                             $bCls  = $status_badge[$req['status']] ?? 'badge-pending';
                             $isOwn = ((int)$req['created_by'] === $currentUserId);
                             $items = $request_items[$pid] ?? [];
+                            $canDeleteRow = ($isManager && in_array($req['status'],['Draft','Submitted','Rejected'],true))
+                                         || ($isOwn   && in_array($req['status'],['Draft','Rejected'],true));
                         ?>
-                            <tr>
+                            <tr<?= $canDeleteRow ? ' data-row-id="' . $pid . '"' : '' ?>>
                                 <!-- Ref -->
                                 <td>
                                     <span class="mono" style="font-size:11px;"><?= $ref ?></span>

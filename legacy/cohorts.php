@@ -499,7 +499,7 @@ if (isset($_GET['edit'])) {
 
         <div class="table-wrap">
 
-            <table class="table">
+            <table class="table" data-bulk-delete="/includes/process-cohorts.php" data-bulk-delete-fields='{"action":"delete","id":"{id}"}' data-bulk-delete-label="cohort|cohorts">
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -568,7 +568,7 @@ if (isset($_GET['edit'])) {
                             );
                             ?>
 
-                            <tr>
+                            <tr<?= $applicationCount === 0 ? ' data-row-id="' . (int) ($cohort['id'] ?? 0) . '"' : '' ?>>
                                 <td>
                                     <?= (int) ($cohort['sort_order'] ?? 0) ?>
                                 </td>

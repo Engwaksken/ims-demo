@@ -19,6 +19,7 @@
  */
 (function () {
     'use strict';
+    if (window.hrConfirm) return; // loaded globally (footer) and by some pages: run once
 
     /* ---------------- popup ---------------- */
     var dialog = null;

@@ -152,7 +152,7 @@ body.modal-open { overflow: hidden !important; }
             </div>
         <?php else: ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" data-bulk-delete="manage-ai-apis" data-bulk-delete-fields='{"csrf":"<?= h($csrf) ?>","action":"delete","ai_api_id":"{id}"}' data-bulk-delete-label="AI API|AI APIs">
                 <thead>
                 <tr>
                     <th>API / Provider</th>
@@ -174,7 +174,7 @@ body.modal-open { overflow: hidden !important; }
                             'UTF-8'
                         );
                         ?>
-                        <tr>
+                        <tr data-row-id="<?= (int)($api['ai_api_id'] ?? 0) ?>">
                             <td>
                                 <div class="ai-name">
                                     <?= h($api['api_name'] ?? '') ?>

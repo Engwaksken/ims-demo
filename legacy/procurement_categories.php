@@ -308,7 +308,7 @@ unset($_SESSION['success'], $_SESSION['error']);
 
         <div class="panel-body">
             <div class="table-wrap">
-                <table class="table">
+                <table class="table" data-bulk-delete="procurement_categories" data-bulk-delete-fields='{"action":"delete_category","category_id":"{id}"}' data-bulk-delete-label="category|categories">
                     <thead>
                     <tr>
                         <th>Category</th>
@@ -327,7 +327,7 @@ unset($_SESSION['success'], $_SESSION['error']);
                     <?php endif; ?>
 
                     <?php foreach ($categories as $category): ?>
-                        <tr>
+                        <tr data-row-id="<?= (int)$category['category_id'] ?>">
                             <td>
                                 <strong><?= e($category['category_name']) ?></strong><br>
                                 <span class="note">PCAT-<?= str_pad((string)$category['category_id'], 4, '0', STR_PAD_LEFT) ?></span>

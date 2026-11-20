@@ -315,8 +315,9 @@ function type_badge(string $type): string {
             </span>
         </div>
 
+        <?php $canBulkDelete = ims_allowed('indicators.delete', ['Administrator', 'MEAL Lead'], 'Delete indicators'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDelete): ?> data-bulk-delete="includes/indicator-process.php" data-bulk-delete-fields='{"indicator_id":"{id}","delete_indicator":""}' data-bulk-delete-label="indicator|indicators"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Context</th>
@@ -347,7 +348,7 @@ function type_badge(string $type): string {
                             $ac      = ach_class($pct);
                             $is_proj = $ind['context_type'] === 'Project';
                         ?>
-                            <tr>
+                            <tr<?= $canBulkDelete ? ' data-row-id="' . (int)$ind['indicator_id'] . '"' : '' ?>>
                                 <!-- Context type chip -->
                                 <td>
                                     <span class="ctx-chip <?= $is_proj?'project':'program' ?>">

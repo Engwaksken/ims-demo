@@ -175,8 +175,9 @@ $currencies = [
             </span>
         </div>
 
+        <?php $canBulkDelete = ims_allowed('programs.delete', ['Administrator'], 'Delete programs'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDelete): ?> data-bulk-delete="includes/programs-process.php" data-bulk-delete-fields='{"delete_program":"1","id":"{id}"}' data-bulk-delete-label="program|programs"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Program</th>
@@ -201,7 +202,7 @@ $currencies = [
                         </tr>
                     <?php else: ?>
                         <?php foreach ($programs as $p): ?>
-                            <tr>
+                            <tr<?= $canBulkDelete ? ' data-row-id="' . (int)$p['id'] . '"' : '' ?>>
                                 <!-- Program name + code -->
                                 <td>
                                     <div class="project-name-cell">

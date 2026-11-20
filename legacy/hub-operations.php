@@ -331,8 +331,9 @@ if (isset($_GET['edit_receipt'])) {
         </form>
         
         <!-- Members Table -->
+        <?php $canBulkDeleteMembers = ims_allowed('members.delete', ['Administrator'], 'Delete members'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDeleteMembers): ?> data-bulk-delete="includes/hub-operations-process.php" data-bulk-delete-method="GET" data-bulk-delete-fields='{"delete_member":"{id}","tab":"members"}' data-bulk-delete-label="member|members"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -360,7 +361,7 @@ if (isset($_GET['edit_receipt'])) {
                             }
                             $expiring_soon = $days_to_expire <= 30 && $days_to_expire > 0;
                         ?>
-                            <tr<?php echo $expiring_soon ? ' class="ho-row-expiring"' : ''; ?>>
+                            <tr<?php echo $expiring_soon ? ' class="ho-row-expiring"' : ''; ?><?= $canBulkDeleteMembers ? ' data-row-id="' . (int)$member['member_id'] . '"' : '' ?>>
                                 <td>
                                     <strong><?php echo hub_e($member['full_name'] ?? 'N/A'); ?></strong>
                                     <small class="cell-muted">
@@ -703,8 +704,9 @@ if (isset($_GET['edit_receipt'])) {
         </form>
         
         <!-- Receipts Table -->
+        <?php $canBulkDeleteReceipts = ims_allowed('hub_operations.delete_receipts', ['Administrator'], 'Delete payment receipts'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDeleteReceipts): ?> data-bulk-delete="includes/hub-operations-process.php" data-bulk-delete-method="GET" data-bulk-delete-fields='{"delete_receipt":"{id}","tab":"receipts"}' data-bulk-delete-label="receipt|receipts"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -725,7 +727,7 @@ if (isset($_GET['edit_receipt'])) {
                         </tr>
                     <?php else: ?>
                         <?php foreach ($receipts as $receipt): ?>
-                            <tr>
+                            <tr<?= $canBulkDeleteReceipts ? ' data-row-id="' . (int)$receipt['receipt_id'] . '"' : '' ?>>
                                 <td><strong><?php echo hub_e($receipt['member_name'] ?? 'N/A'); ?></strong></td>
                                 <td>
                                     <span class="badge badge-purple">
@@ -1386,8 +1388,9 @@ new Chart(revenueTrendCtx, {
         </form>
         
         <!-- Subscriptions Table -->
+        <?php $canBulkDeleteSubscriptions = ims_allowed('subscriptions.delete', ['Administrator'], 'Delete subscription payments'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDeleteSubscriptions): ?> data-bulk-delete="includes/hub-operations-process.php" data-bulk-delete-method="GET" data-bulk-delete-fields='{"delete_subscription":"{id}","tab":"subscriptions"}' data-bulk-delete-label="subscription payment|subscription payments"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Member</th>
@@ -1408,7 +1411,7 @@ new Chart(revenueTrendCtx, {
                         </tr>
                     <?php else: ?>
                         <?php foreach ($subscriptions as $sub): ?>
-                            <tr>
+                            <tr<?= $canBulkDeleteSubscriptions ? ' data-row-id="' . (int)$sub['payment_id'] . '"' : '' ?>>
                                 <td>
                                     <strong><?php echo hub_e($sub['member_name'] ?? 'N/A'); ?></strong>
                                     <small class="cell-muted"><?php echo hub_e($sub['membership_number']); ?></small>

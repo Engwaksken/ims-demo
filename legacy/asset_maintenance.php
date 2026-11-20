@@ -147,7 +147,7 @@ $totalPages = $pageData['totalPages'];
         </form>
     </div>
 </div>
-            <table class="table">
+            <table class="table" data-bulk-delete="asset_maintenance.php" data-bulk-delete-fields='{"action":"delete_maintenance","maintenance_id":"{id}"}' data-bulk-delete-label="maintenance record|maintenance records">
                 <thead>
                 <tr>
                     <th>Asset</th>
@@ -176,7 +176,7 @@ $totalPages = $pageData['totalPages'];
                         default       => 'badge-pending',
                     };
                     ?>
-                    <tr>
+                    <tr data-row-id="<?= (int)$record['maintenance_id'] ?>">
                         <td>
                             <strong><?= e($record['asset_name']) ?></strong><br>
                             <span class="note"><?= e($record['asset_code']) ?></span>

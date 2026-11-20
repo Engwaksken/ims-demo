@@ -167,8 +167,9 @@ $status_badge = [
             </span>
         </div>
 
+        <?php $canBulkDelete = ims_allowed('projects.delete', ['Administrator'], 'Delete projects'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDelete): ?> data-bulk-delete="includes/projects-process.php" data-bulk-delete-fields='{"project_id":"{id}","delete_project":""}' data-bulk-delete-label="project|projects"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Project</th>
@@ -193,7 +194,7 @@ $status_badge = [
                         </tr>
                     <?php else: ?>
                         <?php foreach ($projects as $p): ?>
-                            <tr>
+                            <tr<?= $canBulkDelete ? ' data-row-id="' . (int)$p['project_id'] . '"' : '' ?>>
                                 <!-- Project name + code -->
                                 <td>
                                     <div class="project-name-cell">

@@ -1080,7 +1080,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
         </div>
 
         <div class="table-responsive">
-            <table class="table" id="asgnTable">
+            <table class="table" id="asgnTable" data-bulk-delete="includes/process_manage_reviewers.php" data-bulk-delete-fields='{"action":"remove_assignment","assignment_id":"{id}"}' data-bulk-delete-label="assignment|assignments">
                 <thead>
                 <tr>
                     <th class="mr-col-check"></th>
@@ -1114,7 +1114,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         $srch    = strtolower(($a['startup_name']??'').' '.($a['reviewer_name']??''));
                         $rtname  = strtolower((string)($a['review_type_name'] ?? ''));
                     ?>
-                    <tr class="<?= $overdue ? 'overdue-row' : '' ?>"
+                    <tr class="<?= $overdue ? 'overdue-row' : '' ?>" data-row-id="<?= (int)$a['assignment_id'] ?>"
                         data-status="<?= h($status) ?>"
                         data-search="<?= h($srch) ?>"
                         data-rt="<?= h($rtname) ?>">
@@ -1289,7 +1289,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
             </div>
         <?php else: ?>
         <div class="table-responsive">
-            <table class="table" id="rtTable">
+            <table class="table" id="rtTable" data-bulk-delete="includes/process_manage_reviewers.php" data-bulk-delete-fields='{"action":"delete_review_type","review_type_id":"{id}"}' data-bulk-delete-label="review type|review types">
                 <thead>
                 <tr><th>#</th><th>Name &amp; Description</th><th>Order</th><th>Uses</th><th>Status</th><th>Created By</th><th class="text-center">Actions</th></tr>
                 </thead>
@@ -1298,7 +1298,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     $active = (int)$rt['is_active'] === 1;
                     $uses   = (int)$rt['usage_count'];
                 ?>
-                <tr class="<?= $active?'':'inactive-row' ?>"
+                <tr class="<?= $active?'':'inactive-row' ?>"<?= $uses === 0 ? ' data-row-id="' . (int)$rt['review_type_id'] . '"' : '' ?>
                     data-rt-name="<?= h(strtolower($rt['name'].' '.($rt['description']??''))) ?>">
                     <td class="cell-muted"><?= $i+1 ?></td>
                     <td class="rt-cell-name">
@@ -1498,7 +1498,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
             </div>
         <?php else: ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" data-bulk-delete="includes/process_manage_reviewers.php" data-bulk-delete-fields='{"action":"delete_criteria","criteria_id":"{id}"}' data-bulk-delete-label="criterion|criteria">
                 <thead>
                 <tr>
                     <th>#</th><th>Category</th><th>Question</th><th>Scoring Guide</th>
@@ -1529,7 +1529,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                             </span>
                         </td></tr>
                     <?php endif; ?>
-                    <tr class="<?= (int)$c['is_active']===0?'inactive-row':'' ?>">
+                    <tr class="<?= (int)$c['is_active']===0?'inactive-row':'' ?>" data-row-id="<?= (int)$c['criteria_id'] ?>">
                         <td class="cell-muted"><?= $rowNo+$idx ?></td>
                         <td><span class="badge badge-warning"><?= h($c['category']) ?></span></td>
                         <td>

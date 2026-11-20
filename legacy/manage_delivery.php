@@ -243,7 +243,7 @@ $stmt->close();
         </div>
 
         <div class="panel-body table-wrap">
-            <table class="table">
+            <table class="table" data-bulk-delete="manage_delivery?po_id=<?= (int)$po_id ?>" data-bulk-delete-fields='{"action":"delete_delivery","delivery_id":"{id}"}' data-bulk-delete-label="delivery record|delivery records">
                 <thead>
                 <tr>
                     <th>Delivery Date</th>
@@ -270,7 +270,7 @@ $stmt->close();
                     };
                     ?>
 
-                    <tr>
+                    <tr<?= $delivery['status'] === 'Received' ? ' data-row-id="' . (int)$delivery['delivery_id'] . '"' : '' ?>>
                         <td><?= !empty($delivery['delivery_date']) ? date('d M Y H:i', strtotime($delivery['delivery_date'])) : '-' ?></td>
                         <td><?= e($delivery['received_by_name'] ?? '-') ?></td>
                         <td><?= e($delivery['verified_by_name'] ?? '-') ?></td>

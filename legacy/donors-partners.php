@@ -181,8 +181,9 @@ while ($row = $result->fetch_assoc()) {
     </div>
     
     <div class="card-body">
+        <?php $canBulkDeleteDonors = ims_allowed('donors_partners.delete_donors', ['Administrator'], 'Delete donors'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDeleteDonors): ?> data-bulk-delete="includes/donors-partners-process.php" data-bulk-delete-fields='{"donor_id":"{id}","delete_donor":""}' data-bulk-delete-label="donor|donors"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Donor Name</th>
@@ -203,7 +204,7 @@ while ($row = $result->fetch_assoc()) {
                         </tr>
                     <?php else: ?>
                         <?php foreach ($donors as $donor): ?>
-                            <tr>
+                            <tr<?= $canBulkDeleteDonors ? ' data-row-id="' . (int)$donor['donor_id'] . '"' : '' ?>>
                                 <td>
                                     <strong><?php echo htmlspecialchars($donor['donor_name']); ?></strong>
                                     <?php if ($donor['website']): ?>
@@ -284,8 +285,9 @@ while ($row = $result->fetch_assoc()) {
     </div>
     
     <div class="card-body">
+        <?php $canBulkDeletePartners = ims_allowed('donors_partners.delete_partners', ['Administrator'], 'Delete partners'); ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table"<?php if ($canBulkDeletePartners): ?> data-bulk-delete="includes/donors-partners-process.php" data-bulk-delete-fields='{"partner_id":"{id}","delete_partner":""}' data-bulk-delete-label="partner|partners"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Partner Name</th>
@@ -306,7 +308,7 @@ while ($row = $result->fetch_assoc()) {
                         </tr>
                     <?php else: ?>
                         <?php foreach ($partners as $partner): ?>
-                            <tr>
+                            <tr<?= $canBulkDeletePartners ? ' data-row-id="' . (int)$partner['partner_id'] . '"' : '' ?>>
                                 <td><strong><?php echo htmlspecialchars($partner['partner_name']); ?></strong>
                                  <?php if ($partner['website']): ?>
                                         <br><a href="<?php echo htmlspecialchars($partner['website']); ?>" target="_blank" class="dp-link-sm">

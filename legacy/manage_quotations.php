@@ -375,7 +375,7 @@ $stmt->close();
 
     </div>
         <div class="panel-body table-wrap">
-            <table class="table">
+            <table class="table" data-bulk-delete="manage_quotations?rfq_id=<?= (int)$rfq_id ?>" data-bulk-delete-fields='{"action":"delete_quotation","quotation_id":"{id}"}' data-bulk-delete-label="quotation|quotations">
                 <thead>
                 <tr>
                     <th>Supplier</th>
@@ -402,7 +402,7 @@ $stmt->close();
                         default    => 'badge-pending',
                     };
                     ?>
-                    <tr>
+                    <tr<?= $quote['status'] !== 'Selected' ? ' data-row-id="' . (int)$quote['quotation_id'] . '"' : '' ?>>
                         <td>
                             <strong><?= e($quote['supplier_name']) ?></strong><br>
                             <span class="note"><?= e($quote['email'] ?: $quote['phone'] ?: '-') ?></span>

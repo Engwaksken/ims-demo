@@ -137,7 +137,7 @@ include 'includes/header.php';
 
             <!-- Table -->
             <div class="table-responsive">
-                <table class="table table-stack" id="jmTable">
+                <table class="table table-stack" id="jmTable" data-bulk-delete="includes/admin-jobs.php" data-bulk-delete-method="GET" data-bulk-delete-fields='{"action":"delete","id":"{id}"}' data-bulk-delete-label="job posting|job postings">
                     <thead>
                         <tr>
                             <th>Job Title</th>
@@ -164,7 +164,7 @@ include 'includes/header.php';
                         <?php foreach ($jobs as $j):
                             $dl = jobs_deadline_info($j);
                         ?>
-                        <tr data-title="<?= htmlspecialchars(strtolower($j['job_title'])) ?>"
+                        <tr data-row-id="<?= (int)$j['job_id'] ?>" data-title="<?= htmlspecialchars(strtolower($j['job_title'])) ?>"
                             data-status="<?= htmlspecialchars($j['status']) ?>"
                             data-type="<?= htmlspecialchars($j['job_type']) ?>">
 

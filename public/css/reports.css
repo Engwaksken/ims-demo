@@ -1184,3 +1184,23 @@ select.form-control {
 .tbl-pager-size { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 600; }
 .tbl-pager-size select { height: 34px; padding: 0 8px; border: 1px solid var(--border); border-radius: var(--radius-sm, 8px); background: var(--surface-card); color: var(--ink-700); }
 @media (max-width: 640px) { .tbl-pager { justify-content: center; } .tbl-pager-info { width: 100%; text-align: center; } }
+
+/* Bulk delete (public/js/bulk-delete.js) */
+.bd-col { width: 36px; }
+.bd-sel, .bd-all { width: 16px; height: 16px; cursor: pointer; accent-color: var(--red-fg); }
+tr.is-selected > td { background: var(--brand-50); }
+.bd-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; padding: 10px 12px; border: 1px solid var(--red-fg); border-radius: var(--radius-md, 10px); background: var(--red-bg); }
+.bd-bar[hidden] { display: none; }
+.bd-count { font-weight: 700; color: var(--ink-700); margin-right: auto; }
+
+/* Confirm / alert popup used site-wide (public/js/hr-ui.js) */
+.modal.hr-dialog { z-index: 4000; }
+.hr-dialog .hr-dialog-box { max-width: 420px; padding: 26px 24px 20px; text-align: center; }
+.hr-dialog h3 { margin: 10px 0 6px; font-size: 1.1rem; color: var(--ink-900); }
+.hr-dialog p { margin: 0 0 18px; color: var(--ink-500); line-height: 1.5; }
+.hr-dialog-icon { width: 52px; height: 52px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+.hr-dialog-icon.is-ask { background: var(--brand-50); color: var(--brand-600); }
+.hr-dialog-icon.is-danger { background: var(--red-bg); color: var(--red-fg); }
+.hr-dialog-icon.is-info { background: var(--blue-bg); color: var(--blue-fg); }
+.hr-dialog-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.hr-dialog-actions .btn { min-width: 110px; justify-content: center; }

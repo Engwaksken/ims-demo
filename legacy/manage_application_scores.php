@@ -430,7 +430,7 @@ function pgUrl(int $p): string {
 
         <!-- Table -->
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" data-bulk-delete="includes/process_manage_application_scores.php" data-bulk-delete-fields='{"action":"delete_review","review_id":"{id}"}' data-bulk-delete-label="review|reviews">
                 <thead>
                 <tr>
                     <th>#</th>
@@ -467,7 +467,7 @@ function pgUrl(int $p): string {
                             'per_page'       => $pp,
                         ],fn($v)=>$v!==''&&$v!==0&&$v!=='0'));
                     ?>
-                    <tr>
+                    <tr data-row-id="<?= (int)$row['review_id'] ?>" data-row-fields='<?= e(json_encode(['application_id' => (string)(int)$row['application_id'], 'reviewer_id' => (string)(int)$row['reviewer_id'], 'review_type_id' => (string)(int)$row['review_type_id']])) ?>'>
                         <td class="cell-muted"><?= $offset + $i + 1 ?></td>
                         <td>
                             <strong><?= e($row['startup_name']) ?></strong><br>

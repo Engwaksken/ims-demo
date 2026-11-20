@@ -242,8 +242,9 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                     <button type="submit" name="bulk_mark_selected_attended" class="btn btn-primary" onclick="return ensureSelectedAttendees();"><i class="fas fa-user-check"></i> Mark Selected Attended</button>
                     <button type="submit" name="bulk_mark_all_attended" class="btn btn-warning" onclick="return confirm('Mark all attendees for this day as Attended?');"><i class="fas fa-check-double"></i> Mark All Attended</button>
                 </div>
+                <?php $canBulkDeleteAttendance = ims_allowed('event_attendance.delete', ['Administrator', 'Operations/Admin'], 'Delete event attendance records'); ?>
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table"<?php if ($canBulkDeleteAttendance): ?> data-bulk-delete="<?= e($process_url) ?>" data-bulk-delete-method="GET" data-bulk-delete-fields='{"delete":"{id}"}' data-bulk-delete-label="attendee|attendees"<?php endif; ?>>
                         <thead>
                         <tr>
                             <th><input type="checkbox" id="selectAllAttendance" onclick="toggleAttendanceSelectAll()"></th>
@@ -252,7 +253,7 @@ $process_url = 'includes/event-attendance-process.php?id=' . (int)$event_id . '&
                         </thead>
                         <tbody>
                         <?php $count = 1; foreach ($attendance_records as $record): $badge = $status_badges[$record['registration_status']] ?? 'secondary'; ?>
-                            <tr>
+                            <tr<?= $canBulkDeleteAttendance ? ' data-row-id="' . (int)$record['registration_id'] . '"' : '' ?>>
                                 <td><input type="checkbox" name="registration_ids[]" value="<?= (int)$record['registration_id'] ?>" class="attendance-checkbox"></td>
                                 <td><?= $count++ ?></td>
                                 <td><strong><?= e($record['attendee_name']) ?></strong><?php if (!empty($record['is_beneficiary'])): ?><br><span class="badge badge-info ea-tag-sm">Participant</span><?php endif; ?><?php if (!empty($record['is_pwd'])): ?><br><span class="badge badge-warning ea-tag-sm" title="Person with a disability"><i class="fas fa-wheelchair" aria-hidden="true"></i> PWD<?= !empty($record['pwd_type']) ? ': ' . e($record['pwd_type']) : '' ?></span><?php endif; ?><?php if (array_key_exists('photo_consent', $record)): ?><br><span class="badge <?= !empty($record['photo_consent']) ? 'badge-success' : 'badge-secondary' ?> ea-tag-sm"><i class="fas fa-camera" aria-hidden="true"></i> <?= !empty($record['photo_consent']) ? 'Photo consent' : 'No photo consent' ?></span><?php endif; ?></td>

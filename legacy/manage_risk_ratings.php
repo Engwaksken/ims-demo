@@ -625,7 +625,18 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
             </div>
         <?php else: ?>
             <div class="table-responsive">
-                <table class="table table-stack mrr-table">
+                <?php
+                $bulkDeleteFields = json_encode([
+                    'action'         => 'delete',
+                    'rr_id'          => '{id}',
+                    'search'         => (string)$search,
+                    'status'         => (string)$filterStatus,
+                    'rating'         => (string)$filterRating,
+                    'opportunity_id' => (string)($filterOpportunity ?: ''),
+                    'page'           => (string)$page,
+                ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+                ?>
+                <table class="table table-stack mrr-table" data-bulk-delete="manage_risk_ratings" data-bulk-delete-fields='<?= h($bulkDeleteFields) ?>' data-bulk-delete-label="risk rating|risk ratings">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -661,7 +672,7 @@ function buildSigArea(string $prefix, bool $canSign, array $allowedRoles, string
                             'revComments' => $rr['reviewer_comments'] ?? '',
                         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
                         ?>
-                        <tr>
+                        <tr data-row-id="<?= (int)$rr['rr_id'] ?>">
                             <td class="mrr-rownum" data-label="#"><?= $rowNum ?></td>
 
                             <td data-label="Startup">

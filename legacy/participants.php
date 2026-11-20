@@ -275,7 +275,14 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
         
         <!-- Beneficiaries Table -->
         <div class="table-responsive">
-            <table class="table data-table" id="beneficiariesTable">
+            <?php
+            $canBulkDelete = ims_allowed('participants.delete', ['Administrator'], 'Delete participants');
+            $bulkDeleteFields = ['beneficiary_id' => '{id}'];
+            if ($filter_project_id) { $bulkDeleteFields['context_return_project'] = (string)$filter_project_id; }
+            elseif ($filter_program_id) { $bulkDeleteFields['context_return_program'] = (string)$filter_program_id; }
+            $bulkDeleteFields['delete_beneficiary'] = '';
+            ?>
+            <table class="table data-table" id="beneficiariesTable"<?php if ($canBulkDelete): ?> data-bulk-delete="includes/participants-process.php" data-bulk-delete-fields='<?= htmlspecialchars(json_encode($bulkDeleteFields), ENT_QUOTES, 'UTF-8') ?>' data-bulk-delete-label="participant|participants"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -323,7 +330,7 @@ $femalePct = $stats['total'] > 0 ? round(($stats['female'] / $stats['total']) * 
                         </tr>
                     <?php else: ?>
                         <?php foreach ($beneficiaries as $beneficiary): ?>
-                            <tr>
+                            <tr<?= $canBulkDelete ? ' data-row-id="' . (int)$beneficiary['beneficiary_id'] . '"' : '' ?>>
                                 <td><?php echo $beneficiary['beneficiary_id']; ?></td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($beneficiary['first_name'] . ' ' . $beneficiary['last_name']); ?></strong>

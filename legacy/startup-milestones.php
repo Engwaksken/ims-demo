@@ -433,7 +433,7 @@ $stats = [
         </div>
 
         <div class="table-wrap">
-            <table class="table">
+            <table class="table" data-bulk-delete="includes/startup-milestones-process.php" data-bulk-delete-fields='{"milestone_id":"{id}","delete_startup_milestone":""}' data-bulk-delete-label="milestone|milestones">
                 <thead>
                     <tr>
                         <th>Startup</th>
@@ -484,7 +484,7 @@ $stats = [
                                 'responsible_person' => (string)($milestone['responsible_person'] ?? ''),
                             ];
                             ?>
-                            <tr>
+                            <tr data-row-id="<?php echo (int)$milestone['milestone_id']; ?>">
                                 <td>
                                     <strong><?php echo h($milestone['startup_name']); ?></strong>
                                     <br>

@@ -354,7 +354,7 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
         .assets-register-table{min-width:1450px;table-layout:auto}
         .assets-register-table th{white-space:nowrap}
         .assets-register-table td{vertical-align:top;white-space:nowrap}
-        .assets-register-table td:nth-child(2){white-space:normal;min-width:180px;max-width:280px}
+        .assets-register-table td.ar-desc{white-space:normal;min-width:180px;max-width:280px}
         .assets-register-table td:last-child{white-space:normal;min-width:145px}
     </style>
     <div class="tab-panel <?= $activeTab === 'assets' ? 'active' : '' ?>" id="tab-assets">
@@ -380,7 +380,7 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
                 </form>
 
                 <p class="note" style="margin:10px 0;font-size:12px">Asset movement fields not stored in the current inventory database (additions, revaluations and impairment) display as zero; depreciation and NBV are estimated from recorded cost and current value.</p>
-                 <table class="table assets-register-table">
+                 <table class="table assets-register-table" data-bulk-delete="manage_assets" data-bulk-delete-fields='{"action":"delete_asset","asset_id":"{id}"}' data-bulk-delete-label="asset|assets">
                     <thead>
                        <tr>
     <th>Class</th><th>Description</th><th>Asset Number</th><th>Date of Acquisition</th>
@@ -393,7 +393,7 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
                             <tr><td colspan="13">No assets found.</td></tr>
                         <?php endif; ?>
                         <?php foreach ($data['assets'] as $asset): ?>
-                            <tr>
+                            <tr<?= ($asset['offload_status'] ?? 'Active') !== 'Offloaded' ? ' data-row-id="' . (int)$asset['asset_id'] . '"' : '' ?>>
                                 <?php
                                 $cost = (float)($asset['purchase_cost'] ?? 0);
                                 $closingNbv = (float)($asset['current_value'] ?? 0);
@@ -403,7 +403,7 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
                                 if (($asset['offload_status'] ?? '') === 'Offloaded') $closingNbv = 0;
                                 ?>
                                 <td><?= e($asset['category_name'] ?? $asset['category'] ?? '-') ?></td>
-                                <td><?= e($asset['description'] ?? $asset['asset_name'] ?? '-') ?></td>
+                                <td class="ar-desc"><?= e($asset['description'] ?? $asset['asset_name'] ?? '-') ?></td>
                                 <td><?= e($asset['asset_code'] ?? '-') ?></td>
                                 <td><?= !empty($asset['purchase_date']) ? e(date('d M Y', strtotime($asset['purchase_date']))) : '-' ?></td>
                                 <td>UGX <?= number_format($cost, 2) ?></td>
@@ -495,7 +495,7 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
                     </div>
                 </form>
 
-                <table class="table">
+                <table class="table"<?php if ($isAssetManager): ?> data-bulk-delete="manage_assets" data-bulk-delete-fields='{"action":"delete_request","request_id":"{id}"}' data-bulk-delete-label="request|requests"<?php endif; ?>>
                     <thead>
                         <tr>
                             <th>Staff</th>
@@ -521,7 +521,7 @@ unset($_SESSION['success'], $_SESSION['error'], $_SESSION['asset_import_report']
                                 default              => 'badge-pending',
                             };
                             ?>
-                            <tr>
+                            <tr<?= $isAssetManager ? ' data-row-id="' . (int)$request['request_id'] . '"' : '' ?>>
                                 <td><?= e($request['staff_name']) ?></td>
                                 <td>
                                     <strong><?= e($request['asset_name']) ?></strong><br>

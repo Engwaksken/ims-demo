@@ -467,7 +467,7 @@ foreach ($by_category['Monthly Receipt'] as $d) {
             <?php foreach ($visible as $cat => $docs): if (!$docs) continue; ?>
                 <h4 class="mf-group"><i class="fas <?= $cat_icons[$cat] ?>" aria-hidden="true"></i> <?= mf_e($cat) ?> <span><?= count($docs) ?></span></h4>
                 <div class="table-responsive">
-                    <table class="table table-stack mf-table">
+                    <table class="table table-stack mf-table"<?php if ($mf_can_delete): ?> data-bulk-delete="includes/member-folder-process.php" data-bulk-delete-fields='{"action":"delete","member_id":"<?= (int)$member_id ?>","document_id":"{id}"}' data-bulk-delete-label="document|documents"<?php endif; ?>>
                         <thead>
                             <tr>
                                 <th>Title</th>
@@ -480,7 +480,7 @@ foreach ($by_category['Monthly Receipt'] as $d) {
                         </thead>
                         <tbody>
                         <?php foreach ($docs as $d): ?>
-                            <tr>
+                            <tr<?= $mf_can_delete ? ' data-row-id="' . (int)$d['document_id'] . '"' : '' ?>>
                                 <td data-label="Title"><strong><?= mf_e($d['title']) ?></strong>
                                     <?php if (!empty($d['notes'])): ?><span class="cell-muted"><?= mf_e($d['notes']) ?></span><?php endif; ?></td>
                                 <?php if ($cat === 'Monthly Receipt'): ?>

@@ -2284,7 +2284,7 @@ body.ev-modal-open { overflow: hidden; }
             <div class="table-responsive">
 
 
-                <table class="table table-stack">
+                <table class="table table-stack"<?php if ($canDeleteEvents): ?> data-bulk-delete="includes/events-process.php" data-bulk-delete-fields='{"event_id":"{id}","delete_event":""}' data-bulk-delete-label="event|events"<?php endif; ?>>
 
 
                     <thead>
@@ -2359,7 +2359,7 @@ body.ev-modal-open { overflow: hidden; }
                             ?>
 
 
-                            <tr>
+                            <tr<?= ($canDeleteEvents && $eventSource === 'ims') ? ' data-row-id="' . (int)$event['event_id'] . '"' : '' ?>>
 
 
                                 <td>

@@ -477,7 +477,7 @@ function catColor(string $cat, array $keys, array $pal): string
 
         <form method="POST" id="perm-form">
         <div class="pt-wrap">
-        <table class="pt">
+        <table class="pt" data-bulk-delete="menu-permissions" data-bulk-delete-method="GET" data-bulk-delete-fields='{"delete":"{id}"}' data-bulk-delete-label="menu item|menu items">
             <thead>
                 <tr>
                     <th class="th-item">
@@ -513,7 +513,7 @@ function catColor(string $cat, array $keys, array $pal): string
                     $granted = $item['roles'];
                     $active  = (bool)$item['is_active'];
                 ?>
-                <tr id="row-<?= $mid ?>">
+                <tr id="row-<?= $mid ?>" data-row-id="<?= (int)$mid ?>">
 
                     <!-- -- Inline-edit cell -- -->
                     <td class="td-item item-cell">

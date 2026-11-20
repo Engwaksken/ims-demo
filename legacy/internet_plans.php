@@ -66,7 +66,7 @@ require_once 'includes/internet-plans.php';
         </div>
 
         <div class="table-responsive">
-            <table class="table" id="plansTable">
+            <table class="table" id="plansTable" data-bulk-delete="internet_plans" data-bulk-delete-fields='{"action":"delete","id":"{id}"}' data-bulk-delete-label="plan|plans">
                 <thead>
                 <tr>
                     <th>#</th>
@@ -85,7 +85,7 @@ require_once 'includes/internet-plans.php';
                 <tbody>
                 <?php if ($plans && $plans->num_rows > 0): ?>
                     <?php $i = 1; while ($row = $plans->fetch_assoc()): ?>
-                        <tr>
+                        <tr data-row-id="<?= (int)$row['id'] ?>">
                             <td><?= $i++ ?></td>
 
                             <td>

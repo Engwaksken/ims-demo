@@ -301,8 +301,9 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
         </div>
 
         <!-- Visitors Table -->
+        <?php $canBulkDeleteVisitors = ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors'); ?>
         <div class="table-responsive">
-            <table class="table table-stack">
+            <table class="table table-stack"<?php if ($canBulkDeleteVisitors): ?> data-bulk-delete="includes/hub-visitors-process.php" data-bulk-delete-method="GET" data-bulk-delete-fields='{"delete":"{id}"}' data-bulk-delete-label="visitor|visitors"<?php endif; ?>>
                 <thead>
                     <tr>
                         <th>Visitor</th>
@@ -344,7 +345,7 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                         'Other'        => 'secondary'
                     ];
                     foreach ($visitors as $v): ?>
-                    <tr>
+                    <tr<?= $canBulkDeleteVisitors ? ' data-row-id="' . (int)$v['visitor_id'] . '"' : '' ?>>
                         <td data-label="Visitor">
                             <strong><?php echo htmlspecialchars($v['visitor_name']); ?></strong>
                             <?php if ($v['is_member']): ?>

@@ -158,7 +158,7 @@ if (!function_exists('survey_h')) {
             </div>
 
             <div class="table-responsive">
-                <table class="table survey-table">
+                <table class="table survey-table" data-bulk-delete="includes/process-surveys.php" data-bulk-delete-fields='{"action":"delete_survey","survey_id":"{id}"}' data-bulk-delete-label="survey|surveys">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -212,7 +212,7 @@ if (!function_exists('survey_h')) {
                             );
                             ?>
 
-                            <tr>
+                            <tr data-row-id="<?= $surveyId ?>">
                                 <td class="survey-number">
                                     <?= number_format($index + 1) ?>
                                 </td>

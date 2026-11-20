@@ -271,7 +271,7 @@ $stmt->close();
         </div>
 
         <div class="panel-body table-wrap">
-            <table class="table">
+            <table class="table" data-bulk-delete="manage_suppliers?rfq_id=<?= (int)$rfq_id ?>" data-bulk-delete-fields='{"action":"remove_invitation","id":"{id}"}' data-bulk-delete-label="invitation|invitations">
                 <thead>
                 <tr>
                     <th>Supplier</th>
@@ -289,7 +289,7 @@ $stmt->close();
                 <?php endif; ?>
 
                 <?php foreach ($invited as $row): ?>
-                    <tr>
+                    <tr data-row-id="<?= (int)$row['id'] ?>">
                         <td><strong><?= e($row['name']) ?></strong></td>
                         <td><?= e($row['email'] ?: '-') ?></td>
                         <td><?= e($row['phone'] ?: '-') ?></td>

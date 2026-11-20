@@ -2,7 +2,9 @@
 
     <!-- JavaScript -->
     <script src="../js/main.js"></script>
+    <script src="../js/hr-ui.js"></script>
     <script src="../js/stat-filters.js"></script>
+    <script src="../js/bulk-delete.js"></script>
     <script src="../js/table-pager.js"></script>
 <?php if (empty($load_chartjs)): /* already loaded in <head> by header.php when set */ ?>
     <!-- Chart.js pinned to the version the floating "npm/chart.js" URL served (4.5.1) so it can carry SRI. -->

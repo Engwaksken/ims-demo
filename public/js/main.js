@@ -736,7 +736,8 @@ function exportToCSV(tableId, filename) {
     const rows = table.querySelectorAll('tr');
 
     rows.forEach(row => {
-        const cols = row.querySelectorAll('td, th');
+        // Selection checkbox columns (bulk delete / bulk actions) are not data.
+        const cols = Array.from(row.querySelectorAll('td, th')).filter(col => !col.classList.contains('bd-col') && !col.classList.contains('hr-sel-col'));
         // Quote every field so commas/quotes/newlines in cells don't shift columns.
         const rowData = Array.from(cols).map(col => '"' + col.textContent.trim().replace(/"/g, '""') + '"');
         csv.push(rowData.join(','));
