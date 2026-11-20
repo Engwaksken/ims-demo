@@ -785,7 +785,7 @@ elseif ($memberId > 0):
                 </div>
                 <div class="form-group">
                     <label for="tm_macs">Device MAC addresses</label>
-                    <textarea id="tm_macs" class="form-control" name="macs" rows="3" placeholder="One per line, e.g. a4:5e:60:12:ab:cd"></textarea>
+                    <textarea id="tm_macs" class="form-control" name="macs" rows="3" placeholder="One device per line: MAC address, then an optional label&#10;a4:5e:60:12:ab:cd Laptop"></textarea>
                     <div class="ht-help">Laptop and phone Wi-Fi addresses. Ask them to turn off "private / random MAC address" for the hub Wi-Fi so the address stays the same.</div>
                 </div>
                 <div class="modal-footer">
@@ -838,7 +838,7 @@ elseif ($memberId > 0):
 <div id="addDeviceModal" class="modal" aria-hidden="true">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>Add device</h3>
+            <h3>Add devices</h3>
             <span class="close" onclick="closeModal('addDeviceModal')">&times;</span>
         </div>
         <div class="modal-body">
@@ -854,13 +854,14 @@ elseif ($memberId > 0):
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label for="dv_mac" class="required">MAC address</label><input id="dv_mac" class="form-control" name="mac_address" required placeholder="a4:5e:60:12:ab:cd"></div>
-                    <div class="form-group"><label for="dv_label">Label</label><input id="dv_label" class="form-control" name="label" maxlength="80" placeholder="Laptop, phone..."></div>
+                <div class="form-group">
+                    <label for="dv_devices" class="required">Devices</label>
+                    <textarea id="dv_devices" class="form-control" name="devices" rows="4" required placeholder="One device per line: MAC address, then an optional label&#10;a4:5e:60:12:ab:cd Laptop&#10;a4:5e:60:12:ab:ce Phone"></textarea>
+                    <small class="ht-help">Add several at once. Every address is checked first; nothing is saved if one is invalid or already registered.</small>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addDeviceModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add device</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add devices</button>
                 </div>
             </form>
         </div>

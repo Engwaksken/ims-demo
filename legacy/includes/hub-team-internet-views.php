@@ -218,12 +218,13 @@ elseif ($view === 'staff' || $view === 'guests'):
     <div class="card-header"><h3><i class="fas fa-laptop" aria-hidden="true"></i> Devices (<?= count($pDevices) ?>)</h3></div>
     <div class="card-body">
         <?php if ($canManage): ?>
-        <form method="post" action="<?= $hiAction ?>" class="hr-inline" style="margin-bottom:12px">
+        <form method="post" action="<?= $hiAction ?>" style="margin-bottom:12px">
             <?= $hiHidden('add_person_device', $view, $personId) ?>
             <input type="hidden" name="person_id" value="<?= $personId ?>">
-            <input name="mac_address" class="form-control" required placeholder="MAC address, e.g. 3C:22:FB:12:34:56" aria-label="MAC address">
-            <input name="label" class="form-control" maxlength="80" placeholder="Label (e.g. Laptop)" aria-label="Device label">
-            <button class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add device</button>
+            <label for="hiAddDevices">Add devices</label>
+            <textarea id="hiAddDevices" name="devices" class="form-control" rows="3" required placeholder="One device per line: MAC address, then an optional label&#10;3C:22:FB:12:34:56 Laptop&#10;3C:22:FB:12:34:57 Phone"></textarea>
+            <p class="form-hint">Add several at once. Every address is checked first; nothing is saved if one is invalid or already registered.</p>
+            <button class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add devices</button>
         </form>
         <?php endif; ?>
         <?php if (!$pDevices): ?>
@@ -345,9 +346,9 @@ elseif ($view === 'staff' || $view === 'guests'):
                 <div class="hr-form-grid">
                     <?php if ($kind === 'staff'): ?>
                         <div class="form-group is-wide"><label for="hiUser">IMS user</label>
-                            <select id="hiUser" name="user_id" class="form-control"><option value="0">Not an IMS user (type the name below)</option>
-                                <?php foreach ($staffCandidates as $c): ?><option value="<?= (int)$c['user_id'] ?>"><?= ht_e($c['full_name']) ?> · <?= ht_e($c['role']) ?></option><?php endforeach; ?>
-                            </select><p class="form-hint">Name and email are taken from the user when left empty.</p></div>
+                            <select id="hiUser" name="user_id" class="form-control" data-staff-fill="hiAddPerson"><option value="0">Not an IMS user (type the details below)</option>
+                                <?php foreach ($staffCandidates as $c): ?><option value="<?= (int)$c['user_id'] ?>" data-name="<?= ht_e($c['full_name']) ?>" data-email="<?= ht_e($c['email']) ?>" data-phone="<?= ht_e($c['phone']) ?>" data-org="<?= ht_e(trim(($c['job_title'] ?? '') . ($c['job_title'] && $c['department_name'] ? ', ' : '') . ($c['department_name'] ?? ''))) ?>"><?= ht_e($c['full_name']) ?> · <?= ht_e($c['role']) ?></option><?php endforeach; ?>
+                            </select><p class="form-hint">Choosing a user fills in their name, email, phone and department from their profile; you can still edit them.</p></div>
                     <?php endif; ?>
                     <div class="form-group"><label for="hiName"><?= $kind === 'staff' ? 'Name' : 'Name (required)' ?></label><input id="hiName" name="full_name" class="form-control" maxlength="150" <?= $kind === 'guest' ? 'required' : '' ?>></div>
                     <div class="form-group"><label for="hiPhone">Phone</label><input id="hiPhone" name="phone" class="form-control" maxlength="40"></div>
@@ -357,8 +358,9 @@ elseif ($view === 'staff' || $view === 'guests'):
                         <div class="form-group"><label for="hiUntil">Access until</label><input id="hiUntil" type="datetime-local" name="valid_until" class="form-control" value="<?= date('Y-m-d') ?>T23:59"></div>
                         <div class="form-group"><label class="hr-check" style="margin-top:28px"><input type="checkbox" name="no_expiry" value="1" onchange="document.getElementById('hiUntil').disabled=this.checked"> No expiry</label></div>
                     <?php endif; ?>
-                    <div class="form-group"><label for="hiMac">Device MAC address (optional)</label><input id="hiMac" name="mac_address" class="form-control" placeholder="3C:22:FB:12:34:56"></div>
-                    <div class="form-group"><label for="hiLabel">Device label</label><input id="hiLabel" name="label" class="form-control" maxlength="80" placeholder="e.g. Laptop"></div>
+                    <div class="form-group is-wide"><label for="hiDevices">Devices (optional)</label>
+                        <textarea id="hiDevices" name="devices" class="form-control" rows="3" placeholder="One device per line: MAC address, then an optional label&#10;3C:22:FB:12:34:56 Laptop&#10;3C:22:FB:12:34:57 Phone"></textarea>
+                        <p class="form-hint">Add as many devices as the person uses. Every address is checked first; nothing is saved if one is invalid or already registered.</p></div>
                 </div>
                 <p class="form-hint">Find a device's MAC address under <a href="hub-team?view=online&amp;kind=unknown">Online now</a> (unknown devices) and register it from there.</p>
             </div>
@@ -451,7 +453,7 @@ elseif ($view === 'online'):
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="block"> Block this device</label>
                 </fieldset>
                 <div class="hr-form-grid" data-reg="guest staff">
-                    <div class="form-group" data-reg="staff"><label>IMS user</label><select name="user_id" class="form-control"><option value="0">Not an IMS user</option><?php foreach ($staffCandidates as $c): ?><option value="<?= (int)$c['user_id'] ?>"><?= ht_e($c['full_name']) ?></option><?php endforeach; ?></select></div>
+                    <div class="form-group" data-reg="staff"><label>IMS user</label><select name="user_id" class="form-control" data-staff-fill="hiRegisterModal"><option value="0">Not an IMS user</option><?php foreach ($staffCandidates as $c): ?><option value="<?= (int)$c['user_id'] ?>" data-name="<?= ht_e($c['full_name']) ?>" data-email="<?= ht_e($c['email']) ?>" data-phone="<?= ht_e($c['phone']) ?>"><?= ht_e($c['full_name']) ?> · <?= ht_e($c['role']) ?></option><?php endforeach; ?></select></div>
                     <div class="form-group"><label>Name</label><input name="full_name" class="form-control" maxlength="150"></div>
                     <div class="form-group"><label>Phone</label><input name="phone" class="form-control" maxlength="40"></div>
                     <div class="form-group" data-reg="guest"><label>Access until</label><input type="datetime-local" name="valid_until" class="form-control" value="<?= date('Y-m-d') ?>T23:59"></div>
@@ -593,3 +595,29 @@ elseif ($view === 'hotspot'):
 })();
 </script>
 <?php endif; ?>
+
+<script>
+/* Staff: choosing an IMS user fills in their details (name, email, phone, department).
+   A field the person typed into is left alone; fields filled by an earlier choice are replaced. */
+document.querySelectorAll('select[data-staff-fill]').forEach(function (select) {
+    var form = select.form;
+    if (!form) return;
+    var map = { name: 'full_name', email: 'email', phone: 'phone', org: 'organisation' };
+    Object.keys(map).forEach(function (key) {
+        var field = form.querySelector('[name="' + map[key] + '"]');
+        if (field) field.addEventListener('input', function () { delete field.dataset.autofilled; });
+    });
+    select.addEventListener('change', function () {
+        var opt = select.selectedOptions[0];
+        Object.keys(map).forEach(function (key) {
+            var field = form.querySelector('[name="' + map[key] + '"]');
+            if (!field) return;
+            var value = opt && opt.value !== '0' ? (opt.getAttribute('data-' + key) || '') : '';
+            if (field.value === '' || field.dataset.autofilled === '1') {
+                field.value = value;
+                if (value !== '') field.dataset.autofilled = '1'; else delete field.dataset.autofilled;
+            }
+        });
+    });
+});
+</script>

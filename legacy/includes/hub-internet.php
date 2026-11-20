@@ -119,12 +119,25 @@ function hubinet_staff_candidates(mysqli $conn): array
 {
     $roles = defined('IMS_STAFF_ROLES') ? IMS_STAFF_ROLES : ['Administrator', 'Staff'];
     $marks = implode(',', array_fill(0, count($roles), '?'));
+    $notRegistered = "u.is_active = 1 AND u.role IN ($marks)
+            AND NOT EXISTS (SELECT 1 FROM hub_network_people p WHERE p.kind = 'staff' AND p.user_id = u.user_id)";
+    // Details for filling in the form: the employee profile first, then the user account.
     $stmt = $conn->prepare(
-        "SELECT u.user_id, u.full_name, u.email, u.role FROM users u
-          WHERE u.is_active = 1 AND u.role IN ($marks)
-            AND NOT EXISTS (SELECT 1 FROM hub_network_people p WHERE p.kind = 'staff' AND p.user_id = u.user_id)
-          ORDER BY u.full_name"
+        "SELECT u.user_id, COALESCE(NULLIF(ed.full_name, ''), u.full_name) AS full_name,
+                COALESCE(NULLIF(ed.company_email, ''), u.email) AS email,
+                COALESCE(NULLIF(ed.phone, ''), NULLIF(u.phone, ''), '') AS phone,
+                u.role, ed.job_title, d.department_name
+           FROM users u
+           LEFT JOIN employee_directory ed ON ed.employee_id = (SELECT MAX(e2.employee_id) FROM employee_directory e2 WHERE e2.user_id = u.user_id)
+           LEFT JOIN departments d ON d.department_id = ed.department_id
+          WHERE $notRegistered
+          ORDER BY full_name"
     );
+    if (!$stmt) {
+        // Installations without employee profiles: account details only.
+        $stmt = $conn->prepare("SELECT u.user_id, u.full_name, u.email, '' AS phone, u.role, NULL AS job_title, NULL AS department_name
+                                  FROM users u WHERE $notRegistered ORDER BY u.full_name");
+    }
     if (!$stmt) {
         return [];
     }
@@ -193,6 +206,28 @@ function hubinet_save_person(mysqli $conn, array $post, int $uid): array
     $name = mb_substr($name, 0, 150);
     $email = mb_substr($email, 0, 190);
 
+    // Devices added with a new person: "MAC [label]" per line. Checked before the person is
+    // created, so a typo or an already-registered device never leaves a half-added person.
+    $newDevices = [];
+    if (!$existing) {
+        $lines = (string)($post['devices'] ?? '');
+        if (trim($lines) === '' && trim((string)($post['mac_address'] ?? '')) !== '') {
+            $lines = trim((string)$post['mac_address']) . ' ' . trim((string)($post['label'] ?? ''));
+        }
+        if (trim($lines) !== '') {
+            $parsed = hubnet_parse_device_lines($lines);
+            if ($parsed['errors']) {
+                return hubinet_result(false, implode(' ', array_slice($parsed['errors'], 0, 3)));
+            }
+            $taken = hubinet_taken_macs($conn, array_column($parsed['devices'], 'mac'));
+            if ($taken) {
+                $mac = (string)array_key_first($taken);
+                return hubinet_result(false, $mac . ' is already registered to ' . $taken[$mac] . '. Nothing was saved.');
+            }
+            $newDevices = $parsed['devices'];
+        }
+    }
+
     if ($existing) {
         $stmt = $conn->prepare('UPDATE hub_network_people SET user_id = ?, full_name = ?, email = NULLIF(?, \'\'), phone = NULLIF(?, \'\'),
                                 organisation = NULLIF(?, \'\'), note = NULLIF(?, \'\'), status = ?, valid_until = ? WHERE person_id = ?');
@@ -219,11 +254,9 @@ function hubinet_save_person(mysqli $conn, array $post, int $uid): array
     $personId = $existing ? $personId : (int)$stmt->insert_id;
     $stmt->close();
 
-    // A first device can be added with the person.
     $note2 = '';
-    $mac = trim((string)($post['mac_address'] ?? ''));
-    if (!$existing && $mac !== '') {
-        $dev = hubinet_add_device($conn, $personId, $mac, (string)($post['label'] ?? ''), $uid);
+    if ($newDevices) {
+        $dev = hubinet_add_devices($conn, $personId, $newDevices, $uid, (string)($post['device_mode'] ?? 'auto'));
         $note2 = ' ' . $dev['message'];
     }
     if ($existing) {
@@ -236,8 +269,57 @@ function hubinet_save_person(mysqli $conn, array $post, int $uid): array
     return hubinet_result(true, ($existing ? 'Saved ' : 'Added ') . $name . '.' . $note2, ['person_id' => $personId]);
 }
 
-/** Registers a device (MAC) for a staff member or guest. */
-function hubinet_add_device(mysqli $conn, int $personId, string $mac, string $label, int $uid, string $mode = 'auto'): array
+/** Which of these MACs are already registered: [mac => "name (owner)"]. */
+function hubinet_taken_macs(mysqli $conn, array $macs): array
+{
+    $taken = [];
+    foreach ($macs as $mac) {
+        $rows = hubnet_devices_where($conn, 'd.mac_address = ?', 's', [$mac]);
+        if ($rows) {
+            $o = $rows[0];
+            $taken[$mac] = ($o['person_name'] ?: 'someone else') . ' (' . ($o['owner_kind'] === 'member' ? ($o['company_name'] ?: 'hub member') : $o['owner_kind']) . ')';
+        }
+    }
+    return $taken;
+}
+
+/**
+ * Registers several devices for a staff member or guest in one go.
+ * $devices: [['mac' => .., 'label' => ..], ...] (from hubnet_parse_device_lines).
+ * All addresses are checked first; nothing is saved if one is already registered.
+ */
+function hubinet_add_devices(mysqli $conn, int $personId, array $devices, int $uid, string $mode = 'auto'): array
+{
+    if (!hubinet_person($conn, $personId)) {
+        return hubinet_result(false, 'Person not found.');
+    }
+    if (!$devices) {
+        return hubinet_result(false, 'Enter at least one MAC address (e.g. 3C:22:FB:12:34:56).');
+    }
+    $taken = hubinet_taken_macs($conn, array_column($devices, 'mac'));
+    if ($taken) {
+        $list = [];
+        foreach ($taken as $mac => $who) {
+            $list[] = $mac . ' is already registered to ' . $who;
+        }
+        return hubinet_result(false, implode('; ', array_slice($list, 0, 3)) . '. Nothing was saved.');
+    }
+    $ids = [];
+    foreach ($devices as $dev) {
+        $r = hubinet_add_device($conn, $personId, (string)$dev['mac'], (string)($dev['label'] ?? ''), $uid, $mode, false);
+        if (!$r['ok']) {
+            return hubinet_result(false, $r['message'] . ($ids ? ' ' . count($ids) . ' device(s) before it were saved.' : ''));
+        }
+        $ids[] = (int)$r['device_id'];
+    }
+    $marks = implode(',', array_fill(0, count($ids), '?'));
+    $applied = hubnet_apply($conn, hubnet_devices_where($conn, "d.device_id IN ($marks)", str_repeat('i', count($ids)), $ids), $uid, 'add');
+    $n = count($ids);
+    return hubinet_result(true, ($n === 1 ? 'Device ' . $devices[0]['mac'] . ' registered. ' : $n . ' devices registered. ') . $applied['message'], ['device_ids' => $ids]);
+}
+
+/** Registers a device (MAC) for a staff member or guest. $apply=false when the caller applies a batch. */
+function hubinet_add_device(mysqli $conn, int $personId, string $mac, string $label, int $uid, string $mode = 'auto', bool $apply = true): array
 {
     $person = hubinet_person($conn, $personId);
     if (!$person) {
@@ -267,6 +349,9 @@ function hubinet_add_device(mysqli $conn, int $personId, string $mac, string $la
     }
     $deviceId = (int)$stmt->insert_id;
     $stmt->close();
+    if (!$apply) {
+        return hubinet_result(true, 'Device ' . $mac . ' registered.', ['device_id' => $deviceId]);
+    }
     $applied = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $uid, 'add');
     return hubinet_result(true, 'Device ' . $mac . ' registered. ' . $applied['message'], ['device_id' => $deviceId]);
 }

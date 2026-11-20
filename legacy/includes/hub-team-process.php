@@ -179,7 +179,13 @@ try {
             $email = ht_str('email');
             $phone = ht_str('phone', 40);
             $jobTitle = ht_str('job_title', 120);
-            $macs = ht_parse_macs((string)($_POST['macs'] ?? ''));
+            // Devices: one per line, "MAC [label]".
+            $parsedDevices = hubnet_parse_device_lines((string)($_POST['macs'] ?? ''));
+            if ($parsedDevices['errors'] !== []) {
+                throw new InvalidArgumentException(implode(' ', array_slice($parsedDevices['errors'], 0, 3)));
+            }
+            $macs = array_column($parsedDevices['devices'], 'mac');
+            $macLabels = array_column($parsedDevices['devices'], 'label', 'mac');
 
             if ($fullName === '') {
                 throw new InvalidArgumentException('Enter the team member\'s full name.');
@@ -215,7 +221,7 @@ try {
             $stmt->close();
 
             foreach ($macs as $index => $mac) {
-                ht_insert_device($conn, $memberId, $teamMemberId, $mac, 'Device ' . ($index + 1), $userId);
+                ht_insert_device($conn, $memberId, $teamMemberId, $mac, ($macLabels[$mac] ?? '') !== '' ? $macLabels[$mac] : 'Device ' . ($index + 1), $userId);
             }
 
             $conn->commit();
@@ -321,15 +327,35 @@ try {
                 }
             }
 
-            $mac = hubnet_normalize_mac(ht_str('mac_address', 40));
+            // One or several devices: "MAC [label]" per line (the single MAC field still works).
+            $lines = (string)($_POST['devices'] ?? '');
+            if (trim($lines) === '' && ht_str('mac_address', 40) !== '') {
+                $lines = ht_str('mac_address', 40) . ' ' . ht_str('label', 80);
+            }
+            $parsed = hubnet_parse_device_lines($lines);
 
-            if ($mac === '') {
-                throw new InvalidArgumentException('Enter a valid MAC address (e.g. a4:5e:60:12:ab:cd).');
+            if ($parsed['errors'] !== []) {
+                throw new InvalidArgumentException(implode(' ', array_slice($parsed['errors'], 0, 3)));
             }
 
-            $deviceId = ht_insert_device($conn, $memberId, $teamMemberId, $mac, ht_str('label', 80), $userId);
-            $net = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $userId, 'device-add');
-            ht_back(ht_member_query($memberId), null, 'Device ' . $mac . ' registered.' . ht_net_note($net));
+            if ($parsed['devices'] === []) {
+                throw new InvalidArgumentException('Enter at least one MAC address (e.g. a4:5e:60:12:ab:cd).');
+            }
+
+            // Check every address before saving any, so nothing is half-registered.
+            foreach ($parsed['devices'] as $dev) {
+                ht_assert_mac_free($conn, $dev['mac']);
+            }
+
+            $deviceIds = [];
+            foreach ($parsed['devices'] as $dev) {
+                $deviceIds[] = ht_insert_device($conn, $memberId, $teamMemberId, $dev['mac'], $dev['label'], $userId);
+            }
+
+            $marks = implode(',', array_fill(0, count($deviceIds), '?'));
+            $net = hubnet_apply($conn, hubnet_devices_where($conn, "d.device_id IN ($marks)", str_repeat('i', count($deviceIds)), $deviceIds), $userId, 'device-add');
+            $count = count($deviceIds);
+            ht_back(ht_member_query($memberId), null, ($count === 1 ? 'Device ' . $parsed['devices'][0]['mac'] . ' registered.' : $count . ' devices registered.') . ht_net_note($net));
 
         case 'remove_device':
             $deviceId = ht_int('device_id');

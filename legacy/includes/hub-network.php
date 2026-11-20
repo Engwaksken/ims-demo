@@ -242,6 +242,50 @@ if (!function_exists('hubnet_normalize_mac')) {
 | Packages and seats
 --------------------------------------------------------------------- */
 
+if (!function_exists('hubnet_parse_device_lines')) {
+    /**
+     * Several devices typed at once, one per line: "MAC [label]", e.g.
+     *   a4:5e:60:12:ab:cd Laptop
+     *   A45E6012ABCE  Phone
+     * Several MACs on one line (comma/space separated) are each a device;
+     * any other text on the line becomes the label of the line's last MAC.
+     *
+     * @return array{devices: list<array{mac:string,label:string}>, errors: list<string>}
+     */
+    function hubnet_parse_device_lines(string $text): array
+    {
+        $devices = [];
+        $errors = [];
+
+        foreach (preg_split('/\R/', $text) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '') {
+                continue;
+            }
+            $macs = [];
+            $labelParts = [];
+            foreach (preg_split('/[\s,;]+/', $line) ?: [] as $token) {
+                $mac = hubnet_normalize_mac($token);
+                if ($mac !== '' && $labelParts === []) {
+                    $macs[] = $mac;
+                } else {
+                    $labelParts[] = $token;
+                }
+            }
+            if ($macs === []) {
+                $errors[] = '"' . mb_substr($line, 0, 40) . '" does not start with a valid MAC address (e.g. a4:5e:60:12:ab:cd).';
+                continue;
+            }
+            $label = mb_substr(trim(implode(' ', $labelParts)), 0, 80);
+            foreach ($macs as $i => $mac) {
+                $devices[$mac] = ['mac' => $mac, 'label' => $i === count($macs) - 1 ? $label : ''];
+            }
+        }
+
+        return ['devices' => array_values($devices), 'errors' => $errors];
+    }
+}
+
 if (!function_exists('hubnet_packages')) {
     /** @return list<array<string,mixed>> */
     function hubnet_packages(mysqli $conn, bool $activeOnly = false): array

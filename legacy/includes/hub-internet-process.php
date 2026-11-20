@@ -80,7 +80,16 @@ try {
             hip_back($returnQuery, $r['ok'], $r['message']);
 
         case 'add_person_device':
-            $r = hubinet_add_device($conn, (int)($_POST['person_id'] ?? 0), (string)($_POST['mac_address'] ?? ''), (string)($_POST['label'] ?? ''), $uid);
+            // One or several devices: "MAC [label]" per line (a single MAC field still works).
+            $lines = (string)($_POST['devices'] ?? '');
+            if (trim($lines) === '' && trim((string)($_POST['mac_address'] ?? '')) !== '') {
+                $lines = trim((string)$_POST['mac_address']) . ' ' . trim((string)($_POST['label'] ?? ''));
+            }
+            $parsed = hubnet_parse_device_lines($lines);
+            if ($parsed['errors']) {
+                hip_back($returnQuery, false, implode(' ', array_slice($parsed['errors'], 0, 3)));
+            }
+            $r = hubinet_add_devices($conn, (int)($_POST['person_id'] ?? 0), $parsed['devices'], $uid);
             hip_back($returnQuery, $r['ok'], $r['message']);
 
         case 'remove_person_device':
