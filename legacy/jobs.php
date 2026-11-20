@@ -96,7 +96,7 @@ include 'includes/header.php';
                 <div class="stat-value"><?= $stats['draft'] ?></div>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" data-stat-href="recruitment">
             <div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div>
             <div class="stat-info">
                 <div class="stat-label">Applications</div>

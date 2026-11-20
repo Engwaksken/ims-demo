@@ -79,9 +79,9 @@ include 'includes/header.php';
     </div>
 
     <div class="stats-grid reports-stats">
-        <div class="stat-card"><div class="stat-icon bg-red"><i class="fas fa-file-signature" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Policies to acknowledge</span><span class="stat-value"><?= count($pendingPolicies) ?></span></div></div>
-        <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-file-circle-exclamation" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Documents missing</span><span class="stat-value"><?= $me ? count($me['missing_docs']) : count($settings['required_docs_list']) ?></span></div></div>
-        <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Scorecards to submit</span><span class="stat-value"><?= count($toScore) ?></span></div></div>
+        <div class="stat-card" data-stat-href="my-hr?view=policies"><div class="stat-icon bg-red"><i class="fas fa-file-signature" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Policies to acknowledge</span><span class="stat-value"><?= count($pendingPolicies) ?></span></div></div>
+        <div class="stat-card" data-stat-href="my-hr?view=documents"><div class="stat-icon bg-amber"><i class="fas fa-file-circle-exclamation" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Documents missing</span><span class="stat-value"><?= $me ? count($me['missing_docs']) : count($settings['required_docs_list']) ?></span></div></div>
+        <div class="stat-card" data-stat-href="my-hr?view=interviews"><div class="stat-icon bg-purple"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Scorecards to submit</span><span class="stat-value"><?= count($toScore) ?></span></div></div>
     </div>
 
     <div class="card">

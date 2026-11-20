@@ -170,6 +170,7 @@ $hrEmbedSelected = $jobId;
 include 'includes/header.php';
 ?>
 <link rel="stylesheet" href="css/hr.css">
+<script src="js/hr-ui.js"></script>
 
 <div class="page-stack">
     <div class="page-hero">
@@ -390,11 +391,11 @@ include 'includes/header.php';
 <?php else: ?>
     <!-- ================= One job ================= -->
     <div class="stats-grid reports-stats">
-        <div class="stat-card"><div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Applicants</span><span class="stat-value"><?= array_sum($counts) ?></span></div></div>
-        <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-robot" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Waiting for AI screening</span><span class="stat-value"><?= $unscreened ?></span></div></div>
-        <div class="stat-card"><div class="stat-icon bg-teal"><i class="fas fa-list-check" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Shortlisted</span><span class="stat-value"><?= $counts['Shortlisted'] ?? 0 ?></span></div></div>
-        <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-comments" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Interviewing</span><span class="stat-value"><?= $counts['Interview'] ?? 0 ?></span></div></div>
-        <div class="stat-card"><div class="stat-icon bg-green"><i class="fas fa-handshake" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Offer / hired</span><span class="stat-value"><?= ($counts['Offer'] ?? 0) + ($counts['Hired'] ?? 0) ?></span></div></div>
+        <div class="stat-card" data-stat-href="recruitment?job_id=<?= $jobId ?>&amp;stage=all"><div class="stat-icon bg-blue"><i class="fas fa-users" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Applicants</span><span class="stat-value"><?= array_sum($counts) ?></span></div></div>
+        <div class="stat-card" data-stat-href="recruitment?job_id=<?= $jobId ?>&amp;stage=New"><div class="stat-icon bg-purple"><i class="fas fa-robot" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Waiting for AI screening</span><span class="stat-value"><?= $unscreened ?></span></div></div>
+        <div class="stat-card" data-stat-href="recruitment?job_id=<?= $jobId ?>&amp;stage=Shortlisted"><div class="stat-icon bg-teal"><i class="fas fa-list-check" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Shortlisted</span><span class="stat-value"><?= $counts['Shortlisted'] ?? 0 ?></span></div></div>
+        <div class="stat-card" data-stat-href="recruitment?job_id=<?= $jobId ?>&amp;stage=Interview"><div class="stat-icon bg-amber"><i class="fas fa-comments" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Interviewing</span><span class="stat-value"><?= $counts['Interview'] ?? 0 ?></span></div></div>
+        <div class="stat-card" data-stat-href="recruitment?job_id=<?= $jobId ?>&amp;stage=Hired"><div class="stat-icon bg-green"><i class="fas fa-handshake" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Offer / hired</span><span class="stat-value"><?= ($counts['Offer'] ?? 0) + ($counts['Hired'] ?? 0) ?></span></div></div>
     </div>
 
     <div class="card">
@@ -604,7 +605,7 @@ include 'includes/header.php';
                                                 <?php if ($iv['status'] === 'Scheduled'): ?>
                                                     <input type="hidden" name="notify" value="1">
                                                     <button class="btn btn-sm btn-soft" name="action" value="interview_status" onclick="this.form.status.value='Completed'" title="Mark completed"><i class="fas fa-check" aria-hidden="true"></i></button>
-                                                    <button class="btn btn-sm btn-danger" name="action" value="interview_status" onclick="if(!confirm('Cancel this interview and tell the candidate and panel?'))return false;this.form.status.value='Cancelled'" title="Cancel interview"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+                                                    <button class="btn btn-sm btn-danger" name="action" value="interview_status" data-confirm="Cancel this interview? The candidate and panel members will be told." data-confirm-title="Cancel interview" data-confirm-ok="Cancel interview" data-confirm-danger onclick="this.form.status.value='Cancelled'" title="Cancel interview"><i class="fas fa-xmark" aria-hidden="true"></i></button>
                                                 <?php endif; ?>
                                                 <input type="hidden" name="status" value="">
                                             </form>
@@ -737,12 +738,12 @@ include 'includes/header.php';
             } catch (e) { failed++; lastError = 'Network error'; }
         }
         if (status) status.textContent = ok + ' screened' + (failed ? ', ' + failed + ' failed: ' + lastError : '') + '. Refreshing ranking…';
-        if (!status && failed) alert(lastError);
+        if (!status && failed) hrAlert(lastError, { title: 'AI screening failed' });
         setTimeout(() => location.reload(), failed ? 2500 : 800);
     };
 
     window.hrScreenQueue = async function (all, btn) {
-        if (all && !confirm('Re-screen every active applicant for this job? This uses your AI API quota.')) return;
+        if (all && !(await hrConfirm('Re-screen every active applicant for this job? This uses your AI API quota.', { title: 'Re-screen all applicants', okText: 'Re-screen' }))) return;
         btn.disabled = true;
         const r = await post({ action: 'screen_queue', all: all ? 1 : 0 });
         if (!r.ok || !r.ids.length) { document.getElementById('hrScreenStatus').textContent = 'Nothing to screen.'; btn.disabled = false; return; }
@@ -750,9 +751,14 @@ include 'includes/header.php';
     };
 
     window.hrBulkCheck = function () {
-        if (!document.querySelector('.hr-pick:checked')) { alert('Select at least one applicant.'); return false; }
+        if (window.hrBulkOk) { window.hrBulkOk = false; return true; }
+        if (!document.querySelector('.hr-pick:checked')) { hrAlert('Select at least one applicant first.', { title: 'Nothing selected' }); return false; }
         const stage = document.getElementById('hrBulkStage').value;
-        return stage !== 'Rejected' || confirm('Reject the selected applicants?');
+        const n = document.querySelectorAll('.hr-pick:checked').length;
+        hrConfirm('Move ' + n + ' applicant' + (n === 1 ? '' : 's') + ' to ' + stage + '?', { title: 'Change stage', okText: 'Move to ' + stage, danger: stage === 'Rejected' }).then((yes) => {
+            if (yes) { window.hrBulkOk = true; document.querySelector('#hrBulkForm button[type=submit]').click(); }
+        });
+        return false;
     };
     const all = document.getElementById('hrAll');
     if (all) all.addEventListener('change', () => document.querySelectorAll('.hr-pick').forEach((c) => { c.checked = all.checked; }));
@@ -812,7 +818,7 @@ include 'includes/header.php';
     };
     const ivForm = document.getElementById('hrIvForm');
     if (ivForm) ivForm.addEventListener('submit', (ev) => {
-        if (!ivForm.querySelector('input[name="panel[]"]:checked')) { ev.preventDefault(); alert('Choose at least one panel member.'); return; }
+        if (!ivForm.querySelector('input[name="panel[]"]:checked')) { ev.preventDefault(); hrAlert('Choose at least one staff member for the interview panel.', { title: 'No panel chosen' }); return; }
         ivForm.application_id.disabled = false;
     });
     <?php if (isset($_GET['schedule']) && $job): ?>hrOpenInterview(<?= (int)$_GET['schedule'] ?>);<?php endif; ?>

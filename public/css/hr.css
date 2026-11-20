@@ -109,3 +109,28 @@
 .hr-table { width: 100%; }
 .hr-table td { vertical-align: top; }
 .card-header form { margin: 0; }
+
+/* Custom confirm / alert popup (public/js/hr-ui.js) */
+.modal.hr-dialog { z-index: 4000; }
+.hr-dialog .hr-dialog-box { max-width: 420px; padding: 26px 24px 20px; text-align: center; }
+.hr-dialog h3 { margin: 10px 0 6px; font-size: 1.1rem; color: var(--ink-900); }
+.hr-dialog p { margin: 0 0 18px; color: var(--ink-500); line-height: 1.5; }
+.hr-dialog-icon { width: 52px; height: 52px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; font-size: 22px; }
+.hr-dialog-icon.is-ask { background: var(--brand-50); color: var(--brand-600); }
+.hr-dialog-icon.is-danger { background: var(--red-bg); color: var(--red-fg); }
+.hr-dialog-icon.is-info { background: var(--blue-bg); color: var(--blue-fg); }
+.hr-dialog-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.hr-dialog-actions .btn { min-width: 110px; justify-content: center; }
+
+/* Multiple selection */
+.hr-sel-col { width: 36px; }
+.hr-sel, .hr-sel-all { width: 16px; height: 16px; cursor: pointer; accent-color: var(--brand-600); }
+tr.is-selected > td { background: var(--brand-50); }
+.hr-bulkbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; margin-top: 12px; border: 1px dashed var(--border); border-radius: var(--radius-md, 10px); background: var(--surface-card); }
+.hr-bulkbar.has-selection { border-style: solid; border-color: var(--brand-500); background: var(--brand-50); }
+.hr-bulkbar [data-bulk-count] { font-weight: 700; color: var(--ink-700); margin-right: auto; }
+.hr-bulkbar .form-control { width: auto; }
+
+/* Sub-tabs inside a card (HR Operations overview) */
+.hr-subtabs { border-bottom: 1px solid var(--border); }
+.hr-subpanel[hidden] { display: none; }

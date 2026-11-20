@@ -1160,3 +1160,11 @@ select.form-control {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Clickable statistics cards (public/js/stat-filters.js) */
+.stat-card.is-clickable { cursor: pointer; }
+.stat-card.is-clickable:hover { border-color: var(--brand-100); }
+.stat-card.is-clickable:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 2px; }
+.stat-card.is-active { border-color: var(--brand-500) !important; box-shadow: 0 0 0 2px var(--brand-100), var(--shadow-md); }
+.stat-card.is-active .stat-label { color: var(--brand-700); }
+.stat-filter-hidden { display: none !important; }

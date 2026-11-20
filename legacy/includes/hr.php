@@ -1924,6 +1924,46 @@ function hr_acknowledge_policy(mysqli $conn, int $policyId, int $uid): array
     return hr_result(true, 'Thank you. You have acknowledged "' . $p['title'] . '".');
 }
 
+/** Archive or re-activate several policies. */
+function hr_set_policies_active(mysqli $conn, array $policyIds, bool $active, int $uid): array
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $policyIds), fn($i) => $i > 0)));
+    if (!$ids) {
+        return hr_result(false, 'Select at least one policy.');
+    }
+    $n = (int)hr_exec(
+        $conn,
+        'UPDATE hr_policies SET is_active = ?, updated_at = NOW() WHERE policy_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')',
+        'i' . str_repeat('i', count($ids)),
+        array_merge([$active ? 1 : 0], $ids)
+    );
+    if (function_exists('log_action')) {
+        log_action($uid, $active ? 'Activate policies' : 'Archive policies', 'hr_policies', 0, implode(',', $ids));
+    }
+    return hr_result(true, $n . ' polic' . ($n === 1 ? 'y' : 'ies') . ' ' . ($active ? 're-activated.' : 'archived.'));
+}
+
+/** Bulk interview actions: remind panels that have not scored, or cancel (telling candidate and panel). */
+function hr_interviews_bulk(mysqli $conn, array $interviewIds, string $op, int $uid): array
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $interviewIds), fn($i) => $i > 0)));
+    if (!$ids) {
+        return hr_result(false, 'Select at least one interview.');
+    }
+    $done = 0;
+    foreach ($ids as $id) {
+        $r = match ($op) {
+            'remind' => hr_remind_panel($conn, $id),
+            'cancel' => hr_set_interview_status($conn, $id, 'Cancelled', $uid, true),
+            'complete' => hr_set_interview_status($conn, $id, 'Completed', $uid, false),
+            default => hr_result(false, 'Unknown action.'),
+        };
+        $done += $r['ok'] ? 1 : 0;
+    }
+    $verb = ['remind' => 'Panel reminders sent for', 'cancel' => 'Cancelled', 'complete' => 'Marked completed'][$op] ?? 'Updated';
+    return hr_result($done > 0, $done > 0 ? "{$verb} {$done} interview" . ($done === 1 ? '' : 's') . '.' : 'Nothing changed (panels may have scored already).');
+}
+
 /** download-file.php: may $uid open this policy file? */
 function hr_policy_file_access(mysqli $conn, string $like, int $uid): bool
 {
