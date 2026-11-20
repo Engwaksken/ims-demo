@@ -69,6 +69,26 @@ final class AiReviewService
         return $row;
     }
 
+    /**
+     * One prompt in, one decoded JSON object out, using the active (default)
+     * AI API unless $aiApiId names another active one. Used by HR candidate
+     * screening (includes/hr.php).
+     *
+     * $files: [['name' => 'cv.pdf', 'mime' => 'application/pdf', 'data' => <raw bytes>], ...]
+     * sent natively to providers that read documents (Gemini, OpenAI);
+     * other providers get the prompt only, so callers should also put any
+     * extracted text in the prompt.
+     *
+     * @return array{data: array, api: array, raw: string}
+     */
+    public function completeJson(string $prompt, array $files = [], ?int $aiApiId = null): array
+    {
+        $api = $aiApiId ? $this->fetchApi($aiApiId) : $this->getDefaultApi();
+        $raw = $this->callProvider($api, $prompt, $files);
+
+        return ['data' => $this->extractJson($raw), 'api' => $api, 'raw' => $raw];
+    }
+
     public function generateReview(int $applicationId, int $reviewTypeId, int $requestedBy, ?int $aiApiId = null): int
     {
         $api = $aiApiId ? $this->fetchApi($aiApiId) : $this->getDefaultApi();
@@ -153,7 +173,7 @@ $this->insertPending(
             "\n\nCRITERIA:\n" . json_encode($criteria, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
 
-    private function callProvider(array $api, string $prompt): string
+    private function callProvider(array $api, string $prompt, array $files = []): string
     {
         $provider = strtolower((string)$api['provider_name']);
         $key = $this->decryptKey((string)$api['api_key_encrypted']);
@@ -172,13 +192,32 @@ if ($url === '') {
 if (!str_contains($url, '?key=')) {
     $url .= (str_contains($url, '?') ? '&' : '?') . 'key=' . rawurlencode($key);
 }
+            $parts = [['text' => $prompt]];
+            foreach ($files as $file) {
+                $parts[] = ['inline_data' => ['mime_type' => (string)$file['mime'], 'data' => base64_encode((string)$file['data'])]];
+            }
             $body = [
-                'contents' => [['parts' => [['text' => $prompt]]]],
+                'contents' => [['parts' => $parts]],
                 'generationConfig' => ['temperature' => $temperature, 'maxOutputTokens' => $maxTokens, 'responseMimeType' => 'application/json']
             ];
             $headers = ['Content-Type: application/json'];
         } else {
             $url = $api['api_endpoint'] ?: 'https://api.openai.com/v1/chat/completions';
+            $userContent = $prompt;
+            // Only OpenAI's own endpoint is known to accept PDF file parts;
+            // other OpenAI-compatible endpoints get the text prompt alone.
+            if ($files && str_contains((string)$url, 'api.openai.com')) {
+                $userContent = [['type' => 'text', 'text' => $prompt]];
+                foreach ($files as $file) {
+                    if ((string)$file['mime'] !== 'application/pdf') {
+                        continue;
+                    }
+                    $userContent[] = ['type' => 'file', 'file' => [
+                        'filename' => (string)($file['name'] ?? 'document.pdf'),
+                        'file_data' => 'data:application/pdf;base64,' . base64_encode((string)$file['data']),
+                    ]];
+                }
+            }
             $body = [
                 'model' => $model,
                 'temperature' => $temperature,
@@ -186,7 +225,7 @@ if (!str_contains($url, '?key=')) {
                 'response_format' => ['type' => 'json_object'],
                 'messages' => [
                     ['role' => 'system', 'content' => 'Return valid JSON only.'],
-                    ['role' => 'user', 'content' => $prompt]
+                    ['role' => 'user', 'content' => $userContent]
                 ]
             ];
             $headers = ['Content-Type: application/json', 'Authorization: Bearer ' . $key];

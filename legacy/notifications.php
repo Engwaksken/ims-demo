@@ -258,6 +258,14 @@ require_once __DIR__ . '/includes/header.php';
                                 <a href="it-support?id=<?= (int)$refId ?>">Open request</a>
                             <?php elseif ($refType === 'event_registration' && $refId > 0): ?>
                                 <a href="event-confirm?rid=<?= (int)$refId ?>">Confirm attendance</a>
+                            <?php elseif ($refType === 'hr_interview' && $refId > 0): ?>
+                                <a href="interview-scorecard?id=<?= (int)$refId ?>">Open scorecard</a>
+                            <?php elseif ($refType === 'hr_policy' || $refType === 'hr_reminder'): ?>
+                                <a href="my-hr">Open My HR</a>
+                            <?php elseif ($refType === 'hr_recruitment' && $refId > 0): ?>
+                                <a href="recruitment?job_id=<?= (int)$refId ?>&amp;view=interviews">Open recruitment</a>
+                            <?php elseif ($refType === 'job_application' && $refId > 0): ?>
+                                <a href="recruitment">Open recruitment</a>
                             <?php endif; ?>
                             <?php if (!$isUnread && !empty($n['read_at'])): ?>
                                 <span>Read <?= h(date('d M Y, H:i', (int)strtotime((string)$n['read_at']))) ?></span>

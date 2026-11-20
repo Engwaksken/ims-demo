@@ -4,16 +4,20 @@ require_once __DIR__ . '/includes/config.php';
 
 check_login();
 
+// Where to go afterwards: the employee directory, or HR Operations when
+// the action came from there (whitelisted, never a free URL).
+$eap_back = (($_POST['return_to'] ?? '') === 'hr-operations') ? 'hr-operations?view=employees' : 'employees-list';
+
 // Approve/reject: same permission as the buttons on employees-list.
 if (!ims_allowed('employees.approve', ['Administrator'], 'Approve or reject employee profiles')) {
     send_notification($_SESSION['user_id'] ?? 0, 'You are not allowed to approve or reject employee profiles.', 'danger');
-    header("Location: employees-list");
+    header("Location: " . $eap_back);
     exit();
 }
 
 // State changes are POST-only (CSRF token is enforced globally by config.php).
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
-    header("Location: employees-list");
+    header("Location: " . $eap_back);
     exit();
 }
 
@@ -36,7 +40,7 @@ function eap_load_employee(mysqli $conn, int $employee_id): array
 
     if (!$employee) {
         send_notification($_SESSION['user_id'], 'Employee not found', 'danger');
-        header("Location: employees-list");
+        header("Location: " . $eap_back);
         exit();
     }
 
@@ -50,7 +54,7 @@ if (isset($_POST['approve_employee'])) {
 
     if ($employee['status'] !== 'Submitted') {
         send_notification($current_user_id, 'Only submitted profiles can be approved', 'warning');
-        header("Location: employees-list");
+        header("Location: " . $eap_back);
         exit();
     }
 
@@ -71,7 +75,7 @@ if (isset($_POST['approve_employee'])) {
     }
 
     $stmt->close();
-    header("Location: employees-list");
+    header("Location: " . $eap_back);
     exit();
 }
 
@@ -82,7 +86,7 @@ if (isset($_POST['reject_employee'])) {
 
     if ($rejection_reason === '') {
         send_notification($current_user_id, 'Please provide a reason for rejection', 'danger');
-        header("Location: employees-list");
+        header("Location: " . $eap_back);
         exit();
     }
 
@@ -90,7 +94,7 @@ if (isset($_POST['reject_employee'])) {
 
     if ($employee['status'] !== 'Submitted') {
         send_notification($current_user_id, 'Only submitted profiles can be rejected', 'warning');
-        header("Location: employees-list");
+        header("Location: " . $eap_back);
         exit();
     }
 
@@ -110,10 +114,10 @@ if (isset($_POST['reject_employee'])) {
     }
 
     $stmt->close();
-    header("Location: employees-list");
+    header("Location: " . $eap_back);
     exit();
 }
 
 // If no valid action, redirect
-header("Location: employees-list");
+header("Location: " . $eap_back);
 exit();

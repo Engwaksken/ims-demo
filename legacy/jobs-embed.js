@@ -17,6 +17,7 @@
     var SHOW_FILTER   = cfg.showFilter   !== false ? 1 : 0;
     var SHOW_HEADER   = cfg.showHeader   !== false ? 1 : 0;
     var APPLY_BASE    = cfg.applyBase    || '';
+    var JOB_ID        = cfg.job          ? parseInt(cfg.job, 10) || 0 : 0;
 
  
     var TOKENS = {
@@ -65,6 +66,7 @@
         if (DEPT)       p.push('dept='       + encodeURIComponent(DEPT));
         if (ACCENT)     p.push('accent='     + encodeURIComponent(ACCENT));
         if (APPLY_BASE) p.push('apply_base=' + encodeURIComponent(APPLY_BASE));
+        if (JOB_ID)     p.push('job='        + JOB_ID);
         return BASE_SRC + '?' + p.join('&');
     }
 

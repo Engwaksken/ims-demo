@@ -208,7 +208,22 @@ function dl_can_access(mysqli $conn, string $relative, int $userId): bool
                 return true;
             }
 
-            return $ownerSegment > 0 && $ownerSegment === $userId;
+            if ($ownerSegment > 0 && $ownerSegment === $userId) {
+                return true;
+            }
+
+            // Staff on an interview panel for this applicant (includes/hr.php).
+            require_once __DIR__ . '/includes/hr.php';
+            return hr_ensure_schema($conn) && hr_panel_file_access($conn, $like, $userId);
+
+        // uploads/hr_policies/... : HR, or staff the policy was shared with.
+        case 'hr_policies':
+            require_once __DIR__ . '/includes/hr.php';
+            if (hr_can_manage()) {
+                return true;
+            }
+
+            return hr_ensure_schema($conn) && hr_policy_file_access($conn, $like, $userId);
 
         // uploads/employees/{user_id}/... (national IDs, contracts, signatures)
         // Same reviewer roles as employee-profile-view.php.

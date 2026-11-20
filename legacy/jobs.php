@@ -4,6 +4,7 @@ ob_start();
 
 require_once 'includes/config.php';
 require_once 'includes/jobs.php';
+require_once 'includes/hr.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login');
@@ -49,6 +50,14 @@ include 'includes/header.php';
             <a href="jobs-listings" target="_blank" class="btn">
                 <i class="fas fa-external-link-alt" aria-hidden="true"></i> View Listings
             </a>
+            <?php if (hr_can_recruit()): ?>
+            <a href="recruitment" class="btn">
+                <i class="fas fa-user-check" aria-hidden="true"></i> Recruitment
+            </a>
+            <?php endif; ?>
+            <button type="button" class="btn" onclick="hrOpenEmbed(0)">
+                <i class="fas fa-code" aria-hidden="true"></i> Embed Jobs
+            </button>
             <button type="button" class="btn btn-primary" onclick="openCreateModal()">
                 <i class="fas fa-plus" aria-hidden="true"></i> Post New Job
             </button>
@@ -226,6 +235,15 @@ include 'includes/header.php';
                             <!-- Actions -->
                             <td data-label="Actions">
                                 <div class="jb-acts">
+                                    <?php if (hr_can_recruit()): ?>
+                                    <a class="btn btn-sm btn-primary" href="recruitment?job_id=<?= (int)$j['job_id'] ?>" title="Applicants, AI screening &amp; interviews" aria-label="Applicants">
+                                        <i class="fas fa-user-check" aria-hidden="true"></i>
+                                    </a>
+                                    <?php endif; ?>
+                                    <button type="button" class="btn btn-sm btn-soft" title="Embed &amp; share" aria-label="Embed and share"
+                                            onclick="hrOpenEmbed(<?= (int)$j['job_id'] ?>)">
+                                        <i class="fas fa-code" aria-hidden="true"></i>
+                                    </button>
                                     <button type="button" class="btn btn-sm btn-info" title="View listing" aria-label="View listing"
                                             onclick="window.open('jobs-listings#job-<?= $j['job_id'] ?>','_blank')">
                                         <i class="fas fa-eye" aria-hidden="true"></i>
@@ -625,4 +643,9 @@ include 'includes/header.php';
 }());
 </script>
 
+<?php
+$hrEmbedJobs = $jobs;
+include __DIR__ . '/includes/hr-embed-modal.php';
+?>
+<link rel="stylesheet" href="css/hr.css">
 <?php include 'includes/footer.php'; ?>

@@ -5,7 +5,7 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | Default sidebar entries for staff modules
 |--------------------------------------------------------------------------
-| Modules added after the original menu seed (Appointments, IT Support) used
+| Modules added after the original menu seed (Appointments, IT Support, HR) used
 | to appear only once their migration SQL had been run. sidebar.php calls
 | ims_ensure_default_menu_items() so a missing entry is created on the fly
 | and granted to every staff role, including admin-added roles based on a
@@ -20,6 +20,10 @@ if (!function_exists('ims_default_menu_items')) {
         return [
             'appointments' => ['icon' => 'fa-handshake', 'label' => 'Appointments', 'category' => 'Operations', 'sort_order' => 16],
             'it-support' => ['icon' => 'fa-screwdriver-wrench', 'label' => 'IT Support', 'category' => 'Operations', 'sort_order' => 17],
+            'my-hr' => ['icon' => 'fa-id-card-clip', 'label' => 'My HR', 'category' => 'People', 'sort_order' => 32],
+            // 'roles': granted only to these roles instead of every staff role.
+            'hr-operations' => ['icon' => 'fa-people-roof', 'label' => 'HR Operations', 'category' => 'People', 'sort_order' => 30, 'roles' => ['Administrator', 'HR']],
+            'recruitment' => ['icon' => 'fa-user-check', 'label' => 'Recruitment', 'category' => 'People', 'sort_order' => 31, 'roles' => ['Administrator', 'HR']],
         ];
     }
 }
@@ -60,11 +64,11 @@ if (!function_exists('ims_ensure_default_menu_items')) {
             }
             $stmt->close();
 
-            $grantTo = [];
+            $grantTo = [];   // menu_id => page
             foreach ($defaults as $page => $item) {
                 if (isset($existing[$page])) {
                     if ((int)$existing[$page]['grants'] === 0) {
-                        $grantTo[] = (int)$existing[$page]['menu_id'];
+                        $grantTo[(int)$existing[$page]['menu_id']] = $page;
                     }
                     continue;
                 }
@@ -74,7 +78,7 @@ if (!function_exists('ims_ensure_default_menu_items')) {
                 }
                 $insert->bind_param('ssssi', $page, $item['icon'], $item['label'], $item['category'], $item['sort_order']);
                 $insert->execute();
-                $grantTo[] = (int)$insert->insert_id;
+                $grantTo[(int)$insert->insert_id] = $page;
                 $insert->close();
             }
 
@@ -87,8 +91,8 @@ if (!function_exists('ims_ensure_default_menu_items')) {
             if (!$grant) {
                 return;
             }
-            foreach ($grantTo as $menuId) {
-                foreach ($roles as $role) {
+            foreach ($grantTo as $menuId => $page) {
+                foreach ($defaults[$page]['roles'] ?? $roles as $role) {
                     $grant->bind_param('is', $menuId, $role);
                     $grant->execute();
                 }

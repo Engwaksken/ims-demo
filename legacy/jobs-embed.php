@@ -24,6 +24,8 @@ if (!preg_match('/\A#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\z/', $accentRaw)) $accent
 // ?accent= wins; otherwise the configured primary colour (the original #f97316 while the theme is at its default).
 $accent     = $accentRaw ?: ($brand['primary'] === IMS_THEME_DEFAULTS['theme_primary_color'] ? '#f97316' : $brand['primary']);
 $applyBase  = rtrim((string)($_GET['apply_base'] ?? ''), '/');
+// Only an http(s) base may prefix the Apply links (never javascript: etc.).
+if ($applyBase !== '' && !preg_match('#\Ahttps?://[^\s"\'<>]+\z#i', $applyBase)) $applyBase = '';
 
 /* -- Sanitise filter inputs via prepared statement ------------- */
 $where  = [];
@@ -42,6 +44,13 @@ if ($filterDept !== '') {
     $where[]  = "department = ?";
     $params[] = $filterDept;
     $types   .= 's';
+}
+/* ?job=ID: a single posting (embed code from Manage Jobs / Recruitment) */
+$filterJob = max(0, (int)($_GET['job'] ?? 0));
+if ($filterJob > 0) {
+    $where[]  = "job_id = ?";
+    $params[] = $filterJob;
+    $types   .= 'i';
 }
 
 $whereSql = 'WHERE ' . implode(' AND ', $where);
