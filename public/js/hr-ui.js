@@ -187,7 +187,8 @@
         if (t.matches('.hr-sel-all')) {
             boxes(scope).forEach(function (b) {
                 var row = b.closest('tr');
-                if (!row || !row.classList.contains('stat-filter-hidden')) b.checked = t.checked;
+                // Select all = the rows on screen (current page, current filter).
+                if (!row || !(row.classList.contains('stat-filter-hidden') || row.classList.contains('pg-hidden') || row.style.display === 'none')) b.checked = t.checked;
             });
         }
         if (t.matches('.hr-sel, .hr-sel-all')) refresh(scope);

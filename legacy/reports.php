@@ -674,7 +674,11 @@ $rp_plural = static function (int $n, string $one, string $many): string {
 
             <!-- ── OVERVIEW ─────────────────────────────────────────────── -->
             <div class="tab-panel active" id="tab-overview" role="tabpanel" aria-labelledby="tabbtn-overview">
-                <div class="rp-grid">
+                <div class="rp-collapse-bar">
+                    <button type="button" class="btn btn-sm btn-soft" data-rp-all="expand"><i class="fas fa-up-right-and-down-left-from-center" aria-hidden="true"></i> Expand all</button>
+                    <button type="button" class="btn btn-sm btn-soft" data-rp-all="collapse"><i class="fas fa-down-left-and-up-right-to-center" aria-hidden="true"></i> Collapse all</button>
+                </div>
+                <div class="rp-grid rp-collapsible">
 
                     <!-- Programs -->
                     <article class="card rp-card" aria-labelledby="rpOvPrograms">
@@ -1291,6 +1295,57 @@ $rp_plural = static function (int $n, string $one, string $many): string {
             if(t) t.classList.add('active');
         });
     });
+
+    /* Overview cards: collapse / expand (remembered in this browser) */
+    (function(){
+        const KEY = 'ims.reports.collapsed';
+        const grid = document.querySelector('#tab-overview .rp-collapsible');
+        if(!grid) return;
+        let saved = {};
+        try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e) { saved = {}; }
+        const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch(e) {} };
+
+        const cards = Array.from(grid.querySelectorAll(':scope > .rp-card'));
+        function setOpen(card, open, remember){
+            const btn = card.querySelector('.rp-toggle');
+            card.classList.toggle('is-collapsed', !open);
+            card.querySelectorAll(':scope > .card-body, :scope > .rp-card-foot').forEach(el => { el.hidden = !open; });
+            if(btn){
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                btn.setAttribute('aria-label', (open ? 'Collapse ' : 'Expand ') + btn.dataset.title);
+                btn.title = open ? 'Collapse' : 'Expand';
+            }
+            // Charts drawn while hidden have no size: redraw them once visible.
+            if(open && window.Chart && Chart.getChart){
+                card.querySelectorAll('canvas').forEach(c => { const ch = Chart.getChart(c); if(ch) ch.resize(); });
+            }
+            if(remember){ if(open) delete saved[card.id]; else saved[card.id] = 1; persist(); }
+        }
+
+        cards.forEach((card, i) => {
+            const heading = card.querySelector('.card-header h3');
+            if(!card.id) card.id = 'rpCard-' + (heading && heading.id ? heading.id : i);
+            const body = card.querySelector(':scope > .card-body');
+            if(body && !body.id) body.id = card.id + '-body';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-soft rp-toggle';
+            btn.dataset.title = heading ? heading.textContent.trim() : 'card';
+            if(body) btn.setAttribute('aria-controls', body.id);
+            btn.innerHTML = '<i class="fas fa-chevron-up" aria-hidden="true"></i>';
+            btn.addEventListener('click', () => setOpen(card, card.classList.contains('is-collapsed'), true));
+            card.querySelector('.card-header').appendChild(btn);
+            // Clicking the title area toggles too (not the CSV link).
+            const titles = card.querySelector('.rp-card-titles');
+            if(titles){ titles.classList.add('rp-toggle-area'); titles.addEventListener('click', () => btn.click()); }
+            setOpen(card, !saved[card.id], false);
+        });
+
+        document.querySelectorAll('[data-rp-all]').forEach(b => b.addEventListener('click', () => {
+            const open = b.dataset.rpAll === 'expand';
+            cards.forEach(card => setOpen(card, open, true));
+        }));
+    })();
 
     /* Generate report button */
     window.generateReport = function(){

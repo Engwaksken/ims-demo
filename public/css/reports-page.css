@@ -232,3 +232,14 @@
   .tab-shell .tab-panels { padding: 0; background: none; }
   .rp-card { box-shadow: none; break-inside: avoid; }
 }
+
+/* Overview cards: collapse / expand */
+.rp-collapse-bar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+.rp-collapsible { align-items: start; }
+.rp-collapsible .rp-card > .card-header { gap: 8px; }
+.rp-toggle { flex-shrink: 0; }
+.rp-toggle i { transition: transform .2s var(--ease-out, ease); }
+.rp-card.is-collapsed .rp-toggle i { transform: rotate(180deg); }
+.rp-card.is-collapsed > .card-header { border-bottom: 0; }
+.rp-toggle-area { cursor: pointer; }
+@media (max-width: 640px) { .rp-collapse-bar { justify-content: stretch; } .rp-collapse-bar .btn { flex: 1; justify-content: center; } }

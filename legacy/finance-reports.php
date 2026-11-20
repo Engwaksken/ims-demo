@@ -313,7 +313,7 @@ $qs = 'year=' . $year . '&amp;entity_type=' . rawurlencode($type);
         <h2>Budget lines</h2>
         <p>Grouped by code, then workplan milestone, with each activity (code description) underneath. Burn rate = (Actual + Concept amount) / Original budget × 100. Actual is the total of approved activity requests; concept amount includes requests in review or returned for revision. <?= fr_h($rateNote) ?></p>
         <div class="fr-table-wrap">
-            <table>
+            <table data-no-paginate>
                 <thead><tr><th>Code</th><th>Milestone / activity (code description)</th><th class="num">Original budget</th><th class="num">Actual</th><th class="num">Concept amount</th><th class="num">Remaining</th><th class="num">Burn rate</th></tr></thead>
                 <tbody><?= fr_body($groups) ?></tbody>
             </table>

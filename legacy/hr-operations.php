@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ((int)($_POST['return_policy'] ?? 0) > 0) {
         $qs .= '&policy=' . (int)$_POST['return_policy'];
     }
-    if (in_array($_POST['return_tab'] ?? '', ['attention', 'interviews', 'policies'], true)) {
+    if (in_array($_POST['return_tab'] ?? '', ['attention', 'interviews', 'policies', 'send', 'settings', 'log'], true)) {
         $qs .= '&tab=' . $_POST['return_tab'];
     }
     header('Location: hr-operations?' . $qs, true, 303);
@@ -119,6 +119,9 @@ $policy = $view === 'policies' && $policyId > 0 ? hr_policy($conn, $policyId) : 
 $overviewTabs = ['attention' => 'Needs attention', 'interviews' => 'Upcoming interviews', 'policies' => 'Policies'];
 $overviewTab = array_key_exists((string)($_GET['tab'] ?? ''), $overviewTabs) ? (string)$_GET['tab'] : 'attention';
 $upcoming = $view === 'overview' ? hr_upcoming_interviews($conn, 100) : [];
+$remTabs = ['send' => ['Send reminders now', 'fa-paper-plane'], 'settings' => ['Reminder settings', 'fa-gear'], 'log' => ['Recent reminders', 'fa-clock-rotate-left']];
+$remTab = array_key_exists((string)($_GET['tab'] ?? ''), $remTabs) ? (string)$_GET['tab'] : 'send';
+$reminderLog = $view === 'reminders' ? hr_reminder_log($conn, 500) : [];
 $canApprove = ims_allowed('employees.approve', ['Administrator'], 'Approve or reject employee profiles');
 
 $complianceOptions = [
@@ -414,12 +417,20 @@ include 'includes/header.php';
 
 <?php elseif ($view === 'reminders'): ?>
     <div class="card">
-        <div class="card-header"><h3><i class="fas fa-paper-plane" aria-hidden="true"></i> Send reminders now</h3></div>
-        <div class="card-body">
+        <nav class="tab-nav hr-subtabs" role="tablist" aria-label="Reminder sections">
+            <?php foreach ($remTabs as $key => [$label, $icon]): ?>
+                <button type="button" class="tab-btn<?= $remTab === $key ? ' active' : '' ?>" role="tab" id="ovTab-<?= $key ?>" aria-controls="ovPanel-<?= $key ?>"
+                        aria-selected="<?= $remTab === $key ? 'true' : 'false' ?>" tabindex="<?= $remTab === $key ? '0' : '-1' ?>" data-ov-tab="<?= $key ?>">
+                    <i class="fas <?= $icon ?>" aria-hidden="true"></i> <?= $e($label) ?><?php if ($key === 'log' && $reminderLog): ?> <span class="badge"><?= count($reminderLog) ?></span><?php endif; ?>
+                </button>
+            <?php endforeach; ?>
+        </nav>
+        <section class="card-body hr-subpanel" role="tabpanel" id="ovPanel-send" aria-labelledby="ovTab-send"<?= $remTab === 'send' ? '' : ' hidden' ?>>
             <form method="POST" action="hr-operations" data-confirm="Send reminders to everyone with something outstanding?" data-confirm-title="Send reminders" data-confirm-ok="Send reminders">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="remind_outstanding">
                 <input type="hidden" name="return_view" value="reminders">
+                <input type="hidden" name="return_tab" value="send">
                 <p class="hr-muted"><?= $stats['staff'] - $stats['compliant'] ?> staff have something outstanding. Each gets one message (in-app and email) listing exactly what is missing; staff with nothing outstanding for the chosen topic are skipped.</p>
                 <div class="hr-form-grid">
                     <div class="form-group"><label for="hrRemKind">About</label>
@@ -433,16 +444,14 @@ include 'includes/header.php';
                 </div>
                 <button class="btn btn-primary"><i class="fas fa-bell" aria-hidden="true"></i> Send reminders</button>
             </form>
-        </div>
-    </div>
+        </section>
 
-    <div class="card">
-        <div class="card-header"><h3><i class="fas fa-gear" aria-hidden="true"></i> Reminder settings</h3></div>
-        <div class="card-body">
+        <section class="card-body hr-subpanel" role="tabpanel" id="ovPanel-settings" aria-labelledby="ovTab-settings"<?= $remTab === 'settings' ? '' : ' hidden' ?>>
             <form method="POST" action="hr-operations">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="settings">
                 <input type="hidden" name="return_view" value="reminders">
+                <input type="hidden" name="return_tab" value="settings">
                 <fieldset class="form-group">
                     <legend>Documents every member of staff must upload</legend>
                     <?php foreach (HR_DOCS as $col => $lbl): ?>
@@ -463,19 +472,17 @@ include 'includes/header.php';
                 </fieldset>
                 <button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save settings</button>
             </form>
-        </div>
-    </div>
+        </section>
 
-    <div class="card">
-        <div class="card-header"><h3><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Recent reminders</h3></div>
-        <div class="card-body">
-            <?php $log = hr_reminder_log($conn, 100); if (!$log): ?>
+        <section class="card-body hr-subpanel" role="tabpanel" id="ovPanel-log" aria-labelledby="ovTab-log"<?= $remTab === 'log' ? '' : ' hidden' ?>>
+            <?php $log = $reminderLog; if (!$log): ?>
                 <p class="hr-muted">No reminders sent yet.</p>
             <?php else: ?>
                 <form method="POST" action="hr-operations" data-bulk-scope>
                     <?= csrf_field() ?>
                     <input type="hidden" name="action" value="remind">
                     <input type="hidden" name="return_view" value="reminders">
+                    <input type="hidden" name="return_tab" value="log">
                     <div class="table-responsive">
                         <table class="table table-stack hr-table">
                             <thead><tr><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all reminders"></th><th>When</th><th>To</th><th>About</th><th>What was outstanding</th><th>By</th></tr></thead>
@@ -506,7 +513,7 @@ include 'includes/header.php';
                     </div>
                 </form>
             <?php endif; ?>
-        </div>
+        </section>
     </div>
 
 <?php elseif ($policy): ?>
@@ -742,7 +749,7 @@ include 'includes/header.php';
 
 <script>
 (function () {
-    // Overview sub-tabs (Needs attention / Upcoming interviews / Policies); the choice is kept in the URL.
+    // Sub-tabs (Overview: attention / interviews / policies; Reminders: send / settings / log); kept in the URL.
     const subTabs = Array.from(document.querySelectorAll('[data-ov-tab]'));
     function showSub(key, focus) {
         subTabs.forEach((b) => {
@@ -755,7 +762,7 @@ include 'includes/header.php';
             if (on && focus) b.focus();
         });
         const url = new URL(window.location.href);
-        url.searchParams.set('view', 'overview');
+        url.searchParams.set('view', <?= json_encode($view) ?>);
         url.searchParams.set('tab', key);
         history.replaceState(null, '', url);
     }
