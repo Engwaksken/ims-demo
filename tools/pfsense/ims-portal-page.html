@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<!--
+  IMS guest hotspot - captive portal page for pfSense.
+
+  1. Replace https://ims.example.org below with your IMS address (twice).
+  2. pfSense: Services > Captive Portal > (zone) > Portal page contents:
+     upload this file.
+  3. Same zone > Allowed Hostnames: add your IMS host name (e.g.
+     ims.example.org) so devices that are not signed in yet can open the
+     hotspot page. Also add the host of any CDN the page uses if styling is
+     missing (the hotspot page itself has no external dependencies).
+  4. In the IMS: Hub Team & Internet > Hotspot: switch the hotspot on and set
+     the password guests must enter.
+
+  pfSense fills in $CLIENT_MAC$, $CLIENT_IP$, $PORTAL_ZONE$ and
+  $PORTAL_REDIRURL$ before showing the page. Members' and staff devices that
+  are registered in the IMS are let through by MAC and never see this page.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guest Wi-Fi</title>
+<meta http-equiv="refresh" content="0;url=https://ims.example.org/hotspot?mac=$CLIENT_MAC$&amp;ip=$CLIENT_IP$&amp;zone=$PORTAL_ZONE$&amp;redirurl=$PORTAL_REDIRURL$">
+<style>
+body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; display: flex; min-height: 100vh; margin: 0; align-items: center; justify-content: center; background: #f6f7f9; color: #111827; }
+.box { text-align: center; padding: 24px; }
+a { display: inline-block; margin-top: 12px; padding: 12px 20px; background: #c2410c; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="box">
+  <p>Opening the guest Wi-Fi sign-in&hellip;</p>
+  <a href="https://ims.example.org/hotspot?mac=$CLIENT_MAC$&amp;ip=$CLIENT_IP$&amp;zone=$PORTAL_ZONE$&amp;redirurl=$PORTAL_REDIRURL$">Continue to sign in</a>
+</div>
+</body>
+</html>

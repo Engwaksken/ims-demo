@@ -10,6 +10,15 @@
  * Entries the IMS created have a description starting with "IMS "; entries
  * you add by hand in pfSense are never touched.
  *
+ * 2.1 adds:
+ *   - the internet switch: the IMS can enforce the captive portal ("on") or
+ *     switch it off for open internet ("off"); empty leaves it as configured
+ *   - live clients: every check-in reports the devices seen on the portal
+ *     interfaces (ARP table) and the portal sessions, so the IMS can show
+ *     who is online and count connected devices over time
+ *   - guest hotspot: use tools/pfsense/ims-portal-page.html as the zone's
+ *     portal page and add the IMS host name under Allowed Hostnames
+ *
  * ---------------------------------------------------------------------------
  * PULL MODE (recommended; required when the IMS is on shared hosting)
  * pfSense calls the IMS every minute, so nothing on the firewall is exposed.
@@ -43,7 +52,7 @@ const IMS_ALLOWED_IPS = ['192.168.1.10'];                          // push mode 
 const IMS_DEFAULT_ZONE = 'lan';
 // ---------------------------------------------------------------------------
 
-const IMS_AGENT_VERSION = '2.0';
+const IMS_AGENT_VERSION = '2.1';
 const IMS_MAX_ITEMS = 5000;
 const IMS_STATE_FILE = '/var/db/ims-cp-agent-state.json';
 const IMS_DESCR_PREFIX = 'IMS ';
@@ -154,6 +163,7 @@ function ims_sessions(): array
             'mac' => ims_normalize_mac((string)($row['mac'] ?? $row[3] ?? '')),
             'ip' => (string)($row['ip'] ?? $row[2] ?? ''),
             'username' => (string)($row['username'] ?? $row[4] ?? ''),
+            'started' => (int)($row['allow_time'] ?? $row[0] ?? 0),
         ];
     }
 
@@ -304,15 +314,93 @@ function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string
     return ['results' => $results, 'reload' => $reload, 'changed' => $changed];
 }
 
+/** Devices seen on the zone's interfaces (ARP table): [['mac' => .., 'ip' => ..], ...]. */
+function ims_clients(array $zoneConfig): array
+{
+    $clients = [];
+    $ifaces = array_filter(array_map('trim', explode(',', (string)($zoneConfig['interface'] ?? ''))));
+
+    foreach ($ifaces as $iface) {
+        $real = function_exists('get_real_interface') ? get_real_interface($iface) : $iface;
+        if (!preg_match('/^[A-Za-z0-9_.]+$/', (string)$real)) {
+            continue;
+        }
+        $out = [];
+        exec('/usr/sbin/arp -an -i ' . escapeshellarg((string)$real) . ' 2>/dev/null', $out);
+        foreach ($out as $line) {
+            // ? (192.168.1.23) at 3c:22:fb:12:34:56 on igb1 expires in 1180 seconds [ethernet]
+            if (preg_match('/\(([0-9.]+)\) at ([0-9a-f:]{11,17}) on /i', $line, $m)) {
+                $mac = ims_normalize_mac($m[2]);
+                if ($mac !== '' && $mac !== 'ff:ff:ff:ff:ff:ff') {
+                    $clients[$mac] = ['mac' => $mac, 'ip' => $m[1]];
+                }
+            }
+        }
+    }
+
+    return array_values(array_slice($clients, 0, IMS_MAX_ITEMS));
+}
+
+/**
+ * Internet switch: "on" enables the captive portal zone, "off" disables it
+ * (open internet). Anything else leaves it alone. Returns what happened.
+ */
+function ims_set_portal(string $zone, string $want): string
+{
+    if ($want !== 'on' && $want !== 'off') {
+        return '';
+    }
+    $zoneConfig = ims_cfg_get("captiveportal/{$zone}");
+    if (!is_array($zoneConfig)) {
+        return 'error: zone not found';
+    }
+    $isOn = isset($zoneConfig['enable']);
+    if (($want === 'on') === $isOn) {
+        return '';
+    }
+
+    if ($want === 'on') {
+        $zoneConfig['enable'] = '';
+    } else {
+        unset($zoneConfig['enable']);
+    }
+    ims_cfg_set("captiveportal/{$zone}", $zoneConfig);
+    write_config('IMS hub: captive portal ' . ($want === 'on' ? 'enabled' : 'disabled (open internet)'));
+
+    // Same steps as saving the zone in the pfSense GUI.
+    if (function_exists('captiveportal_configure_zone')) {
+        captiveportal_configure_zone($zoneConfig);
+    } elseif (function_exists('captiveportal_configure')) {
+        captiveportal_configure();
+    }
+    if (function_exists('filter_configure')) {
+        filter_configure();
+    }
+
+    return $want === 'on' ? 'portal enabled' : 'portal disabled';
+}
+
 function ims_zone_info(array $zoneConfig, string $zone): array
 {
     return [
         'version' => IMS_AGENT_VERSION,
         'zone' => $zone,
+        'portal_enabled' => isset($zoneConfig['enable']),
         'mac_filtering' => empty($zoneConfig['nomacfilter']),
         'sessions' => count(ims_sessions()),
+        'clients' => count(ims_clients($zoneConfig)),
         'mac_entries' => count((array)($zoneConfig['passthrumac'] ?? [])),
     ];
+}
+
+/** Online devices for the IMS (portal sessions + ARP clients). */
+function ims_online_payload(array $zoneConfig): array
+{
+    $sessions = array_map(static function (array $s): array {
+        return ['mac' => $s['mac'], 'ip' => $s['ip'], 'username' => $s['username'], 'started' => $s['started'] ?? 0];
+    }, array_slice(ims_sessions(), 0, IMS_MAX_ITEMS));
+
+    return ['clients' => ims_clients($zoneConfig), 'sessions' => $sessions];
 }
 
 /* ------------------------------------------------------------------------
@@ -386,6 +474,8 @@ if ($imsCli) {
     $feed = ims_post(['action' => 'feed', 'info' => ims_zone_info($zoneConfig, IMS_DEFAULT_ZONE)]);
 
     if (empty($feed['enabled'])) {
+        // Control is off: change nothing, but still report who is online.
+        ims_post(['action' => 'report', 'results' => [], 'info' => ims_zone_info($zoneConfig, IMS_DEFAULT_ZONE)] + ims_online_payload($zoneConfig));
         echo "[ims-cp-agent] checked in; control is off in the IMS, nothing changed.\n";
         exit(0);
     }
@@ -395,14 +485,21 @@ if ($imsCli) {
         $zoneConfig = ims_load_pfsense($zone);
     }
 
+    $portalChange = ims_set_portal($GLOBALS['cpzone'], (string)($feed['portal'] ?? ''));
+    if ($portalChange !== '') {
+        $zoneConfig = ims_cfg_get("captiveportal/{$GLOBALS['cpzone']}", $zoneConfig);
+        echo '[ims-cp-agent] ' . $portalChange . ".\n";
+    }
+
     $prefix = (string)($feed['descr_prefix'] ?? IMS_DESCR_PREFIX) ?: IMS_DESCR_PREFIX;
     $applied = ims_apply($zoneConfig, is_array($feed['items'] ?? null) ? $feed['items'] : [], true, $prefix);
 
+    $finalZone = ims_cfg_get("captiveportal/{$GLOBALS['cpzone']}", []);
     ims_post([
         'action' => 'report',
         'results' => $applied['results'],
-        'info' => ims_zone_info(ims_cfg_get("captiveportal/{$GLOBALS['cpzone']}", []), $zone) + ['reload' => $applied['reload']],
-    ]);
+        'info' => ims_zone_info($finalZone, $zone) + ['reload' => $applied['reload'], 'portal_change' => $portalChange],
+    ] + ims_online_payload($finalZone));
 
     echo '[ims-cp-agent] ' . count($applied['results']) . ' device(s) checked'
         . ($applied['changed'] ? ', rules reloaded (' . $applied['reload'] . ')' : ', no changes') . ".\n";

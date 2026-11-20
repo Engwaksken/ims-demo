@@ -122,6 +122,19 @@ if (!function_exists('hubnet_ensure_schema')) {
                 ['hub_network_settings', 'mode', "VARCHAR(10) NOT NULL DEFAULT 'pull'"],
                 ['hub_network_settings', 'last_checkin_at', 'DATETIME NULL'],
                 ['hub_network_settings', 'last_checkin_info', 'TEXT NULL'],
+                // Staff and guest devices (hub_network_people); member_id is then NULL.
+                ['hub_network_devices', 'person_id', 'INT UNSIGNED NULL'],
+                // Internet switch: unmanaged (pfSense decides), on (portal enforced), off (open internet).
+                ['hub_network_settings', 'portal_control', "VARCHAR(10) NOT NULL DEFAULT 'unmanaged'"],
+                // Guest hotspot (hotspot.php) and the Wi-Fi details printed on the QR poster.
+                ['hub_network_settings', 'hotspot_enabled', 'TINYINT(1) NOT NULL DEFAULT 0'],
+                ['hub_network_settings', 'hotspot_password', 'TEXT NULL'],
+                ['hub_network_settings', 'hotspot_hours', 'SMALLINT UNSIGNED NOT NULL DEFAULT 8'],
+                ['hub_network_settings', 'hotspot_require_phone', 'TINYINT(1) NOT NULL DEFAULT 1'],
+                ['hub_network_settings', 'hotspot_terms', 'TEXT NULL'],
+                ['hub_network_settings', 'wifi_ssid', 'VARCHAR(64) NULL'],
+                ['hub_network_settings', 'wifi_key', 'TEXT NULL'],
+                ['hub_network_settings', 'wifi_security', "VARCHAR(10) NOT NULL DEFAULT 'WPA'"],
             ];
 
             foreach ($addColumns as [$table, $column, $definition]) {
@@ -130,6 +143,64 @@ if (!function_exists('hubnet_ensure_schema')) {
                 if ($hasColumn && $hasColumn->num_rows === 0
                     && !$conn->query("ALTER TABLE `$table` ADD COLUMN `$column` $definition")) {
                     error_log("[hub-network] $table.$column: " . $conn->error);
+                    return $ready = false;
+                }
+            }
+
+            // Staff/guest devices have no member.
+            $memberCol = $conn->query("SHOW COLUMNS FROM hub_network_devices LIKE 'member_id'");
+            $memberColRow = $memberCol ? $memberCol->fetch_assoc() : null;
+            if ($memberColRow && strtoupper((string)$memberColRow['Null']) === 'NO'
+                && !$conn->query('ALTER TABLE hub_network_devices MODIFY member_id INT NULL')) {
+                error_log('[hub-network] member_id nullable: ' . $conn->error);
+                return $ready = false;
+            }
+
+            $extraTables = [
+                // Staff (linked to an IMS user) and guests (manual or from the hotspot).
+                "CREATE TABLE IF NOT EXISTS hub_network_people (
+                    person_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    kind ENUM('staff','guest') NOT NULL,
+                    user_id INT NULL,
+                    full_name VARCHAR(150) NOT NULL,
+                    email VARCHAR(190) NULL,
+                    phone VARCHAR(40) NULL,
+                    organisation VARCHAR(150) NULL,
+                    note VARCHAR(255) NULL,
+                    status ENUM('Active','Suspended') NOT NULL DEFAULT 'Active',
+                    valid_until DATETIME NULL,
+                    source ENUM('manual','hotspot') NOT NULL DEFAULT 'manual',
+                    created_by INT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (person_id),
+                    KEY idx_hub_people_kind (kind, status),
+                    KEY idx_hub_people_user (user_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                // Devices pfSense reported as online at its last check-in (replaced each time).
+                "CREATE TABLE IF NOT EXISTS hub_network_online (
+                    mac_address CHAR(17) NOT NULL,
+                    ip_address VARCHAR(45) NULL,
+                    portal_user VARCHAR(120) NULL,
+                    in_portal TINYINT(1) NOT NULL DEFAULT 0,
+                    session_started DATETIME NULL,
+                    first_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    last_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (mac_address)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                // Hourly connected-device counts for the history chart.
+                "CREATE TABLE IF NOT EXISTS hub_network_stats (
+                    hour_start DATETIME NOT NULL,
+                    max_online INT UNSIGNED NOT NULL DEFAULT 0,
+                    sum_online INT UNSIGNED NOT NULL DEFAULT 0,
+                    samples INT UNSIGNED NOT NULL DEFAULT 0,
+                    max_portal INT UNSIGNED NOT NULL DEFAULT 0,
+                    PRIMARY KEY (hour_start)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+            ];
+            foreach ($extraTables as $sql) {
+                if (!$conn->query($sql)) {
+                    error_log('[hub-network] schema: ' . $conn->error);
                     return $ready = false;
                 }
             }
@@ -267,6 +338,14 @@ if (!function_exists('hubnet_desired_mode')) {
             return 'pass';
         }
 
+        // Staff and guests: online while Active and (guests) not past their expiry.
+        if (!empty($device['person_id'])) {
+            $until = (string)($device['person_valid_until'] ?? '');
+            $current = $until === '' || strtotime($until) >= time();
+
+            return ($device['person_status'] ?? '') === 'Active' && $current ? 'pass' : 'remove';
+        }
+
         $personActive = empty($device['team_member_id']) || ($device['team_status'] ?? '') === 'Active';
 
         return $personActive && hubnet_membership_live($device) ? 'pass' : 'remove';
@@ -288,14 +367,19 @@ if (!function_exists('hubnet_device_sql')) {
     /** Devices joined with their owner, company and membership. */
     function hubnet_device_sql(string $where = '1=1'): string
     {
+        // owner_kind: member (company or its team), staff or guest (hub_network_people).
         return "SELECT d.*, m.company_name, m.membership_number, m.membership_status, m.subscription_end_date,
-                       COALESCE(t.full_name, u.full_name) AS person_name,
-                       t.status AS team_status, u.full_name AS primary_name
+                       COALESCE(t.full_name, hp.full_name, u.full_name) AS person_name,
+                       t.status AS team_status, u.full_name AS primary_name,
+                       COALESCE(hp.kind, 'member') AS owner_kind,
+                       hp.status AS person_status, hp.valid_until AS person_valid_until,
+                       hp.organisation AS person_organisation, hp.phone AS person_phone, hp.source AS person_source
                 FROM hub_network_devices d
-                JOIN members m ON m.member_id = d.member_id
+                LEFT JOIN members m ON m.member_id = d.member_id
                 LEFT JOIN users u ON u.user_id = m.user_id
                 LEFT JOIN hub_team_members t ON t.team_member_id = d.team_member_id
-                WHERE $where";
+                LEFT JOIN hub_network_people hp ON hp.person_id = d.person_id
+                WHERE ($where) AND (d.member_id IS NOT NULL AND m.member_id IS NOT NULL OR d.person_id IS NOT NULL AND hp.person_id IS NOT NULL)";
     }
 }
 
@@ -324,6 +408,15 @@ if (!function_exists('hubnet_settings')) {
             'mode' => ($row['mode'] ?? 'pull') === 'push' ? 'push' : 'pull',
             'last_checkin_at' => $row['last_checkin_at'] ?? null,
             'last_checkin_info' => json_decode((string)($row['last_checkin_info'] ?? ''), true) ?: [],
+            'portal_control' => in_array($row['portal_control'] ?? '', ['on', 'off'], true) ? (string)$row['portal_control'] : 'unmanaged',
+            'hotspot_enabled' => !empty($row['hotspot_enabled']),
+            'hotspot_password' => function_exists('ims_decrypt') ? ims_decrypt((string)($row['hotspot_password'] ?? '')) : (string)($row['hotspot_password'] ?? ''),
+            'hotspot_hours' => max(1, (int)($row['hotspot_hours'] ?? 8)),
+            'hotspot_require_phone' => !array_key_exists('hotspot_require_phone', $row) || !empty($row['hotspot_require_phone']),
+            'hotspot_terms' => (string)($row['hotspot_terms'] ?? ''),
+            'wifi_ssid' => (string)($row['wifi_ssid'] ?? ''),
+            'wifi_key' => function_exists('ims_decrypt') ? ims_decrypt((string)($row['wifi_key'] ?? '')) : (string)($row['wifi_key'] ?? ''),
+            'wifi_security' => in_array($row['wifi_security'] ?? '', ['WPA', 'WEP', 'nopass'], true) ? (string)$row['wifi_security'] : 'WPA',
         ];
     }
 }
@@ -578,7 +671,10 @@ if (!function_exists('hubnet_device_descr')) {
     /** Captive portal entry description; the agent treats the "IMS " prefix as IMS-managed. */
     function hubnet_device_descr(array $device): string
     {
-        $text = HUBNET_DESCR_PREFIX . ($device['membership_number'] ?? '') . ' ' . ($device['person_name'] ?? '')
+        $owner = ($device['owner_kind'] ?? 'member') === 'member'
+            ? (string)($device['membership_number'] ?? '')
+            : strtoupper((string)$device['owner_kind']);
+        $text = HUBNET_DESCR_PREFIX . $owner . ' ' . ($device['person_name'] ?? '')
             . (!empty($device['label']) ? ' (' . $device['label'] . ')' : '');
 
         return mb_substr((string)preg_replace('/[^\w .@()\-]/u', '', $text), 0, 120);
@@ -720,6 +816,7 @@ if (!function_exists('hubnet_record_checkin')) {
     {
         $json = json_encode(array_intersect_key($info, array_flip([
             'version', 'zone', 'mac_filtering', 'sessions', 'mac_entries', 'ip', 'error',
+            'portal_enabled', 'clients', 'portal_change',
         ])), JSON_UNESCAPED_SLASHES);
 
         $stmt = $conn->prepare('UPDATE hub_network_settings SET last_checkin_at = NOW(), last_checkin_info = ? WHERE id = 1');

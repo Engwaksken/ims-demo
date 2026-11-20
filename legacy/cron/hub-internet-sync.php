@@ -4,7 +4,8 @@ declare(strict_types=1);
 /*
 | Automatic hub internet enforcement (pfSense).
 | Disconnects devices whose membership expired / was suspended (or whose
-| team member was suspended) and reconnects them when active again. Only
+| team member was suspended) and reconnects them when active again, and
+| removes hotspot guests 30 days after their access ended. Only
 | devices whose pfSense state differs from the desired state are sent.
 |
 | Cron (every 5 minutes):
@@ -24,6 +25,14 @@ $conn = db_connect();
 if (!$conn instanceof mysqli || !hubnet_ensure_schema($conn)) {
     fwrite(STDERR, "Hub network tables unavailable.\n");
     exit(1);
+}
+
+// Hotspot guests: forget them (and their devices) 30 days after their access ended.
+require_once __DIR__ . '/../includes/hub-internet.php';
+$purged = hubinet_purge_hotspot_guests($conn, 30);
+if ($purged > 0) {
+    echo date('Y-m-d H:i:s') . " removed {$purged} expired hotspot guest(s).
+";
 }
 
 $settings = hubnet_settings($conn);

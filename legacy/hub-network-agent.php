@@ -9,7 +9,10 @@ declare(strict_types=1);
  * firewall has to be reachable from the internet. Works from shared hosting.
  *
  *   action=feed    -> desired state of every registered device
- *   action=report  -> what pfSense applied (per MAC), stored on each device
+ *   action=report  -> what pfSense applied (per MAC), stored on each device,
+ *                     plus the devices it sees online (agent 2.1+: clients/sessions)
+ * The feed also carries the internet switch ("portal": on/off; empty = leave
+ * the captive portal as configured in pfSense).
  *
  * POST only, JSON body signed with HMAC-SHA256 (header X-IMS-Signature) using
  * the shared secret, timestamp within 5 minutes, single-use nonce. Replies are
@@ -19,6 +22,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/includes/hub-network.php';
+require_once __DIR__ . '/includes/hub-internet.php';
 
 /** Signed JSON reply. */
 function hna_respond(int $status, array $body, string $secret = ''): never
@@ -78,13 +82,22 @@ switch ((string)($request['action'] ?? '')) {
             'zone' => $settings['cp_zone'],
             'descr_prefix' => HUBNET_DESCR_PREFIX,
             'items' => $active ? hubnet_feed($conn) : [],
+            // Internet switch for agent 2.1+: on = enforce the captive portal, off = open internet.
+            'portal' => $active && $settings['portal_control'] !== 'unmanaged' ? $settings['portal_control'] : '',
             'server_time' => time(),
         ], $settings['secret']);
 
     case 'report':
         $results = is_array($request['results'] ?? null) ? $request['results'] : [];
         $changed = $active ? hubnet_record_report($conn, $results) : 0;
-        hna_respond(200, ['ok' => true, 'changed' => $changed], $settings['secret']);
+        // Who is online is tracked even while access control is off.
+        $online = 0;
+        if (is_array($request['clients'] ?? null) || is_array($request['sessions'] ?? null)) {
+            $online = hubinet_record_online($conn,
+                is_array($request['clients'] ?? null) ? $request['clients'] : [],
+                is_array($request['sessions'] ?? null) ? $request['sessions'] : []);
+        }
+        hna_respond(200, ['ok' => true, 'changed' => $changed, 'online' => $online], $settings['secret']);
 
     default:
         hna_respond(400, ['ok' => false, 'error' => 'unknown_action'], $settings['secret']);

@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 /*
 | Hub Team & Internet
-|   /hub-team                    internet dashboard: every registered person and device
+|   /hub-team                    overview: internet switch, devices online now, history
+|   /hub-team?view=companies     companies & seats, every registered device and its access
+|   /hub-team?view=staff|guests  staff / guests on the internet (?person=N: one person)
+|   /hub-team?view=online        devices pfSense sees online, identified; register unknown ones
+|   /hub-team?view=hotspot       guest hotspot: password, QR codes, poster, pfSense setup
 |   /hub-team?member_id=N        one company: seats, team members, devices
 |   /hub-team?view=settings      workspace packages (seat limits) and pfSense connection
 */
@@ -12,6 +16,7 @@ $page_title = 'Hub Team & Internet';
 include 'includes/header.php';
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/hub-network.php';
+require_once __DIR__ . '/includes/hub-internet.php';
 check_role(IMS_ALL_ROLES);
 
 function ht_e(mixed $value): string
@@ -26,6 +31,7 @@ $canSettings = ims_allowed('hub_network.settings', ['Administrator', 'IT Officer
 $canRemind = ims_allowed('hub_reminders.send', ['Administrator', 'Operations/Admin'], 'Send subscription reminders to hub members');
 $canReminderSettings = ims_allowed('hub_reminders.settings', ['Administrator', 'Operations/Admin'], 'Configure automatic hub member reminders');
 $canOpenSettings = $canSettings || $canRemind || $canReminderSettings;
+$canSwitch = ims_allowed('hub_network.switch', ['Administrator', 'IT Officer'], 'Switch hub internet control on/off (open internet) on pfSense');
 
 $successMessage = (string)($_SESSION['success'] ?? '');
 $errorMessage = (string)($_SESSION['error'] ?? '');
@@ -39,6 +45,13 @@ $memberId = (int)($_GET['member_id'] ?? 0);
 
 if ($view === 'settings' && !$canOpenSettings) {
     $view = '';
+}
+// Default page: the overview. The companies/devices dashboard is view=companies (or an old ?tab= link).
+if ($view === '' && $memberId === 0) {
+    $view = isset($_GET['tab']) || isset($_GET['q']) || isset($_GET['state']) ? 'companies' : 'overview';
+}
+if (!in_array($view, ['overview', 'companies', 'staff', 'guests', 'online', 'hotspot', 'settings'], true)) {
+    $view = 'overview';
 }
 
 // Settings tabs: Packages and pfSense (IT/admin), Reminders (Operations/admin).
@@ -93,6 +106,8 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
 
 <style>
 .ht-inline { display: inline; margin: 0; }
+.ht-mainnav { padding: 0; overflow: hidden; }
+.ht-mainnav .tab-nav { margin: 0; border-bottom: 0; }
 .ht-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .ht-devices { display: grid; gap: 6px; }
 .ht-device { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; }
@@ -119,7 +134,7 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
 <div class="page-hero">
     <div>
         <h1><i class="fas fa-wifi" aria-hidden="true"></i> Hub Team &amp; Internet</h1>
-        <p>Register each company's team within its workspace package and control their internet access on pfSense.</p>
+        <p>Manage internet access for hub members, staff and guests, run the guest hotspot and control pfSense from here.</p>
     </div>
     <div class="hero-actions">
         <a href="hub-operations?tab=members" class="btn"><i class="fas fa-building" aria-hidden="true"></i> Hub Operations</a>
@@ -154,11 +169,21 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
 </div>
 <?php endif; ?>
 
-<div class="ht-tabs">
-    <a href="hub-team" class="btn <?= $view === '' && $memberId === 0 ? 'btn-primary' : 'btn-soft' ?>"><i class="fas fa-network-wired" aria-hidden="true"></i> Internet dashboard</a>
-    <?php if ($canOpenSettings): ?>
-    <a href="hub-team?view=settings" class="btn <?= $view === 'settings' ? 'btn-primary' : 'btn-soft' ?>"><i class="fas fa-sliders" aria-hidden="true"></i> Settings &amp; reminders</a>
-    <?php endif; ?>
+<div class="card ht-mainnav">
+    <nav class="tab-nav" aria-label="Hub team and internet">
+        <?php foreach (array_filter([
+            'overview' => ['fa-gauge', 'Overview'],
+            'companies' => ['fa-building', 'Companies & devices'],
+            'staff' => ['fa-id-badge', 'Staff'],
+            'guests' => ['fa-user-clock', 'Guests'],
+            'online' => ['fa-signal', 'Online now'],
+            'hotspot' => ['fa-qrcode', 'Hotspot'],
+            'settings' => $canOpenSettings ? ['fa-sliders', 'Settings'] : null,
+        ]) as $navKey => [$navIcon, $navLabel]):
+            $navActive = $view === $navKey || ($navKey === 'companies' && $memberId > 0); ?>
+            <a class="tab-btn<?= $navActive ? ' active' : '' ?>" href="hub-team?view=<?= $navKey ?>"<?= $navActive ? ' aria-current="page"' : '' ?>><i class="fas <?= $navIcon ?>" aria-hidden="true"></i> <?= ht_e($navLabel) ?></a>
+        <?php endforeach; ?>
+    </nav>
 </div>
 
 <?php
@@ -859,7 +884,13 @@ function openEditTeam(person) {
     endif;
 
 /* =====================================================================
-   INTERNET DASHBOARD: everyone, across companies
+   OVERVIEW, STAFF, GUESTS, ONLINE NOW, HOTSPOT (includes/hub-team-internet-views.php)
+===================================================================== */
+elseif (in_array($view, ['overview', 'staff', 'guests', 'online', 'hotspot'], true)):
+    include __DIR__ . '/includes/hub-team-internet-views.php';
+
+/* =====================================================================
+   COMPANIES & DEVICES: companies, seats and every registered device
 ===================================================================== */
 else:
     $search = trim((string)($_GET['q'] ?? ''));
@@ -869,10 +900,10 @@ else:
     $params = [];
 
     if ($search !== '') {
-        $where .= ' AND (m.company_name LIKE ? OR m.membership_number LIKE ? OR t.full_name LIKE ? OR u.full_name LIKE ? OR d.mac_address LIKE ?)';
+        $where .= ' AND (m.company_name LIKE ? OR m.membership_number LIKE ? OR t.full_name LIKE ? OR u.full_name LIKE ? OR hp.full_name LIKE ? OR d.mac_address LIKE ?)';
         $like = '%' . $search . '%';
-        $types .= 'sssss';
-        array_push($params, $like, $like, $like, $like, $like);
+        $types .= 'ssssss';
+        array_push($params, $like, $like, $like, $like, $like, $like);
     }
 
     if (in_array($stateFilter, ['connected', 'disconnected', 'blocked', 'error', 'unknown'], true)) {
@@ -936,7 +967,7 @@ else:
         <button type="button" class="tab-btn <?= $dashboardTab === 'devices' ? 'active' : '' ?>" role="tab"
                 id="tab-devices" aria-controls="panel-devices" data-tab="devices"
                 aria-selected="<?= $dashboardTab === 'devices' ? 'true' : 'false' ?>">
-            <i class="fas fa-network-wired" aria-hidden="true"></i> Devices &amp; internet access
+            <i class="fas fa-network-wired" aria-hidden="true"></i> All devices &amp; internet access
             <span class="badge"><?= count($devices) ?></span>
         </button>
     </div>
@@ -985,6 +1016,7 @@ else:
         <!-- Devices & internet access -->
         <section class="tab-panel <?= $dashboardTab === 'devices' ? 'active' : '' ?>" id="panel-devices" role="tabpanel" aria-labelledby="tab-devices">
             <form method="get" action="hub-team" class="filters-bar" role="search">
+                <input type="hidden" name="view" value="companies">
                 <input type="hidden" name="tab" value="devices">
                 <input type="text" name="q" class="form-control filters-grow" value="<?= ht_e($search) ?>" placeholder="Search company, person, membership # or MAC...">
                 <select name="state" class="form-control" aria-label="Internet state">
@@ -995,21 +1027,26 @@ else:
                 </select>
                 <button type="submit" class="btn btn-secondary"><i class="fas fa-search" aria-hidden="true"></i> Filter</button>
                 <?php if ($hasDeviceFilter): ?>
-                    <a href="hub-team?tab=devices" class="btn btn-soft"><i class="fas fa-times" aria-hidden="true"></i> Clear</a>
+                    <a href="hub-team?view=companies&amp;tab=devices" class="btn btn-soft"><i class="fas fa-times" aria-hidden="true"></i> Clear</a>
                 <?php endif; ?>
             </form>
 
             <div class="table-responsive">
                 <table class="table">
-                    <thead><tr><th>Person</th><th>Company</th><th>Device</th><th>Mode</th><th>pfSense</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Person</th><th>Company / type</th><th>Device</th><th>Mode</th><th>pfSense</th><th>Actions</th></tr></thead>
                     <tbody>
                     <?php if ($devices === []): ?>
                         <tr><td colspan="6"><div class="empty-state"><i class="fas fa-laptop" aria-hidden="true"></i><p>No devices registered<?= $hasDeviceFilter ? ' match the filter' : ' yet. Open a company\'s Team page to add people and devices' ?>.</p></div></td></tr>
                     <?php endif; ?>
                     <?php foreach ($devices as $device): $expected = hubnet_state_for_mode(hubnet_desired_mode($device)); ?>
                         <tr>
+                            <?php if (($device['owner_kind'] ?? 'member') === 'member'): ?>
                             <td><strong><?= ht_e($device['person_name']) ?></strong><?= empty($device['team_member_id']) ? '<small class="cell-muted">Primary member</small>' : (($device['team_status'] ?? '') !== 'Active' ? '<small class="cell-muted">Suspended</small>' : '') ?></td>
                             <td><a href="hub-team?member_id=<?= (int)$device['member_id'] ?>"><?= ht_e($device['company_name'] ?: $device['primary_name']) ?></a><small class="cell-muted"><?= ht_e($device['membership_status']) ?></small></td>
+                            <?php else: ?>
+                            <td><a href="hub-team?view=<?= $device['owner_kind'] === 'staff' ? 'staff' : 'guests' ?>&amp;person=<?= (int)$device['person_id'] ?>"><strong><?= ht_e($device['person_name']) ?></strong></a><?= ($device['person_status'] ?? '') !== 'Active' ? '<small class="cell-muted">Suspended</small>' : (!empty($device['person_valid_until']) && strtotime((string)$device['person_valid_until']) < time() ? '<small class="cell-muted">Expired</small>' : '') ?></td>
+                            <td><span class="badge <?= $device['owner_kind'] === 'staff' ? 'badge-purple' : 'badge-warning' ?>"><?= $device['owner_kind'] === 'staff' ? 'Staff' : 'Guest' ?></span><?= !empty($device['person_organisation']) ? '<small class="cell-muted">' . ht_e($device['person_organisation']) . '</small>' : '' ?></td>
+                            <?php endif; ?>
                             <td><code><?= ht_e($device['mac_address']) ?></code><?= !empty($device['label']) ? '<small class="cell-muted">' . ht_e($device['label']) . '</small>' : '' ?></td>
                             <td><?= ht_e(ht_mode_label((string)$device['access_mode'])) ?></td>
                             <td><?= ht_state_badge($device) ?><?= $device['pf_state'] !== $expected ? '<small class="cell-muted">Should be ' . ht_e($expected) . '</small>' : '' ?></td>
