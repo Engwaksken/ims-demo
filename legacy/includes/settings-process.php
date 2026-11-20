@@ -36,6 +36,17 @@ function settings_bool(string $key): string
     return isset($_POST[$key]) ? '1' : '0';
 }
 
+/** "1 USD = ? UGX": a positive number up to 100,000 (finance reports, approvals). */
+function settings_rate(string $value): string
+{
+    $rate = filter_var(str_replace(',', '', $value), FILTER_VALIDATE_FLOAT);
+    if ($rate === false || $rate <= 0 || $rate > 100000) {
+        throw new InvalidArgumentException('Exchange rate must be a number between 1 and 100,000 UGX per USD.');
+    }
+
+    return rtrim(rtrim(number_format((float)$rate, 4, '.', ''), '0'), '.');
+}
+
 function settings_get(mysqli $conn, string $key, string $default = ''): string
 {
     $stmt = $conn->prepare("
@@ -338,6 +349,7 @@ if (isset($_POST['update_settings'])) {
                 'date_format' => sanitize_input(settings_post('date_format', 'd M Y')),
                 'currency' => sanitize_input(settings_post('currency', 'UGX')),
                 'items_per_page' => (string)max(10, min(100, (int)($_POST['items_per_page'] ?? 25))),
+                'usd_ugx_rate' => settings_rate(settings_post('usd_ugx_rate', '3700')),
         ];
         $generalSettings += isset($_POST['theme_reset']) ? IMS_THEME_DEFAULTS : ims_theme_validate($_POST);
         if ($newLogo !== null) $generalSettings['site_logo_path'] = $newLogo;

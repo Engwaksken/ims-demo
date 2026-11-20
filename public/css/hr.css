@@ -102,3 +102,10 @@
     .hr-dl { grid-template-columns: 1fr; }
     .hr-toolbar { flex-direction: column; align-items: stretch; }
 }
+
+/* HR Operations: tabs as their own bar, full-width tables */
+.hr-tabbar { padding: 0; overflow: hidden; }
+.hr-tabbar .tab-nav { margin: 0; border-bottom: 0; }
+.hr-table { width: 100%; }
+.hr-table td { vertical-align: top; }
+.card-header form { margin: 0; }

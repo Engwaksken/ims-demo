@@ -37,6 +37,15 @@ include 'includes/header.php';
 .jb-req { color: var(--red-fg); }
 .jm-form-grid > .form-group { margin-bottom: 0; }
 .jb-tall { min-height: 110px; }
+/* Job form tabs */
+.jm-tabs { margin: -4px 0 18px; overflow-x: auto; }
+.jm-tabs .tab-btn { white-space: nowrap; }
+.jm-tab-num { font-weight: 700; opacity: .6; }
+.jm-tab-panel[hidden] { display: none; }
+.jm-tab-panel .modal-section-label:first-child { margin-top: 0; }
+.jm-foot-spacer { flex: 1; }
+.jm-modal-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 640px) { .jm-foot-spacer { display: none; } }
 </style>
 
 <div class="page-stack">
@@ -284,8 +293,15 @@ include 'includes/header.php';
         <div class="jm-modal-body">
             <input type="hidden" id="f_job_id">
 
-            <!-- Basic information -->
-            <div class="modal-section-label"><i class="fas fa-info-circle" aria-hidden="true"></i> Basic Information</div>
+            <nav class="tab-nav jm-tabs" role="tablist" aria-label="Job form sections">
+                <button type="button" class="tab-btn active" role="tab" id="jmTab-basics" aria-controls="jmPanel-basics" aria-selected="true" data-jm-tab="0"><i class="fas fa-info-circle" aria-hidden="true"></i> <span class="jm-tab-num">1.</span> Basics</button>
+                <button type="button" class="tab-btn" role="tab" id="jmTab-pay" aria-controls="jmPanel-pay" aria-selected="false" data-jm-tab="1"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> <span class="jm-tab-num">2.</span> Compensation</button>
+                <button type="button" class="tab-btn" role="tab" id="jmTab-content" aria-controls="jmPanel-content" aria-selected="false" data-jm-tab="2"><i class="fas fa-align-left" aria-hidden="true"></i> <span class="jm-tab-num">3.</span> Job content</button>
+                <button type="button" class="tab-btn" role="tab" id="jmTab-apply" aria-controls="jmPanel-apply" aria-selected="false" data-jm-tab="3"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span class="jm-tab-num">4.</span> Application & visibility</button>
+            </nav>
+
+            <!-- 1. Basics -->
+            <section class="jm-tab-panel active" role="tabpanel" id="jmPanel-basics" aria-labelledby="jmTab-basics" data-jm-panel="0">
             <div class="jm-form-grid">
                 <div class="form-group jm-form-full">
                     <label>Job Title <span class="jb-req">*</span></label>
@@ -315,8 +331,10 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Compensation -->
-            <div class="modal-section-label"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> Compensation</div>
+            </section>
+
+            <!-- 2. Compensation -->
+            <section class="jm-tab-panel" role="tabpanel" id="jmPanel-pay" aria-labelledby="jmTab-pay" data-jm-panel="1" hidden>
             <div class="jm-form-grid cols3">
                 <div class="form-group">
                     <label>Min Salary</label>
@@ -351,8 +369,10 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Job content -->
-            <div class="modal-section-label"><i class="fas fa-align-left" aria-hidden="true"></i> Job Content</div>
+            </section>
+
+            <!-- 3. Job content -->
+            <section class="jm-tab-panel" role="tabpanel" id="jmPanel-content" aria-labelledby="jmTab-content" data-jm-panel="2" hidden>
             <div class="jm-form-grid">
                 <div class="form-group jm-form-full">
                     <label>Description <span class="jb-req">*</span></label>
@@ -376,7 +396,10 @@ include 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Application settings -->
+            </section>
+
+            <!-- 4. Application & visibility -->
+            <section class="jm-tab-panel" role="tabpanel" id="jmPanel-apply" aria-labelledby="jmTab-apply" data-jm-panel="3" hidden>
             <div class="modal-section-label"><i class="fas fa-paper-plane" aria-hidden="true"></i> Application Settings</div>
             <div class="jm-form-grid">
                 <div class="form-group">
@@ -424,11 +447,19 @@ include 'includes/header.php';
                     </div>
                 </div>
             </div>
+            </section>
         </div><!-- /.jm-modal-body -->
 
         <div class="jm-modal-foot">
             <button type="button" class="btn btn-secondary" onclick="jmClose('jmJobModal')">
                 <i class="fas fa-times"></i> Cancel
+            </button>
+            <span class="jm-foot-spacer"></span>
+            <button type="button" class="btn btn-secondary" id="jmBackBtn" onclick="jmStep(-1)" hidden>
+                <i class="fas fa-arrow-left" aria-hidden="true"></i> Back
+            </button>
+            <button type="button" class="btn btn-soft" id="jmNextBtn" onclick="jmStep(1)">
+                Next <i class="fas fa-arrow-right" aria-hidden="true"></i>
             </button>
             <button type="button" class="btn btn-primary" id="jmSaveBtn" onclick="jmSave()">
                 <i class="fas fa-save"></i> <span id="jmSaveTxt">Post Job</span>
@@ -512,6 +543,44 @@ include 'includes/header.php';
         });
     };
 
+    /* -- Form tabs ------------------------------------------------------------ */
+    var jmTabCount = document.querySelectorAll('[data-jm-panel]').length;
+    var jmTabIndex = 0;
+    window.jmShowTab = function (i) {
+        jmTabIndex = Math.max(0, Math.min(jmTabCount - 1, i));
+        document.querySelectorAll('[data-jm-tab]').forEach(function (b) {
+            var on = parseInt(b.dataset.jmTab, 10) === jmTabIndex;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+            b.tabIndex = on ? 0 : -1;
+        });
+        document.querySelectorAll('[data-jm-panel]').forEach(function (p) {
+            var on = parseInt(p.dataset.jmPanel, 10) === jmTabIndex;
+            p.hidden = !on;
+            p.classList.toggle('active', on);
+        });
+        document.getElementById('jmBackBtn').hidden = jmTabIndex === 0;
+        document.getElementById('jmNextBtn').hidden = jmTabIndex === jmTabCount - 1;
+        var body = document.querySelector('#jmJobModal .jm-modal-body');
+        if (body) body.scrollTop = 0;
+    };
+    window.jmStep = function (d) { jmShowTab(jmTabIndex + d); };
+    document.querySelectorAll('[data-jm-tab]').forEach(function (b) {
+        b.addEventListener('click', function () { jmShowTab(parseInt(b.dataset.jmTab, 10)); });
+        b.addEventListener('keydown', function (e) {
+            if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+            e.preventDefault();
+            jmShowTab(jmTabIndex + (e.key === 'ArrowRight' ? 1 : -1));
+            document.querySelector('[data-jm-tab="' + jmTabIndex + '"]').focus();
+        });
+    });
+    function jmFocusField(id) {
+        var el = document.getElementById(id);
+        var panel = el && el.closest('[data-jm-panel]');
+        if (panel) jmShowTab(parseInt(panel.dataset.jmPanel, 10));
+        if (el) setTimeout(function () { el.focus(); }, 50);
+    }
+
     /* -- Field helpers -------------------------------------------------------- */
     function fv(id)       { return document.getElementById(id).value; }
     function fset(id, v)  { var el = document.getElementById(id); if (el) el.value = (v != null ? v : ''); }
@@ -529,6 +598,7 @@ include 'includes/header.php';
         togOn('t_show_salary', 1);
         togOn('t_is_featured', 0);
         togOn('t_is_urgent',   0);
+        jmShowTab(0);
     }
 
     /* -- Open create ---------------------------------------------------------- */
@@ -568,6 +638,7 @@ include 'includes/header.php';
         togOn('t_is_featured',     j.is_featured);
         togOn('t_is_urgent',       j.is_urgent);
 
+        jmShowTab(0);
         document.getElementById('jmModalTitle').textContent = 'Edit Job';
         document.getElementById('jmSaveTxt').textContent    = 'Update Job';
         jmOpen('jmJobModal');
@@ -576,7 +647,8 @@ include 'includes/header.php';
     /* -- Save ----------------------------------------------------------------- */
     window.jmSave = async function () {
         var title = fv('f_job_title').trim();
-        if (!title) { jmToast('Job title is required.', false); return; }
+        if (!title) { jmToast('Job title is required.', false); jmFocusField('f_job_title'); return; }
+        if (!fv('f_description').trim()) { jmToast('Description is required.', false); jmFocusField('f_description'); return; }
 
         var btn = document.getElementById('jmSaveBtn');
         btn.disabled = true;

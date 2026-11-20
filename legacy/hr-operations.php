@@ -135,338 +135,385 @@ include 'includes/header.php';
         </div>
     </div>
 
-    <div class="card">
+    <div class="card hr-tabbar">
         <nav class="tab-nav" aria-label="HR views">
             <?php foreach ($views as $key => $label):
+                $icon = ['overview' => 'fa-gauge', 'employees' => 'fa-users', 'reminders' => 'fa-bell', 'policies' => 'fa-file-shield'][$key];
                 $badge = match ($key) { 'employees' => $stats['staff'] - $stats['compliant'], 'policies' => count($activePolicies), default => 0 }; ?>
-                <a class="tab-btn<?= $view === $key ? ' active' : '' ?>" href="hr-operations?view=<?= $key ?>"<?= $view === $key ? ' aria-current="page"' : '' ?>><?= $e($label) ?><?php if ($badge): ?> <span class="badge"><?= $badge ?></span><?php endif; ?></a>
+                <a class="tab-btn<?= $view === $key ? ' active' : '' ?>" href="hr-operations?view=<?= $key ?>"<?= $view === $key ? ' aria-current="page"' : '' ?>><i class="fas <?= $icon ?>" aria-hidden="true"></i> <?= $e($label) ?><?php if ($badge): ?> <span class="badge"><?= $badge ?></span><?php endif; ?></a>
             <?php endforeach; ?>
         </nav>
-        <div class="card-body">
+    </div>
 
 <?php if ($view === 'overview'): ?>
-            <div class="stats-grid reports-stats">
-                <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-users" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Active staff</span><span class="stat-value"><?= $stats['staff'] ?></span></div></div>
-                <div class="stat-card"><div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Fully compliant</span><span class="stat-value"><?= $stats['compliant'] ?></span></div></div>
-                <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-file-circle-exclamation" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Missing documents</span><span class="stat-value"><?= $stats['missing_docs'] ?></span></div></div>
-                <div class="stat-card"><div class="stat-icon bg-red"><i class="fas fa-file-signature" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Policies to acknowledge</span><span class="stat-value"><?= $stats['pending_policies'] ?></span></div></div>
-                <div class="stat-card"><div class="stat-icon bg-slate"><i class="fas fa-id-card" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">No profile yet</span><span class="stat-value"><?= $stats['no_profile'] ?></span></div></div>
-                <div class="stat-card"><div class="stat-icon bg-blue"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Profiles to approve</span><span class="stat-value"><?= $stats['pending_approval'] ?></span></div></div>
-                <div class="stat-card"><div class="stat-icon bg-teal"><i class="fas fa-briefcase" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Open jobs · applications this month</span><span class="stat-value"><?= $stats['open_jobs'] ?> · <?= $stats['applications_month'] ?></span></div></div>
-                <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-calendar-check" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Interviews ahead · scorecards due</span><span class="stat-value"><?= $stats['upcoming_interviews'] ?> · <?= $stats['scorecards_due'] ?></span></div></div>
-            </div>
+    <div class="stats-grid reports-stats">
+        <div class="stat-card"><div class="stat-icon bg-primary"><i class="fas fa-users" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Active staff</span><span class="stat-value"><?= $stats['staff'] ?></span></div></div>
+        <div class="stat-card"><div class="stat-icon bg-green"><i class="fas fa-circle-check" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Fully compliant</span><span class="stat-value"><?= $stats['compliant'] ?></span></div></div>
+        <div class="stat-card"><div class="stat-icon bg-amber"><i class="fas fa-file-circle-exclamation" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Missing documents</span><span class="stat-value"><?= $stats['missing_docs'] ?></span></div></div>
+        <div class="stat-card"><div class="stat-icon bg-red"><i class="fas fa-file-signature" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Policies to acknowledge</span><span class="stat-value"><?= $stats['pending_policies'] ?></span></div></div>
+        <div class="stat-card"><div class="stat-icon bg-slate"><i class="fas fa-id-card" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">No profile yet</span><span class="stat-value"><?= $stats['no_profile'] ?></span></div></div>
+        <div class="stat-card"><div class="stat-icon bg-blue"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Profiles to approve</span><span class="stat-value"><?= $stats['pending_approval'] ?></span></div></div>
+        <div class="stat-card"><div class="stat-icon bg-teal"><i class="fas fa-briefcase" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Open jobs · applications this month</span><span class="stat-value"><?= $stats['open_jobs'] ?> · <?= $stats['applications_month'] ?></span></div></div>
+        <div class="stat-card"><div class="stat-icon bg-purple"><i class="fas fa-calendar-check" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Interviews ahead · scorecards due</span><span class="stat-value"><?= $stats['upcoming_interviews'] ?> · <?= $stats['scorecards_due'] ?></span></div></div>
+    </div>
 
-            <div class="hr-grid-2" style="margin-top:20px">
-                <div class="hr-col">
-                    <div class="hr-toolbar">
-                        <h3 style="margin:0"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Needs attention (<?= count($attention) ?>)</h3>
-                        <?php if ($attention): ?>
-                            <form method="POST" action="hr-operations" onsubmit="return confirm('Send a reminder to everyone with something outstanding?')">
-                                <?= csrf_field() ?><input type="hidden" name="action" value="remind_outstanding"><input type="hidden" name="kind" value="all"><input type="hidden" name="return_view" value="overview">
-                                <button class="btn btn-primary btn-sm"><i class="fas fa-bell" aria-hidden="true"></i> Remind all</button>
-                            </form>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (!$attention): ?>
-                        <div class="empty-state"><i class="fas fa-mug-hot" aria-hidden="true"></i><p>Every member of staff is up to date.</p></div>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table table-stack">
-                                <thead><tr><th>Staff</th><th>Outstanding</th><th>Last reminded</th></tr></thead>
-                                <tbody>
-                                <?php foreach (array_slice($attention, 0, 15) as $r): ?>
-                                    <tr>
-                                        <td data-label="Staff"><strong><?= $e($r['name']) ?></strong><div class="hr-muted"><?= $e($r['job_title'] ?: $r['role']) ?></div></td>
-                                        <td data-label="Outstanding">
-                                            <?php if (!$r['has_profile']): ?><span class="badge badge-secondary">No profile</span><?php endif; ?>
-                                            <?php if ($r['missing_docs']): ?><span class="badge badge-warning" title="<?= $e(implode(', ', $r['missing_docs'])) ?>"><?= count($r['missing_docs']) ?> document<?= count($r['missing_docs']) === 1 ? '' : 's' ?></span><?php endif; ?>
-                                            <?php if ($r['policies_pending'] > 0): ?><span class="badge badge-danger"><?= $r['policies_pending'] ?> polic<?= $r['policies_pending'] === 1 ? 'y' : 'ies' ?></span><?php endif; ?>
-                                        </td>
-                                        <td data-label="Last reminded"><?= $r['last_reminded'] ? $e(date('j M', strtotime((string)$r['last_reminded']))) : '<span class="hr-muted">Never</span>' ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                        <?php if (count($attention) > 15): ?><p><a href="hr-operations?view=employees&compliance=non_compliant">See all <?= count($attention) ?></a></p><?php endif; ?>
-                    <?php endif; ?>
-                </div>
-                <div class="hr-col">
-                    <h3 style="margin:0"><i class="fas fa-calendar-day" aria-hidden="true"></i> Upcoming interviews</h3>
-                    <?php $upcoming = hr_upcoming_interviews($conn); if (!$upcoming): ?>
-                        <p class="hr-muted">None scheduled.</p>
-                    <?php else: ?>
-                        <ul class="hr-checklist">
-                            <?php foreach ($upcoming as $u): ?>
-                                <li><i class="fas fa-user-tie" aria-hidden="true"></i><span><a href="interview-scorecard?id=<?= (int)$u['interview_id'] ?>"><?= $e($u['applicant_name']) ?></a><br><small class="hr-muted"><?= $e($u['job_title']) ?> · <?= $e(date('D j M, H:i', strtotime((string)$u['scheduled_at']))) ?></small></span></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                    <h3 style="margin:10px 0 0"><i class="fas fa-file-shield" aria-hidden="true"></i> Policies</h3>
-                    <?php if (!$activePolicies): ?>
-                        <p class="hr-muted">No policies yet. <a href="#" onclick="hrOpenPolicy();return false">Add your first policy</a>.</p>
-                    <?php else: ?>
-                        <ul class="hr-checklist">
-                            <?php foreach (array_slice($activePolicies, 0, 6) as $p): $pct = (int)$p['shared'] ? round((int)$p['acked'] / (int)$p['shared'] * 100) : 0; ?>
-                                <li><i class="fas fa-file-lines" aria-hidden="true"></i><span><a href="hr-operations?view=policies&policy=<?= (int)$p['policy_id'] ?>"><?= $e($p['title']) ?></a><br><small class="hr-muted"><?= (int)$p['shared'] ?> shared<?= (int)$p['requires_ack'] ? ' · ' . $pct . '% acknowledged' : '' ?></small></span></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-<?php elseif ($view === 'employees'): ?>
-            <form method="GET" action="hr-operations" class="filters-bar" role="search">
-                <input type="hidden" name="view" value="employees">
-                <div class="form-group filters-grow">
-                    <label for="hrEmpQ" class="sr-only">Search</label>
-                    <div class="search-input-wrap"><i class="fas fa-search" aria-hidden="true"></i><input id="hrEmpQ" type="search" name="q" class="form-control" value="<?= $e($filters['q']) ?>" placeholder="Search name, email, title or department"></div>
-                </div>
-                <div class="form-group"><label for="hrEmpDept" class="sr-only">Department</label>
-                    <select id="hrEmpDept" name="department" class="form-control"><option value="">All departments</option>
-                        <?php foreach ($departments as $d): ?><option value="<?= (int)$d['department_id'] ?>"<?= $filters['department'] === (int)$d['department_id'] ? ' selected' : '' ?>><?= $e($d['department_name']) ?></option><?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group"><label for="hrEmpComp" class="sr-only">Compliance</label>
-                    <select id="hrEmpComp" name="compliance" class="form-control">
-                        <?php foreach ($complianceOptions as $k => $lbl): ?><option value="<?= $e($k) ?>"<?= $filters['compliance'] === $k ? ' selected' : '' ?>><?= $e($lbl) ?></option><?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="filters-actions">
-                    <button class="btn btn-info"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
-                    <a href="hr-operations?view=employees" class="btn btn-secondary">Clear</a>
-                </div>
-            </form>
-
-            <form method="POST" action="hr-operations" id="hrEmpForm">
-                <?= csrf_field() ?>
-                <input type="hidden" name="return_view" value="employees">
-                <?php if (!$employees): ?>
-                    <div class="empty-state"><i class="fas fa-users" aria-hidden="true"></i><p>No staff match these filters.</p></div>
-                <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-stack">
-                        <thead><tr>
-                            <th><label class="sr-only" for="hrEmpAll">Select all</label><input type="checkbox" id="hrEmpAll"></th>
-                            <th>Staff</th><th>Department</th><th>Profile</th><th>Documents</th><th>Policies</th><th>Reminded</th><th>Actions</th>
-                        </tr></thead>
-                        <tbody>
-                        <?php foreach ($employees as $r): ?>
-                            <tr>
-                                <td data-label="Select"><input type="checkbox" name="ids[]" value="<?= (int)$r['user_id'] ?>" class="hr-emp-pick" aria-label="Select <?= $e($r['name']) ?>"></td>
-                                <td data-label="Staff">
-                                    <strong><?= $e($r['name']) ?></strong>
-                                    <div class="hr-muted"><?= $e($r['job_title'] ?: $r['role']) ?> · <?= $e($r['company_email'] ?: $r['email']) ?></div>
-                                    <?php if ($r['supervisor_name']): ?><div class="hr-muted">Reports to <?= $e($r['supervisor_name']) ?></div><?php endif; ?>
-                                </td>
-                                <td data-label="Department"><?= $e($r['department_name'] ?: '-') ?><div class="hr-muted"><?= $e($r['contract_type'] ?: '') ?></div></td>
-                                <td data-label="Profile">
-                                    <?php if (!$r['has_profile']): ?><span class="badge badge-secondary">Not started</span>
-                                    <?php else: ?><span class="badge <?= match ($r['profile_status']) { 'Approved' => 'badge-success', 'Submitted' => 'badge-info', 'Rejected' => 'badge-danger', default => 'badge-secondary' } ?>"><?= $e($r['profile_status']) ?></span><?php endif; ?>
-                                </td>
-                                <td data-label="Documents">
-                                    <span class="<?= $r['missing_docs'] ? 'text-warning' : 'text-success' ?>" title="<?= $r['missing_docs'] ? 'Missing: ' . $e(implode(', ', $r['missing_docs'])) : 'All required documents uploaded' ?>"><strong><?= $r['docs_done'] ?>/<?= $r['docs_total'] ?></strong></span>
-                                    <?php if ($r['missing_docs']): ?><div class="hr-muted"><?= $e(implode(', ', array_slice($r['missing_docs'], 0, 3))) ?><?= count($r['missing_docs']) > 3 ? '…' : '' ?></div><?php endif; ?>
-                                </td>
-                                <td data-label="Policies"><?= (int)$r['policies_shared'] ? '<strong>' . (int)$r['policies_acked'] . '/' . (int)$r['policies_shared'] . '</strong> acknowledged' : '<span class="hr-muted">None shared</span>' ?></td>
-                                <td data-label="Reminded"><?= $r['last_reminded'] ? $e(date('j M', strtotime((string)$r['last_reminded']))) : '<span class="hr-muted">Never</span>' ?></td>
-                                <td data-label="Actions">
-                                    <div class="hr-inline">
-                                        <?php if ($r['has_profile']): ?>
-                                            <a class="btn btn-sm btn-soft" href="employee-profile-view?id=<?= (int)$r['employee_id'] ?>" title="View profile"><i class="fas fa-eye" aria-hidden="true"></i></a>
-                                            <button type="button" class="btn btn-sm btn-soft" title="Edit employment details" onclick='hrOpenEmp(<?= json_encode([
-                                                'employee_id' => (int)$r['employee_id'], 'name' => $r['name'], 'job_title' => (string)$r['job_title'],
-                                                'department_id' => (int)$r['department_id'], 'supervisor_id' => (int)$r['supervisor_id'],
-                                                'contract_type' => (string)$r['contract_type'], 'start_date' => (string)$r['start_date'],
-                                            ], JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'><i class="fas fa-pen" aria-hidden="true"></i></button>
-                                            <?php if ($canApprove && $r['profile_status'] === 'Submitted'): ?>
-                                                <button type="button" class="btn btn-sm btn-success" title="Approve or reject profile" onclick='hrOpenApprove(<?= (int)$r['employee_id'] ?>, <?= json_encode($r['name'], JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'><i class="fas fa-check" aria-hidden="true"></i></button>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-                                        <?php if (!$r['compliant']): ?>
-                                            <button type="submit" class="btn btn-sm btn-soft" name="action" value="remind" title="Send reminder" onclick="hrOnly(<?= (int)$r['user_id'] ?>)"><i class="fas fa-bell" aria-hidden="true"></i></button>
-                                        <?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="hr-toolbar" style="margin-top:14px">
-                    <div class="hr-toolbar-group">
-                        <label for="hrKind" class="sr-only">Reminder about</label>
-                        <select id="hrKind" name="kind" class="form-control" style="width:auto">
-                            <option value="all">Remind about everything outstanding</option>
-                            <option value="documents">Remind about profile &amp; documents</option>
-                            <option value="policies">Remind about policies</option>
-                        </select>
-                        <button type="submit" name="action" value="remind" class="btn btn-primary" onclick="return hrAnyPicked()"><i class="fas fa-bell" aria-hidden="true"></i> Remind selected</button>
-                        <button type="button" class="btn btn-secondary" onclick="hrShareSelected()"><i class="fas fa-share-nodes" aria-hidden="true"></i> Share policies with selected</button>
-                    </div>
-                    <span class="hr-muted"><?= count($employees) ?> staff shown · documents required: <?= $e(implode(', ', array_map(fn($c) => HR_DOCS[$c], $settings['required_docs_list'])) ?: 'none') ?></span>
-                </div>
-                <label for="hrEmpNote" class="sr-only">Note</label>
-                <textarea id="hrEmpNote" name="note" class="form-control" rows="2" placeholder="Optional note added to the reminder"></textarea>
-                <?php endif; ?>
-            </form>
-
-<?php elseif ($view === 'reminders'): ?>
-            <div class="hr-grid-2">
-                <div class="hr-col">
-                    <h3 style="margin:0"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send reminders now</h3>
-                    <form method="POST" action="hr-operations">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="remind_outstanding">
-                        <input type="hidden" name="return_view" value="reminders">
-                        <p class="hr-muted"><?= $stats['staff'] - $stats['compliant'] ?> staff have something outstanding. Each gets one message (in-app and email) listing exactly what is missing; staff with nothing outstanding for the chosen topic are skipped.</p>
-                        <div class="form-group"><label for="hrRemKind">About</label>
-                            <select id="hrRemKind" name="kind" class="form-control">
-                                <option value="all">Everything outstanding</option>
-                                <option value="documents">Profile and documents only</option>
-                                <option value="policies">Policies only</option>
-                            </select>
-                        </div>
-                        <div class="form-group"><label for="hrRemNote">Note (optional)</label><textarea id="hrRemNote" name="note" class="form-control" rows="3" placeholder="e.g. Please complete this before payroll on the 25th."></textarea></div>
-                        <button class="btn btn-primary" onclick="return confirm('Send reminders now?')"><i class="fas fa-bell" aria-hidden="true"></i> Send reminders</button>
-                    </form>
-
-                    <h3 style="margin:10px 0 0"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Recent reminders</h3>
-                    <?php $log = hr_reminder_log($conn, 40); if (!$log): ?>
-                        <p class="hr-muted">No reminders sent yet.</p>
-                    <?php else: ?>
-                        <div class="table-responsive">
-                            <table class="table table-stack">
-                                <thead><tr><th>When</th><th>To</th><th>About</th><th>By</th></tr></thead>
-                                <tbody>
-                                <?php foreach ($log as $l): ?>
-                                    <tr>
-                                        <td data-label="When"><?= $e(date('j M Y, H:i', strtotime((string)$l['sent_at']))) ?></td>
-                                        <td data-label="To"><?= $e($l['full_name']) ?><?= (int)$l['emailed'] ? ' <i class="fas fa-envelope hr-muted" aria-label="Emailed"></i>' : '' ?></td>
-                                        <td data-label="About"><span title="<?= $e($l['summary']) ?>"><?= $e(ucfirst((string)$l['kind'])) ?></span></td>
-                                        <td data-label="By"><?= (int)$l['is_auto'] ? '<span class="badge badge-secondary">Automatic</span>' : $e($l['sender'] ?: '-') ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    <?php endif; ?>
-                </div>
-
-                <div class="hr-col">
-                    <h3 style="margin:0"><i class="fas fa-gear" aria-hidden="true"></i> Settings</h3>
-                    <form method="POST" action="hr-operations">
-                        <?= csrf_field() ?>
-                        <input type="hidden" name="action" value="settings">
-                        <input type="hidden" name="return_view" value="reminders">
-                        <fieldset class="form-group">
-                            <legend>Documents every member of staff must upload</legend>
-                            <?php foreach (HR_DOCS as $col => $lbl): ?>
-                                <label class="hr-check" style="display:flex"><input type="checkbox" name="required_docs[]" value="<?= $e($col) ?>"<?= in_array($col, $settings['required_docs_list'], true) ? ' checked' : '' ?>> <?= $e($lbl) ?></label>
-                            <?php endforeach; ?>
-                        </fieldset>
-                        <fieldset class="form-group">
-                            <legend>Automatic reminders</legend>
-                            <label class="hr-check" style="display:flex"><input type="checkbox" name="auto_reminders" value="1"<?= (int)$settings['auto_reminders'] ? ' checked' : '' ?>> Remind staff with anything outstanding automatically</label>
-                            <div class="hr-inline" style="margin-top:6px"><label for="hrEvery">Every</label><input id="hrEvery" type="number" name="remind_every_days" min="1" max="90" value="<?= (int)$settings['remind_every_days'] ?>" class="form-control" style="width:90px"><span>days</span></div>
-                            <label class="hr-check" style="display:flex;margin-top:6px"><input type="checkbox" name="send_email" value="1"<?= (int)$settings['send_email'] ? ' checked' : '' ?>> Email automatic reminders too (not only in-app)</label>
-                            <p class="form-hint">Needs the daily cron job: <code>0 8 * * * php legacy/cron/hr-reminders.php</code></p>
-                        </fieldset>
-                        <fieldset class="form-group">
-                            <legend>New staff</legend>
-                            <label class="hr-check" style="display:flex"><input type="checkbox" name="autoshare_new_staff" value="1"<?= (int)$settings['autoshare_new_staff'] ? ' checked' : '' ?>> Share “new staff” policies automatically with new accounts</label>
-                            <div class="hr-inline" style="margin-top:6px"><label for="hrNewDays">Accounts created in the last</label><input id="hrNewDays" type="number" name="new_staff_days" min="1" max="365" value="<?= (int)$settings['new_staff_days'] ?>" class="form-control" style="width:90px"><span>days</span></div>
-                        </fieldset>
-                        <button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save settings</button>
-                    </form>
-                </div>
-            </div>
-
-<?php elseif ($policy): ?>
-            <?php $shares = hr_policy_shares($conn, $policyId); $sharedIds = array_map('intval', array_column($shares, 'user_id')); ?>
-            <p><a href="hr-operations?view=policies"><i class="fas fa-arrow-left" aria-hidden="true"></i> All policies</a></p>
-            <div class="hr-toolbar">
-                <div>
-                    <h3 style="margin:0"><?= $e($policy['title']) ?> <span class="badge badge-secondary">v<?= (int)$policy['version'] ?></span><?= (int)$policy['is_active'] ? '' : ' <span class="badge badge-danger">Archived</span>' ?></h3>
-                    <div class="hr-muted"><?= $e($policy['category']) ?><?= (int)$policy['requires_ack'] ? ' · acknowledgement required' : '' ?><?= (int)$policy['share_with_new_staff'] ? ' · part of the new-staff pack' : '' ?></div>
-                </div>
-                <div class="hr-toolbar-group">
-                    <a class="btn btn-secondary" href="<?= $e(ims_upload_url((string)$policy['file_path'])) ?>" target="_blank" rel="noopener"><i class="fas fa-file" aria-hidden="true"></i> Open document</a>
-                    <button type="button" class="btn btn-secondary" onclick='hrOpenPolicy(<?= json_encode(array_intersect_key($policy, array_flip(['policy_id', 'title', 'category', 'description', 'requires_ack', 'share_with_new_staff', 'is_active', 'original_name'])), JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'><i class="fas fa-pen" aria-hidden="true"></i> Edit / new version</button>
-                    <?php if ((int)$policy['is_active']): ?><button type="button" class="btn btn-primary" onclick="hrOpenShare([<?= $policyId ?>])"><i class="fas fa-share-nodes" aria-hidden="true"></i> Share</button><?php endif; ?>
-                </div>
-            </div>
-            <?php if ($policy['description']): ?><p class="hr-pre"><?= $e($policy['description']) ?></p><?php endif; ?>
-            <?php if (!$shares): ?>
-                <div class="empty-state"><i class="fas fa-share-nodes" aria-hidden="true"></i><p>Not shared with anyone yet.</p></div>
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Needs attention (<?= count($attention) ?>)</h3>
+            <?php if ($attention): ?>
+                <form method="POST" action="hr-operations" onsubmit="return confirm('Send a reminder to everyone with something outstanding?')">
+                    <?= csrf_field() ?><input type="hidden" name="action" value="remind_outstanding"><input type="hidden" name="kind" value="all"><input type="hidden" name="return_view" value="overview">
+                    <button class="btn btn-primary btn-sm"><i class="fas fa-bell" aria-hidden="true"></i> Remind all</button>
+                </form>
+            <?php endif; ?>
+        </div>
+        <div class="card-body">
+            <?php if (!$attention): ?>
+                <div class="empty-state"><i class="fas fa-mug-hot" aria-hidden="true"></i><p>Every member of staff is up to date.</p></div>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table class="table table-stack">
-                        <thead><tr><th>Staff</th><th>Shared</th><th>Opened</th><th>Acknowledged</th></tr></thead>
+                    <table class="table table-stack hr-table">
+                        <thead><tr><th>Staff</th><th>Department</th><th>Profile</th><th>Missing documents</th><th>Policies to acknowledge</th><th>Last reminded</th></tr></thead>
                         <tbody>
-                        <?php foreach ($shares as $s): $ackCurrent = $s['acknowledged_at'] && (int)$s['acknowledged_version'] === (int)$s['version']; ?>
+                        <?php foreach ($attention as $r): ?>
                             <tr>
-                                <td data-label="Staff"><strong><?= $e($s['full_name']) ?></strong><div class="hr-muted"><?= $e($s['role']) ?></div></td>
-                                <td data-label="Shared"><?= $e(date('j M Y', strtotime((string)$s['shared_at']))) ?><div class="hr-muted"><?= $e($s['shared_by_name'] ?: 'Automatic') ?></div></td>
-                                <td data-label="Opened"><?= $s['viewed_at'] ? $e(date('j M Y', strtotime((string)$s['viewed_at']))) : '<span class="hr-muted">Not yet</span>' ?></td>
-                                <td data-label="Acknowledged">
-                                    <?php if ($ackCurrent): ?><span class="badge badge-success"><?= $e(date('j M Y', strtotime((string)$s['acknowledged_at']))) ?></span>
-                                    <?php elseif ($s['acknowledged_at']): ?><span class="badge badge-warning">Older version (v<?= (int)$s['acknowledged_version'] ?>)</span>
-                                    <?php else: ?><span class="badge badge-secondary"><?= (int)$policy['requires_ack'] ? 'Pending' : 'Not required' ?></span><?php endif; ?>
-                                </td>
+                                <td data-label="Staff"><strong><?= $e($r['name']) ?></strong><div class="hr-muted"><?= $e($r['job_title'] ?: $r['role']) ?></div></td>
+                                <td data-label="Department"><?= $e($r['department_name'] ?: '-') ?></td>
+                                <td data-label="Profile"><?php if (!$r['has_profile']): ?><span class="badge badge-secondary">Not started</span><?php else: ?><span class="badge <?= match ($r['profile_status']) { 'Approved' => 'badge-success', 'Submitted' => 'badge-info', 'Rejected' => 'badge-danger', default => 'badge-secondary' } ?>"><?= $e($r['profile_status']) ?></span><?php endif; ?></td>
+                                <td data-label="Missing documents"><?= $r['missing_docs'] ? $e(implode(', ', $r['missing_docs'])) : '<span class="hr-muted">None</span>' ?></td>
+                                <td data-label="Policies to acknowledge"><?= $r['policies_pending'] > 0 ? '<span class="badge badge-danger">' . (int)$r['policies_pending'] . '</span>' : '<span class="hr-muted">None</span>' ?></td>
+                                <td data-label="Last reminded"><?= $r['last_reminded'] ? $e(date('j M Y', strtotime((string)$r['last_reminded']))) : '<span class="hr-muted">Never</span>' ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
             <?php endif; ?>
-
-<?php else: ?>
-            <div class="hr-toolbar">
-                <p class="hr-muted" style="margin:0">Upload organisation policies, share them with staff and track who has read and acknowledged them. Policies marked <strong>new staff</strong> are shared automatically with new accounts<?= (int)$settings['autoshare_new_staff'] ? ' (created in the last ' . (int)$settings['new_staff_days'] . ' days)' : ' (currently switched off in Reminders &gt; Settings)' ?>.</p>
-                <div class="hr-toolbar-group">
-                    <form method="POST" action="hr-operations"><?= csrf_field() ?><input type="hidden" name="action" value="autoshare_now"><input type="hidden" name="return_view" value="policies"><button class="btn btn-secondary"><i class="fas fa-user-plus" aria-hidden="true"></i> Send new-staff pack now</button></form>
-                    <button type="button" class="btn btn-secondary" onclick="hrOpenShare([])"<?= $activePolicies ? '' : ' disabled' ?>><i class="fas fa-share-nodes" aria-hidden="true"></i> Share policies</button>
-                    <button type="button" class="btn btn-primary" onclick="hrOpenPolicy()"><i class="fas fa-file-circle-plus" aria-hidden="true"></i> Add policy</button>
-                </div>
-            </div>
-            <?php if (!$policies): ?>
-                <div class="empty-state"><i class="fas fa-file-shield" aria-hidden="true"></i><p>No policies yet. Add your code of conduct, safeguarding, leave, IT and finance policies so new staff receive them automatically.</p></div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-stack">
-                        <thead><tr><th>Policy</th><th>Category</th><th>Version</th><th>Shared</th><th>Acknowledged</th><th>Actions</th></tr></thead>
-                        <tbody>
-                        <?php foreach ($policies as $p): $pct = (int)$p['shared'] ? round((int)$p['acked'] / (int)$p['shared'] * 100) : 0; ?>
-                            <tr>
-                                <td data-label="Policy">
-                                    <a class="hr-name" href="hr-operations?view=policies&policy=<?= (int)$p['policy_id'] ?>"><?= $e($p['title']) ?></a>
-                                    <div class="hr-muted">
-                                        <?= (int)$p['is_active'] ? '' : '<span class="badge badge-danger">Archived</span> ' ?>
-                                        <?= (int)$p['share_with_new_staff'] ? '<span class="badge badge-info">New staff</span> ' : '' ?>
-                                        <?= (int)$p['requires_ack'] ? 'Acknowledgement required' : 'For information' ?>
-                                    </div>
-                                </td>
-                                <td data-label="Category"><?= $e($p['category']) ?></td>
-                                <td data-label="Version">v<?= (int)$p['version'] ?><div class="hr-muted"><?= $e(date('j M Y', strtotime((string)($p['updated_at'] ?: $p['created_at'])))) ?></div></td>
-                                <td data-label="Shared"><?= (int)$p['shared'] ?> staff<div class="hr-muted"><?= (int)$p['viewed'] ?> opened</div></td>
-                                <td data-label="Acknowledged"><?= (int)$p['requires_ack'] ? '<div class="hr-score"><div class="hr-score-bar ' . ($pct >= 90 ? 'is-high' : ($pct >= 50 ? 'is-mid' : 'is-low')) . '"><span style="width:' . max(2, $pct) . '%"></span></div><b>' . $pct . '%</b></div>' : '<span class="hr-muted">-</span>' ?></td>
-                                <td data-label="Actions">
-                                    <div class="hr-inline">
-                                        <a class="btn btn-sm btn-soft" href="<?= $e(ims_upload_url((string)$p['file_path'])) ?>" target="_blank" rel="noopener" title="Open document"><i class="fas fa-file" aria-hidden="true"></i></a>
-                                        <?php if ((int)$p['is_active']): ?><button type="button" class="btn btn-sm btn-primary" onclick="hrOpenShare([<?= (int)$p['policy_id'] ?>])" title="Share"><i class="fas fa-share-nodes" aria-hidden="true"></i></button><?php endif; ?>
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-<?php endif; ?>
         </div>
     </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-calendar-day" aria-hidden="true"></i> Upcoming interviews</h3><a class="btn btn-sm btn-secondary" href="recruitment">Recruitment</a></div>
+        <div class="card-body">
+            <?php $upcoming = hr_upcoming_interviews($conn, 50); if (!$upcoming): ?>
+                <p class="hr-muted">None scheduled.</p>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-stack hr-table">
+                        <thead><tr><th>Candidate</th><th>Position</th><th>When</th><th>Format</th><th></th></tr></thead>
+                        <tbody>
+                        <?php foreach ($upcoming as $u): ?>
+                            <tr>
+                                <td data-label="Candidate"><strong><?= $e($u['applicant_name']) ?></strong></td>
+                                <td data-label="Position"><a href="recruitment?job_id=<?= (int)$u['job_id'] ?>&view=interviews"><?= $e($u['job_title']) ?></a></td>
+                                <td data-label="When"><?= $e(date('D j M Y, H:i', strtotime((string)$u['scheduled_at']))) ?></td>
+                                <td data-label="Format"><?= $e($u['mode']) ?></td>
+                                <td data-label=""><a class="btn btn-sm btn-soft" href="interview-scorecard?id=<?= (int)$u['interview_id'] ?>">Scorecards</a></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-file-shield" aria-hidden="true"></i> Policies</h3><a class="btn btn-sm btn-secondary" href="hr-operations?view=policies">Manage policies</a></div>
+        <div class="card-body">
+            <?php if (!$activePolicies): ?>
+                <p class="hr-muted">No policies yet. <a href="#" onclick="hrOpenPolicy();return false">Add your first policy</a>.</p>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-stack hr-table">
+                        <thead><tr><th>Policy</th><th>Category</th><th>Shared with</th><th>Opened</th><th>Acknowledged</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($activePolicies as $p): $pct = (int)$p['shared'] ? round((int)$p['acked'] / (int)$p['shared'] * 100) : 0; ?>
+                            <tr>
+                                <td data-label="Policy"><a class="hr-name" href="hr-operations?view=policies&policy=<?= (int)$p['policy_id'] ?>"><?= $e($p['title']) ?></a></td>
+                                <td data-label="Category"><?= $e($p['category']) ?></td>
+                                <td data-label="Shared with"><?= (int)$p['shared'] ?> staff</td>
+                                <td data-label="Opened"><?= (int)$p['viewed'] ?></td>
+                                <td data-label="Acknowledged"><?= (int)$p['requires_ack'] ? (int)$p['acked'] . ' (' . $pct . '%)' : '<span class="hr-muted">Not required</span>' ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+<?php elseif ($view === 'employees'): ?>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-users" aria-hidden="true"></i> Employee directory</h3><span class="hr-muted"><?= count($employees) ?> staff shown</span></div>
+        <div class="card-body">
+        <form method="GET" action="hr-operations" class="filters-bar" role="search">
+            <input type="hidden" name="view" value="employees">
+            <div class="form-group filters-grow">
+                <label for="hrEmpQ" class="sr-only">Search</label>
+                <div class="search-input-wrap"><i class="fas fa-search" aria-hidden="true"></i><input id="hrEmpQ" type="search" name="q" class="form-control" value="<?= $e($filters['q']) ?>" placeholder="Search name, email, title or department"></div>
+            </div>
+            <div class="form-group"><label for="hrEmpDept" class="sr-only">Department</label>
+                <select id="hrEmpDept" name="department" class="form-control"><option value="">All departments</option>
+                    <?php foreach ($departments as $d): ?><option value="<?= (int)$d['department_id'] ?>"<?= $filters['department'] === (int)$d['department_id'] ? ' selected' : '' ?>><?= $e($d['department_name']) ?></option><?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group"><label for="hrEmpComp" class="sr-only">Compliance</label>
+                <select id="hrEmpComp" name="compliance" class="form-control">
+                    <?php foreach ($complianceOptions as $k => $lbl): ?><option value="<?= $e($k) ?>"<?= $filters['compliance'] === $k ? ' selected' : '' ?>><?= $e($lbl) ?></option><?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filters-actions">
+                <button class="btn btn-info"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
+                <a href="hr-operations?view=employees" class="btn btn-secondary">Clear</a>
+            </div>
+        </form>
+
+        <form method="POST" action="hr-operations" id="hrEmpForm">
+            <?= csrf_field() ?>
+            <input type="hidden" name="return_view" value="employees">
+            <?php if (!$employees): ?>
+                <div class="empty-state"><i class="fas fa-users" aria-hidden="true"></i><p>No staff match these filters.</p></div>
+            <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-stack hr-table">
+                    <thead><tr>
+                        <th><label class="sr-only" for="hrEmpAll">Select all</label><input type="checkbox" id="hrEmpAll"></th>
+                        <th>Staff</th><th>Department</th><th>Profile</th><th>Documents</th><th>Policies</th><th>Reminded</th><th>Actions</th>
+                    </tr></thead>
+                    <tbody>
+                    <?php foreach ($employees as $r): ?>
+                        <tr>
+                            <td data-label="Select"><input type="checkbox" name="ids[]" value="<?= (int)$r['user_id'] ?>" class="hr-emp-pick" aria-label="Select <?= $e($r['name']) ?>"></td>
+                            <td data-label="Staff">
+                                <strong><?= $e($r['name']) ?></strong>
+                                <div class="hr-muted"><?= $e($r['job_title'] ?: $r['role']) ?> · <?= $e($r['company_email'] ?: $r['email']) ?></div>
+                                <?php if ($r['supervisor_name']): ?><div class="hr-muted">Reports to <?= $e($r['supervisor_name']) ?></div><?php endif; ?>
+                            </td>
+                            <td data-label="Department"><?= $e($r['department_name'] ?: '-') ?><div class="hr-muted"><?= $e($r['contract_type'] ?: '') ?></div></td>
+                            <td data-label="Profile">
+                                <?php if (!$r['has_profile']): ?><span class="badge badge-secondary">Not started</span>
+                                <?php else: ?><span class="badge <?= match ($r['profile_status']) { 'Approved' => 'badge-success', 'Submitted' => 'badge-info', 'Rejected' => 'badge-danger', default => 'badge-secondary' } ?>"><?= $e($r['profile_status']) ?></span><?php endif; ?>
+                            </td>
+                            <td data-label="Documents">
+                                <span class="<?= $r['missing_docs'] ? 'text-warning' : 'text-success' ?>" title="<?= $r['missing_docs'] ? 'Missing: ' . $e(implode(', ', $r['missing_docs'])) : 'All required documents uploaded' ?>"><strong><?= $r['docs_done'] ?>/<?= $r['docs_total'] ?></strong></span>
+                                <?php if ($r['missing_docs']): ?><div class="hr-muted"><?= $e(implode(', ', array_slice($r['missing_docs'], 0, 3))) ?><?= count($r['missing_docs']) > 3 ? '…' : '' ?></div><?php endif; ?>
+                            </td>
+                            <td data-label="Policies"><?= (int)$r['policies_shared'] ? '<strong>' . (int)$r['policies_acked'] . '/' . (int)$r['policies_shared'] . '</strong> acknowledged' : '<span class="hr-muted">None shared</span>' ?></td>
+                            <td data-label="Reminded"><?= $r['last_reminded'] ? $e(date('j M', strtotime((string)$r['last_reminded']))) : '<span class="hr-muted">Never</span>' ?></td>
+                            <td data-label="Actions">
+                                <div class="hr-inline">
+                                    <?php if ($r['has_profile']): ?>
+                                        <a class="btn btn-sm btn-soft" href="employee-profile-view?id=<?= (int)$r['employee_id'] ?>" title="View profile"><i class="fas fa-eye" aria-hidden="true"></i></a>
+                                        <button type="button" class="btn btn-sm btn-soft" title="Edit employment details" onclick='hrOpenEmp(<?= json_encode([
+                                            'employee_id' => (int)$r['employee_id'], 'name' => $r['name'], 'job_title' => (string)$r['job_title'],
+                                            'department_id' => (int)$r['department_id'], 'supervisor_id' => (int)$r['supervisor_id'],
+                                            'contract_type' => (string)$r['contract_type'], 'start_date' => (string)$r['start_date'],
+                                        ], JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'><i class="fas fa-pen" aria-hidden="true"></i></button>
+                                        <?php if ($canApprove && $r['profile_status'] === 'Submitted'): ?>
+                                            <button type="button" class="btn btn-sm btn-success" title="Approve or reject profile" onclick='hrOpenApprove(<?= (int)$r['employee_id'] ?>, <?= json_encode($r['name'], JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'><i class="fas fa-check" aria-hidden="true"></i></button>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                    <?php if (!$r['compliant']): ?>
+                                        <button type="submit" class="btn btn-sm btn-soft" name="action" value="remind" title="Send reminder" onclick="hrOnly(<?= (int)$r['user_id'] ?>)"><i class="fas fa-bell" aria-hidden="true"></i></button>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="hr-toolbar" style="margin-top:14px">
+                <div class="hr-toolbar-group">
+                    <label for="hrKind" class="sr-only">Reminder about</label>
+                    <select id="hrKind" name="kind" class="form-control" style="width:auto">
+                        <option value="all">Remind about everything outstanding</option>
+                        <option value="documents">Remind about profile &amp; documents</option>
+                        <option value="policies">Remind about policies</option>
+                    </select>
+                    <button type="submit" name="action" value="remind" class="btn btn-primary" onclick="return hrAnyPicked()"><i class="fas fa-bell" aria-hidden="true"></i> Remind selected</button>
+                    <button type="button" class="btn btn-secondary" onclick="hrShareSelected()"><i class="fas fa-share-nodes" aria-hidden="true"></i> Share policies with selected</button>
+                </div>
+                <span class="hr-muted"><?= count($employees) ?> staff shown · documents required: <?= $e(implode(', ', array_map(fn($c) => HR_DOCS[$c], $settings['required_docs_list'])) ?: 'none') ?></span>
+            </div>
+            <label for="hrEmpNote" class="sr-only">Note</label>
+            <textarea id="hrEmpNote" name="note" class="form-control" rows="2" placeholder="Optional note added to the reminder"></textarea>
+            <?php endif; ?>
+        </form>
+        </div>
+    </div>
+
+<?php elseif ($view === 'reminders'): ?>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-paper-plane" aria-hidden="true"></i> Send reminders now</h3></div>
+        <div class="card-body">
+        <form method="POST" action="hr-operations">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="remind_outstanding">
+            <input type="hidden" name="return_view" value="reminders">
+            <p class="hr-muted"><?= $stats['staff'] - $stats['compliant'] ?> staff have something outstanding. Each gets one message (in-app and email) listing exactly what is missing; staff with nothing outstanding for the chosen topic are skipped.</p>
+            <div class="form-group"><label for="hrRemKind">About</label>
+                <select id="hrRemKind" name="kind" class="form-control">
+                    <option value="all">Everything outstanding</option>
+                    <option value="documents">Profile and documents only</option>
+                    <option value="policies">Policies only</option>
+                </select>
+            </div>
+            <div class="form-group"><label for="hrRemNote">Note (optional)</label><textarea id="hrRemNote" name="note" class="form-control" rows="3" placeholder="e.g. Please complete this before payroll on the 25th."></textarea></div>
+            <button class="btn btn-primary" onclick="return confirm('Send reminders now?')"><i class="fas fa-bell" aria-hidden="true"></i> Send reminders</button>
+        </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-gear" aria-hidden="true"></i> Reminder settings</h3></div>
+        <div class="card-body">
+        <form method="POST" action="hr-operations">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="settings">
+            <input type="hidden" name="return_view" value="reminders">
+            <fieldset class="form-group">
+                <legend>Documents every member of staff must upload</legend>
+                <?php foreach (HR_DOCS as $col => $lbl): ?>
+                    <label class="hr-check" style="display:flex"><input type="checkbox" name="required_docs[]" value="<?= $e($col) ?>"<?= in_array($col, $settings['required_docs_list'], true) ? ' checked' : '' ?>> <?= $e($lbl) ?></label>
+                <?php endforeach; ?>
+            </fieldset>
+            <fieldset class="form-group">
+                <legend>Automatic reminders</legend>
+                <label class="hr-check" style="display:flex"><input type="checkbox" name="auto_reminders" value="1"<?= (int)$settings['auto_reminders'] ? ' checked' : '' ?>> Remind staff with anything outstanding automatically</label>
+                <div class="hr-inline" style="margin-top:6px"><label for="hrEvery">Every</label><input id="hrEvery" type="number" name="remind_every_days" min="1" max="90" value="<?= (int)$settings['remind_every_days'] ?>" class="form-control" style="width:90px"><span>days</span></div>
+                <label class="hr-check" style="display:flex;margin-top:6px"><input type="checkbox" name="send_email" value="1"<?= (int)$settings['send_email'] ? ' checked' : '' ?>> Email automatic reminders too (not only in-app)</label>
+                <p class="form-hint">Needs the daily cron job: <code>0 8 * * * php legacy/cron/hr-reminders.php</code></p>
+            </fieldset>
+            <fieldset class="form-group">
+                <legend>New staff</legend>
+                <label class="hr-check" style="display:flex"><input type="checkbox" name="autoshare_new_staff" value="1"<?= (int)$settings['autoshare_new_staff'] ? ' checked' : '' ?>> Share “new staff” policies automatically with new accounts</label>
+                <div class="hr-inline" style="margin-top:6px"><label for="hrNewDays">Accounts created in the last</label><input id="hrNewDays" type="number" name="new_staff_days" min="1" max="365" value="<?= (int)$settings['new_staff_days'] ?>" class="form-control" style="width:90px"><span>days</span></div>
+            </fieldset>
+            <button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save settings</button>
+        </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Recent reminders</h3></div>
+        <div class="card-body">
+        <?php $log = hr_reminder_log($conn, 40); if (!$log): ?>
+            <p class="hr-muted">No reminders sent yet.</p>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-stack hr-table">
+                    <thead><tr><th>When</th><th>To</th><th>About</th><th>By</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($log as $l): ?>
+                        <tr>
+                            <td data-label="When"><?= $e(date('j M Y, H:i', strtotime((string)$l['sent_at']))) ?></td>
+                            <td data-label="To"><?= $e($l['full_name']) ?><?= (int)$l['emailed'] ? ' <i class="fas fa-envelope hr-muted" aria-label="Emailed"></i>' : '' ?></td>
+                            <td data-label="About"><span title="<?= $e($l['summary']) ?>"><?= $e(ucfirst((string)$l['kind'])) ?></span></td>
+                            <td data-label="By"><?= (int)$l['is_auto'] ? '<span class="badge badge-secondary">Automatic</span>' : $e($l['sender'] ?: '-') ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+        </div>
+    </div>
+
+<?php elseif ($policy): ?>
+    <div class="card">
+        <div class="card-body">
+        <?php $shares = hr_policy_shares($conn, $policyId); $sharedIds = array_map('intval', array_column($shares, 'user_id')); ?>
+        <p><a href="hr-operations?view=policies"><i class="fas fa-arrow-left" aria-hidden="true"></i> All policies</a></p>
+        <div class="hr-toolbar">
+            <div>
+                <h3 style="margin:0"><?= $e($policy['title']) ?> <span class="badge badge-secondary">v<?= (int)$policy['version'] ?></span><?= (int)$policy['is_active'] ? '' : ' <span class="badge badge-danger">Archived</span>' ?></h3>
+                <div class="hr-muted"><?= $e($policy['category']) ?><?= (int)$policy['requires_ack'] ? ' · acknowledgement required' : '' ?><?= (int)$policy['share_with_new_staff'] ? ' · part of the new-staff pack' : '' ?></div>
+            </div>
+            <div class="hr-toolbar-group">
+                <a class="btn btn-secondary" href="<?= $e(ims_upload_url((string)$policy['file_path'])) ?>" target="_blank" rel="noopener"><i class="fas fa-file" aria-hidden="true"></i> Open document</a>
+                <button type="button" class="btn btn-secondary" onclick='hrOpenPolicy(<?= json_encode(array_intersect_key($policy, array_flip(['policy_id', 'title', 'category', 'description', 'requires_ack', 'share_with_new_staff', 'is_active', 'original_name'])), JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'><i class="fas fa-pen" aria-hidden="true"></i> Edit / new version</button>
+                <?php if ((int)$policy['is_active']): ?><button type="button" class="btn btn-primary" onclick="hrOpenShare([<?= $policyId ?>])"><i class="fas fa-share-nodes" aria-hidden="true"></i> Share</button><?php endif; ?>
+            </div>
+        </div>
+        <?php if ($policy['description']): ?><p class="hr-pre"><?= $e($policy['description']) ?></p><?php endif; ?>
+        <?php if (!$shares): ?>
+            <div class="empty-state"><i class="fas fa-share-nodes" aria-hidden="true"></i><p>Not shared with anyone yet.</p></div>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-stack hr-table">
+                    <thead><tr><th>Staff</th><th>Shared</th><th>Opened</th><th>Acknowledged</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($shares as $s): $ackCurrent = $s['acknowledged_at'] && (int)$s['acknowledged_version'] === (int)$s['version']; ?>
+                        <tr>
+                            <td data-label="Staff"><strong><?= $e($s['full_name']) ?></strong><div class="hr-muted"><?= $e($s['role']) ?></div></td>
+                            <td data-label="Shared"><?= $e(date('j M Y', strtotime((string)$s['shared_at']))) ?><div class="hr-muted"><?= $e($s['shared_by_name'] ?: 'Automatic') ?></div></td>
+                            <td data-label="Opened"><?= $s['viewed_at'] ? $e(date('j M Y', strtotime((string)$s['viewed_at']))) : '<span class="hr-muted">Not yet</span>' ?></td>
+                            <td data-label="Acknowledged">
+                                <?php if ($ackCurrent): ?><span class="badge badge-success"><?= $e(date('j M Y', strtotime((string)$s['acknowledged_at']))) ?></span>
+                                <?php elseif ($s['acknowledged_at']): ?><span class="badge badge-warning">Older version (v<?= (int)$s['acknowledged_version'] ?>)</span>
+                                <?php else: ?><span class="badge badge-secondary"><?= (int)$policy['requires_ack'] ? 'Pending' : 'Not required' ?></span><?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+        </div>
+    </div>
+
+<?php else: ?>
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-file-shield" aria-hidden="true"></i> Policy library</h3></div>
+        <div class="card-body">
+        <div class="hr-toolbar">
+            <p class="hr-muted" style="margin:0">Upload organisation policies, share them with staff and track who has read and acknowledged them. Policies marked <strong>new staff</strong> are shared automatically with new accounts<?= (int)$settings['autoshare_new_staff'] ? ' (created in the last ' . (int)$settings['new_staff_days'] . ' days)' : ' (currently switched off in Reminders &gt; Settings)' ?>.</p>
+            <div class="hr-toolbar-group">
+                <form method="POST" action="hr-operations"><?= csrf_field() ?><input type="hidden" name="action" value="autoshare_now"><input type="hidden" name="return_view" value="policies"><button class="btn btn-secondary"><i class="fas fa-user-plus" aria-hidden="true"></i> Send new-staff pack now</button></form>
+                <button type="button" class="btn btn-secondary" onclick="hrOpenShare([])"<?= $activePolicies ? '' : ' disabled' ?>><i class="fas fa-share-nodes" aria-hidden="true"></i> Share policies</button>
+                <button type="button" class="btn btn-primary" onclick="hrOpenPolicy()"><i class="fas fa-file-circle-plus" aria-hidden="true"></i> Add policy</button>
+            </div>
+        </div>
+        <?php if (!$policies): ?>
+            <div class="empty-state"><i class="fas fa-file-shield" aria-hidden="true"></i><p>No policies yet. Add your code of conduct, safeguarding, leave, IT and finance policies so new staff receive them automatically.</p></div>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table table-stack hr-table">
+                    <thead><tr><th>Policy</th><th>Category</th><th>Version</th><th>Shared</th><th>Acknowledged</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($policies as $p): $pct = (int)$p['shared'] ? round((int)$p['acked'] / (int)$p['shared'] * 100) : 0; ?>
+                        <tr>
+                            <td data-label="Policy">
+                                <a class="hr-name" href="hr-operations?view=policies&policy=<?= (int)$p['policy_id'] ?>"><?= $e($p['title']) ?></a>
+                                <div class="hr-muted">
+                                    <?= (int)$p['is_active'] ? '' : '<span class="badge badge-danger">Archived</span> ' ?>
+                                    <?= (int)$p['share_with_new_staff'] ? '<span class="badge badge-info">New staff</span> ' : '' ?>
+                                    <?= (int)$p['requires_ack'] ? 'Acknowledgement required' : 'For information' ?>
+                                </div>
+                            </td>
+                            <td data-label="Category"><?= $e($p['category']) ?></td>
+                            <td data-label="Version">v<?= (int)$p['version'] ?><div class="hr-muted"><?= $e(date('j M Y', strtotime((string)($p['updated_at'] ?: $p['created_at'])))) ?></div></td>
+                            <td data-label="Shared"><?= (int)$p['shared'] ?> staff<div class="hr-muted"><?= (int)$p['viewed'] ?> opened</div></td>
+                            <td data-label="Acknowledged"><?= (int)$p['requires_ack'] ? '<div class="hr-score"><div class="hr-score-bar ' . ($pct >= 90 ? 'is-high' : ($pct >= 50 ? 'is-mid' : 'is-low')) . '"><span style="width:' . max(2, $pct) . '%"></span></div><b>' . $pct . '%</b></div>' : '<span class="hr-muted">-</span>' ?></td>
+                            <td data-label="Actions">
+                                <div class="hr-inline">
+                                    <a class="btn btn-sm btn-soft" href="<?= $e(ims_upload_url((string)$p['file_path'])) ?>" target="_blank" rel="noopener" title="Open document"><i class="fas fa-file" aria-hidden="true"></i></a>
+                                    <?php if ((int)$p['is_active']): ?><button type="button" class="btn btn-sm btn-primary" onclick="hrOpenShare([<?= (int)$p['policy_id'] ?>])" title="Share"><i class="fas fa-share-nodes" aria-hidden="true"></i></button><?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+        </div>
+    </div>
+<?php endif; ?>
 </div>
 
 <!-- Edit employment details -->

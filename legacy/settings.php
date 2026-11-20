@@ -521,6 +521,13 @@ if (!in_array($active_tab, $allowed_tabs, true)) {
             </div>
             
             <div class="form-group">
+                <label for="usd_ugx_rate">Exchange Rate (1 USD = ? UGX)</label>
+                <input type="number" id="usd_ugx_rate" name="usd_ugx_rate" class="form-control" min="1" max="100000" step="0.01"
+                       value="<?php echo htmlspecialchars((string)($settings['usd_ugx_rate'] ?? '3700')); ?>">
+                <small class="settings-hint">Converts UGX activity/event requests into USD budget lines in finance reports and approvals.</small>
+            </div>
+
+            <div class="form-group">
                 <label for="items_per_page">Items Per Page</label>
                 <input type="number" id="items_per_page" name="items_per_page" class="form-control" 
                        value="<?php echo intval($settings['items_per_page'] ?? 25); ?>" min="10" max="100">
