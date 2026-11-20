@@ -397,9 +397,17 @@ function hubinet_save_hotspot(mysqli $conn, array $post, int $uid): array
     $security = in_array($post['wifi_security'] ?? '', ['WPA', 'WEP', 'nopass'], true) ? (string)$post['wifi_security'] : 'WPA';
     $enc = static fn(string $v): string => $v === '' ? '' : (function_exists('ims_encrypt') ? ims_encrypt($v) : $v);
 
-    $sets = ['hotspot_enabled = ?', 'hotspot_hours = ?', 'hotspot_require_phone = ?', 'hotspot_terms = ?', 'wifi_ssid = ?', 'wifi_security = ?'];
-    $types = 'iiisss';
-    $params = [$enabled, $hours, $requirePhone, $terms, $ssid, $security];
+    $landing = trim((string)($post['hotspot_landing_url'] ?? ''));
+    if ($landing !== '' && !preg_match('#\Ahttps?://[^\s<>"\']+\z#i', $landing)) {
+        return hubinet_result(false, 'The landing page must be a full web address starting with https:// or http://.');
+    }
+    $landing = mb_substr($landing, 0, 255);
+    $verify = !empty($post['hotspot_verify']) ? 1 : 0;
+
+    $sets = ['hotspot_enabled = ?', 'hotspot_hours = ?', 'hotspot_require_phone = ?', 'hotspot_terms = ?', 'wifi_ssid = ?', 'wifi_security = ?',
+        'hotspot_landing_url = NULLIF(?, \'\')', 'hotspot_verify = ?'];
+    $types = 'iiissssi';
+    $params = [$enabled, $hours, $requirePhone, $terms, $ssid, $security, $landing, $verify];
     // Passwords change only when a new one is typed (or cleared explicitly).
     $newPass = (string)($post['hotspot_password'] ?? '');
     if ($newPass !== '' || !empty($post['clear_hotspot_password'])) {
@@ -454,6 +462,47 @@ function hubinet_hotspot_url(): string
  * ==================================================================== */
 
 /**
+ * Is this MAC (and IP) a device pfSense currently sees on the hub network?
+ *   yes      - reported at a recent check-in (and the IP matches when known)
+ *   mismatch - reported, but with a different IP: not the requesting device
+ *   pending  - not reported yet (a device that just joined appears within a
+ *              minute): the page retries
+ *   skip     - cannot check: verification switched off, or the agent is older
+ *              than 2.1 and does not report devices
+ */
+function hubinet_device_on_network(mysqli $conn, array $settings, string $mac, string $ip): string
+{
+    $agent = (string)($settings['last_checkin_info']['version'] ?? '');
+    if (!$settings['hotspot_verify'] || $agent === '' || version_compare($agent, '2.1', '<')) {
+        return 'skip';
+    }
+    $stmt = $conn->prepare('SELECT ip_address FROM hub_network_online WHERE mac_address = ?
+                             AND last_seen >= DATE_SUB(NOW(), INTERVAL ' . HUBINET_ONLINE_STALE_MINUTES . ' MINUTE) LIMIT 1');
+    if (!$stmt) {
+        return 'skip';
+    }
+    $stmt->bind_param('s', $mac);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$row) {
+        return 'pending';
+    }
+    $seenIp = (string)($row['ip_address'] ?? '');
+    return $ip !== '' && $seenIp !== '' && $seenIp !== $ip ? 'mismatch' : 'yes';
+}
+
+/** Where guests go after signing in: the hotspot landing page, else the organisation website. */
+function hubinet_hotspot_landing(array $settings): string
+{
+    if ($settings['hotspot_landing_url'] !== '') {
+        return $settings['hotspot_landing_url'];
+    }
+    $site = function_exists('ims_brand') ? (string)(ims_brand()['website'] ?? '') : '';
+    return preg_match('#\Ahttps?://[^\s<>"\']+\z#i', $site) ? $site : '';
+}
+
+/**
  * Registers the visitor's device as a hotspot guest for the configured
  * number of hours. $mac comes from the captive portal redirect.
  */
@@ -484,6 +533,17 @@ function hubinet_hotspot_signin(mysqli $conn, array $post, string $mac, string $
     }
     if ($settings['hotspot_terms'] !== '' && empty($post['accept_terms'])) {
         return hubinet_result(false, 'Please accept the terms of use.');
+    }
+
+    // Only devices pfSense sees on the hub network can be signed in, so the
+    // hotspot cannot be used from outside to whitelist an arbitrary MAC.
+    $check = hubinet_device_on_network($conn, $settings, $mac, $ip);
+    if ($check === 'pending') {
+        return hubinet_result(false, 'Checking your device on the hub network...', ['pending' => true]);
+    }
+    if ($check === 'mismatch') {
+        hubnet_log($conn, null, $mac, 'hotspot:refused', false, 'Device/IP not seen on the hub network (' . $ip . ')', 0);
+        return hubinet_result(false, 'This sign-in must be done from the device that is connected to the hub Wi-Fi.');
     }
 
     $until = date('Y-m-d H:i:s', time() + $settings['hotspot_hours'] * 3600);

@@ -42,7 +42,9 @@ ALTER TABLE hub_network_settings
     ADD COLUMN IF NOT EXISTS hotspot_terms TEXT NULL,
     ADD COLUMN IF NOT EXISTS wifi_ssid VARCHAR(64) NULL,
     ADD COLUMN IF NOT EXISTS wifi_key TEXT NULL,
-    ADD COLUMN IF NOT EXISTS wifi_security VARCHAR(10) NOT NULL DEFAULT 'WPA';
+    ADD COLUMN IF NOT EXISTS wifi_security VARCHAR(10) NOT NULL DEFAULT 'WPA',
+    ADD COLUMN IF NOT EXISTS hotspot_landing_url VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS hotspot_verify TINYINT(1) NOT NULL DEFAULT 1;
 
 -- Devices pfSense saw online at its last check-in.
 CREATE TABLE IF NOT EXISTS hub_network_online (

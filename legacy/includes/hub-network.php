@@ -135,6 +135,10 @@ if (!function_exists('hubnet_ensure_schema')) {
                 ['hub_network_settings', 'wifi_ssid', 'VARCHAR(64) NULL'],
                 ['hub_network_settings', 'wifi_key', 'TEXT NULL'],
                 ['hub_network_settings', 'wifi_security', "VARCHAR(10) NOT NULL DEFAULT 'WPA'"],
+                // Where guests go after signing in (empty = organisation website), and whether
+                // a sign-in must come from a device pfSense sees on the hub network.
+                ['hub_network_settings', 'hotspot_landing_url', 'VARCHAR(255) NULL'],
+                ['hub_network_settings', 'hotspot_verify', 'TINYINT(1) NOT NULL DEFAULT 1'],
             ];
 
             foreach ($addColumns as [$table, $column, $definition]) {
@@ -417,6 +421,8 @@ if (!function_exists('hubnet_settings')) {
             'wifi_ssid' => (string)($row['wifi_ssid'] ?? ''),
             'wifi_key' => function_exists('ims_decrypt') ? ims_decrypt((string)($row['wifi_key'] ?? '')) : (string)($row['wifi_key'] ?? ''),
             'wifi_security' => in_array($row['wifi_security'] ?? '', ['WPA', 'WEP', 'nopass'], true) ? (string)$row['wifi_security'] : 'WPA',
+            'hotspot_landing_url' => preg_match('#\Ahttps?://[^\s<>"\']+\z#i', (string)($row['hotspot_landing_url'] ?? '')) ? (string)$row['hotspot_landing_url'] : '',
+            'hotspot_verify' => !array_key_exists('hotspot_verify', $row) || !empty($row['hotspot_verify']),
         ];
     }
 }
