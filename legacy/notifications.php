@@ -264,6 +264,8 @@ require_once __DIR__ . '/includes/header.php';
                                 <a href="my-hr">Open My HR</a>
                             <?php elseif ($refType === 'hr_recruitment' && $refId > 0): ?>
                                 <a href="recruitment?job_id=<?= (int)$refId ?>&amp;view=interviews">Open recruitment</a>
+                            <?php elseif ($refType === 'activity_event_request' && $refId > 0): ?>
+                                <a href="activity-event-requests">Open requests</a>
                             <?php elseif ($refType === 'job_application' && $refId > 0): ?>
                                 <a href="recruitment">Open recruitment</a>
                             <?php endif; ?>
