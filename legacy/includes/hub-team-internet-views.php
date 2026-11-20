@@ -221,10 +221,8 @@ elseif ($view === 'staff' || $view === 'guests'):
         <form method="post" action="<?= $hiAction ?>" style="margin-bottom:12px">
             <?= $hiHidden('add_person_device', $view, $personId) ?>
             <input type="hidden" name="person_id" value="<?= $personId ?>">
-            <label for="hiAddDevices">Add devices</label>
-            <textarea id="hiAddDevices" name="devices" class="form-control" rows="3" required placeholder="One device per line: MAC address, then an optional label&#10;3C:22:FB:12:34:56 Laptop&#10;3C:22:FB:12:34:57 Phone"></textarea>
-            <p class="form-hint">Add several at once. Every address is checked first; nothing is saved if one is invalid or already registered.</p>
-            <button class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add devices</button>
+            <?= hubinet_device_rows('hiAddDevices', true, 'Add devices') ?>
+            <button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save devices</button>
         </form>
         <?php endif; ?>
         <?php if (!$pDevices): ?>
@@ -358,9 +356,7 @@ elseif ($view === 'staff' || $view === 'guests'):
                         <div class="form-group"><label for="hiUntil">Access until</label><input id="hiUntil" type="datetime-local" name="valid_until" class="form-control" value="<?= date('Y-m-d') ?>T23:59"></div>
                         <div class="form-group"><label class="hr-check" style="margin-top:28px"><input type="checkbox" name="no_expiry" value="1" onchange="document.getElementById('hiUntil').disabled=this.checked"> No expiry</label></div>
                     <?php endif; ?>
-                    <div class="form-group is-wide"><label for="hiDevices">Devices (optional)</label>
-                        <textarea id="hiDevices" name="devices" class="form-control" rows="3" placeholder="One device per line: MAC address, then an optional label&#10;3C:22:FB:12:34:56 Laptop&#10;3C:22:FB:12:34:57 Phone"></textarea>
-                        <p class="form-hint">Add as many devices as the person uses. Every address is checked first; nothing is saved if one is invalid or already registered.</p></div>
+                    <div class="form-group is-wide"><?= hubinet_device_rows('hiDevices', false, 'Devices (optional)') ?></div>
                 </div>
                 <p class="form-hint">Find a device's MAC address under <a href="hub-team?view=online&amp;kind=unknown">Online now</a> (unknown devices) and register it from there.</p>
             </div>

@@ -81,7 +81,7 @@ try {
 
         case 'add_person_device':
             // One or several devices: "MAC [label]" per line (a single MAC field still works).
-            $lines = (string)($_POST['devices'] ?? '');
+            $lines = hubnet_device_rows_text($_POST, 'devices');
             if (trim($lines) === '' && trim((string)($_POST['mac_address'] ?? '')) !== '') {
                 $lines = trim((string)$_POST['mac_address']) . ' ' . trim((string)($_POST['label'] ?? ''));
             }

@@ -286,6 +286,37 @@ if (!function_exists('hubnet_parse_device_lines')) {
     }
 }
 
+if (!function_exists('hubnet_device_rows_text')) {
+    /**
+     * Devices from the "Add device" rows (device_mac[] / device_label[]) as
+     * "MAC label" lines for hubnet_parse_device_lines(). Falls back to a
+     * plain text field ($fallbackKey) for older forms.
+     */
+    function hubnet_device_rows_text(array $post, string $fallbackKey = 'devices'): string
+    {
+        if (!isset($post['device_mac']) || !is_array($post['device_mac'])) {
+            return (string)($post[$fallbackKey] ?? '');
+        }
+
+        $labels = is_array($post['device_label'] ?? null) ? $post['device_label'] : [];
+        $lines = [];
+
+        foreach (array_slice($post['device_mac'], 0, 200, true) as $i => $mac) {
+            $mac = trim((string)$mac);
+            $label = trim(preg_replace('/[\r\n]+/', ' ', (string)($labels[$i] ?? '')) ?? '');
+
+            if ($mac === '' && $label === '') {
+                continue; // empty row
+            }
+
+            // A label without a MAC is reported by the parser as an invalid line.
+            $lines[] = ($mac !== '' ? preg_replace('/\s+/', '', $mac) : '') . ($label !== '' ? ' ' . $label : '');
+        }
+
+        return implode("\n", $lines);
+    }
+}
+
 if (!function_exists('hubnet_packages')) {
     /** @return list<array<string,mixed>> */
     function hubnet_packages(mysqli $conn, bool $activeOnly = false): array

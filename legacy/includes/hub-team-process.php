@@ -180,7 +180,7 @@ try {
             $phone = ht_str('phone', 40);
             $jobTitle = ht_str('job_title', 120);
             // Devices: one per line, "MAC [label]".
-            $parsedDevices = hubnet_parse_device_lines((string)($_POST['macs'] ?? ''));
+            $parsedDevices = hubnet_parse_device_lines(hubnet_device_rows_text($_POST, 'macs'));
             if ($parsedDevices['errors'] !== []) {
                 throw new InvalidArgumentException(implode(' ', array_slice($parsedDevices['errors'], 0, 3)));
             }
@@ -328,7 +328,7 @@ try {
             }
 
             // One or several devices: "MAC [label]" per line (the single MAC field still works).
-            $lines = (string)($_POST['devices'] ?? '');
+            $lines = hubnet_device_rows_text($_POST, 'devices');
             if (trim($lines) === '' && ht_str('mac_address', 40) !== '') {
                 $lines = ht_str('mac_address', 40) . ' ' . ht_str('label', 80);
             }

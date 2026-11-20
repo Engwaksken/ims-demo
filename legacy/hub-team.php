@@ -783,11 +783,8 @@ elseif ($memberId > 0):
                     <div class="form-group"><label for="tm_email">Email</label><input id="tm_email" type="email" class="form-control" name="email"></div>
                     <div class="form-group"><label for="tm_phone">Phone</label><input id="tm_phone" class="form-control" name="phone" maxlength="40"></div>
                 </div>
-                <div class="form-group">
-                    <label for="tm_macs">Device MAC addresses</label>
-                    <textarea id="tm_macs" class="form-control" name="macs" rows="3" placeholder="One device per line: MAC address, then an optional label&#10;a4:5e:60:12:ab:cd Laptop"></textarea>
-                    <div class="ht-help">Laptop and phone Wi-Fi addresses. Ask them to turn off "private / random MAC address" for the hub Wi-Fi so the address stays the same.</div>
-                </div>
+                <?= hubinet_device_rows('tm_devices', false, 'Devices (optional)') ?>
+                <div class="ht-help">Laptop and phone Wi-Fi addresses. Ask them to turn off "private / random MAC address" for the hub Wi-Fi so the address stays the same.</div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addTeamModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> Add team member</button>
@@ -854,11 +851,7 @@ elseif ($memberId > 0):
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="dv_devices" class="required">Devices</label>
-                    <textarea id="dv_devices" class="form-control" name="devices" rows="4" required placeholder="One device per line: MAC address, then an optional label&#10;a4:5e:60:12:ab:cd Laptop&#10;a4:5e:60:12:ab:ce Phone"></textarea>
-                    <small class="ht-help">Add several at once. Every address is checked first; nothing is saved if one is invalid or already registered.</small>
-                </div>
+                <?= hubinet_device_rows('dv_devices', true, 'Devices') ?>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addDeviceModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add devices</button>

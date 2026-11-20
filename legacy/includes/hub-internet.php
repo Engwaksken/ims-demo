@@ -40,6 +40,71 @@ function hubinet_result(bool $ok, string $message, array $extra = []): array
     return ['ok' => $ok, 'message' => $message] + $extra;
 }
 
+/**
+ * "Add device" rows for a form: a MAC address and a label per row, with
+ * "+ Add device" to add another row and x to remove one. Posts
+ * device_mac[] / device_label[] (read with hubnet_device_rows_text()).
+ * $required: the first row's MAC must be filled in.
+ */
+function hubinet_device_rows(string $id, bool $required = false, string $legend = 'Devices', int $rows = 1): string
+{
+    static $assets = false;
+    $h = 'hubinet_h';
+    $row = static function (bool $first) use ($required): string {
+        return '<div class="dr-row">'
+            . '<input type="text" name="device_mac[]" class="form-control dr-mac" maxlength="17" autocomplete="off" spellcheck="false"'
+            . ' placeholder="MAC address, e.g. a4:5e:60:12:ab:cd" aria-label="MAC address"'
+            . ' pattern="\s*[0-9A-Fa-f]{2}([:\-.\s]?[0-9A-Fa-f]{2}){5}\s*" title="12 hexadecimal digits, e.g. a4:5e:60:12:ab:cd"'
+            . ($first && $required ? ' required' : '') . '>'
+            . '<input type="text" name="device_label[]" class="form-control dr-label" maxlength="80" placeholder="Label, e.g. Laptop" aria-label="Device label">'
+            . '<button type="button" class="btn btn-sm btn-soft dr-remove" title="Remove this device" aria-label="Remove this device"><i class="fas fa-xmark" aria-hidden="true"></i></button>'
+            . '</div>';
+    };
+
+    $html = '<fieldset class="dr-field" data-device-rows id="' . $h($id) . '">'
+        . '<legend class="' . ($required ? 'required' : '') . '">' . $h($legend) . '</legend>'
+        . '<div class="dr-rows">';
+    for ($i = 0; $i < max(1, $rows); $i++) {
+        $html .= $row($i === 0);
+    }
+    $html .= '</div>'
+        . '<button type="button" class="btn btn-sm btn-secondary dr-add"><i class="fas fa-plus" aria-hidden="true"></i> Add device</button>'
+        . '<p class="form-hint">Add as many devices as needed. Every address is checked first; nothing is saved if one is invalid or already registered.</p>'
+        . '</fieldset>';
+
+    if (!$assets) {
+        $assets = true;
+        $html .= '<style>'
+            . '.dr-field{border:0;padding:0;margin:0 0 12px;min-width:0}'
+            . '.dr-field legend{font-weight:600;font-size:14px;margin-bottom:6px}'
+            . '.dr-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}'
+            . '.dr-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:8px;align-items:center}'
+            . '.dr-row .form-control{margin:0}'
+            . '.dr-mac{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}'
+            . '@media(max-width:560px){.dr-row{grid-template-columns:minmax(0,1fr) auto}.dr-row .dr-label{grid-column:1}.dr-row .dr-remove{grid-row:1/span 2;grid-column:2}}'
+            . '</style>'
+            . '<script>(function(){'
+            . 'function clear(row){row.querySelectorAll("input").forEach(function(i){i.value="";});}'
+            . 'document.addEventListener("click",function(e){'
+            . 'var add=e.target.closest(".dr-add");'
+            . 'if(add){var f=add.closest("[data-device-rows]"),list=f.querySelector(".dr-rows"),tpl=list.querySelector(".dr-row").cloneNode(true);'
+            . 'clear(tpl);tpl.querySelectorAll("[required]").forEach(function(i){i.removeAttribute("required");});'
+            . 'list.appendChild(tpl);tpl.querySelector(".dr-mac").focus();return;}'
+            . 'var rm=e.target.closest(".dr-remove");'
+            . 'if(rm){var list2=rm.closest(".dr-rows"),r=rm.closest(".dr-row");'
+            . 'if(list2.querySelectorAll(".dr-row").length>1){var req=r.querySelector("[required]");r.remove();'
+            . 'if(req){var first=list2.querySelector(".dr-mac");if(first)first.required=true;}}else{clear(r);}}'
+            . '});'
+            // Enter in a MAC field adds the next row instead of submitting.
+            . 'document.addEventListener("keydown",function(e){'
+            . 'if(e.key!=="Enter"||!e.target.matches||!e.target.matches(".dr-mac,.dr-label"))return;'
+            . 'var f=e.target.closest("[data-device-rows]");if(!f)return;e.preventDefault();f.querySelector(".dr-add").click();});'
+            . '})();</script>';
+    }
+
+    return $html;
+}
+
 /* ======================================================================
  | People (staff and guests)
  * ==================================================================== */
@@ -210,7 +275,7 @@ function hubinet_save_person(mysqli $conn, array $post, int $uid): array
     // created, so a typo or an already-registered device never leaves a half-added person.
     $newDevices = [];
     if (!$existing) {
-        $lines = (string)($post['devices'] ?? '');
+        $lines = hubnet_device_rows_text($post, 'devices');
         if (trim($lines) === '' && trim((string)($post['mac_address'] ?? '')) !== '') {
             $lines = trim((string)$post['mac_address']) . ' ' . trim((string)($post['label'] ?? ''));
         }
