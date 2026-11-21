@@ -252,8 +252,12 @@ try {
 
         case 'import_pfmacs':
             // Online now > pfSense MAC list: bring manual pfSense entries under IMS management.
-            $r = hubinet_import_pf_macs($conn, (array)($_POST['macs'] ?? []), (string)($_POST['import_as'] ?? ''),
-                (string)($_POST['equipment_type'] ?? ''), (int)($_POST['person_id'] ?? 0), $uid);
+            // "All matching" imports every entry matching the search, not only the ticked rows on this page.
+            $pfMacsToImport = !empty($_POST['all_matching'])
+                ? hubinet_pf_macs_matching($conn, mb_substr((string)($_POST['pfq'] ?? ''), 0, 80))
+                : (array)($_POST['macs'] ?? []);
+            $r = hubinet_import_pf_macs($conn, $pfMacsToImport, (string)($_POST['import_as'] ?? ''),
+                (string)($_POST['equipment_type'] ?? ''), (int)($_POST['person_id'] ?? 0), $uid, (int)($_POST['member_id'] ?? 0));
             hip_back($returnQuery, $r['ok'], $r['message']);
 
         case 'person_to_member':

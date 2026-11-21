@@ -527,16 +527,44 @@ elseif ($view === 'online'):
     </div>
 </div>
 
-<?php $pfMacs = hubinet_pf_macs($conn); if ($pfMacs): ?>
+<?php
+    // Manual pfSense MAC entries (agent 2.4+): searchable, 100 per page.
+    $pfQ = mb_substr(trim((string)($_GET['pfq'] ?? '')), 0, 80);
+    $pfPage = max(1, (int)($_GET['pfp'] ?? 1));
+    $pfList = hubinet_pf_macs($conn, $pfQ, 100, ($pfPage - 1) * 100);
+    $pfMacs = $pfList['rows'];
+    $pfTotal = $pfList['total'];
+    $pfPages = max(1, (int)ceil($pfTotal / 100));
+    $pfReturn = $onlineReturn . ($pfQ !== '' ? '&pfq=' . rawurlencode($pfQ) : '') . '#pfmacs';
+    $pfUrl = static function (array $over) use ($kindFilter, $onlineQ, $pfQ): string {
+        $q = array_filter(array_merge(['view' => 'online', 'kind' => $kindFilter, 'q' => $onlineQ, 'pfq' => $pfQ], $over), fn($v) => $v !== '' && $v !== null && $v !== 1);
+        return 'hub-team?' . http_build_query($q) . '#pfmacs';
+    };
+    $pfMembers = $pfTotal > 0 || $pfQ !== '' ? hubinet_member_options($conn) : [];
+?>
+<?php if ($pfTotal > 0 || $pfQ !== ''): ?>
 <div class="card" id="pfmacs">
-    <div class="card-header"><h3><i class="fas fa-list-check" aria-hidden="true"></i> pfSense MAC list: <?= count($pfMacs) ?> entr<?= count($pfMacs) === 1 ? 'y' : 'ies' ?> not managed by the IMS</h3></div>
+    <div class="card-header"><h3><i class="fas fa-list-check" aria-hidden="true"></i> pfSense MAC list: <?= number_format($pfTotal) ?> entr<?= $pfTotal === 1 ? 'y' : 'ies' ?> not managed by the IMS<?= $pfQ !== '' ? ' matching &ldquo;' . ht_e($pfQ) . '&rdquo;' : '' ?></h3>
+        <form method="get" action="hub-team" style="display:flex;gap:6px">
+            <input type="hidden" name="view" value="online">
+            <?php if ($kindFilter !== ''): ?><input type="hidden" name="kind" value="<?= ht_e($kindFilter) ?>"><?php endif; ?>
+            <?php if ($onlineQ !== ''): ?><input type="hidden" name="q" value="<?= ht_e($onlineQ) ?>"><?php endif; ?>
+            <input type="search" name="pfq" value="<?= ht_e($pfQ) ?>" class="form-control" placeholder="Description, MAC, name, maker" aria-label="Search the pfSense MAC list" style="min-width:220px">
+            <button class="btn btn-soft" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></button>
+            <?php if ($pfQ !== ''): ?><a class="btn btn-soft" href="<?= ht_e($pfUrl(['pfq' => ''])) ?>" aria-label="Clear search"><i class="fas fa-times" aria-hidden="true"></i></a><?php endif; ?>
+        </form>
+    </div>
     <div class="card-body">
-        <p class="form-hint" style="margin-top:0">These were added by hand under Services &gt; Captive Portal &gt; MACs on pfSense. Import them to manage them here: "Pass" entries become <em>Always on</em>, "Block" entries stay blocked and speed limits are kept. At the next check-in pfSense replaces its manual entries with IMS-managed ones (agent 2.4).</p>
+        <p class="form-hint" style="margin-top:0">Entries added by hand under Services &gt; Captive Portal &gt; MACs on pfSense. Import them to manage them here; speed limits are kept and "Block" entries stay blocked. Tip: search a company name used in the descriptions, tick <em>all matching</em> and import them to that member company in one go. At the next check-in pfSense replaces its manual entries with IMS-managed ones.</p>
+        <?php if (!$pfMacs): ?>
+            <div class="empty-state"><i class="fas fa-search" aria-hidden="true"></i><p>No pfSense entries match this search.</p></div>
+        <?php else: ?>
         <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
             <?= $hiHidden('import_pfmacs', 'online') ?>
-            <input type="hidden" name="return_query" value="<?= ht_e($onlineReturn) ?>">
+            <input type="hidden" name="return_query" value="<?= ht_e(strtok($pfReturn, '#')) ?>">
+            <input type="hidden" name="pfq" value="<?= ht_e($pfQ) ?>">
             <div class="table-responsive"><table class="table table-stack hr-table">
-                <thead><tr><?php if ($canManage): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all pfSense entries"></th><?php endif; ?><th>Device</th><th>pfSense</th><th>Speed</th><th>Last seen online</th></tr></thead>
+                <thead><tr><?php if ($canManage): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all entries on this page"></th><?php endif; ?><th>Device</th><th>pfSense</th><th>Speed</th><th>Last seen online</th></tr></thead>
                 <tbody>
                 <?php foreach ($pfMacs as $pm): ?>
                     <tr>
@@ -550,27 +578,60 @@ elseif ($view === 'online'):
                 <?php endforeach; ?>
                 </tbody>
             </table></div>
+            <?php if ($pfPages > 1): ?>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0">
+                <span class="cell-muted">Page <?= $pfPage ?> of <?= $pfPages ?> (<?= number_format($pfTotal) ?> entries)</span>
+                <?php if ($pfPage > 1): ?><a class="btn btn-sm btn-soft" href="<?= ht_e($pfUrl(['pfp' => $pfPage - 1])) ?>">&laquo; Previous</a><?php endif; ?>
+                <?php if ($pfPage < $pfPages): ?><a class="btn btn-sm btn-soft" href="<?= ht_e($pfUrl(['pfp' => $pfPage + 1])) ?>">Next &raquo;</a><?php endif; ?>
+            </div>
+            <?php endif; ?>
             <?php if ($canManage): ?>
             <div class="hr-bulkbar" data-bulk-bar style="flex-wrap:wrap;gap:6px">
                 <span data-bulk-count>None selected</span>
+                <label class="hr-check" style="display:inline-flex;gap:4px;align-items:center" title="Import every entry matching the search, on all pages">
+                    <input type="checkbox" name="all_matching" value="1" id="pfAllMatching"> all <?= number_format($pfTotal) ?> matching
+                </label>
                 <label class="cell-muted" for="pfImportAs">Import as</label>
                 <select id="pfImportAs" name="import_as" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto"
-                        onchange="document.getElementById('pfImportType').hidden = this.value !== 'equipment'; document.getElementById('pfImportPerson').hidden = this.value !== 'existing';">
+                        onchange="var v=this.value;document.getElementById('pfImportType').hidden=v!=='equipment';document.getElementById('pfImportPerson').hidden=v!=='existing';document.getElementById('pfImportMember').hidden=v!=='member';">
+                    <option value="member">Member company</option>
                     <option value="equipment">Network equipment</option>
                     <option value="guest">Guests (one per device)</option>
                     <option value="staff">Staff (one per device)</option>
                     <option value="existing">Devices of one person</option>
                 </select>
-                <select id="pfImportType" name="equipment_type" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Equipment type">
+                <select id="pfImportMember" name="member_id" class="form-control" style="width:auto;max-width:280px;display:inline-block;padding:4px 8px;height:auto" aria-label="Member company">
+                    <option value="">Choose a member company…</option>
+                    <?php foreach ($pfMembers as $hm): ?>
+                        <option value="<?= (int)$hm['member_id'] ?>"><?= ht_e(($hm['company_name'] ?: $hm['full_name'] ?: 'Member #' . $hm['member_id']) . ($hm['membership_number'] ? ' (' . $hm['membership_number'] . ')' : '') . ($hm['membership_status'] !== 'Active' ? ' - ' . $hm['membership_status'] : '')) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <select id="pfImportType" name="equipment_type" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Equipment type" hidden>
                     <?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?>
                 </select>
                 <select id="pfImportPerson" name="person_id" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Person" hidden>
                     <?php foreach ($peopleForSelect as $pp): ?><option value="<?= (int)$pp['person_id'] ?>"><?= ht_e($pp['full_name']) ?> (<?= $pp['kind'] === 'staff' ? 'staff' : 'guest' ?>)</option><?php endforeach; ?>
                 </select>
-                <button type="submit" class="btn btn-sm btn-primary" data-bulk-required="Select pfSense entries first."><i class="fas fa-file-import" aria-hidden="true"></i> Import</button>
+                <button type="submit" class="btn btn-sm btn-primary" id="pfImportBtn"><i class="fas fa-file-import" aria-hidden="true"></i> Import</button>
             </div>
+            <script>
+            (function () {
+                var btn = document.getElementById('pfImportBtn'), all = document.getElementById('pfAllMatching');
+                btn.addEventListener('click', function (e) {
+                    var form = btn.form;
+                    var picked = form.querySelectorAll('input.hr-sel[name="macs[]"]:checked').length;
+                    var n = all.checked ? <?= (int)$pfTotal ?> : picked;
+                    var as = document.getElementById('pfImportAs');
+                    if (!n) { e.preventDefault(); (window.hrAlert || alert)('Tick entries, or "all matching".'); return; }
+                    if (as.value === 'member' && !document.getElementById('pfImportMember').value) { e.preventDefault(); (window.hrAlert || alert)('Choose the member company.'); return; }
+                    if (!confirm('Import ' + n + ' pfSense entr' + (n === 1 ? 'y' : 'ies') + ' as "' + as.options[as.selectedIndex].text + '"?')) e.preventDefault();
+                });
+
+            })();
+            </script>
             <?php endif; ?>
         </form>
+        <?php endif; ?>
     </div>
 </div>
 <?php endif; ?>
@@ -591,7 +652,7 @@ elseif ($view === 'online'):
     }
     setInterval(function () {
         if (!on || document.hidden) return;
-        if (document.querySelector('input.hr-sel:checked') || document.querySelector('.modal.show, .modal[aria-hidden="false"], .modal.active')) return;
+        if (document.querySelector('input.hr-sel:checked, #pfAllMatching:checked') || document.querySelector('.modal.show, .modal[aria-hidden="false"], .modal.active')) return;
         var a = document.activeElement;
         if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && a.type !== 'checkbox') return;
         location.reload();

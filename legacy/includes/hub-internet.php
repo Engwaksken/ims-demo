@@ -1791,16 +1791,72 @@ function hubinet_record_pf_macs(mysqli $conn, array $entries): void
     $stmt->close();
 }
 
-/** Manual pfSense MAC entries the IMS does not manage yet, with what pfSense saw of them online. */
-function hubinet_pf_macs(mysqli $conn): array
+/** WHERE for manual pfSense entries not managed yet, optionally matching $q (description, MAC, name, maker, IP). */
+function hubinet_pf_where(string $q, string &$types, array &$params): string
 {
-    $res = $conn->query('SELECT p.*, o.hostname, o.vendor, o.ip_address, o.last_seen
-                           FROM hub_network_pfmacs p
-                           LEFT JOIN hub_network_online o ON o.mac_address = p.mac_address
-                           LEFT JOIN hub_network_devices d ON d.mac_address = p.mac_address
-                          WHERE d.device_id IS NULL
-                          ORDER BY p.descr, p.mac_address');
-    return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+    $where = 'd.device_id IS NULL';
+    $q = trim($q);
+    if ($q !== '') {
+        $like = '%' . $q . '%';
+        $macLike = '%' . implode(':', str_split(strtolower((string)preg_replace('/[^A-Fa-f0-9]/', '', $q)), 2)) . '%';
+        $where .= ' AND (p.descr LIKE ? OR p.mac_address LIKE ? OR o.hostname LIKE ? OR o.vendor LIKE ? OR o.ip_address LIKE ?)';
+        $types .= 'sssss';
+        array_push($params, $like, strlen(trim($macLike, '%:')) >= 2 ? $macLike : $like, $like, $like, $like);
+    }
+    return $where;
+}
+
+/**
+ * Manual pfSense MAC entries the IMS does not manage yet, with what pfSense
+ * saw of them online. Returns ['rows' => [...], 'total' => n].
+ */
+function hubinet_pf_macs(mysqli $conn, string $q = '', int $limit = 100, int $offset = 0): array
+{
+    $types = '';
+    $params = [];
+    $where = hubinet_pf_where($q, $types, $params);
+    $from = 'FROM hub_network_pfmacs p
+             LEFT JOIN hub_network_online o ON o.mac_address = p.mac_address
+             LEFT JOIN hub_network_devices d ON d.mac_address = p.mac_address
+             WHERE ' . $where;
+    $stmt = $conn->prepare('SELECT COUNT(*) n ' . $from);
+    if (!$stmt) {
+        return ['rows' => [], 'total' => 0];
+    }
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $total = (int)($stmt->get_result()->fetch_assoc()['n'] ?? 0);
+    $stmt->close();
+    $stmt = $conn->prepare('SELECT p.*, o.hostname, o.vendor, o.ip_address, o.last_seen ' . $from
+        . ' ORDER BY p.descr IS NULL, p.descr, p.mac_address LIMIT ' . max(1, $limit) . ' OFFSET ' . max(0, $offset));
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    return ['rows' => $rows, 'total' => $total];
+}
+
+/** MACs of every unmanaged pfSense entry matching $q (for "import all matching"). */
+function hubinet_pf_macs_matching(mysqli $conn, string $q): array
+{
+    $types = '';
+    $params = [];
+    $where = hubinet_pf_where($q, $types, $params);
+    $stmt = $conn->prepare('SELECT p.mac_address FROM hub_network_pfmacs p
+                             LEFT JOIN hub_network_online o ON o.mac_address = p.mac_address
+                             LEFT JOIN hub_network_devices d ON d.mac_address = p.mac_address
+                            WHERE ' . $where . ' LIMIT 5000');
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $macs = array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'mac_address');
+    $stmt->close();
+    return $macs;
 }
 
 /**
@@ -1810,17 +1866,24 @@ function hubinet_pf_macs(mysqli $conn): array
  * block entries "Blocked"; speed limits are kept. At the next check-in the
  * agent replaces the manual entries with IMS-managed ones.
  */
-function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $type, int $personId, int $uid): array
+function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $type, int $personId, int $uid, int $memberId = 0): array
 {
     $macs = array_values(array_unique(array_filter(array_map(static fn($m) => hubnet_normalize_mac((string)$m), $macs))));
     if (!$macs) {
         return hubinet_result(false, 'Select pfSense entries first.');
     }
-    if (!in_array($as, ['equipment', 'guest', 'staff', 'existing'], true)) {
+    if (!in_array($as, ['equipment', 'guest', 'staff', 'existing', 'member'], true)) {
         return hubinet_result(false, 'Choose how to import the devices.');
     }
     if ($as === 'existing' && !hubinet_person($conn, $personId)) {
         return hubinet_result(false, 'Choose the staff member or guest the devices belong to.');
+    }
+    $member = $as === 'member' ? hubnet_member($conn, $memberId) : null;
+    if ($as === 'member' && !$member) {
+        return hubinet_result(false, 'Choose the member company the devices belong to.');
+    }
+    if (count($macs) > 2000) {
+        return hubinet_result(false, 'Import at most 2000 entries at a time (narrow the search).');
     }
     $type = array_key_exists($type, HUBINET_DEVICE_TYPES) ? $type : 'access_point';
     $marks = implode(',', array_fill(0, count($macs), '?'));
@@ -1842,6 +1905,23 @@ function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $t
         }
         $label = trim((string)($row['descr'] ?? '')) ?: trim((string)($row['hostname'] ?? '')) ?: trim((string)($row['vendor'] ?? ''));
         $mode = $row['action'] === 'block' ? 'block' : 'allow';
+        if ($as === 'member') {
+            // The company's own devices: online while the membership is active ("auto"), blocked stays blocked.
+            $memberMode = $mode === 'block' ? 'block' : 'auto';
+            $ins = $conn->prepare("INSERT INTO hub_network_devices (member_id, team_member_id, person_id, mac_address, label, access_mode, created_by)
+                                   VALUES (?, NULL, NULL, ?, NULLIF(?, ''), ?, NULLIF(?, 0))");
+            $ins->bind_param('isssi', $memberId, $mac, $label, $memberMode, $uid);
+            if (!$ins->execute()) {
+                $ins->close();
+                $failed[] = $mac;
+                continue;
+            }
+            $deviceId = (int)$ins->insert_id;
+            $ins->close();
+            hubinet_set_device_bw($conn, [$deviceId], $row['bw_down_kbps'] !== null ? (int)$row['bw_down_kbps'] : null, $row['bw_up_kbps'] !== null ? (int)$row['bw_up_kbps'] : null);
+            $ids[] = $deviceId;
+            continue;
+        }
         $pid = $as === 'existing' ? $personId : $equipmentPid;
         if ($as === 'guest' || $as === 'staff') {
             $r = hubinet_save_person($conn, [
@@ -1880,6 +1960,8 @@ function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $t
     $del->bind_param(str_repeat('s', count($macs)), ...$macs);
     $del->execute();
     $del->close();
-    return hubinet_result(true, count($ids) . ' device(s) imported from pfSense' . ($failed ? '; ' . count($failed) . ' failed' : '')
-        . '. pfSense switches them to IMS management at its next check-in (needs agent 2.4). ' . $net['message']);
+    return hubinet_result(true, count($ids) . ' device(s) imported from pfSense'
+        . ($member ? ' to ' . ($member['company_name'] ?: $member['full_name']) . ' (online while the membership is active)' : '')
+        . ($failed ? '; ' . count($failed) . ' failed' : '')
+        . '. pfSense switches them to IMS management at its next check-in. ' . $net['message'], ['member_id' => $member ? $memberId : 0]);
 }
