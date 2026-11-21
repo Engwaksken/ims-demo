@@ -23,7 +23,7 @@ function hip_back(string $query, bool $ok, string $message): never
     exit;
 }
 
-$views = ['overview', 'staff', 'guests', 'devices', 'online', 'hotspot'];
+$views = ['overview', 'staff', 'guests', 'devices', 'online', 'hotspot', 'vouchers'];
 $returnView = in_array($_POST['return_view'] ?? '', $views, true) ? (string)$_POST['return_view'] : 'overview';
 $returnQuery = 'view=' . $returnView . ((int)($_POST['return_person'] ?? 0) > 0 ? '&person=' . (int)$_POST['return_person'] : '');
 
@@ -41,6 +41,12 @@ $canManage = ims_allowed('hub_team.manage', ['Administrator', 'Operations/Admin'
 $canControl = ims_allowed('hub_network.control', ['Administrator', 'Operations/Admin', 'IT Officer'], 'Connect and disconnect hub members from the internet (pfSense)');
 $canSettings = ims_allowed('hub_network.settings', ['Administrator', 'IT Officer'], 'Configure hub workspace packages and the pfSense connection');
 $canSwitch = ims_allowed('hub_network.switch', ['Administrator', 'IT Officer'], 'Switch hub internet control on/off (open internet) on pfSense');
+$canVouchers = ims_allowed('hub_network.vouchers', ['Administrator', 'Operations/Admin'], 'Create, print and cancel internet vouchers for day clients');
+
+// The online list's bulk bar posts devices_bulk; its "unknown devices" buttons carry unknown_op.
+if ($action === 'devices_bulk' && in_array($_POST['unknown_op'] ?? '', ['block', 'forget'], true)) {
+    $action = 'unknown_bulk';
+}
 
 $needs = [
     'save_person' => $canManage,
@@ -54,6 +60,9 @@ $needs = [
     'save_hotspot' => $canSettings,
     'download_pfsense_page' => $canSettings,
     'register_online' => $canManage,
+    'unknown_bulk' => $canControl,
+    'create_vouchers' => $canVouchers,
+    'vouchers_bulk' => $canVouchers,
 ];
 if (!array_key_exists($action, $needs)) {
     hip_back($returnQuery, false, 'Unknown action.');
@@ -140,6 +149,48 @@ try {
             header('Cache-Control: no-store');
             echo $html;
             exit;
+
+        case 'unknown_bulk':
+            // Unknown devices selected in Online now: block (disconnect) or forget them.
+            $macs = array_values(array_unique(array_filter(array_map(
+                static fn($m) => hubnet_normalize_mac((string)$m), (array)($_POST['macs'] ?? [])))));
+            if (!$macs) {
+                hip_back($returnQuery, false, 'Select unknown devices first.');
+            }
+            if ($_POST['unknown_op'] === 'forget') {
+                $n = hubinet_forget_online($conn, $macs);
+                hip_back($returnQuery, true, $n . ' device(s) removed from the list. Devices that are still connected appear again at the next check-in.');
+            }
+            $blocked = 0;
+            $failed = [];
+            foreach ($macs as $mac) {
+                if (hubnet_devices_where($conn, 'd.mac_address = ?', 's', [$mac])) {
+                    continue; // registered in the meantime: use the registered-device buttons
+                }
+                $r = hubinet_save_person($conn, [
+                    'kind' => 'guest',
+                    'full_name' => 'Blocked device ' . $mac,
+                    'no_expiry' => 1,
+                    'note' => 'Blocked from the online devices list',
+                ], $uid);
+                $dev = $r['ok'] ? hubinet_add_device($conn, (int)$r['person_id'], $mac, 'Blocked', $uid, 'block') : $r;
+                if ($dev['ok']) {
+                    $blocked++;
+                } else {
+                    $failed[] = $mac;
+                }
+            }
+            hip_back($returnQuery, $failed === [], $blocked . ' device(s) blocked and disconnected.'
+                . ($failed ? ' Could not block: ' . implode(', ', $failed) . '.' : '')
+                . ' To let one back in, find "Blocked device" under Guests and remove it.');
+
+        case 'create_vouchers':
+            $r = hubinet_create_vouchers($conn, $_POST, $uid);
+            hip_back('view=vouchers' . ($r['ok'] ? '&batch=' . rawurlencode((string)$r['batch']) . '&print=1' : ''), $r['ok'], $r['message']);
+
+        case 'vouchers_bulk':
+            $r = hubinet_vouchers_bulk($conn, (array)($_POST['ids'] ?? []), (string)($_POST['op'] ?? ''), $uid);
+            hip_back('view=vouchers', $r['ok'], $r['message']);
 
         case 'register_online':
             // A device seen online that the IMS does not know: give it to a staff member / guest, or block it.

@@ -32,6 +32,7 @@ $canRemind = ims_allowed('hub_reminders.send', ['Administrator', 'Operations/Adm
 $canReminderSettings = ims_allowed('hub_reminders.settings', ['Administrator', 'Operations/Admin'], 'Configure automatic hub member reminders');
 $canOpenSettings = $canSettings || $canRemind || $canReminderSettings;
 $canSwitch = ims_allowed('hub_network.switch', ['Administrator', 'IT Officer'], 'Switch hub internet control on/off (open internet) on pfSense');
+$canVouchers = ims_allowed('hub_network.vouchers', ['Administrator', 'Operations/Admin'], 'Create, print and cancel internet vouchers for day clients');
 
 $successMessage = (string)($_SESSION['success'] ?? '');
 $errorMessage = (string)($_SESSION['error'] ?? '');
@@ -43,14 +44,14 @@ $ready = isset($conn) && $conn instanceof mysqli && hubnet_ensure_schema($conn) 
 $view = (string)($_GET['view'] ?? '');
 $memberId = (int)($_GET['member_id'] ?? 0);
 
-if ($view === 'settings' && !$canOpenSettings) {
+if (($view === 'settings' && !$canOpenSettings) || ($view === 'vouchers' && !$canVouchers)) {
     $view = '';
 }
 // Default page: the overview. The companies/devices dashboard is view=companies (or an old ?tab= link).
 if ($view === '' && $memberId === 0) {
     $view = isset($_GET['tab']) || isset($_GET['q']) || isset($_GET['state']) ? 'companies' : 'overview';
 }
-if (!in_array($view, ['overview', 'companies', 'staff', 'guests', 'online', 'hotspot', 'settings'], true)) {
+if (!in_array($view, ['overview', 'companies', 'staff', 'guests', 'online', 'hotspot', 'vouchers', 'settings'], true)) {
     $view = 'overview';
 }
 
@@ -178,6 +179,7 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
             'guests' => ['fa-user-clock', 'Guests'],
             'online' => ['fa-signal', 'Online now'],
             'hotspot' => ['fa-qrcode', 'Hotspot'],
+            'vouchers' => $canVouchers ? ['fa-ticket', 'Vouchers'] : null,
             'settings' => $canOpenSettings ? ['fa-sliders', 'Settings'] : null,
         ]) as $navKey => [$navIcon, $navLabel]):
             $navActive = $view === $navKey || ($navKey === 'companies' && $memberId > 0); ?>
@@ -880,7 +882,7 @@ function openEditTeam(person) {
 /* =====================================================================
    OVERVIEW, STAFF, GUESTS, ONLINE NOW, HOTSPOT (includes/hub-team-internet-views.php)
 ===================================================================== */
-elseif (in_array($view, ['overview', 'staff', 'guests', 'online', 'hotspot'], true)):
+elseif (in_array($view, ['overview', 'staff', 'guests', 'online', 'hotspot', 'vouchers'], true)):
     include __DIR__ . '/includes/hub-team-internet-views.php';
 
 /* =====================================================================

@@ -184,13 +184,18 @@ $ssid = $ready ? (string)$settings['wifi_ssid'] : '';
     }
 }
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+/* Centred when it fits; taller pages (help, terms) scroll normally from the top. */
 body {
     margin: 0; font-family: <?= $font ?>; color: var(--ink); background: var(--bg);
     background-image: radial-gradient(1200px 500px at 50% -10%, color-mix(in srgb, var(--brand) 22%, transparent), transparent 70%);
-    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background-repeat: no-repeat;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
     padding: 24px 16px calc(24px + env(safe-area-inset-bottom)); -webkit-font-smoothing: antialiased;
 }
+.card { margin-top: auto; }
+.below { margin-bottom: auto; }
+.back { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 14px; color: var(--brand); font-weight: 600; font-size: .9rem; text-decoration: none; }
+.back:hover { text-decoration: underline; }
 .card { width: 100%; max-width: 440px; background: var(--card); border-radius: 20px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 18px 48px rgba(17,24,39,.12); overflow: hidden; }
 .head { background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: var(--on-brand); padding: 28px 24px 24px; text-align: center; position: relative; }
 .logo { display: inline-flex; align-items: center; justify-content: center; background: #fff; border-radius: 14px; padding: 10px 16px; min-height: 64px; max-width: 220px; box-shadow: 0 6px 18px rgba(0,0,0,.15); }
@@ -281,6 +286,7 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
 
     <div class="body">
     <?php if ($showHelp): ?>
+        <a class="back" href="hotspot"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg> Back</a>
         <p class="lead">Help &amp; support</p>
         <div class="help" style="margin-top:14px">
             <?= hubinet_help_html($ready && trim($settings['hotspot_help']) !== '' ? $settings['hotspot_help'] : ($ready ? hubinet_default_help($settings) : 'Please ask at reception for help.')) ?>
@@ -300,7 +306,7 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
         <?php endif; ?>
         <a class="btn" href="hotspot">Back to sign-in</a>
 
-    <?php elseif (!$enabled): ?>
+    <?php elseif (!$ready): ?>
         <div class="state">
             <div class="state-icon off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 2l20 20"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 4.2-2.6M14.8 9.9A10 10 0 0 1 19 12.5"/><circle cx="12" cy="19.5" r="1"/></svg></div>
             <h2>Guest Wi-Fi is not available</h2>
@@ -381,8 +387,13 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
         <script>setTimeout(function () { location.replace('hotspot'); }, 10000);</script>
 
     <?php elseif ($mac === ''): ?>
-        <p class="lead">Connect to our Wi-Fi to sign in</p>
-        <p class="muted">This page needs to be opened from the hub Wi-Fi.</p>
+        <?php if (!$enabled): ?>
+            <p class="lead">Welcome to <?= $h($ssid !== '' ? $ssid : $orgName . ' Wi-Fi') ?></p>
+            <p class="muted">Members and staff: your registered devices connect automatically. Visitors: ask at reception for an internet voucher, then follow these steps.</p>
+        <?php else: ?>
+            <p class="lead">Connect to our Wi-Fi to sign in</p>
+            <p class="muted">This page needs to be opened from the hub Wi-Fi.</p>
+        <?php endif; ?>
         <ol class="steps">
             <li><span>Join the Wi-Fi network <?= $ssid !== '' ? '<span class="ssid">' . $h($ssid) . '</span>' : 'of the hub' ?>. Turn off mobile data.</span></li>
             <li><span>Tap the <strong>Sign in to network</strong> message, or open any website.</span></li>
@@ -393,8 +404,17 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
         <?php if ($error !== ''): ?>
             <div class="alert bad" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg><span><?= $h($error) ?></span></div>
         <?php endif; ?>
-        <p class="lead">Welcome! Sign in to get online</p>
-        <p class="muted">Free access for <?= $hours ?> hour<?= $hours === 1 ? '' : 's' ?>. It only takes a moment.</p>
+        <?php
+        // Access field: the hotspot password or a voucher; with the hotspot off, vouchers only.
+        $codeMode = !$enabled ? 'voucher' : ($settings['hotspot_password'] !== '' ? 'either' : 'optional');
+        ?>
+        <?php if ($codeMode === 'voucher'): ?>
+            <p class="lead">Enter your voucher to get online</p>
+            <p class="muted">Vouchers are available at reception. Your internet time starts when you connect.</p>
+        <?php else: ?>
+            <p class="lead">Welcome! Sign in to get online</p>
+            <p class="muted">Free access for <?= $hours ?> hour<?= $hours === 1 ? '' : 's' ?>, or as long as your voucher allows. It only takes a moment.</p>
+        <?php endif; ?>
         <form method="post" action="hotspot" autocomplete="on" id="hsForm">
             <?= csrf_field() ?>
             <label for="hsName">Full name</label>
@@ -412,12 +432,18 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg>
                 <input id="hsEmail" type="email" name="email" maxlength="190" autocomplete="email" placeholder="you@example.com" value="<?= $h($_POST['email'] ?? '') ?>">
             </div>
-            <?php if ($settings['hotspot_password'] !== ''): ?>
-                <label for="hsPass">Wi-Fi access code</label>
+            <?php if ($codeMode === 'either'): ?>
+                <label for="hsPass">Access code or voucher</label>
                 <div class="field">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
                     <input id="hsPass" type="password" name="hotspot_password" required autocomplete="off" placeholder="Ask at reception" style="padding-right:64px">
                     <button type="button" class="reveal" aria-controls="hsPass" onclick="var i=document.getElementById('hsPass');var s=i.type==='password';i.type=s?'text':'password';this.textContent=s?'Hide':'Show';">Show</button>
+                </div>
+            <?php else: ?>
+                <label for="hsPass">Voucher code<?= $codeMode === 'optional' ? ' <span class="opt">(optional)</span>' : '' ?></label>
+                <div class="field">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2.5a2.5 2.5 0 0 0 0 5V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2.5a2.5 2.5 0 0 0 0-5z"/><path d="M14 5v12" stroke-dasharray="2 2"/></svg>
+                    <input id="hsPass" type="text" name="hotspot_password" <?= $codeMode === 'voucher' ? 'required' : '' ?> autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" placeholder="e.g. ABCD-2345" style="text-transform:uppercase;letter-spacing:.06em">
                 </div>
             <?php endif; ?>
             <?php if ($settings['hotspot_terms'] !== ''): ?>

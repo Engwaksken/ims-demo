@@ -206,6 +206,27 @@ if (!function_exists('hubnet_ensure_schema')) {
                     max_portal INT UNSIGNED NOT NULL DEFAULT 0,
                     PRIMARY KEY (hour_start)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                // Internet vouchers for day clients: redeemed on the hotspot page. The access
+                // period starts at first use; expires_at is the last day it can be first used.
+                "CREATE TABLE IF NOT EXISTS hub_network_vouchers (
+                    voucher_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    code VARCHAR(16) NOT NULL,
+                    batch VARCHAR(20) NOT NULL,
+                    hours SMALLINT UNSIGNED NOT NULL,
+                    max_devices TINYINT UNSIGNED NOT NULL DEFAULT 1,
+                    note VARCHAR(150) NULL,
+                    expires_at DATETIME NOT NULL,
+                    person_id INT UNSIGNED NULL,
+                    used_at DATETIME NULL,
+                    valid_until DATETIME NULL,
+                    revoked_at DATETIME NULL,
+                    created_by INT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (voucher_id),
+                    UNIQUE KEY uq_hub_voucher_code (code),
+                    KEY idx_hub_voucher_batch (batch),
+                    KEY idx_hub_voucher_person (person_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
             ];
             foreach ($extraTables as $sql) {
                 if (!$conn->query($sql)) {

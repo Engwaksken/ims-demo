@@ -392,11 +392,11 @@ elseif ($view === 'online'):
         <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
             <?= $hiHidden('devices_bulk', 'online') ?>
             <div class="table-responsive"><table class="table table-stack hr-table">
-                <thead><tr><?php if ($canControl): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all registered devices"></th><?php endif; ?><th>Device</th><th>Who</th><th>Type</th><th>IP</th><th>Seen</th><th></th></tr></thead>
+                <thead><tr><?php if ($canControl): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all devices"></th><?php endif; ?><th>Device</th><th>Who</th><th>Type</th><th>IP</th><th>Seen</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($online as $o): $d = $o['device']; ?>
                     <tr>
-                        <?php if ($canControl): ?><td data-label="Select"><?php if ($d): ?><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$d['device_id'] ?>" aria-label="Select <?= ht_e($o['mac_address']) ?>"><?php endif; ?></td><?php endif; ?>
+                        <?php if ($canControl): ?><td data-label="Select"><?php if ($d): ?><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$d['device_id'] ?>" aria-label="Select <?= ht_e($o['mac_address']) ?>"><?php else: ?><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($o['mac_address']) ?>" aria-label="Select unknown device <?= ht_e($o['mac_address']) ?>"><?php endif; ?></td><?php endif; ?>
                         <td data-label="Device"><code><?= ht_e($o['mac_address']) ?></code><?= $d && $d['label'] ? '<small class="cell-muted">' . ht_e($d['label']) . '</small>' : '' ?></td>
                         <td data-label="Who">
                             <?php if ($d): ?>
@@ -427,6 +427,9 @@ elseif ($view === 'online'):
                 <button type="submit" name="mode" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select registered devices first (unknown devices: use Register)." data-confirm="Disconnect the selected devices?" data-confirm-title="Disconnect" data-confirm-ok="Disconnect" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Disconnect</button>
                 <button type="submit" name="mode" value="allow" class="btn btn-sm btn-secondary" data-bulk-required>Always on</button>
                 <button type="submit" name="mode" value="auto" class="btn btn-sm btn-secondary" data-bulk-required>Automatic</button>
+                <span class="cell-muted" style="margin-left:8px">Unknown devices:</span>
+                <button type="submit" name="unknown_op" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select unknown devices first." data-confirm="Block and disconnect the selected unknown devices? They stay blocked until you remove them under Guests (&quot;Blocked device&quot;)." data-confirm-title="Block unknown devices" data-confirm-ok="Block" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Block</button>
+                <button type="submit" name="unknown_op" value="forget" class="btn btn-sm btn-secondary" data-bulk-required="Select unknown devices first." data-confirm="Remove the selected unknown devices from this list? Devices that are still connected appear again at the next check-in." data-confirm-title="Remove from list" data-confirm-ok="Remove"><i class="fas fa-trash" aria-hidden="true"></i> Remove from list</button>
             </div>
             <?php endif; ?>
         </form>
@@ -527,7 +530,7 @@ elseif ($view === 'hotspot'):
     <div class="card-body">
         <form method="post" action="<?= $hiAction ?>" class="hr-form-grid">
             <?= $hiHidden('save_hotspot', 'hotspot') ?>
-            <div class="form-group is-wide"><label class="hr-check"><input type="checkbox" name="hotspot_enabled" value="1"<?= $settings['hotspot_enabled'] ? ' checked' : '' ?> <?= $canSettings ? '' : 'disabled' ?>> Guest hotspot is on: unknown devices can sign in at <?= ht_e($hotspotUrl) ?></label></div>
+            <div class="form-group is-wide"><label class="hr-check"><input type="checkbox" name="hotspot_enabled" value="1"<?= $settings['hotspot_enabled'] ? ' checked' : '' ?> <?= $canSettings ? '' : 'disabled' ?>> Guest hotspot is on: unknown devices can sign in at <?= ht_e($hotspotUrl) ?></label><p class="form-hint">When off, guests see a Wi-Fi welcome page and can only get online with a voucher (Vouchers tab).</p></div>
             <div class="form-group"><label for="hiHsPass">Hotspot password</label><input id="hiHsPass" type="text" name="hotspot_password" class="form-control" autocomplete="off" placeholder="<?= $settings['hotspot_password'] !== '' ? 'Leave empty to keep the current one' : 'Empty = no password' ?>" <?= $canSettings ? '' : 'disabled' ?>>
                 <?php if ($settings['hotspot_password'] !== ''): ?><label class="hr-check"><input type="checkbox" name="clear_hotspot_password" value="1"> Remove the password (anyone on the Wi-Fi can sign in)</label><?php endif; ?></div>
             <div class="form-group"><label for="hiHsHours">Access lasts (hours)</label><input id="hiHsHours" type="number" name="hotspot_hours" min="1" max="720" class="form-control" value="<?= (int)$settings['hotspot_hours'] ?>" <?= $canSettings ? '' : 'disabled' ?>></div>
@@ -542,7 +545,7 @@ elseif ($view === 'hotspot'):
             <div class="form-group"><label for="hiHelpPhone">Help phone number</label><input id="hiHelpPhone" type="tel" name="hotspot_help_phone" class="form-control" maxlength="40" placeholder="<?= ht_e((string)(ims_brand()['phone'] ?? '')) ?>" value="<?= ht_e($settings['hotspot_help_phone']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">Empty = the organisation phone.</p></div>
             <div class="form-group"><label for="hiHelpWa">WhatsApp number</label><input id="hiHelpWa" type="tel" name="hotspot_help_whatsapp" class="form-control" maxlength="40" placeholder="+256 700 000000" value="<?= ht_e($settings['hotspot_help_whatsapp']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">With the country code. Optional.</p></div>
             <div class="form-group"><label for="hiHelpEmail">Help email</label><input id="hiHelpEmail" type="email" name="hotspot_help_email" class="form-control" maxlength="190" placeholder="<?= ht_e((string)(ims_brand()['email'] ?? '')) ?>" value="<?= ht_e($settings['hotspot_help_email']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">Empty = the organisation email.</p></div>
-            <div class="form-group is-wide"><label for="hiHelp">Help content</label><textarea id="hiHelp" name="hotspot_help" class="form-control" rows="10" placeholder="<?= ht_e(hubinet_default_help($settings)) ?>" <?= $canSettings ? '' : 'disabled' ?>><?= ht_e($settings['hotspot_help']) ?></textarea><p class="form-hint">Plain text. Start a line with <code>## </code> for a heading and <code>- </code> for a bullet; leave an empty line between paragraphs. Empty = the standard help shown as the example.</p></div>
+            <div class="form-group is-wide"><label for="hiHelp">Help content</label><textarea id="hiHelp" name="hotspot_help" class="form-control" rows="16" style="resize:vertical;min-height:260px" placeholder="<?= ht_e(hubinet_default_help($settings)) ?>" <?= $canSettings ? '' : 'disabled' ?>><?= ht_e($settings['hotspot_help']) ?></textarea><p class="form-hint">Plain text. Start a line with <code>## </code> for a heading and <code>- </code> for a bullet; leave an empty line between paragraphs. Empty = the standard help shown as the example.</p></div>
             <?php if ($canSettings): ?><div class="form-group is-wide"><button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save hotspot settings</button></div><?php endif; ?>
         </form>
     </div>
@@ -602,6 +605,154 @@ elseif ($view === 'hotspot'):
         setTimeout(function () { window.print(); }, 150);
     };
 })();
+</script>
+<?php
+/* =====================================================================
+   VOUCHERS: internet access codes for day clients
+   ===================================================================== */
+elseif ($view === 'vouchers'):
+    $vStatuses = ['unused' => 'Unused', 'active' => 'In use', 'used' => 'Used up', 'expired' => 'Expired', 'revoked' => 'Cancelled'];
+    $vFilters = [
+        'status' => array_key_exists($_GET['status'] ?? '', $vStatuses) ? (string)$_GET['status'] : '',
+        'q' => mb_substr(trim((string)($_GET['q'] ?? '')), 0, 60),
+        'batch' => preg_match('/\A[0-9]{6}-[0-9]{6}\z/', (string)($_GET['batch'] ?? '')) ? (string)$_GET['batch'] : '',
+    ];
+    $vouchers = hubinet_vouchers($conn, $vFilters);
+    $vCounts = hubinet_voucher_counts($conn);
+    $vNew = !empty($_GET['print']) && $vFilters['batch'] !== '' && $vouchers !== [];
+    $vContacts = hubinet_help_contacts($settings);
+    $vOrg = (string)(ims_brand()['name'] ?? 'Guest Wi-Fi');
+    $vBadge = ['unused' => 'badge-info', 'active' => 'badge-success', 'used' => 'badge-secondary', 'expired' => 'badge-warning', 'revoked' => 'badge-danger'];
+    $vQuery = static function (array $over) use ($vFilters): string {
+        $q = array_filter(array_merge(['view' => 'vouchers'], $vFilters, $over), fn($v) => $v !== '' && $v !== null);
+        return 'hub-team?' . http_build_query($q);
+    };
+?>
+<style>
+.hi-vcode { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-weight: 700; letter-spacing: .06em; font-size: 1rem; }
+.hi-vsheet { display: none; }
+@media print {
+    body.hi-vprinting > *:not(.hi-vsheet) { display: none !important; }
+    body.hi-vprinting .hi-vsheet { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .hi-vcard { border: 1.5px dashed #555; border-radius: 10px; padding: 12px 12px 10px; break-inside: avoid; font: 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: #111; }
+    .hi-vcard .org { font-weight: 700; font-size: 12px; }
+    .hi-vcard .kind { text-transform: uppercase; letter-spacing: .08em; font-size: 9px; color: #555; }
+    .hi-vcard .code { font: 700 20px/1.2 ui-monospace, Consolas, monospace; letter-spacing: .08em; margin: 8px 0 6px; padding: 6px 0; text-align: center; border: 1px solid #ccc; border-radius: 6px; }
+    .hi-vcard .meta { font-weight: 600; }
+    .hi-vcard ol { margin: 6px 0; padding-left: 16px; }
+    .hi-vcard .small { font-size: 9.5px; color: #555; }
+    @page { margin: 10mm; }
+}
+</style>
+
+<?php if ($vNew): ?>
+<div class="alert alert-success" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+    <span><i class="fas fa-ticket" aria-hidden="true"></i> <?= count($vouchers) ?> new voucher(s) ready. They are selected below.</span>
+    <button type="button" class="btn btn-primary btn-sm" onclick="hiPrintVouchers()"><i class="fas fa-print" aria-hidden="true"></i> Print vouchers</button>
+</div>
+<?php endif; ?>
+
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-ticket" aria-hidden="true"></i> Create vouchers</h3></div>
+    <div class="card-body">
+        <p class="form-hint" style="margin-top:0">Give a voucher to a day client: they join the Wi-Fi, open any website and enter the code on the sign-in page. The time starts when the code is first used. Vouchers work even when the open guest hotspot is switched off.</p>
+        <form method="post" action="<?= $hiAction ?>" class="hr-form-grid">
+            <?= $hiHidden('create_vouchers', 'vouchers') ?>
+            <div class="form-group"><label for="hvQty">Number of vouchers</label><input id="hvQty" type="number" name="quantity" min="1" max="200" value="1" class="form-control" required></div>
+            <div class="form-group"><label for="hvHours">Internet time per voucher</label>
+                <select id="hvHours" name="hours" class="form-control" onchange="document.getElementById('hvCustomWrap').hidden = this.value !== '-1'">
+                    <?php foreach ([1 => '1 hour', 2 => '2 hours', 4 => '4 hours', 8 => '8 hours', 24 => '1 day', 48 => '2 days', 72 => '3 days', 168 => '1 week', 720 => '30 days', -1 => 'Custom…'] as $hv => $hl): ?>
+                        <option value="<?= $hv ?>"<?= $hv === 24 ? ' selected' : '' ?>><?= $hl ?></option>
+                    <?php endforeach; ?>
+                </select></div>
+            <div class="form-group" id="hvCustomWrap" hidden><label for="hvCustom">Custom time (hours)</label><input id="hvCustom" type="number" name="custom_hours" min="1" max="2160" class="form-control" placeholder="e.g. 6"></div>
+            <div class="form-group"><label for="hvDevices">Devices per voucher</label><input id="hvDevices" type="number" name="max_devices" min="1" max="10" value="1" class="form-control" required><p class="form-hint">e.g. 2 for a phone and a laptop.</p></div>
+            <div class="form-group"><label for="hvDays">Must be used within (days)</label><input id="hvDays" type="number" name="use_within_days" min="1" max="365" value="7" class="form-control" required></div>
+            <div class="form-group is-wide"><label for="hvNote">Client or note <span class="cell-muted">(optional)</span></label><input id="hvNote" name="note" maxlength="150" class="form-control" placeholder="e.g. client name, or &quot;Training 21 Nov&quot;"></div>
+            <div class="form-group is-wide"><button class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Create vouchers</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3><i class="fas fa-list" aria-hidden="true"></i> Vouchers (<?= count($vouchers) ?>)</h3>
+        <form method="get" action="hub-team" style="display:flex;gap:6px">
+            <input type="hidden" name="view" value="vouchers">
+            <?php if ($vFilters['status'] !== ''): ?><input type="hidden" name="status" value="<?= ht_e($vFilters['status']) ?>"><?php endif; ?>
+            <input type="search" name="q" value="<?= ht_e($vFilters['q']) ?>" class="form-control" placeholder="Code, client or guest" aria-label="Search vouchers" style="min-width:200px">
+            <button class="btn btn-soft" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></button>
+        </form>
+    </div>
+    <div class="card-body">
+        <div class="hr-stage-pills">
+            <a href="<?= ht_e($vQuery(['status' => ''])) ?>" class="<?= $vFilters['status'] === '' ? 'active' : '' ?>">All <span class="n"><?= $vCounts['total'] ?></span></a>
+            <?php foreach ($vStatuses as $sk => $sl): ?>
+                <a href="<?= ht_e($vQuery(['status' => $sk])) ?>" class="<?= $vFilters['status'] === $sk ? 'active' : '' ?>"><?= $sl ?> <span class="n"><?= $vCounts[$sk] ?></span></a>
+            <?php endforeach; ?>
+        </div>
+        <?php if ($vFilters['batch'] !== ''): ?>
+            <p class="cell-muted">Showing batch <code><?= ht_e($vFilters['batch']) ?></code> &middot; <a href="<?= ht_e($vQuery(['batch' => '', 'print' => ''])) ?>">Show all vouchers</a></p>
+        <?php endif; ?>
+        <?php if (!$vouchers): ?>
+            <div class="empty-state"><i class="fas fa-ticket" aria-hidden="true"></i><p>No vouchers<?= $vFilters['status'] !== '' || $vFilters['q'] !== '' ? ' match this filter' : ' yet. Create some above' ?>.</p></div>
+        <?php else: ?>
+        <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
+            <?= $hiHidden('vouchers_bulk', 'vouchers') ?>
+            <div class="table-responsive"><table class="table table-stack hr-table">
+                <thead><tr><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all vouchers"<?= $vNew ? ' checked' : '' ?>></th><th>Code</th><th>Time</th><th>Devices</th><th>Client / note</th><th>Status</th><th>Used by</th><th>Use by</th></tr></thead>
+                <tbody>
+                <?php foreach ($vouchers as $v): ?>
+                    <tr data-code="<?= ht_e(hubinet_voucher_format($v['code'])) ?>" data-time="<?= ht_e(hubinet_voucher_duration((int)$v['hours'])) ?>" data-devices="<?= (int)$v['max_devices'] ?>" data-expires="<?= ht_e(date('j M Y', strtotime((string)$v['expires_at']))) ?>" data-note="<?= ht_e((string)$v['note']) ?>">
+                        <td data-label="Select"><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$v['voucher_id'] ?>" aria-label="Select voucher <?= ht_e(hubinet_voucher_format($v['code'])) ?>"<?= $vNew ? ' checked' : '' ?>></td>
+                        <td data-label="Code"><span class="hi-vcode"><?= ht_e(hubinet_voucher_format($v['code'])) ?></span></td>
+                        <td data-label="Time"><?= ht_e(hubinet_voucher_duration((int)$v['hours'])) ?></td>
+                        <td data-label="Devices"><?= $v['person_id'] ? (int)$v['device_count'] . ' / ' : '' ?><?= (int)$v['max_devices'] ?></td>
+                        <td data-label="Client / note"><?= $v['note'] ? ht_e($v['note']) : '<span class="cell-muted">-</span>' ?></td>
+                        <td data-label="Status"><span class="badge <?= $vBadge[$v['status']] ?>"><?= ht_e($vStatuses[$v['status']]) ?></span></td>
+                        <td data-label="Used by">
+                            <?php if ($v['person_id']): ?>
+                                <a href="hub-team?view=guests&amp;person=<?= (int)$v['person_id'] ?>"><?= ht_e($v['person_name'] ?: 'Guest') ?></a>
+                                <small class="cell-muted"><?= $v['person_phone'] ? ht_e($v['person_phone']) . ' &middot; ' : '' ?>until <?= ht_e(date('j M H:i', strtotime((string)$v['valid_until']))) ?></small>
+                            <?php else: ?><span class="cell-muted">Not used</span><?php endif; ?>
+                        </td>
+                        <td data-label="Use by"><?= ht_e(date('j M Y', strtotime((string)$v['expires_at']))) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table></div>
+            <div class="hr-bulkbar" data-bulk-bar>
+                <span data-bulk-count>None selected</span>
+                <button type="button" class="btn btn-sm btn-primary" data-bulk-required="Select the vouchers to print." onclick="hiPrintVouchers()"><i class="fas fa-print" aria-hidden="true"></i> Print</button>
+                <button type="submit" name="op" value="revoke" class="btn btn-sm btn-secondary" data-bulk-required data-confirm="Cancel the selected vouchers? Guests using them are disconnected." data-confirm-title="Cancel vouchers" data-confirm-ok="Cancel vouchers"><i class="fas fa-ban" aria-hidden="true"></i> Cancel</button>
+                <button type="submit" name="op" value="delete" class="btn btn-sm btn-danger" data-bulk-required data-confirm="Delete the selected vouchers? Guests using them are disconnected. This cannot be undone." data-confirm-title="Delete vouchers" data-confirm-ok="Delete" data-confirm-danger><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+            </div>
+        </form>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+window.hiPrintVouchers = function () {
+    var rows = Array.prototype.map.call(document.querySelectorAll('input.hr-sel[name="ids[]"]:checked'), function (c) { return c.closest('tr'); });
+    if (!rows.length) return;
+    var esc = function (s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; };
+    var org = <?= json_encode($vOrg) ?>, ssid = <?= json_encode($settings['wifi_ssid']) ?>, phone = <?= json_encode($vContacts['phone']) ?>;
+    var sheet = document.createElement('div');
+    sheet.className = 'hi-vsheet';
+    sheet.innerHTML = rows.map(function (r) {
+        var d = r.dataset;
+        return '<div class="hi-vcard"><div class="org">' + esc(org) + '</div><div class="kind">Guest Wi-Fi voucher</div>'
+            + '<div class="code">' + esc(d.code) + '</div>'
+            + '<div class="meta">' + esc(d.time) + ' of internet &middot; ' + esc(d.devices) + ' device' + (d.devices === '1' ? '' : 's') + '</div>'
+            + '<ol><li>Join the Wi-Fi' + (ssid ? ' <strong>' + esc(ssid) + '</strong>' : '') + '</li><li>Open any website</li><li>Enter this code and tap Connect</li></ol>'
+            + '<div class="small">Use by ' + esc(d.expires) + '. Time starts at first use.' + (phone ? ' Help: ' + esc(phone) : '') + (d.note ? '<br>' + esc(d.note) : '') + '</div></div>';
+    }).join('');
+    document.body.appendChild(sheet);
+    document.body.classList.add('hi-vprinting');
+    var done = function () { document.body.classList.remove('hi-vprinting'); sheet.remove(); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); }, 100);
+};
 </script>
 <?php endif; ?>
 

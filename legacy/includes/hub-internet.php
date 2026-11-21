@@ -844,8 +844,8 @@ function hubinet_pfsense_page(array $settings, string $kind): string
 :root { --brand: ' . $c . '; --brand-dark: ' . $cDark . '; --on-brand: ' . $onBrand . '; --ink: #111827; --muted: #6b7280; --line: #e5e7eb; --bg: #f3f4f6; --card: #fff; --soft: #f9fafb; }
 @media (prefers-color-scheme: dark) { :root { --ink: #f3f4f6; --muted: #9ca3af; --line: #2d3340; --bg: #0b0f17; --card: #161b26; --soft: #1d2330; } }
 * { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; }
-.card { width: 100%; max-width: 440px; background: var(--card); border-radius: 20px; box-shadow: 0 18px 48px rgba(17,24,39,.12); overflow: hidden; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+.card { margin: auto 0; width: 100%; max-width: 440px; background: var(--card); border-radius: 20px; box-shadow: 0 18px 48px rgba(17,24,39,.12); overflow: hidden; }
 .head { background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: var(--on-brand); padding: 28px 24px 24px; text-align: center; }
 .logo { display: inline-flex; background: #fff; border-radius: 14px; padding: 10px 16px; box-shadow: 0 6px 18px rgba(0,0,0,.15); }
 .logo img { display: block; max-height: 44px; max-width: 188px; }
@@ -935,9 +935,6 @@ function hubinet_hotspot_landing(array $settings): string
 function hubinet_hotspot_signin(mysqli $conn, array $post, string $mac, string $ip): array
 {
     $settings = hubnet_settings($conn);
-    if (!$settings['hotspot_enabled']) {
-        return hubinet_result(false, 'The guest hotspot is not available right now. Please ask at reception.');
-    }
     $mac = hubnet_normalize_mac($mac);
     if ($mac === '') {
         return hubinet_result(false, 'We could not identify your device. Connect to the hub Wi-Fi first, then open any website to get here.');
@@ -954,8 +951,21 @@ function hubinet_hotspot_signin(mysqli $conn, array $post, string $mac, string $
     if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return hubinet_result(false, 'Please enter a valid email address or leave it empty.');
     }
-    if ($settings['hotspot_password'] !== '' && !hash_equals($settings['hotspot_password'], (string)($post['hotspot_password'] ?? ''))) {
-        return hubinet_result(false, 'That hotspot password is not correct. Ask at reception for today\'s password.');
+    // The access field takes the hotspot password or a voucher. With the hotspot
+    // switched off, only vouchers work.
+    $code = trim((string)($post['hotspot_password'] ?? ''));
+    $voucher = $code !== '' ? hubinet_find_voucher($conn, $code) : null;
+    if ($voucher) {
+        $problem = hubinet_voucher_problem($voucher);
+        if ($problem !== '') {
+            return hubinet_result(false, $problem);
+        }
+    } elseif (!$settings['hotspot_enabled']) {
+        return hubinet_result(false, $code === ''
+            ? 'Please enter your voucher code. Vouchers are available at reception.'
+            : 'That voucher code is not valid. Check it and try again, or ask at reception.');
+    } elseif ($settings['hotspot_password'] !== '' && !hash_equals($settings['hotspot_password'], $code)) {
+        return hubinet_result(false, 'That access code or voucher is not correct. Ask at reception for today\'s code.');
     }
     if ($settings['hotspot_terms'] !== '' && empty($post['accept_terms'])) {
         return hubinet_result(false, 'Please accept the terms of use.');
@@ -970,6 +980,10 @@ function hubinet_hotspot_signin(mysqli $conn, array $post, string $mac, string $
     if ($check === 'mismatch') {
         hubnet_log($conn, null, $mac, 'hotspot:refused', false, 'Device/IP not seen on the hub network (' . $ip . ')', 0);
         return hubinet_result(false, 'This sign-in must be done from the device that is connected to the hub Wi-Fi.');
+    }
+
+    if ($voucher) {
+        return hubinet_redeem_voucher($conn, $voucher, $mac, $name, $phone, $email, $ip);
     }
 
     $until = date('Y-m-d H:i:s', time() + $settings['hotspot_hours'] * 3600);
@@ -1155,4 +1169,330 @@ function hubinet_daily_peaks(mysqli $conn, int $days = 14): array
         $out[] = ['day' => $d, 'peak' => (int)($byDay[$d] ?? 0)];
     }
     return $out;
+}
+
+/* ======================================================================
+ | Internet vouchers for day clients (Hub Team & Internet > Vouchers)
+ * ==================================================================== */
+
+const HUBINET_VOUCHER_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L
+
+/** "ABCD2345" from anything the guest typed ("abcd-2345", " ABCD 2345 "). */
+function hubinet_voucher_normalize(string $code): string
+{
+    return strtoupper((string)preg_replace('/[^A-Za-z0-9]/', '', $code));
+}
+
+/** "ABCD-2345" for display and printing. */
+function hubinet_voucher_format(string $code): string
+{
+    return strlen($code) === 8 ? substr($code, 0, 4) . '-' . substr($code, 4) : $code;
+}
+
+/** Duration label: "3 hours", "1 day", "1 week". */
+function hubinet_voucher_duration(int $hours): string
+{
+    if ($hours % 168 === 0) {
+        $n = intdiv($hours, 168);
+        return $n . ' week' . ($n === 1 ? '' : 's');
+    }
+    if ($hours % 24 === 0) {
+        $n = intdiv($hours, 24);
+        return $n . ' day' . ($n === 1 ? '' : 's');
+    }
+    return $hours . ' hour' . ($hours === 1 ? '' : 's');
+}
+
+/** unused | active | used | expired | revoked */
+function hubinet_voucher_status(array $v): string
+{
+    if (!empty($v['revoked_at'])) {
+        return 'revoked';
+    }
+    if (empty($v['used_at'])) {
+        return strtotime((string)$v['expires_at']) < time() ? 'expired' : 'unused';
+    }
+    return strtotime((string)$v['valid_until']) >= time() ? 'active' : 'used';
+}
+
+/** Creates a batch of vouchers. */
+function hubinet_create_vouchers(mysqli $conn, array $post, int $uid): array
+{
+    $qty = (int)($post['quantity'] ?? 1);
+    $hours = (int)($post['hours'] ?? 0) === -1 ? (int)($post['custom_hours'] ?? 0) : (int)($post['hours'] ?? 24);
+    $devices = (int)($post['max_devices'] ?? 1);
+    $days = (int)($post['use_within_days'] ?? 7);
+    $note = mb_substr(trim((string)($post['note'] ?? '')), 0, 150);
+    if ($qty < 1 || $qty > 200) {
+        return hubinet_result(false, 'Create between 1 and 200 vouchers at a time.');
+    }
+    if ($hours < 1 || $hours > 2160) {
+        return hubinet_result(false, 'Choose a duration between 1 hour and 90 days.');
+    }
+    if ($devices < 1 || $devices > 10) {
+        return hubinet_result(false, 'A voucher can be used on 1 to 10 devices.');
+    }
+    if ($days < 1 || $days > 365) {
+        return hubinet_result(false, 'Vouchers must be usable for 1 to 365 days.');
+    }
+    $batch = date('ymd-His');
+    $expires = date('Y-m-d 23:59:59', strtotime('+' . ($days - 1) . ' days'));
+    $stmt = $conn->prepare('INSERT IGNORE INTO hub_network_vouchers (code, batch, hours, max_devices, note, expires_at, created_by)
+                            VALUES (?, ?, ?, ?, NULLIF(?, \'\'), ?, ?)');
+    $made = 0;
+    $alphabet = HUBINET_VOUCHER_ALPHABET;
+    for ($tries = 0; $made < $qty && $tries < $qty * 5; $tries++) {
+        $code = '';
+        for ($i = 0; $i < 8; $i++) {
+            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+        $stmt->bind_param('ssiissi', $code, $batch, $hours, $devices, $note, $expires, $uid);
+        if ($stmt->execute() && $stmt->affected_rows === 1) {
+            $made++;
+        }
+    }
+    $stmt->close();
+    return hubinet_result($made > 0, $made > 0
+        ? $made . ' voucher(s) created: ' . hubinet_voucher_duration($hours) . ' each, ' . $devices . ' device(s), usable until ' . date('j M Y', strtotime($expires)) . '.'
+        : 'Vouchers could not be created.', ['batch' => $batch]);
+}
+
+/** Voucher list. Filters: status, q (code, note or guest name), batch. */
+function hubinet_vouchers(mysqli $conn, array $filters = []): array
+{
+    $where = ['1=1'];
+    $types = '';
+    $params = [];
+    $q = trim((string)($filters['q'] ?? ''));
+    if ($q !== '') {
+        $where[] = '(v.code LIKE ? OR v.note LIKE ? OR p.full_name LIKE ?)';
+        $likeText = '%' . $q . '%';
+        array_push($params, '%' . hubinet_voucher_normalize($q) . '%', $likeText, $likeText);
+        $types .= 'sss';
+    }
+    if (($filters['batch'] ?? '') !== '') {
+        $where[] = 'v.batch = ?';
+        $params[] = (string)$filters['batch'];
+        $types .= 's';
+    }
+    $where[] = match ($filters['status'] ?? '') {
+        'unused' => 'v.revoked_at IS NULL AND v.used_at IS NULL AND v.expires_at >= NOW()',
+        'active' => 'v.revoked_at IS NULL AND v.used_at IS NOT NULL AND v.valid_until >= NOW()',
+        'used' => 'v.revoked_at IS NULL AND v.used_at IS NOT NULL AND v.valid_until < NOW()',
+        'expired' => 'v.revoked_at IS NULL AND v.used_at IS NULL AND v.expires_at < NOW()',
+        'revoked' => 'v.revoked_at IS NOT NULL',
+        default => '1=1',
+    };
+    $stmt = $conn->prepare('SELECT v.*, p.full_name AS person_name, p.phone AS person_phone,
+                   (SELECT COUNT(*) FROM hub_network_devices d WHERE d.person_id = v.person_id) AS device_count
+              FROM hub_network_vouchers v
+              LEFT JOIN hub_network_people p ON p.person_id = v.person_id
+             WHERE ' . implode(' AND ', $where) . '
+             ORDER BY v.created_at DESC, v.voucher_id DESC LIMIT 500');
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    foreach ($rows as &$row) {
+        $row['status'] = hubinet_voucher_status($row);
+    }
+    unset($row);
+    return $rows;
+}
+
+/** Counts per status for the filter pills. */
+function hubinet_voucher_counts(mysqli $conn): array
+{
+    $res = $conn->query("SELECT COUNT(*) total,
+            SUM(revoked_at IS NULL AND used_at IS NULL AND expires_at >= NOW()) unused,
+            SUM(revoked_at IS NULL AND used_at IS NOT NULL AND valid_until >= NOW()) active,
+            SUM(revoked_at IS NULL AND used_at IS NOT NULL AND valid_until < NOW()) used,
+            SUM(revoked_at IS NULL AND used_at IS NULL AND expires_at < NOW()) expired,
+            SUM(revoked_at IS NOT NULL) revoked
+        FROM hub_network_vouchers");
+    $c = $res ? (array)$res->fetch_assoc() : [];
+    $out = [];
+    foreach (['total', 'unused', 'active', 'used', 'expired', 'revoked'] as $k) {
+        $out[$k] = (int)($c[$k] ?? 0);
+    }
+    return $out;
+}
+
+/** Ends the internet access of the guest using a voucher (revoke / delete). */
+function hubinet_voucher_end_access(mysqli $conn, int $personId, int $uid): void
+{
+    if ($personId <= 0) {
+        return;
+    }
+    $stmt = $conn->prepare('UPDATE hub_network_people SET valid_until = NOW() WHERE person_id = ? AND (valid_until IS NULL OR valid_until > NOW())');
+    $stmt->bind_param('i', $personId);
+    $stmt->execute();
+    $stmt->close();
+    hubnet_apply($conn, hubnet_devices_where($conn, 'd.person_id = ?', 'i', [$personId]), $uid, 'voucher-revoked');
+}
+
+/** Bulk revoke / delete. Revoking or deleting a voucher in use disconnects its devices. */
+function hubinet_vouchers_bulk(mysqli $conn, array $ids, string $op, int $uid): array
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $ids), fn($i) => $i > 0)));
+    if (!$ids || !in_array($op, ['revoke', 'delete'], true)) {
+        return hubinet_result(false, 'Select vouchers first.');
+    }
+    $marks = implode(',', array_fill(0, count($ids), '?'));
+    $types = str_repeat('i', count($ids));
+    $stmt = $conn->prepare("SELECT voucher_id, person_id, valid_until, revoked_at FROM hub_network_vouchers WHERE voucher_id IN ($marks)");
+    $stmt->bind_param($types, ...$ids);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+    foreach ($rows as $v) {
+        if (empty($v['revoked_at']) && !empty($v['person_id']) && strtotime((string)$v['valid_until']) > time()) {
+            hubinet_voucher_end_access($conn, (int)$v['person_id'], $uid);
+        }
+    }
+    $stmt = $conn->prepare($op === 'delete'
+        ? "DELETE FROM hub_network_vouchers WHERE voucher_id IN ($marks)"
+        : "UPDATE hub_network_vouchers SET revoked_at = COALESCE(revoked_at, NOW()) WHERE voucher_id IN ($marks)");
+    $stmt->bind_param($types, ...$ids);
+    $stmt->execute();
+    $n = $stmt->affected_rows;
+    $stmt->close();
+    return hubinet_result(true, $n . ' voucher(s) ' . ($op === 'delete' ? 'deleted' : 'revoked') . '. Devices using them are disconnected.');
+}
+
+/** The voucher matching what a guest typed, or null. */
+function hubinet_find_voucher(mysqli $conn, string $input): ?array
+{
+    $code = hubinet_voucher_normalize($input);
+    if (strlen($code) !== 8) {
+        return null;
+    }
+    $stmt = $conn->prepare('SELECT * FROM hub_network_vouchers WHERE code = ? LIMIT 1');
+    if (!$stmt) {
+        return null;
+    }
+    $stmt->bind_param('s', $code);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    return $row ?: null;
+}
+
+/** Why a voucher cannot be used right now, or '' when it can. */
+function hubinet_voucher_problem(array $v): string
+{
+    return match (hubinet_voucher_status($v)) {
+        'revoked' => 'This voucher has been cancelled. Please ask at reception.',
+        'expired' => 'This voucher was not used in time and has expired. Please ask at reception for a new one.',
+        'used' => 'This voucher has run out. Please ask at reception for a new one.',
+        default => '',
+    };
+}
+
+/**
+ * Signs a device in with a voucher. The first use starts the access period;
+ * further devices (up to max_devices) join the same guest until it ends.
+ */
+function hubinet_redeem_voucher(mysqli $conn, array $voucher, string $mac, string $name, string $phone, string $email, string $ip): array
+{
+    $label = 'Voucher ' . hubinet_voucher_format((string)$voucher['code']);
+    $existing = hubnet_devices_where($conn, 'd.mac_address = ?', 's', [$mac]);
+    $dev = $existing[0] ?? null;
+    if ($dev && $dev['owner_kind'] !== 'guest') {
+        return hubinet_result(true, 'This device is already registered with the hub. You should be online within a minute.', ['until' => null]);
+    }
+    if ($dev && ($dev['access_mode'] === 'block' || ($dev['person_status'] ?? '') === 'Suspended')) {
+        return hubinet_result(false, 'This device has been blocked from the hotspot. Please ask at reception.');
+    }
+
+    // Already in use: add this device to the same guest (within the device limit).
+    if (!empty($voucher['person_id'])) {
+        $pid = (int)$voucher['person_id'];
+        $until = (string)$voucher['valid_until'];
+        if ($dev && (int)$dev['person_id'] === $pid) {
+            return hubinet_result(true, 'Welcome back, ' . $name . '!', ['until' => $until]);
+        }
+        $countRes = $conn->query('SELECT COUNT(*) n FROM hub_network_devices WHERE person_id = ' . $pid);
+        $count = $countRes ? (int)($countRes->fetch_assoc()['n'] ?? 0) : 0;
+        if ($count >= (int)$voucher['max_devices']) {
+            return hubinet_result(false, 'This voucher is already in use on ' . $count . ' device' . ($count === 1 ? '' : 's') . ', the maximum allowed. Please ask at reception.');
+        }
+        if ($dev) {
+            $devId = (int)$dev['device_id'];
+            $stmt = $conn->prepare('UPDATE hub_network_devices SET person_id = ?, member_id = NULL, label = ? WHERE device_id = ?');
+            $stmt->bind_param('isi', $pid, $label, $devId);
+            $stmt->execute();
+            $stmt->close();
+            hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$devId]), 0, 'voucher');
+        } else {
+            $r = hubinet_add_device($conn, $pid, $mac, $label, 0);
+            if (!$r['ok']) {
+                return $r;
+            }
+        }
+        hubnet_log($conn, null, $mac, 'voucher:device', true, $label . ' ' . $ip, 0);
+        return hubinet_result(true, 'Welcome, ' . $name . '!', ['until' => $until]);
+    }
+
+    // First use: the access period starts now.
+    $until = date('Y-m-d H:i:s', time() + (int)$voucher['hours'] * 3600);
+    if ($dev) {
+        $pid = (int)$dev['person_id'];
+        $stmt = $conn->prepare("UPDATE hub_network_people SET full_name = ?, phone = NULLIF(?, ''), email = NULLIF(?, ''),
+                                valid_until = GREATEST(COALESCE(valid_until, NOW()), ?) WHERE person_id = ?");
+        $stmt->bind_param('ssssi', $name, $phone, $email, $until, $pid);
+        $stmt->execute();
+        $stmt->close();
+    } else {
+        $note = mb_substr($label . (!empty($voucher['note']) ? ' - ' . $voucher['note'] : ''), 0, 255);
+        $stmt = $conn->prepare("INSERT INTO hub_network_people (kind, full_name, email, phone, status, valid_until, source, note)
+                                VALUES ('guest', ?, NULLIF(?, ''), NULLIF(?, ''), 'Active', ?, 'hotspot', ?)");
+        $stmt->bind_param('sssss', $name, $email, $phone, $until, $note);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            return hubinet_result(false, 'We could not sign you in. Please try again.');
+        }
+        $pid = (int)$stmt->insert_id;
+        $stmt->close();
+    }
+
+    // Claim the voucher (only if nobody claimed it in the meantime).
+    $vid = (int)$voucher['voucher_id'];
+    $stmt = $conn->prepare('UPDATE hub_network_vouchers SET person_id = ?, used_at = NOW(), valid_until = ? WHERE voucher_id = ? AND person_id IS NULL AND revoked_at IS NULL');
+    $stmt->bind_param('isi', $pid, $until, $vid);
+    $stmt->execute();
+    $claimed = $stmt->affected_rows === 1;
+    $stmt->close();
+    if (!$claimed) {
+        return hubinet_result(false, 'This voucher was just used by someone else. Please ask at reception.');
+    }
+
+    if ($dev) {
+        hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [(int)$dev['device_id']]), 0, 'voucher');
+    } else {
+        $r = hubinet_add_device($conn, $pid, $mac, $label, 0);
+        if (!$r['ok']) {
+            return $r;
+        }
+    }
+    hubnet_log($conn, null, $mac, 'voucher:signin', true, $label . ' ' . $name . ' ' . $ip, 0);
+    return hubinet_result(true, 'Welcome, ' . $name . '!', ['until' => $until]);
+}
+
+/** Forget unknown devices from the online list (they come back if still connected). */
+function hubinet_forget_online(mysqli $conn, array $macs): int
+{
+    $macs = array_values(array_filter(array_map(static fn($m) => hubnet_normalize_mac((string)$m), $macs)));
+    if (!$macs) {
+        return 0;
+    }
+    $marks = implode(',', array_fill(0, count($macs), '?'));
+    $stmt = $conn->prepare("DELETE FROM hub_network_online WHERE mac_address IN ($marks)");
+    $stmt->bind_param(str_repeat('s', count($macs)), ...$macs);
+    $stmt->execute();
+    $n = $stmt->affected_rows;
+    $stmt->close();
+    return $n;
 }
