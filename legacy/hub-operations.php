@@ -88,6 +88,19 @@ if (isset($_GET['edit_member'])) {
     $edit_member = $result->fetch_assoc();
 }
 
+// "Mark as member" from Hub Visitors: open Add member filled in from the visitor.
+$from_visitor = null;
+if (!$edit_member && isset($_GET['from_visitor'])) {
+    $fv = $conn->prepare('SELECT visitor_id, visitor_name, email, phone, organization FROM hub_visitors WHERE visitor_id = ? LIMIT 1');
+    if ($fv) {
+        $fvId = (int)$_GET['from_visitor'];
+        $fv->bind_param('i', $fvId);
+        $fv->execute();
+        $from_visitor = $fv->get_result()->fetch_assoc() ?: null;
+        $fv->close();
+    }
+}
+
 // Get subscription for editing
 $edit_subscription = null;
 if (isset($_GET['edit_subscription'])) {
@@ -1483,6 +1496,10 @@ new Chart(revenueTrendCtx, {
                 <?php if ($edit_member): ?>
                     <input type="hidden" name="member_id" value="<?php echo $edit_member['member_id']; ?>">
                 <?php endif; ?>
+                <?php if ($from_visitor): ?>
+                    <input type="hidden" name="from_visitor" value="<?php echo (int)$from_visitor['visitor_id']; ?>">
+                    <p class="form-hint" style="margin-top:0">Filled in from visitor <strong><?php echo hub_e($from_visitor['visitor_name']); ?></strong>. Choose the plan and package, then save: the member then appears under Hub Team &amp; Internet &gt; Companies &amp; devices.</p>
+                <?php endif; ?>
                 
                 <div class="form-row">
                     <div class="form-group">
@@ -1910,6 +1927,14 @@ function rejectReceipt(receiptId) {
 }
 
 // Auto-open modals when editing
+<?php if ($from_visitor): ?>
+    window.addEventListener('DOMContentLoaded', function() {
+        var m = document.getElementById('addMemberModal');
+        var v = <?php echo json_encode(['full_name' => (string)$from_visitor['visitor_name'], 'email' => (string)$from_visitor['email'], 'phone' => (string)$from_visitor['phone'], 'company_name' => (string)$from_visitor['organization']], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        Object.keys(v).forEach(function (k) { var f = m.querySelector('[name="' + k + '"]'); if (f && v[k]) f.value = v[k]; });
+        openModal('addMemberModal');
+    });
+<?php endif; ?>
 <?php if ($edit_member): ?>
     window.addEventListener('DOMContentLoaded', function() {
         openModal('addMemberModal');

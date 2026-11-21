@@ -410,7 +410,7 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                                     </a>
                                 <?php endif; ?>
                                 <?php if (empty($v['is_member'])): ?>
-                                    <a href="includes/hub-visitors-process.php?mark_member=<?= (int)$v['visitor_id'] ?>&amp;csrf_token=<?= h(csrf_token()) ?>" class="btn btn-soft btn-sm" title="Mark as hub member">
+                                    <a href="hub-operations?tab=members&amp;from_visitor=<?= (int)$v['visitor_id'] ?>" class="btn btn-soft btn-sm" title="Make a hub member (opens Add member, filled in)">
                                         <i class="fas fa-user-check" aria-hidden="true"></i>
                                     </a>
                                 <?php endif; ?>

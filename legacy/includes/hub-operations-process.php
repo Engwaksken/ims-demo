@@ -227,6 +227,53 @@ function hub_send_member_credentials(string $email, string $fullName, string $me
     return sendEmail($email, 'Your ' . $orgName . ' Member Account', email_wrapper($content), $altBody);
 }
 
+/**
+ * After a member is added: mark the visitor it came from (Hub Visitors >
+ * Mark as member) as a member, and move guest Wi-Fi devices registered
+ * with the same email or phone to the new member, so the member and its
+ * devices show under Hub Team & Internet > Companies & devices.
+ * Returns a note for the success message.
+ */
+function hub_link_new_member(mysqli $conn, int $memberId, int $visitorId, string $email, string $phone, int $userId): string
+{
+    $notes = [];
+    try {
+        if ($visitorId > 0) {
+            $stmt = $conn->prepare('UPDATE hub_visitors SET is_member = 1 WHERE visitor_id = ?');
+            if ($stmt) {
+                $stmt->bind_param('i', $visitorId);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+
+        require_once __DIR__ . '/hub-internet.php';
+        if (!function_exists('hubinet_person_to_member') || !hubnet_ensure_schema($conn)) {
+            return '';
+        }
+        $digits = preg_replace('/\D+/', '', $phone);
+        $people = $conn->query("SELECT person_id, email, phone FROM hub_network_people WHERE kind = 'guest'");
+        $moved = 0;
+        foreach ($people ? $people->fetch_all(MYSQLI_ASSOC) : [] as $p) {
+            $sameEmail = $email !== '' && strcasecmp((string)$p['email'], $email) === 0;
+            $pDigits = preg_replace('/\D+/', '', (string)$p['phone']);
+            $samePhone = strlen($digits) >= 7 && strlen($pDigits) >= 7 && substr($pDigits, -9) === substr($digits, -9);
+            if ($sameEmail || $samePhone) {
+                $r = hubinet_person_to_member($conn, (int)$p['person_id'], $memberId, 'primary', '', $userId);
+                if ($r['ok']) {
+                    $moved++;
+                }
+            }
+        }
+        if ($moved > 0) {
+            $notes[] = 'Their guest Wi-Fi devices were moved to the new member.';
+        }
+    } catch (Throwable $e) {
+        error_log('[hub-operations] link new member: ' . $e->getMessage());
+    }
+    return $notes ? ' ' . implode(' ', $notes) : '';
+}
+
 /* =========================
    ADD MEMBER
 ========================= */
@@ -321,18 +368,20 @@ if (isset($_POST['add_member'])) {
 
         $conn->commit();
 
+        $linkNote = hub_link_new_member($conn, $new_member_id, (int)($_POST['from_visitor'] ?? 0), $email, $phone, $user_id);
+
         $mailResult = hub_send_member_credentials($email, $full_name, $membership_no, $plain_password);
         unset($plain_password);
         if ($mailResult !== true) {
             error_log('Hub member credentials email failed for ' . $email . ': ' . (is_string($mailResult) ? $mailResult : 'unknown error'));
             redirect_tab(
                 'members',
-                "Member $membership_no was added, but the login email could not be sent. Reset the member's password from Users to give them access.",
+                "Member $membership_no was added, but the login email could not be sent. Reset the member's password from Users to give them access." . $linkNote,
                 null
             );
         }
 
-        $success = "Member added successfully! #: $membership_no. Login details were emailed to the member.";
+        $success = "Member added successfully! #: $membership_no. Login details were emailed to the member." . $linkNote;
 
         // Next step: register the company's team within its package seats.
         if (
