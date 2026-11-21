@@ -152,6 +152,12 @@ if (!function_exists('hubnet_ensure_schema')) {
                 ['hub_network_settings', 'hotspot_bw_up_kbps', 'INT UNSIGNED NULL'],
                 ['hub_network_vouchers', 'bw_down_kbps', 'INT UNSIGNED NULL'],
                 ['hub_network_vouchers', 'bw_up_kbps', 'INT UNSIGNED NULL'],
+                // Agent 2.3: name / maker / interface of devices seen online; device type for
+                // network equipment (access points, switches, printers).
+                ['hub_network_online', 'hostname', 'VARCHAR(120) NULL'],
+                ['hub_network_online', 'vendor', 'VARCHAR(120) NULL'],
+                ['hub_network_online', 'iface', 'VARCHAR(30) NULL'],
+                ['hub_network_devices', 'device_type', 'VARCHAR(20) NULL'],
             ];
 
             foreach ($addColumns as [$table, $column, $definition]) {
@@ -201,6 +207,9 @@ if (!function_exists('hubnet_ensure_schema')) {
                     portal_user VARCHAR(120) NULL,
                     in_portal TINYINT(1) NOT NULL DEFAULT 0,
                     session_started DATETIME NULL,
+                    hostname VARCHAR(120) NULL,
+                    vendor VARCHAR(120) NULL,
+                    iface VARCHAR(30) NULL,
                     first_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     last_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (mac_address)

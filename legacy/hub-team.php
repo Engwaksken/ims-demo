@@ -1091,6 +1091,12 @@ else:
                         <option value="allow">Always on</option>
                         <option value="block">Disconnected (blocked)</option>
                     </select></div>
+                <div class="form-group"><label for="hiEditType">Device type</label>
+                    <select id="hiEditType" name="device_type" class="form-control">
+                        <option value="">Personal device (phone, laptop…)</option>
+                        <?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?>
+                    </select>
+                    <p class="form-hint">Equipment is listed under Online now &gt; Equipment instead of with people's devices.</p></div>
                 <div class="form-row">
                     <div class="form-group"><label for="hiEditDown"><i class="fas fa-arrow-down" aria-hidden="true"></i> Download (Mbps)</label><input id="hiEditDown" name="bw_down" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
                     <div class="form-group"><label for="hiEditUp"><i class="fas fa-arrow-up" aria-hidden="true"></i> Upload (Mbps)</label><input id="hiEditUp" name="bw_up" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
@@ -1162,6 +1168,7 @@ else:
         document.getElementById('hiEditMac').textContent = d.mac + (d.owner ? ' · ' + d.owner : '');
         document.getElementById('hiEditLabel').value = d.label || '';
         document.getElementById('hiEditMode').value = d.mode || 'auto';
+        document.getElementById('hiEditType').value = d.type || '';
         document.getElementById('hiEditDown').value = d.down || '';
         document.getElementById('hiEditUp').value = d.up || '';
         var q = new URLSearchParams(location.search);

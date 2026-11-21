@@ -27,6 +27,7 @@ $hiKindBadge = static function (string $kind): string {
         'member' => '<span class="badge badge-info">Member</span>',
         'staff' => '<span class="badge badge-purple">Staff</span>',
         'guest' => '<span class="badge badge-warning">Guest</span>',
+        'equipment' => '<span class="badge badge-success">Equipment</span>',
         default => '<span class="badge badge-secondary">Unknown</span>',
     };
 };
@@ -414,7 +415,7 @@ elseif ($view === 'staff' || $view === 'guests'):
    ONLINE NOW: devices pfSense sees, identified
 ===================================================================== */
 elseif ($view === 'online'):
-    $kindFilter = in_array($_GET['kind'] ?? '', ['member', 'staff', 'guest', 'unknown'], true) ? (string)$_GET['kind'] : '';
+    $kindFilter = in_array($_GET['kind'] ?? '', ['member', 'staff', 'guest', 'equipment', 'unknown'], true) ? (string)$_GET['kind'] : '';
     $online = hubinet_online($conn, $kindFilter);
     $counts = hubinet_online_counts($conn);
     // Search: MAC, IP, name, company, device label or portal login.
@@ -424,7 +425,7 @@ elseif ($view === 'online'):
         $macNeedle = preg_replace('/[^a-f0-9]/', '', $needle);
         $online = array_values(array_filter($online, static function (array $o) use ($needle, $macNeedle): bool {
             $d = $o['device'] ?? [];
-            $hay = mb_strtolower(implode(' ', [$o['mac_address'], $o['ip_address'], $o['portal_user'],
+            $hay = mb_strtolower(implode(' ', [$o['mac_address'], $o['ip_address'], $o['portal_user'], $o['hostname'] ?? '', $o['vendor'] ?? '', $o['iface'] ?? '',
                 $d['person_name'] ?? '', $d['company_name'] ?? '', $d['label'] ?? '', $d['person_organisation'] ?? '']));
             return str_contains($hay, $needle)
                 || (strlen($macNeedle) >= 4 && str_contains(str_replace(':', '', (string)$o['mac_address']), $macNeedle));
@@ -441,14 +442,14 @@ elseif ($view === 'online'):
             <form method="get" action="hub-team" style="display:flex;gap:6px">
                 <input type="hidden" name="view" value="online">
                 <?php if ($kindFilter !== ''): ?><input type="hidden" name="kind" value="<?= ht_e($kindFilter) ?>"><?php endif; ?>
-                <input type="search" name="q" value="<?= ht_e($onlineQ) ?>" class="form-control" placeholder="MAC, IP, name or company" aria-label="Search devices online" style="min-width:210px">
+                <input type="search" name="q" value="<?= ht_e($onlineQ) ?>" class="form-control" placeholder="Name, MAC, IP, maker or company" aria-label="Search devices online" style="min-width:210px">
                 <button class="btn btn-soft" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></button>
                 <?php if ($onlineQ !== ''): ?><a class="btn btn-soft" href="hub-team?view=online<?= $kindFilter !== '' ? '&amp;kind=' . $kindFilter : '' ?>" aria-label="Clear search"><i class="fas fa-times" aria-hidden="true"></i></a><?php endif; ?>
             </form>
         </div></div>
     <div class="card-body">
         <div class="hr-stage-pills">
-            <?php foreach (['' => ['All', $counts['total']], 'member' => ['Members', $counts['member']], 'staff' => ['Staff', $counts['staff']], 'guest' => ['Guests', $counts['guest']], 'unknown' => ['Unknown', $counts['unknown']]] as $k => [$t, $n]): ?>
+            <?php foreach (['' => ['All', $counts['total']], 'member' => ['Members', $counts['member']], 'staff' => ['Staff', $counts['staff']], 'guest' => ['Guests', $counts['guest']], 'equipment' => ['Equipment', $counts['equipment']], 'unknown' => ['Unknown', $counts['unknown']]] as $k => [$t, $n]): ?>
                 <a href="hub-team?view=online<?= $k !== '' ? '&amp;kind=' . $k : '' ?>" class="<?= $kindFilter === $k ? 'active' : '' ?>"><?= $t ?> <span class="n"><?= $n ?></span></a>
             <?php endforeach; ?>
         </div>
@@ -463,7 +464,17 @@ elseif ($view === 'online'):
                 <?php foreach ($online as $o): $d = $o['device']; ?>
                     <tr>
                         <?php if ($canControl): ?><td data-label="Select"><?php if ($d): ?><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$d['device_id'] ?>" aria-label="Select <?= ht_e($o['mac_address']) ?>"><?php else: ?><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($o['mac_address']) ?>" aria-label="Select unknown device <?= ht_e($o['mac_address']) ?>"><?php endif; ?></td><?php endif; ?>
-                        <td data-label="Device"><code><?= ht_e($o['mac_address']) ?></code><?= $d && $d['label'] ? '<small class="cell-muted">' . ht_e($d['label']) . '</small>' : '' ?><?= $d ? '<div style="margin-top:4px">' . hubinet_speed_cell($d, $canControl, $onlineReturn) . '</div>' : '' ?></td>
+                        <?php
+                            $oName = trim((string)($d['label'] ?? '')) ?: trim((string)($o['hostname'] ?? ''));
+                            $oMeta = array_filter([trim((string)($o['vendor'] ?? '')), trim((string)($o['iface'] ?? ''))]);
+                        ?>
+                        <td data-label="Device">
+                            <strong><?= ht_e($oName !== '' ? $oName : (($o['vendor'] ?? '') !== '' ? $o['vendor'] . ' device' : 'Unnamed device')) ?></strong>
+                            <?= hubinet_is_random_mac($o['mac_address']) ? ' <span class="badge badge-secondary" title="Private / random MAC address: the device may show a different address on other days or networks">Private MAC</span>' : '' ?>
+                            <small class="cell-muted"><code><?= ht_e($o['mac_address']) ?></code><?= $oMeta ? ' &middot; ' . ht_e(implode(' / ', $oMeta)) : '' ?></small>
+                            <?php if ($d && ($o['hostname'] ?? '') !== '' && $o['hostname'] !== $d['label']): ?><small class="cell-muted">Device name: <?= ht_e($o['hostname']) ?></small><?php endif; ?>
+                            <?= $d ? '<div style="margin-top:4px">' . hubinet_speed_cell($d, $canControl, $onlineReturn) . '</div>' : '' ?>
+                        </td>
                         <td data-label="Who">
                             <?php if ($d): ?>
                                 <?php if ($d['owner_kind'] === 'member'): ?>
@@ -475,7 +486,7 @@ elseif ($view === 'online'):
                                 <span class="cell-muted"><?= $o['portal_user'] ? 'Portal login: ' . ht_e($o['portal_user']) : 'Not registered' ?></span>
                             <?php endif; ?>
                         </td>
-                        <td data-label="Type"><?= $hiKindBadge($o['owner_kind']) ?><?= (int)$o['in_portal'] ? ' <span class="badge badge-secondary" title="Signed in through the captive portal">Portal</span>' : '' ?><?= $d && $d['access_mode'] === 'block' ? ' <span class="badge badge-danger">Blocked</span>' : '' ?></td>
+                        <td data-label="Type"><?= $hiKindBadge($o['owner_kind']) ?><?= $d && !empty($d['device_type']) ? ' <small class="cell-muted">' . ht_e(HUBINET_DEVICE_TYPES[$d['device_type']] ?? 'Equipment') . '</small>' : '' ?><?= (int)$o['in_portal'] ? ' <span class="badge badge-secondary" title="Signed in through the captive portal">Portal</span>' : '' ?><?= $d && $d['access_mode'] === 'block' ? ' <span class="badge badge-danger">Blocked</span>' : '' ?></td>
                         <td data-label="IP"><?= ht_e($o['ip_address'] ?: '-') ?></td>
                         <td data-label="Seen">since <?= ht_e(date('H:i', strtotime((string)($o['session_started'] ?: $o['first_seen'])))) ?></td>
                         <td data-label="">
@@ -484,10 +495,11 @@ elseif ($view === 'online'):
                                     data-id="<?= (int)$d['device_id'] ?>" data-mac="<?= ht_e($o['mac_address']) ?>" data-label="<?= ht_e((string)$d['label']) ?>"
                                     data-mode="<?= ht_e((string)$d['access_mode']) ?>" data-down="<?= ht_e(hubnet_mbps_label(isset($d['bw_down_kbps']) ? (int)$d['bw_down_kbps'] : null)) ?>"
                                     data-up="<?= ht_e(hubnet_mbps_label(isset($d['bw_up_kbps']) ? (int)$d['bw_up_kbps'] : null)) ?>"
+                                    data-type="<?= ht_e((string)($d['device_type'] ?? '')) ?>"
                                     data-owner="<?= ht_e((string)$d['person_name']) ?>"><i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
                             <?php endif; ?>
                             <?php if (!$d && $canManage): ?>
-                                <button type="button" class="btn btn-sm btn-primary" onclick="hiRegister(<?= ht_e(json_encode($o['mac_address'])) ?>)"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="hiRegister(<?= ht_e(json_encode($o['mac_address'])) ?>, <?= ht_e(json_encode(trim((string)($o['hostname'] ?? '')) ?: trim((string)($o['vendor'] ?? '')))) ?>)"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</button>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -502,6 +514,10 @@ elseif ($view === 'online'):
                 <button type="submit" name="mode" value="auto" class="btn btn-sm btn-secondary" data-bulk-required>Automatic</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-bulk-required="Select registered devices first." onclick="hiSpeedBulk(this, <?= ht_e(json_encode($onlineReturn)) ?>)"><i class="fas fa-gauge-high" aria-hidden="true"></i> Speed limit</button>
                 <span class="cell-muted" style="margin-left:8px">Unknown devices:</span>
+                <select name="equipment_type" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Equipment type">
+                    <?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?>
+                </select>
+                <button type="submit" name="unknown_op" value="equipment" class="btn btn-sm btn-success" data-bulk-required="Select unknown devices first." title="Register the selected unknown devices as network equipment (always online)"><i class="fas fa-tower-broadcast" aria-hidden="true"></i> Equipment</button>
                 <button type="submit" name="unknown_op" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select unknown devices first." data-confirm="Block and disconnect the selected unknown devices? They stay blocked until you remove them under Guests (&quot;Blocked device&quot;)." data-confirm-title="Block unknown devices" data-confirm-ok="Block" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Block</button>
                 <button type="submit" name="unknown_op" value="forget" class="btn btn-sm btn-secondary" data-bulk-required="Select unknown devices first." data-confirm="Remove the selected unknown devices from this list? Devices that are still connected appear again at the next check-in." data-confirm-title="Remove from list" data-confirm-ok="Remove"><i class="fas fa-trash" aria-hidden="true"></i> Remove from list</button>
             </div>
@@ -510,6 +526,30 @@ elseif ($view === 'online'):
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+/* Online now: reload every minute (pfSense checks in every minute) unless rows are selected or a dialog is open. */
+(function () {
+    var key = 'ims.hubOnlineRefresh', on = true;
+    try { on = localStorage.getItem(key) !== '0'; } catch (e) {}
+    var head = document.querySelector('.card-header .cell-muted');
+    if (head) {
+        var label = document.createElement('label');
+        label.className = 'cell-muted';
+        label.style.cssText = 'display:inline-flex;gap:4px;align-items:center;margin-left:8px;cursor:pointer';
+        label.innerHTML = '<input type="checkbox"' + (on ? ' checked' : '') + '> Auto-refresh';
+        label.querySelector('input').addEventListener('change', function (e) { on = e.target.checked; try { localStorage.setItem(key, on ? '1' : '0'); } catch (x) {} });
+        head.after(label);
+    }
+    setInterval(function () {
+        if (!on || document.hidden) return;
+        if (document.querySelector('input.hr-sel:checked') || document.querySelector('.modal.show, .modal[aria-hidden="false"], .modal.active')) return;
+        var a = document.activeElement;
+        if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && a.type !== 'checkbox') return;
+        location.reload();
+    }, 60000);
+})();
+</script>
 
 <?php if ($canManage): ?>
 <div id="hiRegisterModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hiRegTitle" aria-hidden="true">
@@ -523,6 +563,7 @@ elseif ($view === 'online'):
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="guest" checked> New guest</label>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="staff"> New staff member</label>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="existing"> Device of an existing staff member / guest</label>
+                    <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="equipment"> Network equipment (access point, switch, printer): always online</label>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="block"> Block this device</label>
                 </fieldset>
                 <div class="hr-form-grid" data-reg="guest staff">
@@ -532,7 +573,8 @@ elseif ($view === 'online'):
                     <div class="form-group" data-reg="guest"><label>Access until</label><input type="datetime-local" name="valid_until" class="form-control" value="<?= date('Y-m-d') ?>T23:59"></div>
                 </div>
                 <div class="form-group" data-reg="existing" hidden><label>Person</label><select name="person_id" class="form-control"><?php foreach ($peopleForSelect as $pp): ?><option value="<?= (int)$pp['person_id'] ?>"><?= ht_e($pp['full_name']) ?> (<?= ht_e($pp['kind']) ?>)</option><?php endforeach; ?></select></div>
-                <div class="form-group" data-reg="guest staff existing"><label>Device label</label><input name="label" class="form-control" maxlength="80" placeholder="e.g. Phone"></div>
+                <div class="form-group" data-reg="equipment" hidden><label>Equipment type</label><select name="equipment_type" class="form-control"><?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?></select></div>
+                <div class="form-group" data-reg="guest staff existing equipment"><label>Device label</label><input name="label" id="hiRegLabel" class="form-control" maxlength="80" placeholder="e.g. Phone, Reception AP"></div>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('hiRegisterModal')">Cancel</button><button class="btn btn-primary">Save</button></div>
         </form>
@@ -546,9 +588,10 @@ elseif ($view === 'online'):
         modal.querySelectorAll('[data-reg]').forEach(function (el) { el.hidden = el.dataset.reg.split(' ').indexOf(as) === -1; });
     }
     modal.querySelectorAll('input[name=register_as]').forEach(function (r) { r.addEventListener('change', sync); });
-    window.hiRegister = function (mac) {
+    window.hiRegister = function (mac, name) {
         document.getElementById('hiRegMac').textContent = mac;
         document.getElementById('hiRegMacInput').value = mac;
+        document.getElementById('hiRegLabel').value = name || '';
         sync();
         openModal('hiRegisterModal');
     };

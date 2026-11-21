@@ -10,6 +10,9 @@
  * Entries the IMS created have a description starting with "IMS "; entries
  * you add by hand in pfSense are never touched.
  *
+ * 2.3 adds: device name (DHCP), maker (MAC prefix) and interface for every
+ *   device seen online, so the IMS can identify access points and others.
+ *
  * 2.2 adds: per-device speed limits. "pass" entries carry the Bandwidth
  *   down/up (Kbit/s) set in the IMS; pfSense applies them with limiters.
  *
@@ -55,7 +58,7 @@ const IMS_ALLOWED_IPS = ['192.168.1.1'];                          // push mode o
 const IMS_DEFAULT_ZONE = 'lan';
 // ---------------------------------------------------------------------------
 
-const IMS_AGENT_VERSION = '2.2';
+const IMS_AGENT_VERSION = '2.3';
 const IMS_MAX_ITEMS = 5000;
 const IMS_STATE_FILE = '/var/db/ims-cp-agent-state.json';
 const IMS_DESCR_PREFIX = 'IMS ';
@@ -345,12 +348,15 @@ function ims_clients(array $zoneConfig): array
             $nic = (string)ims_cfg_get("interfaces/{$iface}/if", '');
         }
         if (preg_match('/^[A-Za-z0-9_.]+$/', $nic)) {
-            $real[$nic] = true;
+            // NIC => the interface name shown in pfSense ("LAN", "WIFI").
+            $real[$nic] = strtoupper((string)(ims_cfg_get("interfaces/{$iface}/descr", '') ?: $iface));
         }
     }
     if (!$real) {
         return [];
     }
+    $names = ims_dhcp_names();
+    $vendors = ims_vendor_table();
 
     // One ARP read for all interfaces, filtered by NIC (works on every FreeBSD arp version).
     $out = [];
@@ -365,11 +371,87 @@ function ims_clients(array $zoneConfig): array
         }
         $mac = ims_normalize_mac($m[2]);
         if ($mac !== '' && $mac !== 'ff:ff:ff:ff:ff:ff') {
-            $clients[$mac] = ['mac' => $mac, 'ip' => $m[1]];
+            // 2.3: name (DHCP lease / static mapping), maker (MAC prefix) and interface.
+            $oui = strtoupper(str_replace(':', '', substr($mac, 0, 8)));
+            $clients[$mac] = [
+                'mac' => $mac,
+                'ip' => $m[1],
+                'hostname' => substr((string)($names[$mac] ?? ''), 0, 120),
+                'vendor' => substr(trim((string)($vendors[$oui] ?? '')), 0, 120),
+                'iface' => substr((string)$real[$m[3]], 0, 30),
+            ];
         }
     }
 
     return array_values(array_slice($clients, 0, IMS_MAX_ITEMS));
+}
+
+/**
+ * Device names by MAC: DHCP static mappings (hostname, else description),
+ * then the ISC dhcpd lease file, then the Kea lease file. Best effort.
+ */
+function ims_dhcp_names(): array
+{
+    $names = [];
+    foreach ((array)ims_cfg_get('dhcpd', []) as $ifConf) {
+        foreach ((array)($ifConf['staticmap'] ?? []) as $map) {
+            $mac = ims_normalize_mac((string)($map['mac'] ?? ''));
+            $name = trim((string)($map['hostname'] ?? '')) ?: trim((string)($map['descr'] ?? ''));
+            if ($mac !== '' && $name !== '') {
+                $names[$mac] = $name;
+            }
+        }
+    }
+    $leases = '/var/dhcpd/var/db/dhcpd.leases';
+    if (is_readable($leases) && filesize($leases) < 20 * 1024 * 1024) {
+        // lease 192.168.1.23 { ... hardware ethernet 3c:22:...; client-hostname "Janes-iPhone"; }
+        if (preg_match_all('/lease\s+[0-9.]+\s*\{(.*?)\}/s', (string)file_get_contents($leases), $blocks)) {
+            foreach ($blocks[1] as $block) {
+                if (preg_match('/hardware ethernet ([0-9a-f:]+);/i', $block, $hw) && preg_match('/client-hostname "([^"]*)";/', $block, $hn)) {
+                    $mac = ims_normalize_mac($hw[1]);
+                    if ($mac !== '' && $hn[1] !== '' && !isset($names[$mac])) {
+                        $names[$mac] = $hn[1];
+                    }
+                }
+            }
+        }
+    }
+    foreach (['/var/lib/kea/dhcp4.leases', '/var/db/kea/dhcp4.leases'] as $kea) {
+        if (is_readable($kea) && filesize($kea) < 20 * 1024 * 1024 && ($fh = fopen($kea, 'r'))) {
+            // address,hwaddr,client_id,valid_lifetime,expire,subnet_id,fqdn_fwd,fqdn_rev,hostname,...
+            while (($row = fgetcsv($fh)) !== false) {
+                $mac = ims_normalize_mac((string)($row[1] ?? ''));
+                $name = rtrim(trim((string)($row[8] ?? '')), '.');
+                if ($mac !== '' && $name !== '' && !isset($names[$mac])) {
+                    $names[$mac] = $name;
+                }
+            }
+            fclose($fh);
+        }
+    }
+    return $names;
+}
+
+/** MAC prefix => maker, from pfSense's own table (the one Diagnostics > ARP Table uses). */
+function ims_vendor_table(): array
+{
+    if (function_exists('load_mac_manufacturer_table')) {
+        $table = load_mac_manufacturer_table();
+        if (is_array($table) && $table) {
+            return array_change_key_case($table, CASE_UPPER);
+        }
+    }
+    $file = '/usr/local/share/nmap/nmap-mac-prefixes';
+    $table = [];
+    if (is_readable($file) && ($fh = fopen($file, 'r'))) {
+        while (($line = fgets($fh)) !== false) {
+            if (preg_match('/^([0-9A-F]{6})\s+(.+)$/i', trim($line), $m)) {
+                $table[strtoupper($m[1])] = trim($m[2]);
+            }
+        }
+        fclose($fh);
+    }
+    return $table;
 }
 
 /**

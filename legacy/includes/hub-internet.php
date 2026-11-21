@@ -1107,7 +1107,10 @@ function hubinet_record_online(mysqli $conn, array $clients, array $sessions): i
     foreach (array_slice($clients, 0, 5000) as $c) {
         $mac = hubnet_normalize_mac((string)($c['mac'] ?? ''));
         if ($mac !== '') {
-            $seen[$mac] = ['ip' => mb_substr((string)($c['ip'] ?? ''), 0, 45), 'user' => null, 'portal' => 0, 'started' => null];
+            $seen[$mac] = ['ip' => mb_substr((string)($c['ip'] ?? ''), 0, 45), 'user' => null, 'portal' => 0, 'started' => null,
+                'hostname' => mb_substr(trim((string)($c['hostname'] ?? '')), 0, 120),
+                'vendor' => mb_substr(trim((string)($c['vendor'] ?? '')), 0, 120),
+                'iface' => mb_substr(trim((string)($c['iface'] ?? '')), 0, 30)];
         }
     }
     foreach (array_slice($sessions, 0, 5000) as $s) {
@@ -1121,16 +1124,25 @@ function hubinet_record_online(mysqli $conn, array $clients, array $sessions): i
             'user' => mb_substr((string)($s['username'] ?? ''), 0, 120) ?: null,
             'portal' => 1,
             'started' => $started,
+            'hostname' => $seen[$mac]['hostname'] ?? '',
+            'vendor' => $seen[$mac]['vendor'] ?? '',
+            'iface' => $seen[$mac]['iface'] ?? '',
         ];
     }
 
-    $up = $conn->prepare('INSERT INTO hub_network_online (mac_address, ip_address, portal_user, in_portal, session_started, first_seen, last_seen)
-                          VALUES (?, NULLIF(?, \'\'), ?, ?, ?, NOW(), NOW())
+    // Name / maker / interface (agent 2.3+) keep their last known value when a report has none.
+    $up = $conn->prepare('INSERT INTO hub_network_online (mac_address, ip_address, portal_user, in_portal, session_started, hostname, vendor, iface, first_seen, last_seen)
+                          VALUES (?, NULLIF(?, \'\'), ?, ?, ?, NULLIF(?, \'\'), NULLIF(?, \'\'), NULLIF(?, \'\'), NOW(), NOW())
                           ON DUPLICATE KEY UPDATE ip_address = VALUES(ip_address), portal_user = VALUES(portal_user), in_portal = VALUES(in_portal),
-                                                  session_started = COALESCE(VALUES(session_started), session_started), last_seen = NOW()');
+                                                  session_started = COALESCE(VALUES(session_started), session_started),
+                                                  hostname = COALESCE(VALUES(hostname), hostname), vendor = COALESCE(VALUES(vendor), vendor),
+                                                  iface = COALESCE(VALUES(iface), iface), last_seen = NOW()');
     if ($up) {
         foreach ($seen as $mac => $r) {
-            $up->bind_param('sssis', $mac, $r['ip'], $r['user'], $r['portal'], $r['started']);
+            $hn = (string)($r['hostname'] ?? '');
+            $vd = (string)($r['vendor'] ?? '');
+            $if = (string)($r['iface'] ?? '');
+            $up->bind_param('sssissss', $mac, $r['ip'], $r['user'], $r['portal'], $r['started'], $hn, $vd, $if);
             $up->execute();
         }
         $up->close();
@@ -1172,7 +1184,7 @@ function hubinet_online(mysqli $conn, string $kind = ''): array
     foreach ($online as $o) {
         $d = $byMac[$o['mac_address']] ?? null;
         $o['device'] = $d;
-        $o['owner_kind'] = $d ? (string)$d['owner_kind'] : 'unknown';
+        $o['owner_kind'] = $d ? (!empty($d['device_type']) ? 'equipment' : (string)$d['owner_kind']) : 'unknown';
         if ($kind !== '' && $o['owner_kind'] !== $kind) {
             continue;
         }
@@ -1184,7 +1196,7 @@ function hubinet_online(mysqli $conn, string $kind = ''): array
 /** Counts of devices online now by owner kind. */
 function hubinet_online_counts(mysqli $conn): array
 {
-    $counts = ['total' => 0, 'member' => 0, 'staff' => 0, 'guest' => 0, 'unknown' => 0, 'portal' => 0];
+    $counts = ['total' => 0, 'member' => 0, 'staff' => 0, 'guest' => 0, 'equipment' => 0, 'unknown' => 0, 'portal' => 0];
     foreach (hubinet_online($conn) as $o) {
         $counts['total']++;
         $counts[$o['owner_kind']] = ($counts[$o['owner_kind']] ?? 0) + 1;
@@ -1662,4 +1674,91 @@ function hubinet_person_to_member(mysqli $conn, int $personId, int $memberId, st
     return hubinet_result(true, $person['full_name'] . ' is now ' . ($asTeam ? 'a team member of ' : 'part of ') . $company
         . ($moved ? ' with ' . $moved . ' device(s)' : '') . '. Internet access now follows the membership. ' . $net['message'],
         ['member_id' => $memberId]);
+}
+
+/* ======================================================================
+ | Network equipment (access points, switches, printers...) and device details
+ * ==================================================================== */
+
+const HUBINET_DEVICE_TYPES = [
+    'access_point' => 'Access point',
+    'switch' => 'Switch / router',
+    'printer' => 'Printer',
+    'camera' => 'Camera',
+    'display' => 'TV / display',
+    'other' => 'Other equipment',
+];
+
+/** Private / randomised MAC (locally administered bit): changes per network or over time. */
+function hubinet_is_random_mac(string $mac): bool
+{
+    $mac = hubnet_normalize_mac($mac);
+    return $mac !== '' && in_array($mac[1], ['2', '6', 'a', 'e'], true);
+}
+
+/** The "Network equipment" owner that equipment devices are registered to (created on first use). */
+function hubinet_equipment_person(mysqli $conn, int $uid): int
+{
+    $res = $conn->query("SELECT person_id FROM hub_network_people WHERE kind = 'staff' AND full_name = 'Network equipment' AND organisation = 'Infrastructure' LIMIT 1");
+    $row = $res ? $res->fetch_assoc() : null;
+    if ($row) {
+        return (int)$row['person_id'];
+    }
+    $stmt = $conn->prepare("INSERT INTO hub_network_people (kind, full_name, organisation, note, status, valid_until, source)
+                            VALUES ('staff', 'Network equipment', 'Infrastructure', 'Access points, switches, printers and other hub equipment', 'Active', NULL, 'manual')");
+    if (!$stmt || !$stmt->execute()) {
+        return 0;
+    }
+    $id = (int)$stmt->insert_id;
+    $stmt->close();
+    return $id;
+}
+
+/**
+ * Registers devices seen online as network equipment: always online, typed,
+ * named from $labels[mac] (else their DHCP name / maker). Skips devices that
+ * are already registered.
+ */
+function hubinet_register_equipment(mysqli $conn, array $macs, string $type, array $labels, int $uid): array
+{
+    $type = array_key_exists($type, HUBINET_DEVICE_TYPES) ? $type : 'access_point';
+    $pid = hubinet_equipment_person($conn, $uid);
+    if ($pid <= 0) {
+        return hubinet_result(false, 'The equipment list could not be created.');
+    }
+    $ids = [];
+    $skipped = 0;
+    foreach ($macs as $mac) {
+        $mac = hubnet_normalize_mac((string)$mac);
+        if ($mac === '' || hubnet_devices_where($conn, 'd.mac_address = ?', 's', [$mac])) {
+            $skipped++;
+            continue;
+        }
+        $label = trim((string)($labels[$mac] ?? ''));
+        if ($label === '') {
+            $stmt = $conn->prepare('SELECT hostname, vendor FROM hub_network_online WHERE mac_address = ? LIMIT 1');
+            $stmt->bind_param('s', $mac);
+            $stmt->execute();
+            $seen = $stmt->get_result()->fetch_assoc() ?: [];
+            $stmt->close();
+            $label = trim((string)($seen['hostname'] ?? '')) ?: trim((string)($seen['vendor'] ?? '')) ?: HUBINET_DEVICE_TYPES[$type];
+        }
+        $r = hubinet_add_device($conn, $pid, $mac, $label, $uid, 'allow', false);
+        if ($r['ok']) {
+            $ids[] = (int)$r['device_id'];
+        } else {
+            $skipped++;
+        }
+    }
+    if (!$ids) {
+        return hubinet_result(false, 'No devices were added' . ($skipped ? ' (' . $skipped . ' already registered or invalid)' : '') . '.');
+    }
+    $marks = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $conn->prepare("UPDATE hub_network_devices SET device_type = ? WHERE device_id IN ($marks)");
+    $stmt->bind_param('s' . str_repeat('i', count($ids)), $type, ...$ids);
+    $stmt->execute();
+    $stmt->close();
+    $net = hubnet_apply($conn, hubnet_devices_where($conn, "d.device_id IN ($marks)", str_repeat('i', count($ids)), $ids), $uid, 'equipment');
+    return hubinet_result(true, count($ids) . ' device(s) registered as ' . strtolower(HUBINET_DEVICE_TYPES[$type]) . ' (always online)'
+        . ($skipped ? '; ' . $skipped . ' skipped' : '') . '. ' . $net['message']);
 }

@@ -48,7 +48,7 @@ $canSwitch = ims_allowed('hub_network.switch', ['Administrator', 'IT Officer'], 
 $canVouchers = ims_allowed('hub_network.vouchers', ['Administrator', 'Operations/Admin'], 'Create, print and cancel internet vouchers for day clients');
 
 // The online list's bulk bar posts devices_bulk; its "unknown devices" buttons carry unknown_op.
-if ($action === 'devices_bulk' && in_array($_POST['unknown_op'] ?? '', ['block', 'forget'], true)) {
+if ($action === 'devices_bulk' && in_array($_POST['unknown_op'] ?? '', ['block', 'forget', 'equipment'], true)) {
     $action = 'unknown_bulk';
 }
 
@@ -164,6 +164,10 @@ try {
             if (!$macs) {
                 hip_back($returnQuery, false, 'Select unknown devices first.');
             }
+            if ($_POST['unknown_op'] === 'equipment') {
+                $r = hubinet_register_equipment($conn, $macs, (string)($_POST['equipment_type'] ?? 'access_point'), [], $uid);
+                hip_back($returnQuery, $r['ok'], $r['message']);
+            }
             if ($_POST['unknown_op'] === 'forget') {
                 $n = hubinet_forget_online($conn, $macs);
                 hip_back($returnQuery, true, $n . ' device(s) removed from the list. Devices that are still connected appear again at the next check-in.');
@@ -235,6 +239,13 @@ try {
             $stmt->execute();
             $stmt->close();
             hubinet_set_device_bw($conn, [$deviceId], $down, $up);
+            if (isset($_POST['device_type'])) {
+                $type = array_key_exists((string)$_POST['device_type'], HUBINET_DEVICE_TYPES) ? (string)$_POST['device_type'] : '';
+                $stmt = $conn->prepare("UPDATE hub_network_devices SET device_type = NULLIF(?, '') WHERE device_id = ?");
+                $stmt->bind_param('si', $type, $deviceId);
+                $stmt->execute();
+                $stmt->close();
+            }
             $net = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $uid, 'edit');
             hip_back($returnQuery, true, 'Device updated. ' . $net['message']);
 
@@ -258,6 +269,10 @@ try {
             $as = (string)($_POST['register_as'] ?? '');
             if ($mac === '') {
                 hip_back($returnQuery, false, 'Invalid MAC address.');
+            }
+            if ($as === 'equipment') {
+                $r = hubinet_register_equipment($conn, [$mac], (string)($_POST['equipment_type'] ?? 'access_point'), [$mac => (string)($_POST['label'] ?? '')], $uid);
+                hip_back($returnQuery, $r['ok'], $r['message']);
             }
             if ($as === 'existing') {
                 $r = hubinet_add_device($conn, (int)($_POST['person_id'] ?? 0), $mac, (string)($_POST['label'] ?? ''), $uid);
