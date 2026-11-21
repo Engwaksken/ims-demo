@@ -225,6 +225,19 @@ try {
                 ht_assert_mac_free($conn, $mac);
             }
 
+            // Package device limits: the new person's devices (typed + moved from the guest).
+            $newDevices = count($macs) + ($fromPerson ? count(hubnet_devices_where($conn, 'd.person_id = ?', 'i', [$fromPersonId])) : 0);
+            if ($newDevices > 0) {
+                $perPersonLimit = $member['devices_per_person'] !== null ? (int)$member['devices_per_person'] : null;
+                if ($perPersonLimit !== null && $newDevices > $perPersonLimit) {
+                    throw new InvalidArgumentException('The ' . $member['package_name'] . ' package allows ' . $perPersonLimit . ' device' . ($perPersonLimit === 1 ? '' : 's') . ' per person; ' . $newDevices . ' were given.');
+                }
+                $limitError = hubnet_device_limit_error($conn, ['devices_per_person' => null] + $member, null, $newDevices);
+                if ($limitError !== null) {
+                    throw new InvalidArgumentException($limitError);
+                }
+            }
+
             $conn->begin_transaction();
             $stmt = $conn->prepare(
                 "INSERT INTO hub_team_members (member_id, full_name, email, phone, job_title, created_by)
@@ -377,6 +390,11 @@ try {
                 ht_assert_mac_free($conn, $dev['mac']);
             }
 
+            $limitError = hubnet_device_limit_error($conn, $member, $teamMemberId, count($parsed['devices']));
+            if ($limitError !== null) {
+                throw new InvalidArgumentException($limitError);
+            }
+
             $deviceIds = [];
             foreach ($parsed['devices'] as $dev) {
                 $deviceIds[] = ht_insert_device($conn, $memberId, $teamMemberId, $dev['mac'], $dev['label'], $userId);
@@ -457,29 +475,57 @@ try {
             $description = ht_str('description', 255);
             $sortOrder = ht_int('sort_order');
             $isActive = !empty($_POST['is_active']) ? 1 : 0;
+            // Device limits: empty = no limit.
+            $limit = static function (string $key, int $max): ?int {
+                $raw = trim((string)($_POST[$key] ?? ''));
+                if ($raw === '') {
+                    return null;
+                }
+                if (!ctype_digit($raw) || (int)$raw < 1 || (int)$raw > $max) {
+                    throw new InvalidArgumentException('Device limits must be whole numbers from 1 to ' . $max . ', or empty for no limit.');
+                }
+                return (int)$raw;
+            };
+            $perPerson = $limit('devices_per_person', 50);
+            $maxDevices = $limit('max_devices', 5000);
 
             if ($name === '') {
                 throw new InvalidArgumentException('Enter the package name.');
             }
+            if ($perPerson !== null && $maxDevices !== null && $maxDevices < $perPerson) {
+                throw new InvalidArgumentException('The total devices for the company cannot be lower than the devices per person.');
+            }
+
+            $stmt = $conn->prepare('SELECT 1 FROM hub_space_packages WHERE name = ? AND package_id <> ? LIMIT 1');
+            $stmt->bind_param('si', $name, $packageId);
+            $stmt->execute();
+            $duplicate = $stmt->get_result()->fetch_row() !== null;
+            $stmt->close();
+            if ($duplicate) {
+                throw new InvalidArgumentException('A package called "' . $name . '" already exists.');
+            }
 
             if ($packageId > 0) {
                 $stmt = $conn->prepare(
-                    "UPDATE hub_space_packages SET name = ?, max_seats = ?, description = NULLIF(?, ''), sort_order = ?, is_active = ?
+                    "UPDATE hub_space_packages SET name = ?, max_seats = ?, devices_per_person = ?, max_devices = ?,
+                            description = NULLIF(?, ''), sort_order = ?, is_active = ?
                      WHERE package_id = ?"
                 );
-                $stmt->bind_param('sisiii', $name, $maxSeats, $description, $sortOrder, $isActive, $packageId);
+                $stmt->bind_param('siiisiii', $name, $maxSeats, $perPerson, $maxDevices, $description, $sortOrder, $isActive, $packageId);
             } else {
                 $stmt = $conn->prepare(
-                    "INSERT INTO hub_space_packages (name, max_seats, description, sort_order, is_active)
-                     VALUES (?, ?, NULLIF(?, ''), ?, ?)"
+                    "INSERT INTO hub_space_packages (name, max_seats, devices_per_person, max_devices, description, sort_order, is_active)
+                     VALUES (?, ?, ?, ?, NULLIF(?, ''), ?, ?)"
                 );
-                $stmt->bind_param('sisii', $name, $maxSeats, $description, $sortOrder, $isActive);
+                $stmt->bind_param('siiisii', $name, $maxSeats, $perPerson, $maxDevices, $description, $sortOrder, $isActive);
             }
 
             $stmt->execute();
             $stmt->close();
 
-            ht_back('view=settings&tab=packages', null, 'Package "' . $name . '" saved (maximum ' . $maxSeats . ' seat' . ($maxSeats === 1 ? '' : 's') . ').');
+            $limits = hubnet_device_limit_label(['devices_per_person' => $perPerson, 'max_devices' => $maxDevices]);
+            ht_back('view=settings&tab=packages', null, 'Package "' . $name . '" saved: ' . $maxSeats . ' seat' . ($maxSeats === 1 ? '' : 's')
+                . ', devices: ' . strtolower($limits) . '. Existing devices are kept; companies over a limit cannot add more.');
 
         /* ---------------- pfSense settings ---------------- */
         case 'save_network_settings':

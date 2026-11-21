@@ -158,6 +158,9 @@ if (!function_exists('hubnet_ensure_schema')) {
                 ['hub_network_online', 'vendor', 'VARCHAR(120) NULL'],
                 ['hub_network_online', 'iface', 'VARCHAR(30) NULL'],
                 ['hub_network_devices', 'device_type', 'VARCHAR(20) NULL'],
+                // Device limits per workspace package (NULL = no limit).
+                ['hub_space_packages', 'devices_per_person', 'INT UNSIGNED NULL'],
+                ['hub_space_packages', 'max_devices', 'INT UNSIGNED NULL'],
             ];
 
             foreach ($addColumns as [$table, $column, $definition]) {
@@ -384,7 +387,7 @@ if (!function_exists('hubnet_packages')) {
     function hubnet_packages(mysqli $conn, bool $activeOnly = false): array
     {
         $result = $conn->query(
-            'SELECT package_id, name, max_seats, description, sort_order, is_active
+            'SELECT package_id, name, max_seats, devices_per_person, max_devices, description, sort_order, is_active
              FROM hub_space_packages' . ($activeOnly ? ' WHERE is_active = 1' : '') . '
              ORDER BY sort_order, name'
         );
@@ -401,9 +404,10 @@ if (!function_exists('hubnet_member')) {
             "SELECT m.member_id, m.user_id, m.membership_number, m.company_name, m.member_type,
                     m.membership_status, m.subscription_plan, m.subscription_end_date, m.space_package_id,
                     u.full_name, u.email,
-                    p.name AS package_name, p.max_seats,
+                    p.name AS package_name, p.max_seats, p.devices_per_person, p.max_devices,
                     (SELECT COUNT(*) FROM hub_team_members t
-                      WHERE t.member_id = m.member_id AND t.status = 'Active') AS active_team
+                      WHERE t.member_id = m.member_id AND t.status = 'Active') AS active_team,
+                    (SELECT COUNT(*) FROM hub_network_devices d WHERE d.member_id = m.member_id) AS devices_used
              FROM members m
              LEFT JOIN users u ON u.user_id = m.user_id
              LEFT JOIN hub_space_packages p ON p.package_id = m.space_package_id
@@ -451,6 +455,69 @@ if (!function_exists('hubnet_seat_available')) {
     function hubnet_seat_available(array $member): bool
     {
         return $member['seats_max'] === null || (int)$member['seats_used'] < (int)$member['seats_max'];
+    }
+}
+
+if (!function_exists('hubnet_device_limit_error')) {
+    /**
+     * Package device limits: null when $adding more devices fit, else the reason.
+     * $teamMemberId null = the primary member's own devices. Devices of the
+     * person/company being checked that are already registered count.
+     */
+    function hubnet_device_limit_error(mysqli $conn, array $member, ?int $teamMemberId, int $adding): ?string
+    {
+        if ($adding <= 0) {
+            return null;
+        }
+        $package = (string)($member['package_name'] ?? 'workspace');
+        $company = (string)(($member['company_name'] ?? '') ?: ($member['full_name'] ?? '') ?: 'This company');
+        $maxTotal = isset($member['max_devices']) && $member['max_devices'] !== null ? (int)$member['max_devices'] : null;
+        $perPerson = isset($member['devices_per_person']) && $member['devices_per_person'] !== null ? (int)$member['devices_per_person'] : null;
+        $memberId = (int)$member['member_id'];
+
+        if ($maxTotal !== null) {
+            $stmt = $conn->prepare('SELECT COUNT(*) FROM hub_network_devices WHERE member_id = ?');
+            $stmt->bind_param('i', $memberId);
+            $stmt->execute();
+            $used = (int)$stmt->get_result()->fetch_row()[0];
+            $stmt->close();
+            if ($used + $adding > $maxTotal) {
+                return $company . ' has ' . $used . ' of ' . $maxTotal . ' devices allowed by the ' . $package . ' package'
+                    . ($maxTotal - $used > 0 ? '; only ' . ($maxTotal - $used) . ' more can be added' : '') . '. Remove a device or change the package.';
+            }
+        }
+        if ($perPerson !== null) {
+            if ($teamMemberId === null) {
+                $stmt = $conn->prepare('SELECT COUNT(*) FROM hub_network_devices WHERE member_id = ? AND team_member_id IS NULL');
+                $stmt->bind_param('i', $memberId);
+            } else {
+                $stmt = $conn->prepare('SELECT COUNT(*) FROM hub_network_devices WHERE member_id = ? AND team_member_id = ?');
+                $stmt->bind_param('ii', $memberId, $teamMemberId);
+            }
+            $stmt->execute();
+            $used = (int)$stmt->get_result()->fetch_row()[0];
+            $stmt->close();
+            if ($used + $adding > $perPerson) {
+                return 'The ' . $package . ' package allows ' . $perPerson . ' device' . ($perPerson === 1 ? '' : 's') . ' per person'
+                    . ($used > 0 ? ' and this person already has ' . $used : '') . '. Remove a device or change the package.';
+            }
+        }
+        return null;
+    }
+}
+
+if (!function_exists('hubnet_device_limit_label')) {
+    /** "2 per person, 10 in total" / "No limit" for a package row. */
+    function hubnet_device_limit_label(array $package): string
+    {
+        $parts = [];
+        if (isset($package['devices_per_person']) && $package['devices_per_person'] !== null) {
+            $parts[] = (int)$package['devices_per_person'] . ' per person';
+        }
+        if (isset($package['max_devices']) && $package['max_devices'] !== null) {
+            $parts[] = (int)$package['max_devices'] . ' in total';
+        }
+        return $parts ? implode(', ', $parts) : 'No limit';
     }
 }
 

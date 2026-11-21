@@ -108,6 +108,9 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
 
 <style>
 .ht-inline { display: inline; margin: 0; }
+.pkg-section { border: 1px solid var(--border); border-radius: var(--radius-md, 8px); padding: 10px 14px 4px; margin: 0 0 12px; min-width: 0; }
+.pkg-section legend { font-size: 13px; font-weight: 700; padding: 0 6px; color: var(--ink-700); }
+.pkg-section legend i { color: var(--brand-500); margin-right: 4px; }
 .hi-speed { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .hi-speed-val { font-size: 11px; }
 .hi-row-actions { display: inline-flex; gap: 4px; flex-wrap: nowrap; }
@@ -242,34 +245,38 @@ if ($view === 'settings'):
             <div class="ht-panel-head">
                 <div>
                     <h3>Workspace packages</h3>
-                    <p class="ht-help">Maximum seats includes the primary member. Lowering a maximum removes nobody; companies above it are flagged and cannot add more people.</p>
+                    <p class="ht-help">Seats include the primary member. Device limits cap how many devices each person and the whole company can register (empty = no limit). Lowering a limit removes nothing; companies above it are flagged and cannot add more.</p>
                 </div>
                 <button type="button" class="btn btn-primary" onclick="openPackageModal(null)"><i class="fas fa-plus" aria-hidden="true"></i> Add package</button>
             </div>
             <div class="table-responsive">
                 <table class="table">
-                    <thead><tr><th>Package</th><th>Max seats</th><th>Members</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>Package</th><th>Seats</th><th>Devices</th><th>Members</th><th>Status</th><th></th></tr></thead>
                     <tbody>
                     <?php if ($packages === []): ?>
-                        <tr><td colspan="5"><div class="empty-state"><i class="fas fa-chair" aria-hidden="true"></i><p>No packages yet.</p></div></td></tr>
+                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-chair" aria-hidden="true"></i><p>No packages yet.</p></div></td></tr>
                     <?php endif; ?>
                     <?php foreach ($packages as $package): ?>
                         <tr>
                             <td><strong><?= ht_e($package['name']) ?></strong><?= $package['description'] ? '<small class="cell-muted">' . ht_e($package['description']) . '</small>' : '' ?></td>
                             <td><?= (int)$package['max_seats'] ?> <?= (int)$package['max_seats'] === 1 ? 'person' : 'people' ?></td>
+                            <td><?php $pkgLimit = hubnet_device_limit_label($package); ?><?= $pkgLimit === 'No limit' ? '<span class="cell-muted">No limit</span>' : ht_e($pkgLimit) ?></td>
                             <td><?= $usage[(int)$package['package_id']] ?? 0 ?></td>
                             <td><span class="badge badge-<?= !empty($package['is_active']) ? 'success' : 'secondary' ?>"><?= !empty($package['is_active']) ? 'Active' : 'Hidden' ?></span></td>
                             <td>
-                                <button type="button" class="btn btn-sm btn-warning" title="Edit package"
+                                <button type="button" class="btn btn-sm btn-soft" title="Edit package" aria-label="Edit <?= ht_e($package['name']) ?>"
                                         onclick='openPackageModal(<?= json_encode([
                                             'package_id' => (int)$package['package_id'],
                                             'name' => $package['name'],
                                             'max_seats' => (int)$package['max_seats'],
+                                            'devices_per_person' => $package['devices_per_person'] !== null ? (int)$package['devices_per_person'] : '',
+                                            'max_devices' => $package['max_devices'] !== null ? (int)$package['max_devices'] : '',
+                                            'members' => $usage[(int)$package['package_id']] ?? 0,
                                             'description' => (string)$package['description'],
                                             'sort_order' => (int)$package['sort_order'],
                                             'is_active' => !empty($package['is_active']),
                                         ], JSON_HEX_APOS | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_QUOT) ?>)'>
-                                    <i class="fas fa-edit" aria-hidden="true"></i> Edit
+                                    <i class="fas fa-pen" aria-hidden="true"></i>
                                 </button>
                             </td>
                         </tr>
@@ -428,30 +435,54 @@ if ($view === 'settings'):
 
 <?php if ($canSettings): ?>
 <!-- Add / edit package -->
-<div id="packageModal" class="modal" aria-hidden="true">
-    <div class="modal-content">
+<div id="packageModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="packageModalTitle" aria-hidden="true">
+    <div class="modal-content" style="max-width:600px">
         <div class="modal-header">
             <h3 id="packageModalTitle">Add package</h3>
-            <span class="close" onclick="closeModal('packageModal')">&times;</span>
+            <button type="button" class="close" aria-label="Close" onclick="closeModal('packageModal')">&times;</button>
         </div>
-        <div class="modal-body">
-            <form method="post" action="includes/hub-team-process.php">
+        <form method="post" action="includes/hub-team-process.php" id="pkgForm">
+            <div class="modal-body">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="save_package">
                 <input type="hidden" name="package_id" id="pkg_id" value="0">
-                <div class="form-group"><label for="pkg_name" class="required">Name</label><input id="pkg_name" class="form-control" name="name" required maxlength="100" placeholder="e.g. Dedicated table for 8"></div>
-                <div class="form-row">
-                    <div class="form-group"><label for="pkg_seats" class="required">Maximum seats</label><input id="pkg_seats" class="form-control" type="number" min="1" max="500" name="max_seats" value="1" required><div class="ht-help">Including the primary member.</div></div>
-                    <div class="form-group"><label for="pkg_order">Display order</label><input id="pkg_order" class="form-control" type="number" name="sort_order" value="60"></div>
-                </div>
-                <div class="form-group"><label for="pkg_desc">Description</label><input id="pkg_desc" class="form-control" name="description" maxlength="255"></div>
-                <div class="form-group"><label><input type="checkbox" name="is_active" value="1" id="pkg_active" checked> Offer this package when adding or editing members</label></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('packageModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save package</button>
-                </div>
-            </form>
-        </div>
+                <p class="ht-help" id="pkg_inuse" hidden></p>
+
+                <fieldset class="pkg-section"><legend><i class="fas fa-tag" aria-hidden="true"></i> Package</legend>
+                    <div class="form-group"><label for="pkg_name" class="required">Name</label><input id="pkg_name" class="form-control" name="name" required maxlength="100" placeholder="e.g. Dedicated table for 8"></div>
+                    <div class="form-group"><label for="pkg_desc">Description</label><input id="pkg_desc" class="form-control" name="description" maxlength="255" placeholder="What the member gets, e.g. Dedicated table, up to 8 people"></div>
+                </fieldset>
+
+                <fieldset class="pkg-section"><legend><i class="fas fa-chair" aria-hidden="true"></i> Seats</legend>
+                    <div class="form-group"><label for="pkg_seats" class="required">Maximum people</label><input id="pkg_seats" class="form-control" type="number" min="1" max="500" name="max_seats" value="1" required><p class="form-hint">Including the primary member.</p></div>
+                </fieldset>
+
+                <fieldset class="pkg-section"><legend><i class="fas fa-laptop" aria-hidden="true"></i> Devices on the hub internet</legend>
+                    <div class="form-row">
+                        <div class="form-group"><label for="pkg_dpp">Devices per person</label><input id="pkg_dpp" class="form-control" type="number" min="1" max="50" name="devices_per_person" placeholder="No limit"></div>
+                        <div class="form-group"><label for="pkg_maxdev">Total devices for the company</label><input id="pkg_maxdev" class="form-control" type="number" min="1" max="5000" name="max_devices" placeholder="No limit"></div>
+                    </div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+                        <?php foreach ([1, 2, 3, 5] as $pp): ?>
+                            <button type="button" class="btn btn-sm btn-soft" onclick="pkgPreset(<?= $pp ?>)"><?= $pp ?> per person</button>
+                        <?php endforeach; ?>
+                        <button type="button" class="btn btn-sm btn-soft" onclick="pkgPreset('')">No limit</button>
+                    </div>
+                    <p class="form-hint" id="pkg_summary">Leave a box empty for no limit. Phones, laptops and tablets each count as one device.</p>
+                </fieldset>
+
+                <fieldset class="pkg-section"><legend><i class="fas fa-sliders" aria-hidden="true"></i> Listing</legend>
+                    <div class="form-row">
+                        <div class="form-group"><label for="pkg_order">Display order</label><input id="pkg_order" class="form-control" type="number" name="sort_order" value="60"><p class="form-hint">Lower numbers are listed first.</p></div>
+                        <div class="form-group"><label class="hr-check" style="margin-top:28px"><input type="checkbox" name="is_active" value="1" id="pkg_active" checked> Offer when adding or editing members</label></div>
+                    </div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('packageModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> <span id="pkg_submit">Add package</span></button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -565,15 +596,55 @@ if ($view === 'settings'):
 <script>
 
 function openPackageModal(pkg) {
-    document.getElementById('packageModalTitle').textContent = pkg ? 'Edit package' : 'Add package';
+    document.getElementById('packageModalTitle').textContent = pkg ? 'Edit package: ' + pkg.name : 'Add package';
+    document.getElementById('pkg_submit').textContent = pkg ? 'Save changes' : 'Add package';
     document.getElementById('pkg_id').value = pkg ? pkg.package_id : 0;
     document.getElementById('pkg_name').value = pkg ? pkg.name : '';
     document.getElementById('pkg_seats').value = pkg ? pkg.max_seats : 1;
+    document.getElementById('pkg_dpp').value = pkg ? pkg.devices_per_person : '';
+    document.getElementById('pkg_maxdev').value = pkg ? pkg.max_devices : '';
     document.getElementById('pkg_order').value = pkg ? pkg.sort_order : 60;
     document.getElementById('pkg_desc').value = pkg ? pkg.description : '';
     document.getElementById('pkg_active').checked = pkg ? !!pkg.is_active : true;
+    var inUse = document.getElementById('pkg_inuse');
+    inUse.hidden = !(pkg && pkg.members);
+    inUse.textContent = pkg && pkg.members ? 'Used by ' + pkg.members + ' member' + (pkg.members === 1 ? '' : 's') + '. Lower limits apply to new people and devices only.' : '';
+    pkgSummary();
     openModal('packageModal');
 }
+
+/* "N per person" also fills the company total (seats x N); the total can then be changed. */
+function pkgPreset(n) {
+    var seats = parseInt(document.getElementById('pkg_seats').value, 10) || 1;
+    document.getElementById('pkg_dpp').value = n;
+    document.getElementById('pkg_maxdev').value = n === '' ? '' : seats * n;
+    pkgSummary();
+}
+
+function pkgSummary() {
+    var seats = parseInt(document.getElementById('pkg_seats').value, 10) || 1;
+    var dpp = parseInt(document.getElementById('pkg_dpp').value, 10);
+    var max = parseInt(document.getElementById('pkg_maxdev').value, 10);
+    var out = document.getElementById('pkg_summary');
+    var text;
+    if (!dpp && !max) {
+        text = 'No device limit: every person can register any number of devices.';
+    } else {
+        text = 'Up to ' + seats + ' ' + (seats === 1 ? 'person' : 'people')
+            + (dpp ? ', ' + dpp + ' device' + (dpp === 1 ? '' : 's') + ' each' : '')
+            + (max ? ', ' + max + ' device' + (max === 1 ? '' : 's') + ' in total for the company' : ', no company total')
+            + '.';
+        if (dpp && max && max < dpp) text += ' The total is lower than the devices per person.';
+        else if (dpp && max && max < dpp * seats) text += ' Note: the total is lower than ' + seats + ' x ' + dpp + ' = ' + (seats * dpp) + ', so not everyone can use all their devices.';
+    }
+    out.textContent = text;
+    out.classList.toggle('ht-over', !!(dpp && max && max < dpp));
+}
+
+['pkg_seats', 'pkg_dpp', 'pkg_maxdev'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', pkgSummary);
+});
 
 (function () {
     const all = document.getElementById('remindSelectAll');
@@ -654,6 +725,13 @@ elseif ($memberId > 0):
                     <?php if ($seatsMax): ?><div class="meter" aria-hidden="true"><div class="meter-fill <?= $over ? 'tone-red' : ($percent >= 100 ? 'tone-amber' : 'tone-green') ?>" style="width:<?= $percent ?>%"></div></div><?php endif; ?>
                 </div>
                 <?php if ($over): ?><div class="ht-help ht-over">Over the package limit: suspend someone or upgrade the package.</div><?php endif; ?>
+            </div>
+            <?php $devMax = $member['max_devices'] !== null ? (int)$member['max_devices'] : null; $devUsed = (int)$member['devices_used']; ?>
+            <div>
+                <div class="detail-label">Devices</div>
+                <div class="detail-value"><span class="<?= $devMax !== null && $devUsed > $devMax ? 'ht-over' : '' ?>"><?= $devUsed ?> / <?= $devMax ?? '&infin;' ?></span>
+                    <?= $member['devices_per_person'] !== null ? '<small class="cell-muted">' . (int)$member['devices_per_person'] . ' per person</small>' : '' ?></div>
+                <?php if ($devMax !== null && $devUsed > $devMax): ?><div class="ht-help ht-over">Over the package device limit: remove devices or upgrade the package.</div><?php endif; ?>
             </div>
             <div><div class="detail-label">Internet (automatic rule)</div><div class="detail-value"><?= $member['membership_live'] ? '<span class="badge badge-success">Membership live - online</span>' : '<span class="badge badge-secondary">Membership not active - offline</span>' ?></div></div>
         </div>

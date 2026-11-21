@@ -1815,6 +1815,10 @@ function hubinet_register_member_device(mysqli $conn, string $mac, int $memberId
     if ($taken) {
         return hubinet_result(false, $mac . ' is already registered to ' . ($taken[0]['person_name'] ?? 'someone') . '.');
     }
+    $limitError = hubnet_device_limit_error($conn, $member, $teamMemberId > 0 ? $teamMemberId : null, 1);
+    if ($limitError !== null) {
+        return hubinet_result(false, $limitError);
+    }
     $label = mb_substr(trim($label), 0, 80);
     $tmId = $teamMemberId > 0 ? $teamMemberId : null;
     $stmt = $conn->prepare("INSERT INTO hub_network_devices (member_id, team_member_id, person_id, mac_address, label, access_mode, created_by)
@@ -1857,6 +1861,15 @@ function hubinet_person_to_member(mysqli $conn, int $personId, int $memberId, st
         if (!hubnet_seat_available($member)) {
             return hubinet_result(false, 'All ' . $member['seats_max'] . ' seat(s) of ' . $company . ' are taken. Upgrade the package or suspend someone first.');
         }
+    }
+    // Package device limits: a new team member starts with none; the primary member may have some.
+    $moving = count(hubinet_person_devices($conn, $personId));
+    if ($asTeam && $member['devices_per_person'] !== null && $moving > (int)$member['devices_per_person']) {
+        return hubinet_result(false, 'The ' . $member['package_name'] . ' package allows ' . (int)$member['devices_per_person'] . ' device(s) per person; ' . $person['full_name'] . ' has ' . $moving . '. Remove some first.');
+    }
+    $limitError = hubnet_device_limit_error($conn, $asTeam ? ['devices_per_person' => null] + $member : $member, null, $moving);
+    if ($limitError !== null) {
+        return hubinet_result(false, $limitError);
     }
 
     $conn->begin_transaction();
@@ -2105,6 +2118,12 @@ function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $t
     $member = $as === 'member' ? hubnet_member($conn, $memberId) : null;
     if ($as === 'member' && !$member) {
         return hubinet_result(false, 'Choose the member company the devices belong to.');
+    }
+    if ($as === 'member') {
+        $limitError = hubnet_device_limit_error($conn, $member, null, count($macs));
+        if ($limitError !== null) {
+            return hubinet_result(false, $limitError);
+        }
     }
     if (count($macs) > 2000) {
         return hubinet_result(false, 'Import at most 2000 entries at a time (narrow the search).');
