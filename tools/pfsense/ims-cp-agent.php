@@ -47,8 +47,8 @@
 
 // ---- Settings -------------------------------------------------------------
 const IMS_AGENT_SECRET = 'CHANGE-ME-to-a-long-random-string';
-const IMS_FEED_URL = 'https://ims.example.org/hub-network-agent';  // pull mode
-const IMS_ALLOWED_IPS = ['192.168.1.10'];                          // push mode only
+const IMS_FEED_URL = 'https://ims.hivecolab.com/hub-network-agent';  // pull mode
+const IMS_ALLOWED_IPS = ['192.168.1.1'];                          // push mode only
 const IMS_DEFAULT_ZONE = 'lan';
 // ---------------------------------------------------------------------------
 

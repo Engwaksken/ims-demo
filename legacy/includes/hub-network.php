@@ -510,8 +510,14 @@ if (!function_exists('hubnet_call')) {
      */
     function hubnet_call(array $settings, string $action, array $payload = []): array
     {
-        if ($settings['agent_url'] === '' || $settings['secret'] === '') {
-            return ['ok' => false, 'message' => 'pfSense agent URL or shared secret is not configured.', 'data' => []];
+        if ($settings['agent_url'] === '') {
+            return ['ok' => false, 'message' => 'Push mode is selected but no agent URL is saved. Enter the agent URL in Edit connection, or switch Connection to pull (pfSense checks in) if the IMS server cannot reach the firewall.', 'data' => []];
+        }
+
+        if ($settings['secret'] === '') {
+            return ['ok' => false, 'message' => !empty($settings['has_secret'])
+                ? 'A shared secret is saved but cannot be decrypted (DATA_ENCRYPTION_KEY / APP_KEY changed or missing in .env). Re-enter the shared secret in Edit connection.'
+                : 'No shared secret is saved. Enter the shared secret in Edit connection.', 'data' => []];
         }
 
         if (!function_exists('curl_init')) {
