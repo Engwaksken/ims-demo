@@ -27,7 +27,7 @@ $views = ['overview', 'staff', 'guests', 'devices', 'online', 'hotspot', 'vouche
 $returnView = in_array($_POST['return_view'] ?? '', $views, true) ? (string)$_POST['return_view'] : 'overview';
 $returnQuery = 'view=' . $returnView . ((int)($_POST['return_person'] ?? 0) > 0 ? '&person=' . (int)$_POST['return_person'] : '');
 // Forms used on several pages (the speed modal) say where to come back to.
-if (preg_match('/\A[A-Za-z0-9_]+=[A-Za-z0-9_=&-]{0,150}\z/', (string)($_POST['return_query'] ?? ''))) {
+if (preg_match('/\A[A-Za-z0-9_]+=[A-Za-z0-9_=&%.+-]{0,200}\z/', (string)($_POST['return_query'] ?? ''))) {
     $returnQuery = (string)$_POST['return_query'];
 }
 
@@ -66,6 +66,7 @@ $needs = [
     'register_online' => $canManage,
     'unknown_bulk' => $canControl,
     'device_speed' => $canControl,
+    'edit_device' => $canControl,
     'create_vouchers' => $canVouchers,
     'vouchers_bulk' => $canVouchers,
 ];
@@ -205,6 +206,36 @@ try {
             $net = hubnet_apply($conn, hubnet_devices_where($conn, "d.device_id IN ($marks)", str_repeat('i', count($ids)), $ids), $uid, 'speed');
             $what = $down === null && $up === null ? 'no limit' : 'down ' . ($down ? hubnet_mbps_label($down) . ' Mbps' : 'no limit') . ', up ' . ($up ? hubnet_mbps_label($up) . ' Mbps' : 'no limit');
             hip_back($returnQuery, true, 'Speed set to ' . $what . ' for ' . count($ids) . ' device(s). ' . $net['message']);
+
+        case 'edit_device':
+            // Online now > Edit: name (managers), access mode and speed of one registered device.
+            $deviceId = (int)($_POST['device_id'] ?? 0);
+            $mode = (string)($_POST['access_mode'] ?? '');
+            $down = hubnet_parse_mbps($_POST['bw_down'] ?? '');
+            $up = hubnet_parse_mbps($_POST['bw_up'] ?? '');
+            if ($deviceId <= 0 || !hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId])) {
+                hip_back($returnQuery, false, 'Device not found.');
+            }
+            if (!in_array($mode, ['auto', 'allow', 'block'], true)) {
+                hip_back($returnQuery, false, 'Choose the internet access for this device.');
+            }
+            if ($down === false || $up === false) {
+                hip_back($returnQuery, false, 'Enter the speed in Mbps (at least 0.064, e.g. 5 or 0.5), or leave it empty for no limit.');
+            }
+            if ($canManage && isset($_POST['label'])) {
+                $label = mb_substr(trim((string)$_POST['label']), 0, 80);
+                $stmt = $conn->prepare("UPDATE hub_network_devices SET label = NULLIF(?, '') WHERE device_id = ?");
+                $stmt->bind_param('si', $label, $deviceId);
+                $stmt->execute();
+                $stmt->close();
+            }
+            $stmt = $conn->prepare('UPDATE hub_network_devices SET access_mode = ? WHERE device_id = ?');
+            $stmt->bind_param('si', $mode, $deviceId);
+            $stmt->execute();
+            $stmt->close();
+            hubinet_set_device_bw($conn, [$deviceId], $down, $up);
+            $net = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $uid, 'edit');
+            hip_back($returnQuery, true, 'Device updated. ' . $net['message']);
 
         case 'create_vouchers':
             $r = hubinet_create_vouchers($conn, $_POST, $uid);

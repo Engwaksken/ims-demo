@@ -55,6 +55,14 @@ $hiHidden = static function (string $action, string $view, int $person = 0): str
 .hi-qr-box code { display: block; margin-top: 8px; word-break: break-all; font-size: 12px; }
 .hi-steps { margin: 0; padding-left: 20px; line-height: 1.7; }
 .hi-person-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+/* Compact statistics cards for the hub internet pages. */
+.stats-grid.hi-stats { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.hi-stats .stat-card { padding: 10px 12px; gap: 10px; border-radius: var(--radius-lg, 12px); box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,.06)); }
+.hi-stats .stat-card:hover { transform: none; }
+.hi-stats .stat-icon { width: 34px; height: 34px; font-size: 15px; border-radius: 9px; }
+.hi-stats .stat-label { font-size: 10px; }
+.hi-stats .stat-value { font-size: 20px; letter-spacing: -.5px; }
+@media (max-width: 520px) { .stats-grid.hi-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .hi-switch, .hi-charts, .hi-qr { grid-template-columns: 1fr; } }
 @media print {
   body.hi-printing > *:not(.hi-poster-host) { display: none !important; }
@@ -119,7 +127,7 @@ if ($view === 'overview'):
     </div>
 </div>
 
-<div class="stats-grid reports-stats">
+<div class="stats-grid reports-stats hi-stats">
     <div class="stat-card" data-stat-href="hub-team?view=online"><div class="stat-icon bg-green"><i class="fas fa-signal" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Devices online now</span><span class="stat-value"><?= $counts['total'] ?></span></div></div>
     <div class="stat-card" data-stat-href="hub-team?view=online&amp;kind=member"><div class="stat-icon bg-blue"><i class="fas fa-building" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Members' devices online</span><span class="stat-value"><?= $counts['member'] ?></span></div></div>
     <div class="stat-card" data-stat-href="hub-team?view=online&amp;kind=staff"><div class="stat-icon bg-purple"><i class="fas fa-id-badge" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Staff devices online</span><span class="stat-value"><?= $counts['staff'] ?></span></div></div>
@@ -375,12 +383,35 @@ elseif ($view === 'online'):
     $kindFilter = in_array($_GET['kind'] ?? '', ['member', 'staff', 'guest', 'unknown'], true) ? (string)$_GET['kind'] : '';
     $online = hubinet_online($conn, $kindFilter);
     $counts = hubinet_online_counts($conn);
+    // Search: MAC, IP, name, company, device label or portal login.
+    $onlineQ = mb_substr(trim((string)($_GET['q'] ?? '')), 0, 60);
+    if ($onlineQ !== '') {
+        $needle = mb_strtolower($onlineQ);
+        $macNeedle = preg_replace('/[^a-f0-9]/', '', $needle);
+        $online = array_values(array_filter($online, static function (array $o) use ($needle, $macNeedle): bool {
+            $d = $o['device'] ?? [];
+            $hay = mb_strtolower(implode(' ', [$o['mac_address'], $o['ip_address'], $o['portal_user'],
+                $d['person_name'] ?? '', $d['company_name'] ?? '', $d['label'] ?? '', $d['person_organisation'] ?? '']));
+            return str_contains($hay, $needle)
+                || (strlen($macNeedle) >= 4 && str_contains(str_replace(':', '', (string)$o['mac_address']), $macNeedle));
+        }));
+    }
+    $onlineReturn = 'view=online' . ($kindFilter !== '' ? '&kind=' . $kindFilter : '') . ($onlineQ !== '' ? '&q=' . rawurlencode($onlineQ) : '');
     $peopleForSelect = $canManage ? array_merge(hubinet_people($conn, 'staff', ['status' => 'active']), hubinet_people($conn, 'guest', ['status' => 'active'])) : [];
     $staffCandidates = $canManage ? hubinet_staff_candidates($conn) : [];
 ?>
 <div class="card">
     <div class="card-header"><h3><i class="fas fa-signal" aria-hidden="true"></i> Online now (<?= count($online) ?>)</h3>
-        <span class="cell-muted"><?= $settings['last_checkin_at'] ? 'As of pfSense check-in at ' . ht_e(date('H:i', strtotime((string)$settings['last_checkin_at']))) : 'pfSense has not checked in yet' ?></span></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <span class="cell-muted"><?= $settings['last_checkin_at'] ? 'As of pfSense check-in at ' . ht_e(date('H:i', strtotime((string)$settings['last_checkin_at']))) : 'pfSense has not checked in yet' ?></span>
+            <form method="get" action="hub-team" style="display:flex;gap:6px">
+                <input type="hidden" name="view" value="online">
+                <?php if ($kindFilter !== ''): ?><input type="hidden" name="kind" value="<?= ht_e($kindFilter) ?>"><?php endif; ?>
+                <input type="search" name="q" value="<?= ht_e($onlineQ) ?>" class="form-control" placeholder="MAC, IP, name or company" aria-label="Search devices online" style="min-width:210px">
+                <button class="btn btn-soft" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></button>
+                <?php if ($onlineQ !== ''): ?><a class="btn btn-soft" href="hub-team?view=online<?= $kindFilter !== '' ? '&amp;kind=' . $kindFilter : '' ?>" aria-label="Clear search"><i class="fas fa-times" aria-hidden="true"></i></a><?php endif; ?>
+            </form>
+        </div></div>
     <div class="card-body">
         <div class="hr-stage-pills">
             <?php foreach (['' => ['All', $counts['total']], 'member' => ['Members', $counts['member']], 'staff' => ['Staff', $counts['staff']], 'guest' => ['Guests', $counts['guest']], 'unknown' => ['Unknown', $counts['unknown']]] as $k => [$t, $n]): ?>
@@ -398,7 +429,7 @@ elseif ($view === 'online'):
                 <?php foreach ($online as $o): $d = $o['device']; ?>
                     <tr>
                         <?php if ($canControl): ?><td data-label="Select"><?php if ($d): ?><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$d['device_id'] ?>" aria-label="Select <?= ht_e($o['mac_address']) ?>"><?php else: ?><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($o['mac_address']) ?>" aria-label="Select unknown device <?= ht_e($o['mac_address']) ?>"><?php endif; ?></td><?php endif; ?>
-                        <td data-label="Device"><code><?= ht_e($o['mac_address']) ?></code><?= $d && $d['label'] ? '<small class="cell-muted">' . ht_e($d['label']) . '</small>' : '' ?><?= $d ? '<div style="margin-top:4px">' . hubinet_speed_cell($d, $canControl, 'view=online' . ($kindFilter !== '' ? '&kind=' . $kindFilter : '')) . '</div>' : '' ?></td>
+                        <td data-label="Device"><code><?= ht_e($o['mac_address']) ?></code><?= $d && $d['label'] ? '<small class="cell-muted">' . ht_e($d['label']) . '</small>' : '' ?><?= $d ? '<div style="margin-top:4px">' . hubinet_speed_cell($d, $canControl, $onlineReturn) . '</div>' : '' ?></td>
                         <td data-label="Who">
                             <?php if ($d): ?>
                                 <?php if ($d['owner_kind'] === 'member'): ?>
@@ -414,6 +445,13 @@ elseif ($view === 'online'):
                         <td data-label="IP"><?= ht_e($o['ip_address'] ?: '-') ?></td>
                         <td data-label="Seen">since <?= ht_e(date('H:i', strtotime((string)($o['session_started'] ?: $o['first_seen'])))) ?></td>
                         <td data-label="">
+                            <?php if ($d && $canControl): ?>
+                                <button type="button" class="btn btn-sm btn-soft" onclick="hiEditDevice(this)" title="Edit device"
+                                    data-id="<?= (int)$d['device_id'] ?>" data-mac="<?= ht_e($o['mac_address']) ?>" data-label="<?= ht_e((string)$d['label']) ?>"
+                                    data-mode="<?= ht_e((string)$d['access_mode']) ?>" data-down="<?= ht_e(hubnet_mbps_label(isset($d['bw_down_kbps']) ? (int)$d['bw_down_kbps'] : null)) ?>"
+                                    data-up="<?= ht_e(hubnet_mbps_label(isset($d['bw_up_kbps']) ? (int)$d['bw_up_kbps'] : null)) ?>"
+                                    data-owner="<?= ht_e((string)$d['person_name']) ?>"><i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
+                            <?php endif; ?>
                             <?php if (!$d && $canManage): ?>
                                 <button type="button" class="btn btn-sm btn-primary" onclick="hiRegister(<?= ht_e(json_encode($o['mac_address'])) ?>)"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</button>
                             <?php endif; ?>
@@ -428,7 +466,7 @@ elseif ($view === 'online'):
                 <button type="submit" name="mode" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select registered devices first (unknown devices: use Register)." data-confirm="Disconnect the selected devices?" data-confirm-title="Disconnect" data-confirm-ok="Disconnect" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Disconnect</button>
                 <button type="submit" name="mode" value="allow" class="btn btn-sm btn-secondary" data-bulk-required>Always on</button>
                 <button type="submit" name="mode" value="auto" class="btn btn-sm btn-secondary" data-bulk-required>Automatic</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-bulk-required="Select registered devices first." onclick="hiSpeedBulk(this, <?= ht_e(json_encode('view=online' . ($kindFilter !== '' ? '&kind=' . $kindFilter : ''))) ?>)"><i class="fas fa-gauge-high" aria-hidden="true"></i> Speed limit</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bulk-required="Select registered devices first." onclick="hiSpeedBulk(this, <?= ht_e(json_encode($onlineReturn)) ?>)"><i class="fas fa-gauge-high" aria-hidden="true"></i> Speed limit</button>
                 <span class="cell-muted" style="margin-left:8px">Unknown devices:</span>
                 <button type="submit" name="unknown_op" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select unknown devices first." data-confirm="Block and disconnect the selected unknown devices? They stay blocked until you remove them under Guests (&quot;Blocked device&quot;)." data-confirm-title="Block unknown devices" data-confirm-ok="Block" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Block</button>
                 <button type="submit" name="unknown_op" value="forget" class="btn btn-sm btn-secondary" data-bulk-required="Select unknown devices first." data-confirm="Remove the selected unknown devices from this list? Devices that are still connected appear again at the next check-in." data-confirm-title="Remove from list" data-confirm-ok="Remove"><i class="fas fa-trash" aria-hidden="true"></i> Remove from list</button>
@@ -495,7 +533,7 @@ elseif ($view === 'hotspot'):
                                      FROM hub_network_people WHERE kind = 'guest' AND source = 'hotspot'")->fetch_assoc();
     $orgName = (string)(ims_brand()['name'] ?? 'Guest Wi-Fi');
 ?>
-<div class="stats-grid reports-stats">
+<div class="stats-grid reports-stats hi-stats">
     <div class="stat-card"><div class="stat-icon <?= $settings['hotspot_enabled'] ? 'bg-green' : 'bg-red' ?>"><i class="fas fa-wifi" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Hotspot</span><span class="stat-value"><?= $settings['hotspot_enabled'] ? 'On' : 'Off' ?></span></div></div>
     <div class="stat-card" data-stat-href="hub-team?view=guests&amp;source=hotspot&amp;status=active"><div class="stat-icon bg-amber"><i class="fas fa-user-clock" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Hotspot guests with access</span><span class="stat-value"><?= (int)$hotspotGuests['active'] ?></span></div></div>
     <div class="stat-card" data-stat-href="hub-team?view=guests&amp;source=hotspot"><div class="stat-icon bg-blue"><i class="fas fa-right-to-bracket" aria-hidden="true"></i></div><div class="stat-info"><span class="stat-label">Sign-ins today</span><span class="stat-value"><?= (int)$hotspotGuests['today'] ?></span></div></div>
@@ -563,7 +601,7 @@ elseif ($view === 'hotspot'):
             <div class="form-group"><label for="hiHelpPhone">Help phone number</label><input id="hiHelpPhone" type="tel" name="hotspot_help_phone" class="form-control" maxlength="40" placeholder="<?= ht_e((string)(ims_brand()['phone'] ?? '')) ?>" value="<?= ht_e($settings['hotspot_help_phone']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">Empty = the organisation phone.</p></div>
             <div class="form-group"><label for="hiHelpWa">WhatsApp number</label><input id="hiHelpWa" type="tel" name="hotspot_help_whatsapp" class="form-control" maxlength="40" placeholder="+256 700 000000" value="<?= ht_e($settings['hotspot_help_whatsapp']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">With the country code. Optional.</p></div>
             <div class="form-group"><label for="hiHelpEmail">Help email</label><input id="hiHelpEmail" type="email" name="hotspot_help_email" class="form-control" maxlength="190" placeholder="<?= ht_e((string)(ims_brand()['email'] ?? '')) ?>" value="<?= ht_e($settings['hotspot_help_email']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">Empty = the organisation email.</p></div>
-            <div class="form-group is-wide"><label for="hiHelp">Help content</label><textarea id="hiHelp" name="hotspot_help" class="form-control" rows="16" style="resize:vertical;min-height:260px" placeholder="<?= ht_e(hubinet_default_help($settings)) ?>" <?= $canSettings ? '' : 'disabled' ?>><?= ht_e($settings['hotspot_help']) ?></textarea><p class="form-hint">Plain text. Start a line with <code>## </code> for a heading and <code>- </code> for a bullet; leave an empty line between paragraphs. Empty = the standard help shown as the example.</p></div>
+            <div class="form-group is-wide"><label for="hiHelp">Help content</label><textarea id="hiHelp" name="hotspot_help" class="form-control" rows="16" style="resize:vertical;min-height:260px" data-default="<?= ht_e(hubinet_default_help($settings)) ?>" <?= $canSettings ? '' : 'disabled' ?>><?= ht_e(trim($settings['hotspot_help']) !== '' ? $settings['hotspot_help'] : hubinet_default_help($settings)) ?></textarea><p class="form-hint">Edit the text freely. Plain text: start a line with <code>## </code> for a heading and <code>- </code> for a bullet; leave an empty line between paragraphs.<?php if ($canSettings): ?> <a href="#" onclick="var t=document.getElementById('hiHelp');if(confirm('Replace the help text with the standard text?')){t.value=t.dataset.default;}return false;">Reset to the standard text</a> &middot; <a href="<?= ht_e($hotspotUrl) ?>?help" target="_blank" rel="noopener">Preview</a><?php endif; ?></p></div>
             <?php if ($canSettings): ?><div class="form-group is-wide"><button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save hotspot settings</button></div><?php endif; ?>
         </form>
     </div>

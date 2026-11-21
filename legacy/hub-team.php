@@ -1073,6 +1073,38 @@ else:
 <?php endif; ?>
 
 <?php if ($canControl && $ready): ?>
+<!-- Edit a registered device from Online now: label, internet access, speed -->
+<div id="hiEditModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hiEditTitle" aria-hidden="true">
+    <div class="modal-content" style="max-width:520px">
+        <div class="modal-header"><h3 id="hiEditTitle">Edit device</h3><button type="button" class="close" aria-label="Close" onclick="closeModal('hiEditModal')">&times;</button></div>
+        <form method="post" action="includes/hub-internet-process.php">
+            <div class="modal-body">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="edit_device">
+                <input type="hidden" name="device_id" id="hiEditId">
+                <input type="hidden" name="return_query" id="hiEditReturn">
+                <p class="cell-muted" style="margin-top:0"><code id="hiEditMac"></code></p>
+                <div class="form-group"><label for="hiEditLabel">Device name</label><input id="hiEditLabel" name="label" maxlength="80" class="form-control" placeholder="e.g. Laptop, iPhone"<?= $canManage ? '' : ' disabled' ?>></div>
+                <div class="form-group"><label for="hiEditMode">Internet access</label>
+                    <select id="hiEditMode" name="access_mode" class="form-control">
+                        <option value="auto">Automatic (follows membership / access period)</option>
+                        <option value="allow">Always on</option>
+                        <option value="block">Disconnected (blocked)</option>
+                    </select></div>
+                <div class="form-row">
+                    <div class="form-group"><label for="hiEditDown"><i class="fas fa-arrow-down" aria-hidden="true"></i> Download (Mbps)</label><input id="hiEditDown" name="bw_down" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
+                    <div class="form-group"><label for="hiEditUp"><i class="fas fa-arrow-up" aria-hidden="true"></i> Upload (Mbps)</label><input id="hiEditUp" name="bw_up" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
+                </div>
+                <p class="form-hint">To give the device to someone else, remove it from its owner's page and register it again.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('hiEditModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Speed limit for one device or several (hubinet_speed_cell / hiSpeedBulk) -->
 <div id="hiSpeedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hiSpeedTitle" aria-hidden="true">
     <div class="modal-content" style="max-width:460px">
@@ -1123,6 +1155,19 @@ else:
         var ids = Array.prototype.map.call(form.querySelectorAll('input.hr-sel[name="ids[]"]:checked'), function (c) { return c.value; });
         if (!ids.length) return;
         open(ids, ids.length + ' selected device' + (ids.length === 1 ? '' : 's'), '', '', ret);
+    };
+    window.hiEditDevice = function (btn) {
+        var d = btn.dataset;
+        document.getElementById('hiEditId').value = d.id;
+        document.getElementById('hiEditMac').textContent = d.mac + (d.owner ? ' · ' + d.owner : '');
+        document.getElementById('hiEditLabel').value = d.label || '';
+        document.getElementById('hiEditMode').value = d.mode || 'auto';
+        document.getElementById('hiEditDown').value = d.down || '';
+        document.getElementById('hiEditUp').value = d.up || '';
+        var q = new URLSearchParams(location.search);
+        q.delete('view');
+        document.getElementById('hiEditReturn').value = 'view=online' + (q.toString() ? '&' + q.toString() : '');
+        openModal('hiEditModal');
     };
     window.hiSpeedPreset = function (down, up) {
         document.getElementById('hiSpeedDown').value = down;
