@@ -333,23 +333,39 @@ function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string
 function ims_clients(array $zoneConfig): array
 {
     $clients = [];
-    $ifaces = array_filter(array_map('trim', explode(',', (string)($zoneConfig['interface'] ?? ''))));
+    // Zone interfaces ("lan,opt1") -> real NICs ("igb1"). get_real_interface() lives in
+    // interfaces.inc, which captiveportal.inc does not always load; fall back to config.
+    if (!function_exists('get_real_interface') && is_file('/etc/inc/interfaces.inc')) {
+        require_once 'interfaces.inc';
+    }
+    $real = [];
+    foreach (array_filter(array_map('trim', explode(',', (string)($zoneConfig['interface'] ?? '')))) as $iface) {
+        $nic = function_exists('get_real_interface') ? (string)get_real_interface($iface) : '';
+        if ($nic === '') {
+            $nic = (string)ims_cfg_get("interfaces/{$iface}/if", '');
+        }
+        if (preg_match('/^[A-Za-z0-9_.]+$/', $nic)) {
+            $real[$nic] = true;
+        }
+    }
+    if (!$real) {
+        return [];
+    }
 
-    foreach ($ifaces as $iface) {
-        $real = function_exists('get_real_interface') ? get_real_interface($iface) : $iface;
-        if (!preg_match('/^[A-Za-z0-9_.]+$/', (string)$real)) {
+    // One ARP read for all interfaces, filtered by NIC (works on every FreeBSD arp version).
+    $out = [];
+    exec('/usr/sbin/arp -an 2>/dev/null', $out);
+    foreach ($out as $line) {
+        // ? (192.168.1.23) at 3c:22:fb:12:34:56 on igb1 expires in 1180 seconds [ethernet]
+        if (!preg_match('/\(([0-9.]+)\) at ([0-9a-f:]{11,17}) on ([A-Za-z0-9_.]+)/i', $line, $m) || !isset($real[$m[3]])) {
             continue;
         }
-        $out = [];
-        exec('/usr/sbin/arp -an -i ' . escapeshellarg((string)$real) . ' 2>/dev/null', $out);
-        foreach ($out as $line) {
-            // ? (192.168.1.23) at 3c:22:fb:12:34:56 on igb1 expires in 1180 seconds [ethernet]
-            if (preg_match('/\(([0-9.]+)\) at ([0-9a-f:]{11,17}) on /i', $line, $m)) {
-                $mac = ims_normalize_mac($m[2]);
-                if ($mac !== '' && $mac !== 'ff:ff:ff:ff:ff:ff') {
-                    $clients[$mac] = ['mac' => $mac, 'ip' => $m[1]];
-                }
-            }
+        if (stripos($line, 'permanent') !== false) {
+            continue; // the firewall's own address
+        }
+        $mac = ims_normalize_mac($m[2]);
+        if ($mac !== '' && $mac !== 'ff:ff:ff:ff:ff:ff') {
+            $clients[$mac] = ['mac' => $mac, 'ip' => $m[1]];
         }
     }
 
@@ -490,8 +506,10 @@ if ($imsCli) {
 
     if (empty($feed['enabled'])) {
         // Control is off: change nothing, but still report who is online.
-        ims_post(['action' => 'report', 'results' => [], 'info' => ims_zone_info($zoneConfig, IMS_DEFAULT_ZONE)] + ims_online_payload($zoneConfig));
-        echo "[ims-cp-agent] checked in; control is off in the IMS, nothing changed.\n";
+        $online = ims_online_payload($zoneConfig);
+        ims_post(['action' => 'report', 'results' => [], 'info' => ims_zone_info($zoneConfig, IMS_DEFAULT_ZONE)] + $online);
+        echo "[ims-cp-agent] checked in; control is off in the IMS, nothing changed. "
+            . count($online['clients']) . ' device(s) seen on the portal network, ' . count($online['sessions']) . " portal session(s).\n";
         exit(0);
     }
 
@@ -510,14 +528,16 @@ if ($imsCli) {
     $applied = ims_apply($zoneConfig, is_array($feed['items'] ?? null) ? $feed['items'] : [], true, $prefix);
 
     $finalZone = ims_cfg_get("captiveportal/{$GLOBALS['cpzone']}", []);
+    $online = ims_online_payload($finalZone);
     ims_post([
         'action' => 'report',
         'results' => $applied['results'],
         'info' => ims_zone_info($finalZone, $zone) + ['reload' => $applied['reload'], 'portal_change' => $portalChange],
-    ] + ims_online_payload($finalZone));
+    ] + $online);
 
     echo '[ims-cp-agent] ' . count($applied['results']) . ' device(s) checked'
-        . ($applied['changed'] ? ', rules reloaded (' . $applied['reload'] . ')' : ', no changes') . ".\n";
+        . ($applied['changed'] ? ', rules reloaded (' . $applied['reload'] . ')' : ', no changes')
+        . '; ' . count($online['clients']) . ' device(s) seen on the portal network, ' . count($online['sessions']) . " portal session(s).\n";
     exit(0);
 }
 

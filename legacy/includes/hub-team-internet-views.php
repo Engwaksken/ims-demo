@@ -419,7 +419,7 @@ elseif ($view === 'online'):
             <?php endforeach; ?>
         </div>
         <?php if (!$online): ?>
-            <div class="empty-state"><i class="fas fa-wifi" aria-hidden="true"></i><p>No devices reported online<?= $kindFilter !== '' ? ' in this group' : '' ?>. pfSense agent 2.1 reports connected devices at every check-in.</p></div>
+            <div class="empty-state"><i class="fas fa-wifi" aria-hidden="true"></i><p>No devices reported online<?= $kindFilter !== '' || ($onlineQ ?? '') !== '' ? ' in this group or search' : '' ?>.<?php if ($kindFilter === '' && ($onlineQ ?? '') === ''): ?><br><small>pfSense reports connected devices at every check-in (agent <?= ht_e($hiAgentVersion !== '' ? $hiAgentVersion : 'not checked in yet') ?>; 2.2 or newer recommended). Run <code>/usr/local/bin/php -f /root/ims-cp-agent.php pull</code> on pfSense: it prints how many devices it sees.</small><?php endif; ?></p></div>
         <?php else: ?>
         <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
             <?= $hiHidden('devices_bulk', 'online') ?>
