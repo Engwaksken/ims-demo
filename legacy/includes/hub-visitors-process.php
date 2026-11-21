@@ -5,7 +5,7 @@ require_once 'config.php';
 
 
 
-function redirect(string $msg, bool $success = true, string $extra = ''): never
+function hv_redirect(string $msg, bool $success = true, string $extra = ''): never
 {
     $_SESSION[$success ? 'success' : 'error'] = $msg;
     header('Location: ../hub-visitors' . ($extra ? "?$extra" : ''));
@@ -33,23 +33,23 @@ function collect_visitor_fields(bool $allow_future_date = false): array
     $allowed_purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','Interview','Other'];
 
     if (empty($fields['visitor_name']) || empty($fields['visit_date']) || empty($fields['purpose'])) {
-        redirect('Please fill in all required fields (Name, Date, Purpose).', false);
+        hv_redirect('Please fill in all required fields (Name, Date, Purpose).', false);
     }
 
     if (!in_array($fields['purpose'], $allowed_purposes, true)) {
-        redirect('Invalid purpose selected.', false);
+        hv_redirect('Invalid purpose selected.', false);
     }
 
     if (!$allow_future_date && strtotime($fields['visit_date']) > strtotime('today')) {
-        redirect('Visit date cannot be in the future.', false);
+        hv_redirect('Visit date cannot be in the future.', false);
     }
 
     if (!empty($fields['email']) && !filter_var($fields['email'], FILTER_VALIDATE_EMAIL)) {
-        redirect('Invalid email address format.', false);
+        hv_redirect('Invalid email address format.', false);
     }
 
     if (!empty($fields['visit_time']) && !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $fields['visit_time'])) {
-        redirect('Invalid time format.', false);
+        hv_redirect('Invalid time format.', false);
     }
 
     return $fields;
@@ -58,7 +58,7 @@ function collect_visitor_fields(bool $allow_future_date = false): array
 // -- Auth gate -----------------------------------------------------------------
 
 if (!isset($_SESSION['user_id']) || !ims_allowed('hub_visitors.manage', ['Administrator', 'Operations/Admin'], 'Add and edit hub visitors')) {
-    redirect('Unauthorized access.', false);
+    hv_redirect('Unauthorized access.', false);
 }
 
 $user_id = (int) $_SESSION['user_id'];
@@ -87,9 +87,9 @@ if (isset($_POST['add_visitor'])) {
     if ($stmt->execute()) {
         log_action($user_id, 'Add Visitor', 'hub_visitors', $stmt->insert_id ?: null,
             "Added visitor: {$f['visitor_name']} on {$f['visit_date']}");
-        redirect('Visitor logged successfully!');
+        hv_redirect('Visitor logged successfully!');
     } else {
-        redirect('Error logging visitor: ' . $conn->error, false);
+        hv_redirect('Error logging visitor: ' . $conn->error, false);
     }
     $stmt->close();
 }
@@ -101,7 +101,7 @@ if (isset($_POST['edit_visitor'])) {
 
     $visitor_id = (int) ($_POST['visitor_id'] ?? 0);
     if ($visitor_id <= 0) {
-        redirect('Invalid visitor ID.', false);
+        hv_redirect('Invalid visitor ID.', false);
     }
 
     $f = collect_visitor_fields();
@@ -113,7 +113,7 @@ if (isset($_POST['edit_visitor'])) {
     $chk->bind_result($old_name);
     if (!$chk->fetch()) {
         $chk->close();
-        redirect('Visitor not found.', false);
+        hv_redirect('Visitor not found.', false);
     }
     $chk->close();
 
@@ -143,9 +143,9 @@ if (isset($_POST['edit_visitor'])) {
     if ($stmt->execute()) {
         log_action($user_id, 'Edit Visitor', 'hub_visitors', $visitor_id,
             "Updated visitor ID $visitor_id: \"$old_name\" ? \"{$f['visitor_name']}\"");
-        redirect('Visitor updated successfully!');
+        hv_redirect('Visitor updated successfully!');
     } else {
-        redirect('Error updating visitor: ' . $conn->error, false);
+        hv_redirect('Error updating visitor: ' . $conn->error, false);
     }
     $stmt->close();
 }
@@ -156,14 +156,14 @@ if (isset($_POST['edit_visitor'])) {
 if (isset($_GET['delete'])) {
 
     if (!ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')) {
-        redirect('Only administrators can delete visitor records.', false);
+        hv_redirect('Only administrators can delete visitor records.', false);
     }
 
     csrf_protect(true); // destructive GET link must carry the CSRF token
 
     $visitor_id = (int) $_GET['delete'];
     if ($visitor_id <= 0) {
-        redirect('Invalid visitor ID.', false);
+        hv_redirect('Invalid visitor ID.', false);
     }
 
     // Fetch for audit log
@@ -173,7 +173,7 @@ if (isset($_GET['delete'])) {
     $chk->bind_result($v_name, $v_date);
     if (!$chk->fetch()) {
         $chk->close();
-        redirect('Visitor not found.', false);
+        hv_redirect('Visitor not found.', false);
     }
     $chk->close();
 
@@ -183,9 +183,9 @@ if (isset($_GET['delete'])) {
     if ($del->execute()) {
         log_action($user_id, 'Delete Visitor', 'hub_visitors', $visitor_id,
             "Deleted visitor: $v_name (visit date: $v_date)");
-        redirect('Visitor record deleted successfully.');
+        hv_redirect('Visitor record deleted successfully.');
     } else {
-        redirect('Error deleting visitor: ' . $conn->error, false);
+        hv_redirect('Error deleting visitor: ' . $conn->error, false);
     }
     $del->close();
 }
@@ -196,17 +196,17 @@ if (isset($_GET['delete'])) {
 if (isset($_POST['bulk_delete'])) {
 
     if (!ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')) {
-        redirect('Only administrators can bulk-delete visitor records.', false);
+        hv_redirect('Only administrators can bulk-delete visitor records.', false);
     }
 
     if (empty($_POST['selected_visitors']) || !is_array($_POST['selected_visitors'])) {
-        redirect('No visitors selected.', false);
+        hv_redirect('No visitors selected.', false);
     }
 
     // Sanitise IDs – keep only positive integers
     $ids = array_filter(array_map('intval', $_POST['selected_visitors']), fn($id) => $id > 0);
     if (empty($ids)) {
-        redirect('No valid visitor IDs provided.', false);
+        hv_redirect('No valid visitor IDs provided.', false);
     }
 
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -231,9 +231,9 @@ if (isset($_POST['bulk_delete'])) {
         $count = $del->affected_rows;
         log_action($user_id, 'Bulk Delete Visitors', 'hub_visitors', null,
             "Deleted $count visitor(s): " . implode(', ', $names));
-        redirect("$count visitor record(s) deleted successfully.");
+        hv_redirect("$count visitor record(s) deleted successfully.");
     } else {
-        redirect('Error bulk-deleting visitors: ' . $conn->error, false);
+        hv_redirect('Error bulk-deleting visitors: ' . $conn->error, false);
     }
     $del->close();
 }
@@ -337,10 +337,10 @@ if (isset($_POST['generate_report'])) {
     $end_date    = sanitize_input($_POST['end_date']    ?? '');
 
     if (empty($start_date) || empty($end_date)) {
-        redirect('Please select both a start and an end date.', false);
+        hv_redirect('Please select both a start and an end date.', false);
     }
     if (strtotime($end_date) < strtotime($start_date)) {
-        redirect('End date must be on or after the start date.', false);
+        hv_redirect('End date must be on or after the start date.', false);
     }
 
     if ($report_type === 'summary') {
@@ -409,10 +409,10 @@ if (isset($_POST['generate_report'])) {
         log_action($user_id, 'Generate Report', 'hub_visitors', null,
             "Generated visitor summary report for $start_date to $end_date");
 
-        redirect('Report generated successfully.', true, 'view_report=summary');
+        hv_redirect('Report generated successfully.', true, 'view_report=summary');
     }
 
-    redirect('Unknown report type.', false);
+    hv_redirect('Unknown report type.', false);
 }
 
 // -----------------------------------------------------------------------------
@@ -423,7 +423,7 @@ if (isset($_GET['mark_member'])) {
 
     $visitor_id = (int) $_GET['mark_member'];
     if ($visitor_id <= 0) {
-        redirect('Invalid visitor ID.', false);
+        hv_redirect('Invalid visitor ID.', false);
     }
 
     // Fetch name for audit log
@@ -433,7 +433,7 @@ if (isset($_GET['mark_member'])) {
     $chk->bind_result($v_name);
     if (!$chk->fetch()) {
         $chk->close();
-        redirect('Visitor not found.', false);
+        hv_redirect('Visitor not found.', false);
     }
     $chk->close();
 
@@ -442,9 +442,9 @@ if (isset($_GET['mark_member'])) {
 
     if ($upd->execute()) {
         log_action($user_id, 'Update Visitor', 'hub_visitors', $visitor_id, "Marked \"$v_name\" (ID $visitor_id) as a Hub member");
-        redirect("$v_name has been marked as a Hub member.");
+        hv_redirect("$v_name has been marked as a Hub member.");
     } else {
-        redirect('Error updating visitor: ' . $conn->error, false);
+        hv_redirect('Error updating visitor: ' . $conn->error, false);
     }
     $upd->close();
 }
@@ -457,7 +457,7 @@ if (isset($_GET['approve_self_reg'])) {
 
     $visitor_id = (int) $_GET['approve_self_reg'];
     if ($visitor_id <= 0) {
-        redirect('Invalid visitor ID.', false);
+        hv_redirect('Invalid visitor ID.', false);
     }
 
     $chk = $conn->prepare(
@@ -468,7 +468,7 @@ if (isset($_GET['approve_self_reg'])) {
     $chk->bind_result($v_name);
     if (!$chk->fetch()) {
         $chk->close();
-        redirect('Self-registered visitor not found.', false);
+        hv_redirect('Self-registered visitor not found.', false);
     }
     $chk->close();
 
@@ -481,9 +481,9 @@ if (isset($_GET['approve_self_reg'])) {
     if ($upd->execute()) {
         log_action($user_id, 'Approve Self-Registration', 'hub_visitors', $visitor_id,
             "Approved self-registered visitor: \"$v_name\" (ID $visitor_id)");
-        redirect("Self-registration for \"$v_name\" approved.");
+        hv_redirect("Self-registration for \"$v_name\" approved.");
     } else {
-        redirect('Error approving visitor: ' . $conn->error, false);
+        hv_redirect('Error approving visitor: ' . $conn->error, false);
     }
     $upd->close();
 }
@@ -495,7 +495,7 @@ if (isset($_POST['send_welcome_email'])) {
 
     $visitor_id = (int) ($_POST['visitor_id'] ?? 0);
     if ($visitor_id <= 0) {
-        redirect('Invalid visitor ID.', false);
+        hv_redirect('Invalid visitor ID.', false);
     }
 
     $chk = $conn->prepare('SELECT visitor_name, email FROM hub_visitors WHERE visitor_id = ?');
@@ -504,12 +504,12 @@ if (isset($_POST['send_welcome_email'])) {
     $chk->bind_result($v_name, $v_email);
     if (!$chk->fetch()) {
         $chk->close();
-        redirect('Visitor not found.', false);
+        hv_redirect('Visitor not found.', false);
     }
     $chk->close();
 
     if (empty($v_email)) {
-        redirect("$v_name has no email address on record.", false);
+        hv_redirect("$v_name has no email address on record.", false);
     }
 
   
@@ -517,10 +517,10 @@ if (isset($_POST['send_welcome_email'])) {
     log_action($user_id, 'Send Welcome Email', 'hub_visitors', $visitor_id,
         "Sent welcome email to $v_name ($v_email)");
 
-    redirect("Welcome email sent to $v_email.");
+    hv_redirect("Welcome email sent to $v_email.");
 }
 
 // -----------------------------------------------------------------------------
 // Fallback — no recognised action
 // -----------------------------------------------------------------------------
-redirect('Invalid or unrecognised action.', false);
+hv_redirect('Invalid or unrecognised action.', false);
