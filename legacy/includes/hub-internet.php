@@ -1762,3 +1762,124 @@ function hubinet_register_equipment(mysqli $conn, array $macs, string $type, arr
     return hubinet_result(true, count($ids) . ' device(s) registered as ' . strtolower(HUBINET_DEVICE_TYPES[$type]) . ' (always online)'
         . ($skipped ? '; ' . $skipped . ' skipped' : '') . '. ' . $net['message']);
 }
+
+/* ======================================================================
+ | MAC entries added by hand on pfSense (agent 2.4): list and import
+ * ==================================================================== */
+
+/** Replaces the stored list with what pfSense reported at this check-in. */
+function hubinet_record_pf_macs(mysqli $conn, array $entries): void
+{
+    $conn->query('DELETE FROM hub_network_pfmacs');
+    $stmt = $conn->prepare('INSERT IGNORE INTO hub_network_pfmacs (mac_address, action, descr, bw_down_kbps, bw_up_kbps, seen_at)
+                            VALUES (?, ?, NULLIF(?, \'\'), NULLIF(?, 0), NULLIF(?, 0), NOW())');
+    if (!$stmt) {
+        return;
+    }
+    foreach (array_slice($entries, 0, 5000) as $e) {
+        $mac = hubnet_normalize_mac((string)($e['mac'] ?? ''));
+        if ($mac === '') {
+            continue;
+        }
+        $action = ($e['action'] ?? '') === 'block' ? 'block' : 'pass';
+        $descr = mb_substr(trim((string)($e['descr'] ?? '')), 0, 120);
+        $down = max(0, (int)($e['bw_down'] ?? 0));
+        $up = max(0, (int)($e['bw_up'] ?? 0));
+        $stmt->bind_param('sssii', $mac, $action, $descr, $down, $up);
+        $stmt->execute();
+    }
+    $stmt->close();
+}
+
+/** Manual pfSense MAC entries the IMS does not manage yet, with what pfSense saw of them online. */
+function hubinet_pf_macs(mysqli $conn): array
+{
+    $res = $conn->query('SELECT p.*, o.hostname, o.vendor, o.ip_address, o.last_seen
+                           FROM hub_network_pfmacs p
+                           LEFT JOIN hub_network_online o ON o.mac_address = p.mac_address
+                           LEFT JOIN hub_network_devices d ON d.mac_address = p.mac_address
+                          WHERE d.device_id IS NULL
+                          ORDER BY p.descr, p.mac_address');
+    return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+}
+
+/**
+ * Imports manual pfSense MAC entries into the IMS. $as: equipment (with
+ * $type), guest or staff (one person per device, named from the pfSense
+ * description), or existing ($personId). Pass entries become "Always on",
+ * block entries "Blocked"; speed limits are kept. At the next check-in the
+ * agent replaces the manual entries with IMS-managed ones.
+ */
+function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $type, int $personId, int $uid): array
+{
+    $macs = array_values(array_unique(array_filter(array_map(static fn($m) => hubnet_normalize_mac((string)$m), $macs))));
+    if (!$macs) {
+        return hubinet_result(false, 'Select pfSense entries first.');
+    }
+    if (!in_array($as, ['equipment', 'guest', 'staff', 'existing'], true)) {
+        return hubinet_result(false, 'Choose how to import the devices.');
+    }
+    if ($as === 'existing' && !hubinet_person($conn, $personId)) {
+        return hubinet_result(false, 'Choose the staff member or guest the devices belong to.');
+    }
+    $type = array_key_exists($type, HUBINET_DEVICE_TYPES) ? $type : 'access_point';
+    $marks = implode(',', array_fill(0, count($macs), '?'));
+    $stmt = $conn->prepare("SELECT p.*, o.hostname, o.vendor FROM hub_network_pfmacs p
+                             LEFT JOIN hub_network_online o ON o.mac_address = p.mac_address
+                            WHERE p.mac_address IN ($marks)");
+    $stmt->bind_param(str_repeat('s', count($macs)), ...$macs);
+    $stmt->execute();
+    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $stmt->close();
+
+    $equipmentPid = $as === 'equipment' ? hubinet_equipment_person($conn, $uid) : 0;
+    $ids = [];
+    $failed = [];
+    foreach ($rows as $row) {
+        $mac = (string)$row['mac_address'];
+        if (hubnet_devices_where($conn, 'd.mac_address = ?', 's', [$mac])) {
+            continue; // registered in the meantime
+        }
+        $label = trim((string)($row['descr'] ?? '')) ?: trim((string)($row['hostname'] ?? '')) ?: trim((string)($row['vendor'] ?? ''));
+        $mode = $row['action'] === 'block' ? 'block' : 'allow';
+        $pid = $as === 'existing' ? $personId : $equipmentPid;
+        if ($as === 'guest' || $as === 'staff') {
+            $r = hubinet_save_person($conn, [
+                'kind' => $as,
+                'full_name' => $label !== '' ? $label : 'Device ' . $mac,
+                'no_expiry' => 1,
+                'note' => 'Imported from the pfSense MAC list',
+            ], $uid);
+            $pid = $r['ok'] ? (int)$r['person_id'] : 0;
+        }
+        if ($pid <= 0) {
+            $failed[] = $mac;
+            continue;
+        }
+        $r = hubinet_add_device($conn, $pid, $mac, $label, $uid, $mode, false);
+        if (!$r['ok']) {
+            $failed[] = $mac;
+            continue;
+        }
+        $deviceId = (int)$r['device_id'];
+        hubinet_set_device_bw($conn, [$deviceId], $row['bw_down_kbps'] !== null ? (int)$row['bw_down_kbps'] : null, $row['bw_up_kbps'] !== null ? (int)$row['bw_up_kbps'] : null);
+        if ($as === 'equipment') {
+            $u = $conn->prepare('UPDATE hub_network_devices SET device_type = ? WHERE device_id = ?');
+            $u->bind_param('si', $type, $deviceId);
+            $u->execute();
+            $u->close();
+        }
+        $ids[] = $deviceId;
+    }
+    if (!$ids) {
+        return hubinet_result(false, 'Nothing was imported' . ($failed ? ': ' . implode(', ', array_slice($failed, 0, 5)) . ' could not be added' : ' (already registered?)') . '.');
+    }
+    $idMarks = implode(',', array_fill(0, count($ids), '?'));
+    $net = hubnet_apply($conn, hubnet_devices_where($conn, "d.device_id IN ($idMarks)", str_repeat('i', count($ids)), $ids), $uid, 'import');
+    $del = $conn->prepare("DELETE FROM hub_network_pfmacs WHERE mac_address IN ($marks)");
+    $del->bind_param(str_repeat('s', count($macs)), ...$macs);
+    $del->execute();
+    $del->close();
+    return hubinet_result(true, count($ids) . ' device(s) imported from pfSense' . ($failed ? '; ' . count($failed) . ' failed' : '')
+        . '. pfSense switches them to IMS management at its next check-in (needs agent 2.4). ' . $net['message']);
+}

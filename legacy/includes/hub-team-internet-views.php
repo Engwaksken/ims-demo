@@ -527,6 +527,54 @@ elseif ($view === 'online'):
     </div>
 </div>
 
+<?php $pfMacs = hubinet_pf_macs($conn); if ($pfMacs): ?>
+<div class="card" id="pfmacs">
+    <div class="card-header"><h3><i class="fas fa-list-check" aria-hidden="true"></i> pfSense MAC list: <?= count($pfMacs) ?> entr<?= count($pfMacs) === 1 ? 'y' : 'ies' ?> not managed by the IMS</h3></div>
+    <div class="card-body">
+        <p class="form-hint" style="margin-top:0">These were added by hand under Services &gt; Captive Portal &gt; MACs on pfSense. Import them to manage them here: "Pass" entries become <em>Always on</em>, "Block" entries stay blocked and speed limits are kept. At the next check-in pfSense replaces its manual entries with IMS-managed ones (agent 2.4).</p>
+        <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
+            <?= $hiHidden('import_pfmacs', 'online') ?>
+            <input type="hidden" name="return_query" value="<?= ht_e($onlineReturn) ?>">
+            <div class="table-responsive"><table class="table table-stack hr-table">
+                <thead><tr><?php if ($canManage): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all pfSense entries"></th><?php endif; ?><th>Device</th><th>pfSense</th><th>Speed</th><th>Last seen online</th></tr></thead>
+                <tbody>
+                <?php foreach ($pfMacs as $pm): ?>
+                    <tr>
+                        <?php if ($canManage): ?><td data-label="Select"><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($pm['mac_address']) ?>" aria-label="Select <?= ht_e($pm['mac_address']) ?>"></td><?php endif; ?>
+                        <td data-label="Device"><strong><?= ht_e(($pm['descr'] ?? '') ?: ($pm['hostname'] ?? '') ?: (($pm['vendor'] ?? '') ? $pm['vendor'] . ' device' : 'No description')) ?></strong>
+                            <small class="cell-muted"><code><?= ht_e($pm['mac_address']) ?></code><?= ($pm['vendor'] ?? '') !== '' ? ' &middot; ' . ht_e($pm['vendor']) : '' ?><?= ($pm['hostname'] ?? '') !== '' && $pm['hostname'] !== $pm['descr'] ? ' &middot; ' . ht_e($pm['hostname']) : '' ?></small></td>
+                        <td data-label="pfSense"><?= $pm['action'] === 'block' ? '<span class="badge badge-danger">Block</span>' : '<span class="badge badge-success">Pass</span>' ?></td>
+                        <td data-label="Speed"><?= ht_e(hubinet_speed_label(['bw_down_kbps' => $pm['bw_down_kbps'], 'bw_up_kbps' => $pm['bw_up_kbps']])) ?></td>
+                        <td data-label="Last seen online"><?= $pm['last_seen'] ? ht_e(date('d M H:i', strtotime((string)$pm['last_seen']))) . (($pm['ip_address'] ?? '') ? '<small class="cell-muted">' . ht_e($pm['ip_address']) . '</small>' : '') : '<span class="cell-muted">Not seen</span>' ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table></div>
+            <?php if ($canManage): ?>
+            <div class="hr-bulkbar" data-bulk-bar style="flex-wrap:wrap;gap:6px">
+                <span data-bulk-count>None selected</span>
+                <label class="cell-muted" for="pfImportAs">Import as</label>
+                <select id="pfImportAs" name="import_as" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto"
+                        onchange="document.getElementById('pfImportType').hidden = this.value !== 'equipment'; document.getElementById('pfImportPerson').hidden = this.value !== 'existing';">
+                    <option value="equipment">Network equipment</option>
+                    <option value="guest">Guests (one per device)</option>
+                    <option value="staff">Staff (one per device)</option>
+                    <option value="existing">Devices of one person</option>
+                </select>
+                <select id="pfImportType" name="equipment_type" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Equipment type">
+                    <?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?>
+                </select>
+                <select id="pfImportPerson" name="person_id" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Person" hidden>
+                    <?php foreach ($peopleForSelect as $pp): ?><option value="<?= (int)$pp['person_id'] ?>"><?= ht_e($pp['full_name']) ?> (<?= $pp['kind'] === 'staff' ? 'staff' : 'guest' ?>)</option><?php endforeach; ?>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary" data-bulk-required="Select pfSense entries first."><i class="fas fa-file-import" aria-hidden="true"></i> Import</button>
+            </div>
+            <?php endif; ?>
+        </form>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 /* Online now: reload every minute (pfSense checks in every minute) unless rows are selected or a dialog is open. */
 (function () {

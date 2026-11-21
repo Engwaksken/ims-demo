@@ -223,6 +223,16 @@ if (!function_exists('hubnet_ensure_schema')) {
                     max_portal INT UNSIGNED NOT NULL DEFAULT 0,
                     PRIMARY KEY (hour_start)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                // MAC entries added by hand on pfSense (agent 2.4), listed for import into the IMS.
+                "CREATE TABLE IF NOT EXISTS hub_network_pfmacs (
+                    mac_address CHAR(17) NOT NULL,
+                    action VARCHAR(10) NOT NULL DEFAULT 'pass',
+                    descr VARCHAR(120) NULL,
+                    bw_down_kbps INT UNSIGNED NULL,
+                    bw_up_kbps INT UNSIGNED NULL,
+                    seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (mac_address)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
                 // Internet vouchers for day clients: redeemed on the hotspot page. The access
                 // period starts at first use; expires_at is the last day it can be first used.
                 "CREATE TABLE IF NOT EXISTS hub_network_vouchers (
@@ -738,7 +748,7 @@ if (!function_exists('hubnet_apply')) {
             $byMac[$mac] = ['device' => $device, 'mode' => $mode];
         }
 
-        $response = hubnet_call($settings, 'apply', ['items' => $items]);
+        $response = hubnet_call($settings, 'apply', ['items' => $items, 'adopt' => true]);
         $results = is_array($response['data']['results'] ?? null) ? $response['data']['results'] : [];
         $applied = 0;
         $failed = 0;

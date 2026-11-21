@@ -10,6 +10,9 @@
  * Entries the IMS created have a description starting with "IMS "; entries
  * you add by hand in pfSense are never touched.
  *
+ * 2.4 adds: reports MAC entries added by hand in pfSense so the IMS can import
+ *   them, and takes them over ("adopt") once the IMS manages those devices.
+ *
  * 2.3 adds: device name (DHCP), maker (MAC prefix) and interface for every
  *   device seen online, so the IMS can identify access points and others.
  *
@@ -58,7 +61,7 @@ const IMS_ALLOWED_IPS = ['192.168.1.1'];                          // push mode o
 const IMS_DEFAULT_ZONE = 'lan';
 // ---------------------------------------------------------------------------
 
-const IMS_AGENT_VERSION = '2.3';
+const IMS_AGENT_VERSION = '2.4';
 const IMS_MAX_ITEMS = 5000;
 const IMS_STATE_FILE = '/var/db/ims-cp-agent-state.json';
 const IMS_DESCR_PREFIX = 'IMS ';
@@ -227,7 +230,7 @@ function ims_state_save(array $state): void
  * $removeUnlisted: drop IMS-managed entries that are not in $items (pull mode
  * sends the full list, so a device deleted in the IMS disappears here too).
  */
-function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string $prefix): array
+function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string $prefix, bool $adopt = false): array
 {
     global $cpzone;
 
@@ -265,7 +268,8 @@ function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string
 
     foreach ($entries as $entry) {
         $mac = ims_normalize_mac((string)($entry['mac'] ?? ''));
-        $managed = strpos((string)($entry['descr'] ?? ''), $prefix) === 0;
+        // 2.4: with "adopt" the IMS takes over manual entries for devices it now manages.
+        $managed = strpos((string)($entry['descr'] ?? ''), $prefix) === 0 || ($adopt && isset($wanted[$mac]));
 
         if (!$managed) {
             if (isset($wanted[$mac])) {
@@ -506,6 +510,26 @@ function ims_zone_info(array $zoneConfig, string $zone): array
     ];
 }
 
+/** 2.4: MAC entries added by hand in pfSense (not "IMS "), so the IMS can list and import them. */
+function ims_manual_macs(array $zoneConfig): array
+{
+    $out = [];
+    foreach ((array)($zoneConfig['passthrumac'] ?? []) as $entry) {
+        $mac = ims_normalize_mac((string)($entry['mac'] ?? ''));
+        if ($mac === '' || strpos((string)($entry['descr'] ?? ''), IMS_DESCR_PREFIX) === 0) {
+            continue;
+        }
+        $out[] = [
+            'mac' => $mac,
+            'action' => (string)($entry['action'] ?? 'pass') === 'block' ? 'block' : 'pass',
+            'descr' => substr((string)($entry['descr'] ?? ''), 0, 120),
+            'bw_down' => (int)($entry['bw_down'] ?? 0),
+            'bw_up' => (int)($entry['bw_up'] ?? 0),
+        ];
+    }
+    return array_slice($out, 0, IMS_MAX_ITEMS);
+}
+
 /** Online devices for the IMS (portal sessions + ARP clients). */
 function ims_online_payload(array $zoneConfig): array
 {
@@ -513,7 +537,7 @@ function ims_online_payload(array $zoneConfig): array
         return ['mac' => $s['mac'], 'ip' => $s['ip'], 'username' => $s['username'], 'started' => $s['started'] ?? 0];
     }, array_slice(ims_sessions(), 0, IMS_MAX_ITEMS));
 
-    return ['clients' => ims_clients($zoneConfig), 'sessions' => $sessions];
+    return ['clients' => ims_clients($zoneConfig), 'sessions' => $sessions, 'manual_macs' => ims_manual_macs($zoneConfig)];
 }
 
 /* ------------------------------------------------------------------------
@@ -612,7 +636,7 @@ if ($imsCli) {
     }
 
     $prefix = (string)($feed['descr_prefix'] ?? IMS_DESCR_PREFIX) ?: IMS_DESCR_PREFIX;
-    $applied = ims_apply($zoneConfig, is_array($feed['items'] ?? null) ? $feed['items'] : [], true, $prefix);
+    $applied = ims_apply($zoneConfig, is_array($feed['items'] ?? null) ? $feed['items'] : [], true, $prefix, !empty($feed['adopt']));
 
     $finalZone = ims_cfg_get("captiveportal/{$GLOBALS['cpzone']}", []);
     $online = ims_online_payload($finalZone);
@@ -686,7 +710,7 @@ switch ((string)($request['action'] ?? '')) {
 
     case 'apply':
         $items = is_array($request['items'] ?? null) ? $request['items'] : [];
-        $applied = ims_apply($zoneConfig, $items, false, IMS_DESCR_PREFIX);
+        $applied = ims_apply($zoneConfig, $items, false, IMS_DESCR_PREFIX, !empty($request['adopt']));
         ims_reply(true, 'Applied ' . count($applied['results']) . ' device(s).', [
             'results' => $applied['results'],
             'reload' => $applied['reload'],

@@ -68,6 +68,7 @@ $needs = [
     'device_speed' => $canControl,
     'edit_device' => $canControl,
     'person_to_member' => $canManage,
+    'import_pfmacs' => $canManage,
     'create_vouchers' => $canVouchers,
     'vouchers_bulk' => $canVouchers,
 ];
@@ -248,6 +249,12 @@ try {
             }
             $net = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $uid, 'edit');
             hip_back($returnQuery, true, 'Device updated. ' . $net['message']);
+
+        case 'import_pfmacs':
+            // Online now > pfSense MAC list: bring manual pfSense entries under IMS management.
+            $r = hubinet_import_pf_macs($conn, (array)($_POST['macs'] ?? []), (string)($_POST['import_as'] ?? ''),
+                (string)($_POST['equipment_type'] ?? ''), (int)($_POST['person_id'] ?? 0), $uid);
+            hip_back($returnQuery, $r['ok'], $r['message']);
 
         case 'person_to_member':
             // Guests > person > Make member: move the guest and their devices to a hub member.
