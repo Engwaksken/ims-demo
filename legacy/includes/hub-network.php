@@ -217,6 +217,16 @@ if (!function_exists('hubnet_ensure_schema')) {
                     last_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (mac_address)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                // Data used per device per day (agent 2.7+), from the firewall's connection table.
+                "CREATE TABLE IF NOT EXISTS hub_network_usage (
+                    mac_address CHAR(17) NOT NULL,
+                    day DATE NOT NULL,
+                    bytes_up BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                    bytes_down BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (mac_address, day),
+                    KEY idx_hub_usage_day (day)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
                 // Hourly connected-device counts for the history chart.
                 "CREATE TABLE IF NOT EXISTS hub_network_stats (
                     hour_start DATETIME NOT NULL,

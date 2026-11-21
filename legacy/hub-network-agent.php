@@ -107,6 +107,10 @@ switch ((string)($request['action'] ?? '')) {
                 is_array($request['clients'] ?? null) ? $request['clients'] : [],
                 is_array($request['sessions'] ?? null) ? $request['sessions'] : []);
         }
+        // Agent 2.7+: data used per device since the last check-in.
+        if (is_array($request['usage'] ?? null)) {
+            hubinet_record_usage($conn, $request['usage']);
+        }
         hna_respond(200, ['ok' => true, 'changed' => $changed, 'online' => $online], $settings['secret']);
 
     default:

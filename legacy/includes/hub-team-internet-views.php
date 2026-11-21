@@ -505,6 +505,11 @@ elseif ($view === 'staff' || $view === 'guests'):
 </script>
 <?php endif; ?>
 
+<style>
+.hi-usage { margin-top: 4px; min-width: 120px; }
+.hi-usage .meter { height: 6px; margin-bottom: 2px; }
+.hi-usage small { display: block; font-size: 11px; color: var(--ink-500); white-space: nowrap; }
+</style>
 <?php
 /* =====================================================================
    ONLINE NOW: devices pfSense sees, identified
@@ -519,6 +524,19 @@ elseif ($view === 'online'):
     $pfOffline = count(array_filter(hubinet_online($conn, 'unknown', true), static fn($o) => !empty($o['offline'])));
     $counts['unknown'] += $pfOffline;
     $counts['total'] += $pfOffline;
+    // Data used today (agent 2.7+): bar under the IP, scaled to the heaviest device in the list.
+    $usageByMac = hubinet_usage_by_mac($conn);
+    $onSort = ($_GET['sort'] ?? '') === 'data' ? 'data' : '';
+    $usedToday = static fn(array $o): int => (int)(($usageByMac[$o['mac_address']]['up'] ?? 0) + ($usageByMac[$o['mac_address']]['down'] ?? 0));
+    if ($onSort === 'data') {
+        usort($online, static fn($a, $b) => $usedToday($b) <=> $usedToday($a));
+    }
+    $usageMax = 0;
+    $usageSum = 0;
+    foreach ($online as $o) {
+        $usageMax = max($usageMax, $usedToday($o));
+        $usageSum += $usedToday($o);
+    }
     $onlineTotal = count($online);
     $unknownMatching = count(array_filter($online, static fn($o) => empty($o['device'])));
     $onPerPage = 200;
@@ -549,13 +567,17 @@ elseif ($view === 'online'):
                 <a href="hub-team?view=online<?= $k !== '' ? '&amp;kind=' . $k : '' ?>" class="<?= $kindFilter === $k ? 'active' : '' ?>"><?= $t ?> <span class="n"><?= $n ?></span></a>
             <?php endforeach; ?>
         </div>
+        <?php if ($hiAgentVersion === '' || version_compare($hiAgentVersion, '2.7', '<')): ?>
+            <p class="form-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> Data used per device needs pfSense agent 2.7 (now <?= ht_e($hiAgentVersion !== '' ? $hiAgentVersion : 'not checked in') ?>): replace <code>/root/ims-cp-agent.php</code> on pfSense with the new <code>tools/pfsense/ims-cp-agent.php</code>.</p>
+        <?php endif; ?>
         <?php if (!$online): ?>
             <div class="empty-state"><i class="fas fa-wifi" aria-hidden="true"></i><p>No devices reported online<?= $kindFilter !== '' || ($onlineQ ?? '') !== '' ? ' in this group or search' : '' ?>.<?php if ($kindFilter === '' && ($onlineQ ?? '') === ''): ?><br><small>pfSense reports connected devices at every check-in (agent <?= ht_e($hiAgentVersion !== '' ? $hiAgentVersion : 'not checked in yet') ?>; 2.2 or newer recommended). Run <code>/usr/local/bin/php -f /root/ims-cp-agent.php pull</code> on pfSense: it prints how many devices it sees.</small><?php endif; ?></p></div>
         <?php else: ?>
         <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
             <?= $hiHidden('devices_bulk', 'online') ?>
             <div class="table-responsive"><table class="table table-stack hr-table">
-                <thead><tr><?php if ($canControl): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all devices"></th><?php endif; ?><th>Device</th><th>Who</th><th>Type</th><th>Status</th><th>IP</th><th>Joined</th><th></th></tr></thead>
+                <thead><tr><?php if ($canControl): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all devices"></th><?php endif; ?><th>Device</th><th>Who</th><th>Type</th><th>Status</th><th>
+                    <a href="<?= ht_e('hub-team?' . http_build_query(array_filter(['view' => 'online', 'kind' => $kindFilter, 'q' => $onlineQ, 'sort' => $onSort === 'data' ? '' : 'data'], fn($v) => $v !== ''))) ?>" title="<?= $onSort === 'data' ? 'Back to newest first' : 'Sort by data used today' ?>" style="color:inherit;text-decoration:none">IP &amp; data today <i class="fas fa-sort<?= $onSort === 'data' ? '-down' : '' ?>" aria-hidden="true"></i></a></th><th>Joined</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($online as $o): $d = $o['device']; ?>
                     <tr>
@@ -585,7 +607,18 @@ elseif ($view === 'online'):
                         </td>
                         <td data-label="Type"><?= $hiKindBadge($o['owner_kind']) ?><?= $d && !empty($d['device_type']) ? ' <small class="cell-muted">' . ht_e(HUBINET_DEVICE_TYPES[$d['device_type']] ?? 'Equipment') . '</small>' : '' ?><?= (int)$o['in_portal'] ? ' <span class="badge badge-secondary" title="Signed in through the captive portal">Portal</span>' : '' ?><?= $d && $d['access_mode'] === 'block' ? ' <span class="badge badge-danger">Blocked</span>' : '' ?></td>
                         <td data-label="Status"><?= $hiStatusBadge($o) ?></td>
-                        <td data-label="IP"><?= ht_e($o['ip_address'] ?: '-') ?></td>
+                        <td data-label="IP &amp; data">
+                            <?= ht_e($o['ip_address'] ?: '-') ?>
+                            <?php $uU = (int)($usageByMac[$o['mac_address']]['up'] ?? 0); $uD = (int)($usageByMac[$o['mac_address']]['down'] ?? 0); $uT = $uU + $uD; ?>
+                            <?php if ($uT > 0): $uPct = $usageMax > 0 ? max(2, (int)round($uT / $usageMax * 100)) : 0; ?>
+                                <div class="hi-usage" title="Today: <?= ht_e(hubinet_bytes($uD)) ?> downloaded, <?= ht_e(hubinet_bytes($uU)) ?> uploaded<?= $usageSum > 0 ? ' (' . round($uT / $usageSum * 100) . '% of all data in this list)' : '' ?>. Last 7 days: <?= ht_e(hubinet_bytes((int)($usageByMac[$o['mac_address']]['week'] ?? 0))) ?>.">
+                                    <div class="meter"><div class="meter-fill <?= $uPct >= 75 ? 'tone-red' : ($uPct >= 40 ? 'tone-amber' : 'tone-green') ?>" style="width:<?= $uPct ?>%"></div></div>
+                                    <small><strong><?= ht_e(hubinet_bytes($uT)) ?></strong> &middot; &darr; <?= ht_e(hubinet_bytes($uD)) ?> &uarr; <?= ht_e(hubinet_bytes($uU)) ?></small>
+                                </div>
+                            <?php elseif ($d || empty($o['offline'])): ?>
+                                <small class="cell-muted" style="display:block">No data today</small>
+                            <?php endif; ?>
+                        </td>
                         <td data-label="Joined">
                             <?php if (!empty($o['offline'])): ?>
                                 <span class="cell-muted">Not online</span>
@@ -612,7 +645,7 @@ elseif ($view === 'online'):
                 <?php endforeach; ?>
                 </tbody>
             </table></div>
-            <?php if ($onPages > 1): $onUrl = static fn(int $pg) => 'hub-team?' . http_build_query(array_filter(['view' => 'online', 'kind' => $kindFilter, 'q' => $onlineQ, 'p' => $pg > 1 ? $pg : ''], fn($v) => $v !== '')); ?>
+            <?php if ($onPages > 1): $onUrl = static fn(int $pg) => 'hub-team?' . http_build_query(array_filter(['view' => 'online', 'kind' => $kindFilter, 'q' => $onlineQ, 'sort' => $onSort, 'p' => $pg > 1 ? $pg : ''], fn($v) => $v !== '')); ?>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0">
                 <span class="cell-muted">Page <?= $onPage ?> of <?= $onPages ?> (<?= number_format($onlineTotal) ?> devices)</span>
                 <?php if ($onPage > 1): ?><a class="btn btn-sm btn-soft" href="<?= ht_e($onUrl($onPage - 1)) ?>">&laquo; Previous</a><?php endif; ?>

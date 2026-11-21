@@ -10,6 +10,12 @@
  * Entries the IMS created have a description starting with "IMS "; entries
  * you add by hand in pfSense are never touched.
  *
+ * 2.7 adds: data used per device. Every check-in reads the firewall's
+ *   connection table (pfctl -ss -vv) and reports the bytes each device sent
+ *   and received since the last run, so the IMS can show who uses the most.
+ *   Connections that open and close between two runs are not counted, so the
+ *   figures are a slight under-estimate (long downloads and streams count fully).
+ *
  * 2.6 adds: deletes manual MAC entries that were deleted in the IMS
  *   (Online now > Delete); entries the IMS manages are never touched by this.
  *
@@ -72,7 +78,7 @@ defined('IMS_ALLOWED_IPS') || define('IMS_ALLOWED_IPS', ['192.168.1.1']);       
 defined('IMS_DEFAULT_ZONE') || define('IMS_DEFAULT_ZONE', 'lan');
 // ---------------------------------------------------------------------------
 
-const IMS_AGENT_VERSION = '2.6';
+const IMS_AGENT_VERSION = '2.7';
 const IMS_MAX_ITEMS = 5000;
 const IMS_STATE_FILE = '/var/db/ims-cp-agent-state.json';
 const IMS_DESCR_PREFIX = 'IMS ';
@@ -547,14 +553,112 @@ function ims_manual_macs(array $zoneConfig): array
     return array_slice($out, 0, IMS_MAX_ITEMS);
 }
 
-/** Online devices for the IMS (portal sessions + ARP clients). */
+/**
+ * 2.7: bytes each client sent (up) and received (down) since the last run,
+ * from the pf state table: [['mac' => .., 'up' => bytes, 'down' => bytes], ...].
+ *
+ * Only states with a client's LAN address as a plain endpoint count: the
+ * matching NAT state on the WAN side shows the client in parentheses and is
+ * skipped, so a connection is not counted twice (floating or interface-bound
+ * states alike). Per-state counters are kept in IMS_USAGE_FILE; the first run
+ * only records them.
+ */
+const IMS_USAGE_FILE = '/tmp/ims-cp-agent-usage.json';
+
+function ims_usage(array $clients): array
+{
+    $ipToMac = [];
+    foreach ($clients as $c) {
+        if (!empty($c['ip']) && !empty($c['mac'])) {
+            $ipToMac[(string)$c['ip']] = (string)$c['mac'];
+        }
+    }
+    if (!$ipToMac || !is_executable('/sbin/pfctl')) {
+        return [];
+    }
+
+    $saved = is_file(IMS_USAGE_FILE) ? json_decode((string)file_get_contents(IMS_USAGE_FILE), true) : null;
+    $first = !is_array($saved) || !is_array($saved['states'] ?? null);
+    $before = $first ? [] : $saved['states'];
+    $now = [];
+    $usage = [];
+
+    $pipe = popen('/sbin/pfctl -ss -vv 2>/dev/null', 'r');
+    if (!$pipe) {
+        return [];
+    }
+    $current = null; // ['mac' => .., 'initiator' => bool] for the state being read
+    $bytes = null;
+    while (($line = fgets($pipe)) !== false) {
+        if ($line === '' || $line === "\n") {
+            continue;
+        }
+        if ($line[0] !== ' ' && $line[0] !== "\t") {
+            // State header: "all tcp 142.250.1.1:443 <- 192.168.1.10:51234   ESTABLISHED:ESTABLISHED"
+            $current = null;
+            $bytes = null;
+            if (strpos($line, '(') !== false) {
+                continue; // NAT state (WAN side): counted on the LAN side instead
+            }
+            if (!preg_match('/^\S+\s+\S+\s+(\S+)\s+(<-|->)\s+(\S+)/', $line, $m)) {
+                continue;
+            }
+            $left = preg_match('/^(\d{1,3}(?:\.\d{1,3}){3})/', $m[1], $a) ? $a[1] : '';
+            $right = preg_match('/^(\d{1,3}(?:\.\d{1,3}){3})/', $m[3], $b) ? $b[1] : '';
+            // "->": the left side opened the connection; "<-": the right side did.
+            $init = $m[2] === '->' ? $left : $right;
+            $other = $m[2] === '->' ? $right : $left;
+            if (isset($ipToMac[$init])) {
+                $current = ['mac' => $ipToMac[$init], 'initiator' => true];
+            } elseif (isset($ipToMac[$other])) {
+                $current = ['mac' => $ipToMac[$other], 'initiator' => false];
+            }
+            continue;
+        }
+        if ($current === null) {
+            continue;
+        }
+        if ($bytes === null && preg_match('/(\d+):(\d+) bytes/', $line, $m)) {
+            $bytes = [(float)$m[1], (float)$m[2]]; // [from initiator, to initiator]
+            continue;
+        }
+        if ($bytes !== null && preg_match('/id: ([0-9a-f]+) creatorid: ([0-9a-f]+)/i', $line, $m)) {
+            $key = $m[1] . $m[2];
+            $now[$key] = $bytes;
+            if (!$first) {
+                $old = $before[$key] ?? [0, 0];
+                $d0 = max(0, $bytes[0] - (float)$old[0]);
+                $d1 = max(0, $bytes[1] - (float)$old[1]);
+                [$up, $down] = $current['initiator'] ? [$d0, $d1] : [$d1, $d0];
+                $mac = $current['mac'];
+                $usage[$mac]['up'] = ($usage[$mac]['up'] ?? 0) + $up;
+                $usage[$mac]['down'] = ($usage[$mac]['down'] ?? 0) + $down;
+            }
+            $current = null;
+            $bytes = null;
+        }
+    }
+    pclose($pipe);
+    @file_put_contents(IMS_USAGE_FILE, json_encode(['t' => time(), 'states' => $now]), LOCK_EX);
+
+    $out = [];
+    foreach ($usage as $mac => $u) {
+        if ($u['up'] > 0 || $u['down'] > 0) {
+            $out[] = ['mac' => $mac, 'up' => (int)$u['up'], 'down' => (int)$u['down']];
+        }
+    }
+    return array_slice($out, 0, IMS_MAX_ITEMS);
+}
+
+/** Online devices for the IMS (portal sessions + ARP clients + data used). */
 function ims_online_payload(array $zoneConfig): array
 {
     $sessions = array_map(static function (array $s): array {
         return ['mac' => $s['mac'], 'ip' => $s['ip'], 'username' => $s['username'], 'started' => $s['started'] ?? 0];
     }, array_slice(ims_sessions(), 0, IMS_MAX_ITEMS));
+    $clients = ims_clients($zoneConfig);
 
-    return ['clients' => ims_clients($zoneConfig), 'sessions' => $sessions, 'manual_macs' => ims_manual_macs($zoneConfig)];
+    return ['clients' => $clients, 'sessions' => $sessions, 'manual_macs' => ims_manual_macs($zoneConfig), 'usage' => ims_usage($clients)];
 }
 
 /* ------------------------------------------------------------------------
@@ -637,7 +741,7 @@ if ($imsCli) {
         $online = ims_online_payload($zoneConfig);
         ims_post(['action' => 'report', 'results' => [], 'info' => ims_zone_info($zoneConfig, IMS_DEFAULT_ZONE)] + $online);
         echo "[ims-cp-agent] checked in; control is off in the IMS, nothing changed. "
-            . count($online['clients']) . ' device(s) seen on the portal network, ' . count($online['sessions']) . " portal session(s).\n";
+            . count($online['clients']) . ' device(s) seen on the portal network, ' . count($online['sessions']) . ' portal session(s), data use of ' . count($online['usage']) . " device(s).\n";
         exit(0);
     }
 
@@ -666,7 +770,7 @@ if ($imsCli) {
 
     echo '[ims-cp-agent] ' . count($applied['results']) . ' device(s) checked'
         . ($applied['changed'] ? ', rules reloaded (' . $applied['reload'] . ')' : ', no changes')
-        . '; ' . count($online['clients']) . ' device(s) seen on the portal network, ' . count($online['sessions']) . " portal session(s).\n";
+        . '; ' . count($online['clients']) . ' device(s) seen on the portal network, ' . count($online['sessions']) . ' portal session(s), data use of ' . count($online['usage']) . " device(s).\n";
     exit(0);
 }
 

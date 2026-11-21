@@ -1291,6 +1291,71 @@ function hubinet_online(mysqli $conn, string $kind = '', bool $withPfList = fals
     return $rows;
 }
 
+/**
+ * Agent 2.7+: adds the bytes each device used since the last check-in to
+ * today's totals. Keeps 90 days.
+ */
+function hubinet_record_usage(mysqli $conn, array $usage): int
+{
+    $stmt = $conn->prepare('INSERT INTO hub_network_usage (mac_address, day, bytes_up, bytes_down) VALUES (?, CURDATE(), ?, ?)
+                            ON DUPLICATE KEY UPDATE bytes_up = bytes_up + VALUES(bytes_up), bytes_down = bytes_down + VALUES(bytes_down)');
+    if (!$stmt) {
+        return 0;
+    }
+    $n = 0;
+    foreach (array_slice($usage, 0, 5000) as $u) {
+        $mac = hubnet_normalize_mac((string)($u['mac'] ?? ''));
+        // A minute of traffic above ~1 TB is a counter glitch, not data.
+        $up = max(0, min(1000000000000, (int)($u['up'] ?? 0)));
+        $down = max(0, min(1000000000000, (int)($u['down'] ?? 0)));
+        if ($mac === '' || ($up === 0 && $down === 0)) {
+            continue;
+        }
+        $stmt->bind_param('sii', $mac, $up, $down);
+        if ($stmt->execute()) {
+            $n++;
+        }
+    }
+    $stmt->close();
+    if (random_int(1, 200) === 1) {
+        $conn->query('DELETE FROM hub_network_usage WHERE day < DATE_SUB(CURDATE(), INTERVAL 90 DAY)');
+    }
+    return $n;
+}
+
+/** Data used per MAC: ['aa:bb:..' => ['up' => .., 'down' => .., 'week' => ..]] for today (and the last 7 days). */
+function hubinet_usage_by_mac(mysqli $conn): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    $cache = [];
+    $res = @$conn->query("SELECT mac_address,
+                                 SUM(CASE WHEN day = CURDATE() THEN bytes_up ELSE 0 END) AS up_today,
+                                 SUM(CASE WHEN day = CURDATE() THEN bytes_down ELSE 0 END) AS down_today,
+                                 SUM(bytes_up + bytes_down) AS week
+                            FROM hub_network_usage
+                           WHERE day >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+                           GROUP BY mac_address");
+    foreach ($res ? $res->fetch_all(MYSQLI_ASSOC) : [] as $r) {
+        $cache[$r['mac_address']] = ['up' => (int)$r['up_today'], 'down' => (int)$r['down_today'], 'week' => (int)$r['week']];
+    }
+    return $cache;
+}
+
+/** 1.2 GB, 340 MB, 12 KB. */
+function hubinet_bytes(int|float $bytes): string
+{
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $i = 0;
+    while ($bytes >= 1000 && $i < count($units) - 1) {
+        $bytes /= 1000;
+        $i++;
+    }
+    return ($i === 0 ? (string)(int)$bytes : number_format($bytes, $bytes < 10 ? 1 : 0)) . ' ' . $units[$i];
+}
+
 /** Online now rows filtered by kind and search text (name, MAC, IP, maker, company, pfSense description). */
 function hubinet_online_filtered(mysqli $conn, string $kind, string $q): array
 {
