@@ -778,6 +778,30 @@ elseif ($memberId > 0):
                 <input type="hidden" name="action" value="add_team_member">
                 <input type="hidden" name="member_id" value="<?= $memberId ?>">
                 <p class="ht-help">Seat <?= $seatsUsed + 1 ?> of <?= (int)$seatsMax ?> (<?= ht_e($member['package_name']) ?>).</p>
+                <?php
+                    // Pick an existing guest (details + their devices move here) or devices online now.
+                    $tmGuests = hubinet_people($conn, 'guest');
+                    $tmOnline = array_values(array_filter(hubinet_online($conn, 'unknown'), static fn($o) => empty($o['device'])));
+                ?>
+                <?php if ($tmGuests): ?>
+                <div class="form-group tm-pick">
+                    <label for="tm_guest_search">From an existing guest <span class="cell-muted">(optional)</span></label>
+                    <input id="tm_guest_search" class="form-control" list="tm_guest_list" placeholder="Type a guest's name, phone or email…" autocomplete="off">
+                    <datalist id="tm_guest_list">
+                        <?php foreach ($tmGuests as $g): ?>
+                            <option value="<?= ht_e($g['full_name'] . ($g['phone'] ? ' · ' . $g['phone'] : '') . ($g['email'] ? ' · ' . $g['email'] : '') . ' · #' . $g['person_id']) ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                    <input type="hidden" name="from_person_id" id="tm_from_person" value="0">
+                    <p class="form-hint" id="tm_guest_note">Fills in their details; their <?= 'registered devices' ?> move to this team member and the guest record is removed.</p>
+                </div>
+                <script>
+                window.tmGuests = <?= json_encode(array_map(static fn($g) => [
+                    'id' => (int)$g['person_id'], 'name' => (string)$g['full_name'], 'email' => (string)($g['email'] ?? ''),
+                    'phone' => (string)($g['phone'] ?? ''), 'devices' => (int)$g['device_count'],
+                ], $tmGuests), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+                </script>
+                <?php endif; ?>
                 <div class="form-row">
                     <div class="form-group"><label for="tm_name" class="required">Full name</label><input id="tm_name" class="form-control" name="full_name" required maxlength="150"></div>
                     <div class="form-group"><label for="tm_title">Role / job title</label><input id="tm_title" class="form-control" name="job_title" maxlength="120"></div>
@@ -787,7 +811,68 @@ elseif ($memberId > 0):
                     <div class="form-group"><label for="tm_phone">Phone</label><input id="tm_phone" class="form-control" name="phone" maxlength="40"></div>
                 </div>
                 <?= hubinet_device_rows('tm_devices', false, 'Devices (optional)') ?>
+                <?php if ($tmOnline): ?>
+                <div class="form-group tm-pick">
+                    <label for="tm_dev_search">Add from devices online now <span class="cell-muted">(<?= count($tmOnline) ?> not registered)</span></label>
+                    <input id="tm_dev_search" class="form-control" placeholder="Search name, maker, IP or MAC…" autocomplete="off">
+                    <div class="tm-devlist" id="tm_dev_list">
+                        <?php foreach ($tmOnline as $o):
+                            $tmName = trim((string)($o['hostname'] ?? '')) ?: (($o['vendor'] ?? '') ? $o['vendor'] . ' device' : 'Unnamed device'); ?>
+                            <button type="button" class="tm-dev" data-mac="<?= ht_e($o['mac_address']) ?>" data-label="<?= ht_e(trim((string)($o['hostname'] ?? '')) ?: (string)($o['vendor'] ?? '')) ?>"
+                                    data-search="<?= ht_e(mb_strtolower($tmName . ' ' . ($o['vendor'] ?? '') . ' ' . ($o['ip_address'] ?? '') . ' ' . $o['mac_address'] . ' ' . str_replace(':', '', $o['mac_address']))) ?>">
+                                <span><strong><?= ht_e($tmName) ?></strong><small><?= ht_e($o['mac_address']) ?><?= ($o['ip_address'] ?? '') ? ' · ' . ht_e($o['ip_address']) : '' ?><?= ($o['vendor'] ?? '') ? ' · ' . ht_e($o['vendor']) : '' ?><?= hubinet_is_random_mac($o['mac_address']) ? ' · private MAC' : '' ?></small></span>
+                                <i class="fas fa-plus" aria-hidden="true"></i>
+                            </button>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <div class="ht-help">Laptop and phone Wi-Fi addresses. Ask them to turn off "private / random MAC address" for the hub Wi-Fi so the address stays the same.</div>
+                <style>
+                .tm-pick { margin-bottom: 12px; }
+                .tm-devlist { max-height: 210px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-md, 8px); margin-top: 6px; }
+                .tm-dev { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--border); background: transparent; text-align: left; cursor: pointer; font: inherit; }
+                .tm-dev:last-child { border-bottom: 0; }
+                .tm-dev:hover { background: var(--brand-50); }
+                .tm-dev small { display: block; color: var(--ink-400); font-size: 12px; }
+                .tm-dev.is-added { opacity: .45; pointer-events: none; }
+                </style>
+                <script>
+                (function () {
+                    var form = document.querySelector('#addTeamModal form');
+                    if (!form) return;
+                    // Guest picker: the datalist value ends with "#<id>".
+                    var gs = document.getElementById('tm_guest_search');
+                    if (gs && window.tmGuests) {
+                        gs.addEventListener('change', function () {
+                            var m = /#(\d+)$/.exec(gs.value), g = m && window.tmGuests.find(function (x) { return String(x.id) === m[1]; });
+                            document.getElementById('tm_from_person').value = g ? g.id : 0;
+                            if (!g) return;
+                            form.querySelector('[name=full_name]').value = g.name;
+                            if (g.email) form.querySelector('[name=email]').value = g.email;
+                            if (g.phone) form.querySelector('[name=phone]').value = g.phone;
+                            document.getElementById('tm_guest_note').textContent = g.name + "'s " + g.devices + ' registered device' + (g.devices === 1 ? '' : 's') + ' will move to this team member; the guest record is removed.';
+                        });
+                    }
+                    // Online device picker: fill the first empty device row, else add a row.
+                    var ds = document.getElementById('tm_dev_search'), list = document.getElementById('tm_dev_list');
+                    if (!ds || !list) return;
+                    ds.addEventListener('input', function () {
+                        var q = ds.value.trim().toLowerCase().replace(/[:\-]/g, '');
+                        list.querySelectorAll('.tm-dev').forEach(function (b) { b.hidden = q !== '' && b.dataset.search.replace(/[:\-]/g, '').indexOf(q) === -1; });
+                    });
+                    list.addEventListener('click', function (e) {
+                        var b = e.target.closest('.tm-dev');
+                        if (!b) return;
+                        var rows = form.querySelector('#tm_devices'), empty = null;
+                        rows.querySelectorAll('.dr-row').forEach(function (r) { if (!empty && !r.querySelector('.dr-mac').value.trim()) empty = r; });
+                        if (!empty) { rows.querySelector('.dr-add').click(); var all = rows.querySelectorAll('.dr-row'); empty = all[all.length - 1]; }
+                        empty.querySelector('.dr-mac').value = b.dataset.mac;
+                        empty.querySelector('.dr-label').value = b.dataset.label || '';
+                        b.classList.add('is-added');
+                    });
+                })();
+                </script>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addTeamModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> Add team member</button>

@@ -206,6 +206,21 @@ try {
                 );
             }
 
+            // "From an existing guest": their registered devices move to the new team member.
+            $fromPersonId = (int)($_POST['from_person_id'] ?? 0);
+            $fromPerson = null;
+            if ($fromPersonId > 0) {
+                require_once __DIR__ . '/hub-internet.php';
+                $fromPerson = hubinet_person($conn, $fromPersonId);
+                if (!$fromPerson || $fromPerson['kind'] !== 'guest') {
+                    throw new InvalidArgumentException('The selected guest was not found. Pick them again or leave the guest field empty.');
+                }
+                // Their own devices move anyway: do not add them twice.
+                $guestMacs = array_map(static fn($d) => hubnet_normalize_mac((string)$d['mac_address']),
+                    hubnet_devices_where($conn, 'd.person_id = ?', 'i', [$fromPersonId]));
+                $macs = array_values(array_diff($macs, $guestMacs));
+            }
+
             foreach ($macs as $mac) {
                 ht_assert_mac_free($conn, $mac);
             }
@@ -224,10 +239,25 @@ try {
                 ht_insert_device($conn, $memberId, $teamMemberId, $mac, ($macLabels[$mac] ?? '') !== '' ? $macLabels[$mac] : 'Device ' . ($index + 1), $userId);
             }
 
+            $movedFromGuest = 0;
+            if ($fromPerson) {
+                $stmt = $conn->prepare('UPDATE hub_network_devices SET member_id = ?, team_member_id = ?, person_id = NULL WHERE person_id = ?');
+                $stmt->bind_param('iii', $memberId, $teamMemberId, $fromPersonId);
+                $stmt->execute();
+                $movedFromGuest = $stmt->affected_rows;
+                $stmt->close();
+                $stmt = $conn->prepare('DELETE FROM hub_network_people WHERE person_id = ?');
+                $stmt->bind_param('i', $fromPersonId);
+                $stmt->execute();
+                $stmt->close();
+            }
+
             $conn->commit();
 
-            $net = $macs !== [] ? hubnet_apply_member($conn, $memberId, $userId, 'team-add') : ['ok' => true, 'applied' => 0, 'failed' => 0, 'message' => ''];
-            ht_back(ht_member_query($memberId), null, $fullName . ' was added to ' . ($member['company_name'] ?: $member['full_name']) . '.' . ht_net_note($net));
+            $net = ($macs !== [] || $movedFromGuest > 0) ? hubnet_apply_member($conn, $memberId, $userId, 'team-add') : ['ok' => true, 'applied' => 0, 'failed' => 0, 'message' => ''];
+            ht_back(ht_member_query($memberId), null, $fullName . ' was added to ' . ($member['company_name'] ?: $member['full_name']) . '.'
+                . ($fromPerson ? ' The guest record was converted' . ($movedFromGuest ? ' and ' . $movedFromGuest . ' of their device(s) moved here' : '') . '.' : '')
+                . ht_net_note($net));
 
         case 'edit_team_member':
             $teamMemberId = ht_int('team_member_id');
