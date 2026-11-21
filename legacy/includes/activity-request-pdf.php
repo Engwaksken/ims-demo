@@ -8,7 +8,9 @@ declare(strict_types=1);
 | activity-event-requests?concept_pdf=ID
 | Available once the request is Approved, to its requester and to the
 | reviewers who can see every request (supervisor/operations, procurement,
-| finance, director, administrators).
+| finance, director, administrators). On Director approval it is also
+| emailed to every Procurement Officer (aer_notify_procurement), who no
+| longer reviews the request.
 |
 | Layout follows the concept note the requester filled in:
 |   1. Background and justification   2. Goal and objectives
@@ -43,6 +45,34 @@ function aer_concept_note_pdf(mysqli $conn, int $requestId, int $uid, string $ro
     $seeAll = in_array($role, ['Administrator', 'Finance', 'Accountant', 'Operations/Admin', 'Chief of Operations',
         'Procurement Officer', 'Executive Director', 'Director', 'CEO'], true);
 
+    $built = aer_concept_note_build($conn, $requestId);
+    $r = $built['row'] ?? null;
+    if (!$r || ((int)$r['created_by'] !== $uid && !$seeAll)) {
+        http_response_code(404);
+        exit('Request not found.');
+    }
+    if ($r['status'] !== 'Approved') {
+        http_response_code(409);
+        exit('The concept note PDF is available once the request has been approved.');
+    }
+    if (empty($built['pdf'])) {
+        http_response_code(500);
+        exit((string)($built['error'] ?? 'The concept note could not be created.'));
+    }
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="' . $built['file'] . '"');
+    header('Content-Length: ' . strlen($built['pdf']));
+    echo $built['pdf'];
+    exit;
+}
+
+/**
+ * Builds the concept note PDF of an approved request.
+ * Returns ['row' => request|null, 'pdf' => bytes|null, 'file' => name, 'error' => message].
+ * The caller checks access.
+ */
+function aer_concept_note_build(mysqli $conn, int $requestId): array
+{
     $stmt = $conn->prepare("SELECT r.*, u.full_name requester, u.email requester_email, m.milestone_name,
             CASE WHEN r.entity_type='Project' THEN p.project_name ELSE pr.program_name END entity_name,
             CASE WHEN r.entity_type='Project' THEN p.project_code ELSE pr.program_code END entity_code
@@ -53,21 +83,15 @@ function aer_concept_note_pdf(mysqli $conn, int $requestId, int $uid, string $ro
         LEFT JOIN programs pr ON r.entity_type='Program' AND pr.id = r.entity_id
         WHERE r.request_id = ? LIMIT 1");
     if (!$stmt) {
-        http_response_code(500);
-        exit('The concept note could not be loaded.');
+        return ['row' => null, 'pdf' => null, 'file' => '', 'error' => 'The concept note could not be loaded.'];
     }
     $stmt->bind_param('i', $requestId);
     $stmt->execute();
     $r = $stmt->get_result()->fetch_assoc();
     $stmt->close();
 
-    if (!$r || ((int)$r['created_by'] !== $uid && !$seeAll)) {
-        http_response_code(404);
-        exit('Request not found.');
-    }
-    if ($r['status'] !== 'Approved') {
-        http_response_code(409);
-        exit('The concept note PDF is available once the request has been approved.');
+    if (!$r || $r['status'] !== 'Approved') {
+        return ['row' => $r ?: null, 'pdf' => null, 'file' => '', 'error' => 'The request is not approved.'];
     }
 
     $reviews = [];
@@ -117,8 +141,10 @@ function aer_concept_note_pdf(mysqli $conn, int $requestId, int $uid, string $ro
             . number_format($amount, 2) . '</td><td class="num">' . number_format($amount, 2) . '</td></tr>';
     }
 
-    // Approvals table: requester, then each stage in workflow order.
-    $stages = ['Supervisor' => 'Supervisor / Operations', 'Procurement' => 'Procurement', 'Finance' => 'Finance', 'Director' => 'Director'];
+    // Approvals table: requester, then each stage in workflow order. Procurement no
+    // longer reviews (it receives the approved note); older requests keep its row.
+    $stages = ['Supervisor' => 'Supervisor / Operations'] + (isset($approvals['Procurement']) ? ['Procurement' => 'Procurement'] : [])
+        + ['Finance' => 'Finance', 'Director' => 'Director'];
     $sigRows = '<tr><td><strong>Prepared by</strong><br><span class="muted">Requester</span></td><td>' . aer_pdf_h($r['requester'] ?? '—')
         . '</td><td>' . aer_pdf_h($date($r['created_at'], 'j M Y')) . '</td><td class="sigcell">'
         . aer_pdf_sig($r['requester_signature'] ?? null, $r['requester_signature_mime'] ?? null) . '</td></tr>';
@@ -187,8 +213,7 @@ function aer_concept_note_pdf(mysqli $conn, int $requestId, int $uid, string $ro
 
     $autoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
     if (!is_file($autoload)) {
-        http_response_code(500);
-        exit('PDF export is unavailable: the PDF library is not installed.');
+        return ['row' => $r, 'pdf' => null, 'file' => '', 'error' => 'PDF export is unavailable: the PDF library is not installed.'];
     }
     require_once $autoload;
     $options = new \Dompdf\Options();
@@ -204,6 +229,87 @@ function aer_concept_note_pdf(mysqli $conn, int $requestId, int $uid, string $ro
         }
     }
     $file = 'concept-note-' . preg_replace('/[^A-Za-z0-9_-]+/', '-', (string)$r['reference_code']) . '.pdf';
-    $pdf->stream($file, ['Attachment' => true]);
-    exit;
+    return ['row' => $r, 'pdf' => (string)$pdf->output(), 'file' => $file, 'error' => ''];
+}
+
+/**
+ * Director approval done: every Procurement Officer gets an in-app notification
+ * and an email with the approved concept note PDF attached. Best effort: a
+ * failure is logged and never undoes the approval. Returns emails sent.
+ */
+function aer_notify_procurement(mysqli $conn, int $requestId, int $actorId): int
+{
+    $built = aer_concept_note_build($conn, $requestId);
+    $r = $built['row'] ?? null;
+    if (!$r) {
+        return 0;
+    }
+    $people = [];
+    $q = $conn->prepare("SELECT user_id, full_name, email FROM users WHERE role = 'Procurement Officer'");
+    if ($q) {
+        $q->execute();
+        $people = $q->get_result()->fetch_all(MYSQLI_ASSOC);
+        $q->close();
+    }
+    if (!$people) {
+        return 0;
+    }
+
+    $title = 'Approved activity/event request: ' . $r['reference_code'];
+    $message = $r['reference_code'] . ' (' . $r['title'] . ') has been signed and approved by the Director. '
+        . 'Download the approved concept note (PDF) from Activity/Event Requests to start procurement.';
+
+    // PHPMailer attaches files by path: write the PDF to a temp file for this send.
+    $attachment = null;
+    if (!empty($built['pdf'])) {
+        $dir = rtrim(sys_get_temp_dir(), '/\\') . DIRECTORY_SEPARATOR . 'aer-' . bin2hex(random_bytes(6));
+        if (@mkdir($dir, 0700) && file_put_contents($dir . DIRECTORY_SEPARATOR . $built['file'], $built['pdf']) !== false) {
+            $attachment = $dir . DIRECTORY_SEPARATOR . $built['file'];
+        }
+    }
+    if (!function_exists('sendEmail') && is_file(__DIR__ . '/mail-function.php')) {
+        require_once __DIR__ . '/mail-function.php';
+    }
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = preg_replace('/[^A-Za-z0-9.\-:]/', '', (string)($_SERVER['HTTP_HOST'] ?? ''));
+    $link = $host !== '' ? $scheme . '://' . $host . '/activity-event-requests?concept_pdf=' . $requestId : '';
+
+    $sent = 0;
+    foreach ($people as $p) {
+        $to = (int)$p['user_id'];
+        if ($to <= 0) {
+            continue;
+        }
+        if ($to !== $actorId && function_exists('notify_user')) {
+            notify_user($to, $title, $message, 'success', $requestId, 'activity_event_request');
+        }
+        $email = trim((string)($p['email'] ?? ''));
+        if (!function_exists('sendEmail') || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            continue;
+        }
+        $body = '<h3>' . aer_pdf_h($title) . '</h3><p>Dear ' . aer_pdf_h((string)$p['full_name']) . ',</p>'
+            . '<p>' . aer_pdf_h($r['reference_code'] . ' (' . $r['title'] . ')') . ' has been signed and approved by the Director.</p>'
+            . '<p>Amount: <strong>' . aer_pdf_h(strtoupper((string)$r['currency']) . ' ' . number_format((float)$r['requested_amount'], 2)) . '</strong><br>'
+            . 'Requested by: ' . aer_pdf_h((string)($r['requester'] ?? '')) . '</p>'
+            . '<p>' . ($attachment ? 'The approved concept note is attached.' : 'The approved concept note could not be attached.')
+            . ($link !== '' ? ' <a href="' . aer_pdf_h($link) . '">Download the concept note (PDF)</a>.' : '') . '</p>';
+        if (function_exists('email_wrapper')) {
+            $body = email_wrapper($body);
+        }
+        try {
+            $result = sendEmail($email, $title, $body, $message . ($link !== '' ? "\n\n" . $link : ''), [], [], $attachment ? [$attachment] : []);
+            if ($result === true) {
+                $sent++;
+            } else {
+                error_log('[activity-request] procurement email to user ' . $to . ' failed: ' . (is_string($result) ? $result : 'unknown'));
+            }
+        } catch (Throwable $e) {
+            error_log('[activity-request] procurement email to user ' . $to . ' failed: ' . $e->getMessage());
+        }
+    }
+    if ($attachment) {
+        @unlink($attachment);
+        @rmdir(dirname($attachment));
+    }
+    return $sent;
 }
