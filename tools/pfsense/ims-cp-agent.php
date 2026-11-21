@@ -578,9 +578,14 @@ if ($imsCli) {
         exit(2);
     }
 
-    $lock = fopen('/tmp/ims-cp-agent.lock', 'c');
+    // 'e' = close-on-exec: services pfSense starts during a run (e.g. the captive
+    // portal web server when the portal is switched on) must not inherit the lock,
+    // or it is never released and every later run would stop here.
+    $lock = fopen('/tmp/ims-cp-agent.lock', 'ce');
     if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
-        exit(0); // previous run still busy
+        fwrite(STDERR, "[ims-cp-agent] another run is still busy (lock /tmp/ims-cp-agent.lock); nothing done.\n"
+            . "  If no other run is going on (ps auxww | grep ims-cp-agent), delete that file and try again.\n");
+        exit(0);
     }
 
     $zoneConfig = ims_load_pfsense(IMS_DEFAULT_ZONE);
