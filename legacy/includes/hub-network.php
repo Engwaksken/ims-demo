@@ -139,6 +139,11 @@ if (!function_exists('hubnet_ensure_schema')) {
                 // a sign-in must come from a device pfSense sees on the hub network.
                 ['hub_network_settings', 'hotspot_landing_url', 'VARCHAR(255) NULL'],
                 ['hub_network_settings', 'hotspot_verify', 'TINYINT(1) NOT NULL DEFAULT 1'],
+                // Public help page (hotspot?help) and the contacts shown on the hotspot and pfSense pages.
+                ['hub_network_settings', 'hotspot_help', 'TEXT NULL'],
+                ['hub_network_settings', 'hotspot_help_phone', 'VARCHAR(40) NULL'],
+                ['hub_network_settings', 'hotspot_help_email', 'VARCHAR(190) NULL'],
+                ['hub_network_settings', 'hotspot_help_whatsapp', 'VARCHAR(40) NULL'],
             ];
 
             foreach ($addColumns as [$table, $column, $definition]) {
@@ -498,6 +503,10 @@ if (!function_exists('hubnet_settings')) {
             'wifi_security' => in_array($row['wifi_security'] ?? '', ['WPA', 'WEP', 'nopass'], true) ? (string)$row['wifi_security'] : 'WPA',
             'hotspot_landing_url' => preg_match('#\Ahttps?://[^\s<>"\']+\z#i', (string)($row['hotspot_landing_url'] ?? '')) ? (string)$row['hotspot_landing_url'] : '',
             'hotspot_verify' => !array_key_exists('hotspot_verify', $row) || !empty($row['hotspot_verify']),
+            'hotspot_help' => (string)($row['hotspot_help'] ?? ''),
+            'hotspot_help_phone' => (string)($row['hotspot_help_phone'] ?? ''),
+            'hotspot_help_email' => (string)($row['hotspot_help_email'] ?? ''),
+            'hotspot_help_whatsapp' => (string)($row['hotspot_help_whatsapp'] ?? ''),
         ];
     }
 }

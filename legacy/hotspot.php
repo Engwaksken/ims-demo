@@ -33,6 +33,13 @@ header('Referrer-Policy: no-referrer');
 header('Cache-Control: no-store, max-age=0');
 header('X-Robots-Tag: noindex, nofollow');
 
+// Reachability probe for the pfSense portal page: any answer means the internet and the IMS are up.
+if (isset($_GET['ping'])) {
+    header('Access-Control-Allow-Origin: *');
+    http_response_code(204);
+    exit;
+}
+
 /*
  * Device details from the captive portal redirect (?mac=..&ip=..&redirurl=..)
  * are kept in the session and the browser is sent straight to a clean
@@ -59,6 +66,14 @@ if ((int)($ctx['at'] ?? 0) < time() - 1800) {
 $mac = (string)($ctx['mac'] ?? '');
 $ip = (string)($ctx['ip'] ?? '');
 $redir = (string)($ctx['redir'] ?? '');
+
+// Polled by the "signed in" screen: has pfSense let this device through yet?
+if (isset($_GET['status'])) {
+    header('Content-Type: application/json');
+    echo json_encode(['status' => $ready && $mac !== '' ? hubinet_device_status($conn, $mac) : 'waiting']);
+    exit;
+}
+$showHelp = isset($_GET['help']);
 
 $error = '';
 $done = $_SESSION['hotspot_done'] ?? null;
@@ -134,8 +149,12 @@ $logo = (string)($brand['logo'] ?? '');
 $logo = preg_match('#\A(/|https?://)[^\s"<>]+\z#i', $logo) ? $logo : '';
 $favicon = (string)($brand['favicon'] ?? '');
 $favicon = preg_match('#\A(/|https?://)[^\s"<>]+\z#i', $favicon) ? $favicon : '';
-$supportPhone = (string)($brand['phone'] ?? '');
-$supportEmail = filter_var($brand['email'] ?? '', FILTER_VALIDATE_EMAIL) ? (string)$brand['email'] : '';
+$contacts = $ready ? hubinet_help_contacts($settings)
+    : ['phone' => (string)($brand['phone'] ?? ''), 'email' => filter_var($brand['email'] ?? '', FILTER_VALIDATE_EMAIL) ? (string)$brand['email'] : '', 'whatsapp' => ''];
+$supportPhone = $contacts['phone'];
+$supportEmail = $contacts['email'];
+$supportWa = preg_replace('/[^0-9]/', '', $contacts['whatsapp']);
+$landingHost = (string)preg_replace('#\Awww\.#i', '', (string)parse_url($landing, PHP_URL_HOST));
 $hours = $ready ? (int)$settings['hotspot_hours'] : 0;
 $ssid = $ready ? (string)$settings['wifi_ssid'] : '';
 ?>
@@ -226,6 +245,24 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
 .foot a:hover { color: var(--brand); }
 .foot .sep { margin: 0 6px; opacity: .5; }
 .below { margin-top: 16px; font-size: .78rem; color: var(--muted); text-align: center; }
+[hidden] { display: none !important; }
+.state-icon.bad { background: var(--bad-bg); color: var(--bad); }
+.tips { text-align: left; margin: 16px 0 0; padding: 12px 14px 12px 32px; background: var(--soft); border: 1px solid var(--line); border-radius: 12px; font-size: .88rem; line-height: 1.55; }
+.tips li + li { margin-top: 4px; }
+.btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); font-weight: 600; }
+.btn.ghost:hover { background: var(--soft); }
+.link { color: var(--brand); font-weight: 600; text-decoration: none; }
+.link:hover { text-decoration: underline; }
+.help h3 { font-size: 1rem; margin: 20px 0 6px; }
+.help h3:first-child { margin-top: 0; }
+.help p, .help li { font-size: .92rem; line-height: 1.6; color: var(--ink); }
+.help p { margin: 0 0 10px; }
+.help ul { margin: 0 0 10px; padding-left: 20px; }
+.contacts { display: grid; gap: 8px; margin-top: 18px; }
+.contact { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); text-decoration: none; font-size: .92rem; }
+.contact:hover { border-color: var(--brand); }
+.contact svg { width: 20px; height: 20px; color: var(--brand); flex: none; }
+.contact small { display: block; color: var(--muted); font-size: .78rem; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
@@ -243,7 +280,27 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
     </header>
 
     <div class="body">
-    <?php if (!$enabled): ?>
+    <?php if ($showHelp): ?>
+        <p class="lead">Help &amp; support</p>
+        <div class="help" style="margin-top:14px">
+            <?= hubinet_help_html($ready && trim($settings['hotspot_help']) !== '' ? $settings['hotspot_help'] : ($ready ? hubinet_default_help($settings) : 'Please ask at reception for help.')) ?>
+        </div>
+        <?php if ($supportPhone !== '' || $supportWa !== '' || $supportEmail !== ''): ?>
+        <div class="contacts">
+            <?php if ($supportPhone !== ''): ?>
+                <a class="contact" href="tel:<?= $h(preg_replace('/[^0-9+]/', '', $supportPhone)) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h3.5l1.5 4.5-2.2 1.4a11 11 0 0 0 6.8 6.8l1.4-2.2 4.5 1.5V19a2 2 0 0 1-2 2A17 17 0 0 1 3 5.5a2 2 0 0 1 2-2z"/></svg><span><small>Call us</small><?= $h($supportPhone) ?></span></a>
+            <?php endif; ?>
+            <?php if ($supportWa !== ''): ?>
+                <a class="contact" href="https://wa.me/<?= $h($supportWa) ?>" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8.5 8.5 0 1 1 8.4 19z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/></svg><span><small>WhatsApp</small><?= $h($contacts['whatsapp']) ?></span></a>
+            <?php endif; ?>
+            <?php if ($supportEmail !== ''): ?>
+                <a class="contact" href="mailto:<?= $h($supportEmail) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg><span><small>Email</small><?= $h($supportEmail) ?></span></a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <a class="btn" href="hotspot">Back to sign-in</a>
+
+    <?php elseif (!$enabled): ?>
         <div class="state">
             <div class="state-icon off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 2l20 20"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 4.2-2.6M14.8 9.9A10 10 0 0 1 19 12.5"/><circle cx="12" cy="19.5" r="1"/></svg></div>
             <h2>Guest Wi-Fi is not available</h2>
@@ -251,20 +308,67 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
         </div>
 
     <?php elseif ($done): ?>
-        <div class="state">
-            <div class="state-icon ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <?php $validUntil = !empty($done['until']) ? '<div class="valid">Access valid until <strong>' . $h(date('D j M, H:i', strtotime((string)$done['until']))) . '</strong></div>' : ''; ?>
+        <!-- 1. Waiting for pfSense to let the device through -->
+        <div class="state" id="dsWait">
+            <div class="state-icon wait"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg></div>
             <h2><?= $h($done['message']) ?></h2>
-            <p class="muted">Your device is being connected. This can take up to a minute.</p>
-            <?php if (!empty($done['until'])): ?>
-                <div class="valid">Access valid until <strong><?= $h(date('D j M, H:i', strtotime((string)$done['until']))) ?></strong></div>
-            <?php endif; ?>
+            <p class="muted">Connecting your device to the internet&hellip; This usually takes less than a minute. Keep this page open.</p>
+            <?= $validUntil ?>
+        </div>
+        <!-- 2. Online: straight to the landing page -->
+        <div class="state" id="dsOk" hidden>
+            <div class="state-icon ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+            <h2>You are online!</h2>
+            <p class="muted">Taking you to <?= $h($landingHost !== '' ? $landingHost : 'the internet') ?>&hellip;</p>
+            <?= $validUntil ?>
             <a class="btn" id="go" href="<?= $h($landing) ?>" rel="noreferrer">Start browsing</a>
-            <p class="muted" style="margin-top:12px">Continuing automatically in <span class="count" id="count" aria-live="polite">60</span>s. If a page does not load yet, wait a moment and try again.</p>
+        </div>
+        <!-- 3. Device not connected after a few minutes, or blocked / error -->
+        <div class="state" id="dsFail" hidden>
+            <div class="state-icon bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg></div>
+            <h2 id="dsFailTitle">Your device is not connected yet</h2>
+            <p class="muted" id="dsFailText">You are signed in, but the network has not let your device through yet.</p>
+            <ul class="tips" id="dsFailTips">
+                <li>Stay on the hub Wi-Fi<?= $ssid !== '' ? ' (<strong>' . $h($ssid) . '</strong>)' : '' ?> and turn off mobile data.</li>
+                <li>Turn off <strong>Private Wi-Fi address</strong> / <strong>Random MAC</strong> for this network, reconnect and sign in again.</li>
+                <li>Still nothing after two minutes? Please ask at reception.</li>
+            </ul>
+            <button type="button" class="btn" id="dsRetry">Check again</button>
+            <a class="btn ghost" href="<?= $h($landing) ?>" rel="noreferrer">Try opening a website</a>
         </div>
         <script>
         (function () {
-            var n = 60, el = document.getElementById('count');
-            var t = setInterval(function () { n--; el.textContent = n > 0 ? n : '0'; if (n <= 0) { clearInterval(t); location.href = document.getElementById('go').href; } }, 1000);
+            var landing = document.getElementById('go').href, started, timer;
+            function show(id) { ['dsWait', 'dsOk', 'dsFail'].forEach(function (s) { document.getElementById(s).hidden = s !== id; }); }
+            function fail(title, text, tips) {
+                clearTimeout(timer);
+                if (title) { document.getElementById('dsFailTitle').textContent = title; document.getElementById('dsFailText').textContent = text; document.getElementById('dsFailTips').hidden = !tips; }
+                show('dsFail');
+            }
+            function check() {
+                fetch('hotspot?status=1&t=' + Date.now(), { cache: 'no-store', credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d.status === 'connected') {
+                            show('dsOk');
+                            setTimeout(function () { location.href = landing; }, 1500);
+                        } else if (d.status === 'blocked') {
+                            fail('This device cannot use the hotspot', 'Access for this device has been blocked. Please ask at reception.', false);
+                        } else if (d.status === 'error') {
+                            fail('We could not connect your device', 'The network reported a problem while connecting your device.', true);
+                        } else { next(); }
+                    })
+                    .catch(next);
+            }
+            function next() {
+                if (Date.now() - started > 150000) { fail(); return; }
+                timer = setTimeout(check, 3000);
+            }
+            document.getElementById('dsRetry').addEventListener('click', function () { show('dsWait'); started = Date.now(); check(); });
+            if (!window.fetch) { setTimeout(function () { location.href = landing; }, 60000); return; }
+            started = Date.now();
+            check();
         })();
         </script>
 
@@ -334,9 +438,9 @@ input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px c
     <?php endif; ?>
     </div>
 
-    <?php if ($supportPhone !== '' || $supportEmail !== ''): ?>
+    <?php if (!$showHelp): ?>
     <footer class="foot">
-        Need help? Ask at reception<?php if ($supportPhone !== ''): ?><span class="sep">·</span><a href="tel:<?= $h(preg_replace('/[^0-9+]/', '', $supportPhone)) ?>"><?= $h($supportPhone) ?></a><?php endif; ?><?php if ($supportEmail !== ''): ?><span class="sep">·</span><a href="mailto:<?= $h($supportEmail) ?>"><?= $h($supportEmail) ?></a><?php endif; ?>
+        Need help? <a href="hotspot?help">Help &amp; FAQ</a><?php if ($supportPhone !== ''): ?><span class="sep">·</span><a href="tel:<?= $h(preg_replace('/[^0-9+]/', '', $supportPhone)) ?>"><?= $h($supportPhone) ?></a><?php endif; ?><?php if ($supportWa !== ''): ?><span class="sep">·</span><a href="https://wa.me/<?= $h($supportWa) ?>" rel="noopener">WhatsApp</a><?php endif; ?>
     </footer>
     <?php endif; ?>
 </main>

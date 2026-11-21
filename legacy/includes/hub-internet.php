@@ -554,10 +554,25 @@ function hubinet_save_hotspot(mysqli $conn, array $post, int $uid): array
     $landing = mb_substr($landing, 0, 255);
     $verify = !empty($post['hotspot_verify']) ? 1 : 0;
 
+    // Help page and contacts (shown before guests are online, so plain text only).
+    $help = mb_substr(trim((string)($post['hotspot_help'] ?? '')), 0, 8000);
+    $helpPhone = mb_substr(trim((string)($post['hotspot_help_phone'] ?? '')), 0, 40);
+    $helpEmail = mb_substr(trim((string)($post['hotspot_help_email'] ?? '')), 0, 190);
+    $helpWhatsapp = mb_substr(trim((string)($post['hotspot_help_whatsapp'] ?? '')), 0, 40);
+    foreach (['help phone number' => $helpPhone, 'WhatsApp number' => $helpWhatsapp] as $label => $number) {
+        if ($number !== '' && !preg_match('/^\+?[0-9 ()-]{7,20}$/', $number)) {
+            return hubinet_result(false, 'The ' . $label . ' is not valid.');
+        }
+    }
+    if ($helpEmail !== '' && !filter_var($helpEmail, FILTER_VALIDATE_EMAIL)) {
+        return hubinet_result(false, 'The help email address is not valid.');
+    }
+
     $sets = ['hotspot_enabled = ?', 'hotspot_hours = ?', 'hotspot_require_phone = ?', 'hotspot_terms = ?', 'wifi_ssid = ?', 'wifi_security = ?',
-        'hotspot_landing_url = NULLIF(?, \'\')', 'hotspot_verify = ?'];
-    $types = 'iiissssi';
-    $params = [$enabled, $hours, $requirePhone, $terms, $ssid, $security, $landing, $verify];
+        'hotspot_landing_url = NULLIF(?, \'\')', 'hotspot_verify = ?',
+        'hotspot_help = NULLIF(?, \'\')', 'hotspot_help_phone = NULLIF(?, \'\')', 'hotspot_help_email = NULLIF(?, \'\')', 'hotspot_help_whatsapp = NULLIF(?, \'\')'];
+    $types = 'iiissssissss';
+    $params = [$enabled, $hours, $requirePhone, $terms, $ssid, $security, $landing, $verify, $help, $helpPhone, $helpEmail, $helpWhatsapp];
     // Passwords change only when a new one is typed (or cleared explicitly).
     $newPass = (string)($post['hotspot_password'] ?? '');
     if ($newPass !== '' || !empty($post['clear_hotspot_password'])) {
@@ -605,6 +620,267 @@ function hubinet_hotspot_url(): string
         $base = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
     }
     return $base . '/hotspot';
+}
+
+/* ======================================================================
+ | Hotspot help page, device status and branded pfSense pages
+ * ==================================================================== */
+
+/** Help contacts: the hotspot's own, else the organisation's (Settings > General). */
+function hubinet_help_contacts(array $settings): array
+{
+    $brand = function_exists('ims_brand') ? ims_brand() : [];
+    $email = $settings['hotspot_help_email'] !== '' ? $settings['hotspot_help_email'] : (string)($brand['email'] ?? '');
+    return [
+        'phone' => $settings['hotspot_help_phone'] !== '' ? $settings['hotspot_help_phone'] : (string)($brand['phone'] ?? ''),
+        'email' => filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '',
+        'whatsapp' => $settings['hotspot_help_whatsapp'],
+    ];
+}
+
+/** Help text used until an administrator writes their own. */
+function hubinet_default_help(array $settings): string
+{
+    $ssid = $settings['wifi_ssid'] !== '' ? $settings['wifi_ssid'] : 'the hub Wi-Fi';
+    return "## How do I get online?\n"
+        . "- Join the Wi-Fi network " . $ssid . " and turn off mobile data.\n"
+        . "- Tap the \"Sign in to network\" message, or open any website.\n"
+        . "- Enter your name, phone number and the access code from reception, then tap Connect.\n\n"
+        . "## The sign-in page does not open\n"
+        . "- Open http://neverssl.com in your browser (http, not https).\n"
+        . "- Forget the Wi-Fi network on your phone, join it again and wait a few seconds.\n\n"
+        . "## I signed in but have no internet\n"
+        . "- Wait one minute: your device is connected at the next network check.\n"
+        . "- Turn off \"Private Wi-Fi address\" / \"Random MAC\" for this network, then sign in again.\n\n"
+        . "## How long does access last?\n"
+        . "Access lasts " . (int)$settings['hotspot_hours'] . " hours. After that, simply sign in again.";
+}
+
+/**
+ * Help text to HTML. Plain text only: "## " starts a heading, "- " a bullet,
+ * an empty line a new paragraph. Everything is escaped first.
+ */
+function hubinet_help_html(string $text): string
+{
+    $out = '';
+    $list = false;
+    $para = [];
+    $flush = static function () use (&$out, &$para): void {
+        if ($para) {
+            $out .= '<p>' . implode('<br>', $para) . "</p>\n";
+            $para = [];
+        }
+    };
+    foreach (preg_split('/\R/', $text) as $line) {
+        $line = trim($line);
+        $isItem = str_starts_with($line, '- ') || str_starts_with($line, '* ');
+        if ($list && !$isItem) {
+            $out .= "</ul>\n";
+            $list = false;
+        }
+        if ($line === '') {
+            $flush();
+        } elseif (str_starts_with($line, '#')) {
+            $flush();
+            $out .= '<h3>' . hubinet_h(ltrim($line, '# ')) . "</h3>\n";
+        } elseif ($isItem) {
+            $flush();
+            if (!$list) {
+                $out .= "<ul>\n";
+                $list = true;
+            }
+            $out .= '<li>' . hubinet_h(substr($line, 2)) . "</li>\n";
+        } else {
+            $para[] = hubinet_h($line);
+        }
+    }
+    $flush();
+    return $out . ($list ? "</ul>\n" : '');
+}
+
+/**
+ * Where a signed-in device stands on pfSense:
+ *   connected - pfSense confirmed the pass entry
+ *   blocked   - blocked in the IMS
+ *   error     - pfSense reported an error for this device
+ *   waiting   - not applied yet (next check-in)
+ */
+function hubinet_device_status(mysqli $conn, string $mac): string
+{
+    $mac = hubnet_normalize_mac($mac);
+    if ($mac === '') {
+        return 'waiting';
+    }
+    $stmt = $conn->prepare('SELECT access_mode, pf_state FROM hub_network_devices WHERE mac_address = ? LIMIT 1');
+    if (!$stmt) {
+        return 'waiting';
+    }
+    $stmt->bind_param('s', $mac);
+    $stmt->execute();
+    $row = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+    if (!$row) {
+        return 'waiting';
+    }
+    if ($row['access_mode'] === 'block' || $row['pf_state'] === 'blocked') {
+        return 'blocked';
+    }
+    return match ($row['pf_state']) {
+        'connected' => 'connected',
+        'error' => 'error',
+        default => 'waiting',
+    };
+}
+
+/** The organisation logo as a data: URI, so pages stored on pfSense show it without internet. */
+function hubinet_logo_data_uri(): string
+{
+    $logo = function_exists('ims_brand') ? (string)(ims_brand()['logo'] ?? '') : '';
+    $public = dirname(__DIR__, 2) . '/public';
+    $file = '';
+    $query = [];
+    parse_str((string)(parse_url($logo, PHP_URL_QUERY) ?? ''), $query);
+    if (preg_match('/\A[a-f0-9]{32}\.(png|jpe?g|webp|gif|svg)\z/i', (string)($query['file'] ?? ''))) {
+        $file = $public . '/uploads/site-branding/' . $query['file'];
+    } else {
+        $path = (string)(parse_url($logo, PHP_URL_PATH) ?? '');
+        if ($path !== '' && !str_contains($path, '..') && str_starts_with($path, '/')) {
+            $file = $public . $path;
+        }
+    }
+    if ($file === '' || !is_file($file) || filesize($file) > 200 * 1024) {
+        return '';
+    }
+    $types = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'gif' => 'image/gif', 'svg' => 'image/svg+xml'];
+    $type = $types[strtolower(pathinfo($file, PATHINFO_EXTENSION))] ?? '';
+    return $type === '' ? '' : 'data:' . $type . ';base64,' . base64_encode((string)file_get_contents($file));
+}
+
+/**
+ * Branded pages to upload to pfSense (Services > Captive Portal > zone):
+ *   portal - "Portal page contents": checks the IMS can be reached, then sends
+ *            the device to the sign-in page; otherwise shows "no internet"
+ *   error  - "Auth error page contents": the portal refused the sign-in
+ * pfSense fills in $CLIENT_MAC$, $CLIENT_IP$, $PORTAL_ZONE$, $PORTAL_REDIRURL$
+ * and $PORTAL_MESSAGE$. Everything is inline: these pages are shown before
+ * the device is online.
+ */
+function hubinet_pfsense_page(array $settings, string $kind): string
+{
+    $brand = function_exists('ims_brand') ? ims_brand() : [];
+    $hex = static fn($v, string $d): string => preg_match('/\A#[0-9a-f]{6}\z/i', (string)$v) ? strtolower((string)$v) : $d;
+    $c = $hex($brand['primary'] ?? '', '#c2410c');
+    $cDark = $hex($brand['primary_dark'] ?? '', '#9a3412');
+    [$r, $g, $b] = array_map('hexdec', str_split(substr($c, 1), 2));
+    $onBrand = (0.299 * $r + 0.587 * $g + 0.114 * $b) > 170 ? '#111827' : '#ffffff';
+    $name = (string)($brand['name'] ?? 'Guest Wi-Fi');
+    $base = preg_replace('#/hotspot$#', '', hubinet_hotspot_url());
+    $signin = $base . '/hotspot?mac=$CLIENT_MAC$&amp;ip=$CLIENT_IP$&amp;zone=$PORTAL_ZONE$&amp;redirurl=$PORTAL_REDIRURL$';
+    $logo = hubinet_logo_data_uri();
+    $contacts = hubinet_help_contacts($settings);
+
+    $help = [];
+    if ($contacts['phone'] !== '') {
+        $help[] = 'Call <a href="tel:' . hubinet_h(preg_replace('/[^0-9+]/', '', $contacts['phone'])) . '">' . hubinet_h($contacts['phone']) . '</a>';
+    }
+    if ($contacts['whatsapp'] !== '') {
+        $help[] = 'WhatsApp <strong>' . hubinet_h($contacts['whatsapp']) . '</strong>';
+    }
+    if ($contacts['email'] !== '') {
+        $help[] = 'Email <strong>' . hubinet_h($contacts['email']) . '</strong>';
+    }
+    $helpLine = 'Need help? Ask at reception' . ($help ? '<br>' . implode(' &middot; ', $help) : '') . '.';
+
+    $icon = [
+        'wifi' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M2 9a15 15 0 0 1 20 0"/><circle cx="12" cy="19.5" r="1"/></svg>',
+        'off' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 2l20 20"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M5 12.5a10 10 0 0 1 4.2-2.6M14.8 9.9A10 10 0 0 1 19 12.5"/><circle cx="12" cy="19.5" r="1"/></svg>',
+        'bad' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5v.01"/></svg>',
+        'spin' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>',
+    ];
+
+    if ($kind === 'error') {
+        $body = '<div class="state"><div class="ic bad">' . $icon['bad'] . '</div>'
+            . '<h2>We could not sign you in</h2>'
+            . '<p class="muted">Please try again. If it keeps happening, ask at reception.</p>'
+            . '<p class="msg">$PORTAL_MESSAGE$</p>'
+            . '<a class="btn" href="' . $signin . '">Try again</a></div>';
+        $script = '';
+        $noscript = '';
+    } else {
+        $body = '<div id="checking" class="state"><div class="ic wait">' . $icon['spin'] . '</div>'
+            . '<h2>Opening the Wi-Fi sign-in&hellip;</h2><p class="muted">One moment please.</p>'
+            . '<a class="btn ghost" id="go" href="' . $signin . '">Continue to sign in</a></div>'
+            . '<div id="offline" class="state" hidden><div class="ic off">' . $icon['off'] . '</div>'
+            . '<h2>No internet connection right now</h2>'
+            . '<p class="muted">You are connected to our Wi-Fi, but the internet is not reachable at the moment. This is usually temporary.</p>'
+            . '<ul class="tips"><li>Wait a minute, then tap <strong>Try again</strong>.</li><li>Make sure you are on the hub Wi-Fi, not mobile data.</li><li>If it keeps happening, the hub internet line may be down: please tell reception.</li></ul>'
+            . '<button type="button" class="btn" onclick="location.reload()">Try again</button></div>';
+        // Probe the IMS first: any HTTP answer means it is reachable; a network error or
+        // timeout means the line (or DNS) is down, so show "no internet" instead of a browser error.
+        $script = "<script>\n(function () {\n"
+            . "    var go = document.getElementById('go');\n"
+            . "    function offline() { document.getElementById('checking').hidden = true; document.getElementById('offline').hidden = false; }\n"
+            . "    if (!window.fetch) { location.replace(go.href); return; }\n"
+            . "    var done = false, timer = setTimeout(function () { if (!done) { done = true; offline(); } }, 8000);\n"
+            . "    fetch(" . json_encode($base . '/hotspot?ping=1', JSON_UNESCAPED_SLASHES) . " + '&t=' + Date.now(), { mode: 'no-cors', cache: 'no-store' })\n"
+            . "        .then(function () { if (!done) { done = true; clearTimeout(timer); location.replace(go.href); } })\n"
+            . "        .catch(function () { if (!done) { done = true; clearTimeout(timer); offline(); } });\n"
+            . "})();\n</script>";
+        $noscript = '<noscript><meta http-equiv="refresh" content="0;url=' . $signin . '"></noscript>';
+    }
+
+    $logoHtml = $logo !== '' ? '<div class="logo"><img src="' . $logo . '" alt="' . hubinet_h($name) . '"></div>' : '';
+    $title = $kind === 'error' ? 'Sign-in problem' : 'Guest Wi-Fi';
+
+    return '<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>' . hubinet_h($title . ' · ' . $name) . '</title>
+' . $noscript . '
+<style>
+:root { --brand: ' . $c . '; --brand-dark: ' . $cDark . '; --on-brand: ' . $onBrand . '; --ink: #111827; --muted: #6b7280; --line: #e5e7eb; --bg: #f3f4f6; --card: #fff; --soft: #f9fafb; }
+@media (prefers-color-scheme: dark) { :root { --ink: #f3f4f6; --muted: #9ca3af; --line: #2d3340; --bg: #0b0f17; --card: #161b26; --soft: #1d2330; } }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 16px; }
+.card { width: 100%; max-width: 440px; background: var(--card); border-radius: 20px; box-shadow: 0 18px 48px rgba(17,24,39,.12); overflow: hidden; }
+.head { background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: var(--on-brand); padding: 28px 24px 24px; text-align: center; }
+.logo { display: inline-flex; background: #fff; border-radius: 14px; padding: 10px 16px; box-shadow: 0 6px 18px rgba(0,0,0,.15); }
+.logo img { display: block; max-height: 44px; max-width: 188px; }
+.head h1 { margin: 16px 0 2px; font-size: 1.4rem; }
+.pill { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 5px 12px; border-radius: 999px; background: rgba(255,255,255,.18); font-size: .82rem; font-weight: 600; }
+.pill svg { width: 15px; height: 15px; }
+.body { padding: 24px; }
+.state { text-align: center; }
+.state[hidden] { display: none; }
+.ic { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; background: var(--soft); color: var(--muted); }
+.ic svg { width: 36px; height: 36px; }
+.ic.wait { color: var(--brand); }
+.ic.wait svg { animation: spin 1.1s linear infinite; }
+.ic.bad { color: #b42318; background: #fdf0ef; }
+@keyframes spin { to { transform: rotate(360deg); } }
+h2 { margin: 0 0 6px; font-size: 1.25rem; }
+.muted { color: var(--muted); font-size: .92rem; line-height: 1.5; margin: 0; }
+.msg { color: var(--muted); font-size: .82rem; margin: 10px 0 0; }
+.tips { text-align: left; margin: 16px 0 0; padding: 12px 14px 12px 32px; background: var(--soft); border: 1px solid var(--line); border-radius: 12px; font-size: .88rem; line-height: 1.55; }
+.btn { display: block; width: 100%; margin-top: 20px; padding: 15px; border: 0; border-radius: 12px; background: var(--brand); color: var(--on-brand); font: inherit; font-size: 1rem; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--brand); border: 1px solid var(--line); font-weight: 600; }
+.foot { border-top: 1px solid var(--line); padding: 14px 24px 18px; text-align: center; font-size: .82rem; color: var(--muted); line-height: 1.6; }
+.foot a { color: inherit; font-weight: 600; }
+</style>
+</head>
+<body>
+<main class="card">
+<header class="head">' . $logoHtml . '<h1>' . hubinet_h($name) . '</h1><span class="pill">' . $icon['wifi'] . ' Guest Wi-Fi</span></header>
+<div class="body">' . $body . '</div>
+<footer class="foot">' . $helpLine . '</footer>
+</main>
+' . $script . '
+</body>
+</html>
+';
 }
 
 /* ======================================================================

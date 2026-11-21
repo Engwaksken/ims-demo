@@ -306,7 +306,7 @@ if ($view === 'settings'):
                         <?php if ($settings['last_checkin_at']): ?>
                             <span class="badge badge-<?= $online ? 'success' : 'danger' ?>"><?= $online ? 'Online' : 'Not checking in' ?></span>
                             <?= ht_e(date('d M Y H:i:s', strtotime((string)$settings['last_checkin_at']))) ?>
-                            <?= !empty($checkin['ip']) ? '<small class="cell-muted">from ' . ht_e($checkin['ip']) . ' &middot; agent ' . ht_e($checkin['version'] ?? '?') . ' &middot; ' . (int)($checkin['sessions'] ?? 0) . ' sessions</small>' : '' ?>
+                            <?= !empty($checkin) ? '<small class="cell-muted">agent ' . ht_e($checkin['version'] ?? '?') . ' &middot; ' . (int)($checkin['sessions'] ?? 0) . ' sessions</small>' : '' ?>
                             <?php if (array_key_exists('mac_filtering', $checkin) && !$checkin['mac_filtering']): ?>
                                 <small class="ht-overdue">MAC filtering is off on this zone: pass/block entries have no effect.</small>
                             <?php endif; ?>

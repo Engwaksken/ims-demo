@@ -513,8 +513,9 @@ try {
                 }
 
                 $ago = time() - (int)strtotime((string)$netSettings['last_checkin_at']);
-                $summary = 'Last check-in ' . ($ago < 120 ? $ago . ' seconds' : round($ago / 60) . ' minutes') . ' ago from ' .
-                    ($info['ip'] ?? 'unknown address') . ' (zone ' . ($info['zone'] ?? '?') . ', ' . (int)($info['sessions'] ?? 0) . ' active sessions).';
+                // The firewall's public IP is deliberately not shown.
+                $summary = 'Last check-in ' . ($ago < 120 ? $ago . ' seconds' : round($ago / 60) . ' minutes') . ' ago' .
+                    ' (zone ' . ($info['zone'] ?? '?') . ', ' . (int)($info['sessions'] ?? 0) . ' active sessions).';
 
                 if (array_key_exists('mac_filtering', $info) && !$info['mac_filtering']) {
                     $summary .= ' Warning: MAC filtering is off on this zone, so pass/block entries will not take effect.';

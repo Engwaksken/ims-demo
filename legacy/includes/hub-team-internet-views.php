@@ -538,6 +538,11 @@ elseif ($view === 'hotspot'):
             <div class="form-group"><label for="hiSsid">Wi-Fi network name (SSID)</label><input id="hiSsid" name="wifi_ssid" class="form-control" maxlength="64" value="<?= ht_e($settings['wifi_ssid']) ?>" <?= $canSettings ? '' : 'disabled' ?>></div>
             <div class="form-group"><label for="hiSec">Wi-Fi security</label><select id="hiSec" name="wifi_security" class="form-control" <?= $canSettings ? '' : 'disabled' ?>><?php foreach (['WPA' => 'WPA/WPA2/WPA3', 'WEP' => 'WEP', 'nopass' => 'Open (no Wi-Fi password)'] as $k => $v): ?><option value="<?= $k ?>"<?= $settings['wifi_security'] === $k ? ' selected' : '' ?>><?= $v ?></option><?php endforeach; ?></select></div>
             <div class="form-group"><label for="hiKey">Wi-Fi password</label><input id="hiKey" type="text" name="wifi_key" class="form-control" autocomplete="off" placeholder="<?= $settings['wifi_key'] !== '' ? 'Leave empty to keep the current one' : '' ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">Only used for the QR code: set the same password on your access points.</p></div>
+            <div class="form-group is-wide"><h4 style="margin:12px 0 0">Help page</h4><p class="form-hint">Shown to guests at <a href="<?= ht_e($hotspotUrl) ?>?help" target="_blank" rel="noopener"><?= ht_e($hotspotUrl) ?>?help</a> and linked from every sign-in screen. The contacts also appear on the pfSense pages below.</p></div>
+            <div class="form-group"><label for="hiHelpPhone">Help phone number</label><input id="hiHelpPhone" type="tel" name="hotspot_help_phone" class="form-control" maxlength="40" placeholder="<?= ht_e((string)(ims_brand()['phone'] ?? '')) ?>" value="<?= ht_e($settings['hotspot_help_phone']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">Empty = the organisation phone.</p></div>
+            <div class="form-group"><label for="hiHelpWa">WhatsApp number</label><input id="hiHelpWa" type="tel" name="hotspot_help_whatsapp" class="form-control" maxlength="40" placeholder="+256 700 000000" value="<?= ht_e($settings['hotspot_help_whatsapp']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">With the country code. Optional.</p></div>
+            <div class="form-group"><label for="hiHelpEmail">Help email</label><input id="hiHelpEmail" type="email" name="hotspot_help_email" class="form-control" maxlength="190" placeholder="<?= ht_e((string)(ims_brand()['email'] ?? '')) ?>" value="<?= ht_e($settings['hotspot_help_email']) ?>" <?= $canSettings ? '' : 'disabled' ?>><p class="form-hint">Empty = the organisation email.</p></div>
+            <div class="form-group is-wide"><label for="hiHelp">Help content</label><textarea id="hiHelp" name="hotspot_help" class="form-control" rows="10" placeholder="<?= ht_e(hubinet_default_help($settings)) ?>" <?= $canSettings ? '' : 'disabled' ?>><?= ht_e($settings['hotspot_help']) ?></textarea><p class="form-hint">Plain text. Start a line with <code>## </code> for a heading and <code>- </code> for a bullet; leave an empty line between paragraphs. Empty = the standard help shown as the example.</p></div>
             <?php if ($canSettings): ?><div class="form-group is-wide"><button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save hotspot settings</button></div><?php endif; ?>
         </form>
     </div>
@@ -549,10 +554,18 @@ elseif ($view === 'hotspot'):
         <ol class="hi-steps">
             <li>Install agent 2.1: copy <code>tools/pfsense/ims-cp-agent.php</code> to <code>/root/</code> on pfSense (keep your secret and IMS URL).</li>
             <li>Services &gt; Captive Portal &gt; your zone: enable it, enable <strong>MAC filtering</strong>.</li>
-            <li>Portal page contents: upload <code>tools/pfsense/ims-portal-page.html</code> after replacing <code>https://ims.example.org</code> with <code><?= ht_e(preg_replace('#/hotspot$#', '', $hotspotUrl)) ?></code>.</li>
+            <li><strong>Portal page contents</strong>: upload the <em>sign-in page</em> below. It is branded, sends guests to this sign-in page, and shows a "No internet connection" page when the internet line is down.</li>
+            <li><strong>Auth error page contents</strong>: upload the <em>sign-in problem page</em> below.</li>
             <li>Allowed Hostnames: add <code><?= ht_e((string)parse_url($hotspotUrl, PHP_URL_HOST)) ?></code> so guests can reach this sign-in page before they are online.</li>
             <li>Use <strong>Overview &gt; Internet control</strong> to keep the portal on, or switch it off for open internet.</li>
         </ol>
+        <?php if ($canSettings): ?>
+        <p class="form-hint" style="margin-top:12px">Download again and re-upload after changing the logo, brand colours or help contacts: these pages are stored on pfSense.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <form method="post" action="<?= $hiAction ?>"><?= $hiHidden('download_pfsense_page', 'hotspot') ?><input type="hidden" name="page" value="portal"><button class="btn btn-primary"><i class="fas fa-download" aria-hidden="true"></i> Sign-in page (portal page)</button></form>
+            <form method="post" action="<?= $hiAction ?>"><?= $hiHidden('download_pfsense_page', 'hotspot') ?><input type="hidden" name="page" value="error"><button class="btn btn-soft"><i class="fas fa-download" aria-hidden="true"></i> Sign-in problem page (auth error page)</button></form>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 

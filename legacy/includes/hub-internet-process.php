@@ -52,6 +52,7 @@ $needs = [
     'devices_bulk' => $canControl,
     'portal_switch' => $canSwitch,
     'save_hotspot' => $canSettings,
+    'download_pfsense_page' => $canSettings,
     'register_online' => $canManage,
 ];
 if (!array_key_exists($action, $needs)) {
@@ -128,6 +129,17 @@ try {
         case 'save_hotspot':
             $r = hubinet_save_hotspot($conn, $_POST, $uid);
             hip_back('view=hotspot', $r['ok'], $r['message']);
+
+        case 'download_pfsense_page':
+            // Branded portal / error page to upload to the pfSense captive portal zone.
+            $kind = (string)($_POST['page'] ?? '') === 'error' ? 'error' : 'portal';
+            $html = hubinet_pfsense_page(hubnet_settings($conn), $kind);
+            header('Content-Type: text/html; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . ($kind === 'error' ? 'ims-portal-error.html' : 'ims-portal-page.html') . '"');
+            header('Content-Length: ' . strlen($html));
+            header('Cache-Control: no-store');
+            echo $html;
+            exit;
 
         case 'register_online':
             // A device seen online that the IMS does not know: give it to a staff member / guest, or block it.
