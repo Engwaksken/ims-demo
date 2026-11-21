@@ -31,6 +31,35 @@ $hiKindBadge = static function (string $kind): string {
         default => '<span class="badge badge-secondary">Unknown</span>',
     };
 };
+/**
+ * Internet status of a device in Online now:
+ *   registered -> what the IMS wants on pfSense (Pass / Blocked / No access), plus a pfSense error
+ *   unknown    -> its manual pfSense entry (Pass / Blocked), else portal sign-in or not signed in
+ */
+$hiStatusBadge = static function (array $o): string {
+    $d = $o['device'] ?? null;
+    if ($d) {
+        $mode = hubnet_desired_mode($d);
+        $badge = match ($mode) {
+            'pass' => '<span class="badge badge-success">Pass</span>',
+            'block' => '<span class="badge badge-danger">Blocked</span>',
+            default => '<span class="badge badge-warning" title="Access period ended, membership inactive or suspended">No access</span>',
+        };
+        if (($d['pf_state'] ?? '') === 'error') {
+            $badge .= ' <span class="badge badge-danger" title="' . ht_e((string)($d['pf_last_error'] ?? '')) . '">pfSense error</span>';
+        } elseif ($mode === 'pass' && ($d['pf_state'] ?? '') !== 'connected') {
+            $badge .= '<small class="cell-muted">applied at the next check-in</small>';
+        }
+        return $badge;
+    }
+    if (!empty($o['pf'])) {
+        return ($o['pf']['action'] === 'block' ? '<span class="badge badge-danger">Blocked</span>' : '<span class="badge badge-success">Pass</span>')
+            . '<small class="cell-muted">pfSense list</small>';
+    }
+    return !empty($o['in_portal'])
+        ? '<span class="badge badge-info">Portal sign-in</span>'
+        : '<span class="badge badge-secondary" title="Not let through: the captive portal holds this device until it signs in or is registered">Not signed in</span>';
+};
 $hiHidden = static function (string $action, string $view, int $person = 0): string {
     return csrf_field() . '<input type="hidden" name="action" value="' . ht_e($action) . '"><input type="hidden" name="return_view" value="' . ht_e($view) . '">'
         . ($person > 0 ? '<input type="hidden" name="return_person" value="' . $person . '">' : '');
@@ -459,7 +488,7 @@ elseif ($view === 'online'):
         <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
             <?= $hiHidden('devices_bulk', 'online') ?>
             <div class="table-responsive"><table class="table table-stack hr-table">
-                <thead><tr><?php if ($canControl): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all devices"></th><?php endif; ?><th>Device</th><th>Who</th><th>Type</th><th>IP</th><th>Seen</th><th></th></tr></thead>
+                <thead><tr><?php if ($canControl): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all devices"></th><?php endif; ?><th>Device</th><th>Who</th><th>Type</th><th>Status</th><th>IP</th><th>Joined</th><th></th></tr></thead>
                 <tbody>
                 <?php foreach ($online as $o): $d = $o['device']; ?>
                     <tr>
@@ -488,8 +517,17 @@ elseif ($view === 'online'):
                             <?php endif; ?>
                         </td>
                         <td data-label="Type"><?= $hiKindBadge($o['owner_kind']) ?><?= $d && !empty($d['device_type']) ? ' <small class="cell-muted">' . ht_e(HUBINET_DEVICE_TYPES[$d['device_type']] ?? 'Equipment') . '</small>' : '' ?><?= (int)$o['in_portal'] ? ' <span class="badge badge-secondary" title="Signed in through the captive portal">Portal</span>' : '' ?><?= $d && $d['access_mode'] === 'block' ? ' <span class="badge badge-danger">Blocked</span>' : '' ?></td>
+                        <td data-label="Status"><?= $hiStatusBadge($o) ?></td>
                         <td data-label="IP"><?= ht_e($o['ip_address'] ?: '-') ?></td>
-                        <td data-label="Seen"><?= !empty($o['offline']) ? '<span class="cell-muted">Not online</span>' : 'since ' . ht_e(date('H:i', strtotime((string)($o['session_started'] ?: $o['first_seen'])))) ?></td>
+                        <td data-label="Joined">
+                            <?php if (!empty($o['offline'])): ?>
+                                <span class="cell-muted">Not online</span>
+                            <?php else: $joined = (string)($o['session_started'] ?: $o['first_seen']); ?>
+                                <span title="First seen on the network"><?= ht_e(date('d M Y, H:i', strtotime($joined))) ?></span>
+                                <?php if (!empty($o['last_seen'])): ?><small class="cell-muted">last seen <?= ht_e(date('H:i', strtotime((string)$o['last_seen']))) ?></small><?php endif; ?>
+                            <?php endif; ?>
+                            <?php if ($d && !empty($d['created_at'])): ?><small class="cell-muted">registered <?= ht_e(date('d M Y', strtotime((string)$d['created_at']))) ?></small><?php endif; ?>
+                        </td>
                         <td data-label="">
                             <?php if ($d && $canControl): ?>
                                 <button type="button" class="btn btn-sm btn-soft" onclick="hiEditDevice(this)" title="Edit device"
