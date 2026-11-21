@@ -32,9 +32,9 @@
  * PULL MODE (recommended; required when the IMS is on shared hosting)
  * pfSense calls the IMS every minute, so nothing on the firewall is exposed.
  *
- *   1. Copy this file to /root/ims-cp-agent.php   (NOT /usr/local/www)
- *   2. Set IMS_AGENT_SECRET and IMS_FEED_URL below, e.g.
- *        IMS_FEED_URL = 'https://ims.example.org/hub-network-agent'
+ *   1. Copy this file, unchanged, to /root/ims-cp-agent.php   (NOT /usr/local/www)
+ *   2. Create /root/ims-cp-agent-config.php with your secret and IMS URL
+ *      (see Settings below). Updates then only replace this file.
  *   3. Test from Diagnostics > Command Prompt (or SSH):
  *        /usr/local/bin/php -f /root/ims-cp-agent.php pull
  *   4. System > Package Manager: install "Cron". Services > Cron > Add:
@@ -55,13 +55,21 @@
  */
 
 // ---- Settings -------------------------------------------------------------
-const IMS_AGENT_SECRET = 'CHANGE-ME-to-a-long-random-string';
-const IMS_FEED_URL = 'https://ims.hivecolab.com/hub-network-agent';  // pull mode
-const IMS_ALLOWED_IPS = ['192.168.1.1'];                          // push mode only
-const IMS_DEFAULT_ZONE = 'lan';
+// Put your settings in /root/ims-cp-agent-config.php (next to this file), e.g.
+//   <?php
+//   define('IMS_AGENT_SECRET', 'the same secret as in the IMS');
+//   define('IMS_FEED_URL', 'https://ims.example.org/hub-network-agent');
+// Then an update is just replacing this file: nothing to edit in it.
+if (is_file(__DIR__ . '/ims-cp-agent-config.php')) {
+    require __DIR__ . '/ims-cp-agent-config.php';
+}
+defined('IMS_AGENT_SECRET') || define('IMS_AGENT_SECRET', 'CHANGE-ME-to-a-long-random-string');
+defined('IMS_FEED_URL') || define('IMS_FEED_URL', 'https://ims.hivecolab.com/hub-network-agent');  // pull mode
+defined('IMS_ALLOWED_IPS') || define('IMS_ALLOWED_IPS', ['192.168.1.1']);                          // push mode only
+defined('IMS_DEFAULT_ZONE') || define('IMS_DEFAULT_ZONE', 'lan');
 // ---------------------------------------------------------------------------
 
-const IMS_AGENT_VERSION = '2.4';
+const IMS_AGENT_VERSION = '2.5';
 const IMS_MAX_ITEMS = 5000;
 const IMS_STATE_FILE = '/var/db/ims-cp-agent-state.json';
 const IMS_DESCR_PREFIX = 'IMS ';
@@ -69,7 +77,7 @@ const IMS_DESCR_PREFIX = 'IMS ';
 $imsCli = PHP_SAPI === 'cli';
 
 if (IMS_AGENT_SECRET === '' || strpos(IMS_AGENT_SECRET, 'CHANGE-ME') === 0) {
-    ims_fail('Agent secret is not configured in ' . __FILE__, 500);
+    ims_fail('Agent secret is not configured: create ' . __DIR__ . '/ims-cp-agent-config.php with IMS_AGENT_SECRET and IMS_FEED_URL (see the Settings comment in this file).', 500);
 }
 
 /* ------------------------------------------------------------------------ */
