@@ -529,6 +529,7 @@ elseif ($view === 'online'):
     $onlineReturn = 'view=online' . ($kindFilter !== '' ? '&kind=' . $kindFilter : '') . ($onlineQ !== '' ? '&q=' . rawurlencode($onlineQ) : '');
     $peopleForSelect = $canManage ? array_merge(hubinet_people($conn, 'staff', ['status' => 'active']), hubinet_people($conn, 'guest', ['status' => 'active'])) : [];
     $staffCandidates = $canManage ? hubinet_staff_candidates($conn) : [];
+    $hiTeamOpts = $canManage ? hubinet_team_options($conn) : [];
 ?>
 <div class="card">
     <div class="card-header"><h3><i class="fas fa-signal" aria-hidden="true"></i> Online now (<?= number_format($onlineTotal) ?>)</h3>
@@ -722,6 +723,7 @@ elseif ($view === 'online'):
                 <fieldset class="form-group"><legend>Register as</legend>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="guest" checked> New guest</label>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="staff"> New staff member</label>
+                    <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="member"> Member company (the member or one of their team)</label>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="existing"> Device of an existing staff member / guest</label>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="equipment"> Network equipment (access point, switch, printer): always online</label>
                     <label class="hr-check" style="display:flex"><input type="radio" name="register_as" value="block"> Block this device</label>
@@ -732,9 +734,23 @@ elseif ($view === 'online'):
                     <div class="form-group"><label>Phone</label><input name="phone" class="form-control" maxlength="40"></div>
                     <div class="form-group" data-reg="guest"><label>Access until</label><input type="datetime-local" name="valid_until" class="form-control" value="<?= date('Y-m-d') ?>T23:59"></div>
                 </div>
+                <div class="hr-form-grid" data-reg="member" hidden>
+                    <div class="form-group"><label for="hiRegMember" class="required">Member company</label>
+                        <input id="hiRegMemberSearch" class="form-control" placeholder="Search company, member or number…" autocomplete="off" aria-label="Search member companies" style="margin-bottom:6px">
+                        <select id="hiRegMember" name="reg_member_id" class="form-control">
+                            <option value="">Choose a member company…</option>
+                            <?php foreach ($hiMemberOpts as $hm): ?>
+                                <option value="<?= (int)$hm['member_id'] ?>"><?= ht_e(($hm['company_name'] ?: $hm['full_name'] ?: 'Member #' . $hm['member_id']) . ($hm['membership_number'] ? ' (' . $hm['membership_number'] . ')' : '') . ($hm['membership_status'] !== 'Active' ? ' - ' . $hm['membership_status'] : '')) ?></option>
+                            <?php endforeach; ?>
+                        </select></div>
+                    <div class="form-group"><label for="hiRegTeam">Person</label>
+                        <select id="hiRegTeam" name="reg_team_member_id" class="form-control"><option value="0">The member (primary contact)</option></select>
+                        <p class="form-hint">Access follows the company's membership.</p></div>
+                </div>
+                <script>window.hiTeamOpts = <?= json_encode((object)$hiTeamOpts, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
                 <div class="form-group" data-reg="existing" hidden><label>Person</label><select name="person_id" class="form-control"><?php foreach ($peopleForSelect as $pp): ?><option value="<?= (int)$pp['person_id'] ?>"><?= ht_e($pp['full_name']) ?> (<?= ht_e($pp['kind']) ?>)</option><?php endforeach; ?></select></div>
                 <div class="form-group" data-reg="equipment" hidden><label>Equipment type</label><select name="equipment_type" class="form-control"><?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?></select></div>
-                <div class="form-group" data-reg="guest staff existing equipment"><label>Device label</label><input name="label" id="hiRegLabel" class="form-control" maxlength="80" placeholder="e.g. Phone, Reception AP"></div>
+                <div class="form-group" data-reg="guest staff member existing equipment"><label>Device label</label><input name="label" id="hiRegLabel" class="form-control" maxlength="80" placeholder="e.g. Phone, Reception AP"></div>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('hiRegisterModal')">Cancel</button><button class="btn btn-primary">Save</button></div>
         </form>
@@ -748,6 +764,28 @@ elseif ($view === 'online'):
         modal.querySelectorAll('[data-reg]').forEach(function (el) { el.hidden = el.dataset.reg.split(' ').indexOf(as) === -1; });
     }
     modal.querySelectorAll('input[name=register_as]').forEach(function (r) { r.addEventListener('change', sync); });
+    // Member company: search the list, then offer the company's team members.
+    var mSel = document.getElementById('hiRegMember'), tSel = document.getElementById('hiRegTeam'), mSearch = document.getElementById('hiRegMemberSearch');
+    if (mSel && tSel) {
+        mSel.addEventListener('change', function () {
+            tSel.length = 1;
+            (window.hiTeamOpts[mSel.value] || []).forEach(function (t) { tSel.add(new Option(t.name + ' (team member)', t.id)); });
+        });
+        mSearch.addEventListener('input', function () {
+            var q = mSearch.value.trim().toLowerCase(), first = null;
+            Array.prototype.forEach.call(mSel.options, function (o, i) {
+                if (!i) return;
+                var hit = q === '' || o.text.toLowerCase().indexOf(q) > -1;
+                o.hidden = !hit;
+                if (hit && !first) first = o;
+            });
+            if (q !== '' && first && (mSel.selectedIndex < 1 || mSel.options[mSel.selectedIndex].hidden)) { mSel.value = first.value; mSel.dispatchEvent(new Event('change')); }
+        });
+        modal.querySelector('form').addEventListener('submit', function (e) {
+            var as = modal.querySelector('input[name=register_as]:checked').value;
+            if (as === 'member' && !mSel.value) { e.preventDefault(); hrAlert('Choose the member company the device belongs to.', { title: 'Member company' }); }
+        });
+    }
     window.hiRegister = function (mac, name) {
         document.getElementById('hiRegMac').textContent = mac;
         document.getElementById('hiRegMacInput').value = mac;

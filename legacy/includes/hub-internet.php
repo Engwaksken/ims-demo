@@ -1770,6 +1770,69 @@ function hubinet_member_options(mysqli $conn): array
     return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 }
 
+/** Active team members of every company: [member_id => [[id, name], ...]] (Register device picker). */
+function hubinet_team_options(mysqli $conn): array
+{
+    $out = [];
+    $res = $conn->query("SELECT team_member_id, member_id, full_name FROM hub_team_members
+                          WHERE status = 'Active' ORDER BY full_name LIMIT 5000");
+    if ($res) {
+        foreach ($res->fetch_all(MYSQLI_ASSOC) as $t) {
+            $out[(int)$t['member_id']][] = ['id' => (int)$t['team_member_id'], 'name' => (string)$t['full_name']];
+        }
+    }
+    return $out;
+}
+
+/**
+ * Registers one device seen online to a member company: the member's own
+ * device, or a device of one of its team members. Access follows the
+ * membership ("auto").
+ */
+function hubinet_register_member_device(mysqli $conn, string $mac, int $memberId, int $teamMemberId, string $label, int $uid): array
+{
+    $mac = hubnet_normalize_mac($mac);
+    if ($mac === '') {
+        return hubinet_result(false, 'Invalid MAC address.');
+    }
+    $member = hubnet_member($conn, $memberId);
+    if (!$member) {
+        return hubinet_result(false, 'Choose the member company the device belongs to.');
+    }
+    $who = (string)($member['company_name'] ?? '') ?: (string)($member['full_name'] ?? '') ?: 'the member';
+    if ($teamMemberId > 0) {
+        $stmt = $conn->prepare('SELECT full_name FROM hub_team_members WHERE team_member_id = ? AND member_id = ? LIMIT 1');
+        $stmt->bind_param('ii', $teamMemberId, $memberId);
+        $stmt->execute();
+        $tm = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (!$tm) {
+            return hubinet_result(false, 'That person is not on this company\'s team.');
+        }
+        $who = $tm['full_name'] . ' (' . $who . ')';
+    }
+    $taken = hubnet_devices_where($conn, 'd.mac_address = ?', 's', [$mac]);
+    if ($taken) {
+        return hubinet_result(false, $mac . ' is already registered to ' . ($taken[0]['person_name'] ?? 'someone') . '.');
+    }
+    $label = mb_substr(trim($label), 0, 80);
+    $tmId = $teamMemberId > 0 ? $teamMemberId : null;
+    $stmt = $conn->prepare("INSERT INTO hub_network_devices (member_id, team_member_id, person_id, mac_address, label, access_mode, created_by)
+                            VALUES (?, ?, NULL, ?, NULLIF(?, ''), 'auto', NULLIF(?, 0))");
+    $stmt->bind_param('iissi', $memberId, $tmId, $mac, $label, $uid);
+    $ok = $stmt->execute();
+    $deviceId = (int)$stmt->insert_id;
+    $stmt->close();
+    if (!$ok || $deviceId <= 0) {
+        return hubinet_result(false, 'The device could not be saved.');
+    }
+    $net = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $uid, 'register');
+    if (function_exists('log_action')) {
+        log_action($uid, 'Register online device to member', 'hub_network_devices', $deviceId, $mac . ' -> ' . $who);
+    }
+    return hubinet_result(true, 'Device ' . $mac . ' registered to ' . $who . '. ' . $net['message']);
+}
+
 /**
  * Moves a guest (or staff entry) and their devices to a hub member: as a team
  * member of that company (uses a seat), or as the member's own devices.

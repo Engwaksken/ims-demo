@@ -338,6 +338,10 @@ try {
                 $r = hubinet_add_device($conn, (int)($_POST['person_id'] ?? 0), $mac, (string)($_POST['label'] ?? ''), $uid);
                 hip_back($returnQuery, $r['ok'], $r['message']);
             }
+            if ($as === 'member') {
+                $r = hubinet_register_member_device($conn, $mac, (int)($_POST['reg_member_id'] ?? 0), (int)($_POST['reg_team_member_id'] ?? 0), (string)($_POST['label'] ?? ''), $uid);
+                hip_back($returnQuery, $r['ok'], $r['message']);
+            }
             if ($as === 'block' || $as === 'guest' || $as === 'staff') {
                 $post = [
                     'kind' => $as === 'staff' ? 'staff' : 'guest',
