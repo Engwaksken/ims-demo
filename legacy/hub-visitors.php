@@ -404,6 +404,24 @@ $purposes = ['Meeting','Event','Co-working','Training','Consultation','Tour','In
                                 <a href="?edit=<?php echo $v['visitor_id']; ?>" class="btn btn-warning btn-sm" title="Edit">
                                     <i class="fas fa-edit" aria-hidden="true"></i>
                                 </a>
+                                <?php if (!empty($v['self_registered'])): ?>
+                                    <a href="includes/hub-visitors-process.php?approve_self_reg=<?= (int)$v['visitor_id'] ?>&amp;csrf_token=<?= h(csrf_token()) ?>" class="btn btn-success btn-sm" title="Approve self-registration">
+                                        <i class="fas fa-check" aria-hidden="true"></i>
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (empty($v['is_member'])): ?>
+                                    <a href="includes/hub-visitors-process.php?mark_member=<?= (int)$v['visitor_id'] ?>&amp;csrf_token=<?= h(csrf_token()) ?>" class="btn btn-soft btn-sm" title="Mark as hub member">
+                                        <i class="fas fa-user-check" aria-hidden="true"></i>
+                                    </a>
+                                <?php endif; ?>
+                                <?php if (filter_var((string)($v['email'] ?? ''), FILTER_VALIDATE_EMAIL)): ?>
+                                    <form method="post" action="includes/hub-visitors-process.php" class="ht-inline" style="display:inline" data-confirm="Send a welcome email to <?= h((string)$v['email']) ?>?" data-confirm-title="Welcome email" data-confirm-ok="Send">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="send_welcome_email" value="1">
+                                        <input type="hidden" name="visitor_id" value="<?= (int)$v['visitor_id'] ?>">
+                                        <button type="submit" class="btn btn-soft btn-sm" title="Send welcome email"><i class="fas fa-envelope" aria-hidden="true"></i></button>
+                                    </form>
+                                <?php endif; ?>
                                 <?php if (ims_allowed('hub_visitors.delete', ['Administrator'], 'Delete hub visitors')): ?>
                                     <a href="javascript:void(0)"
                                        onclick="confirmDelete(<?= htmlspecialchars(json_encode((string)($v['visitor_name'])), ENT_QUOTES, 'UTF-8') ?>,'includes/hub-visitors-process.php?delete=<?php echo (int)$v['visitor_id']; ?>&csrf_token=<?= h(csrf_token()) ?>')"

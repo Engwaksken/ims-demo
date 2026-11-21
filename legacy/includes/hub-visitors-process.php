@@ -1,7 +1,9 @@
 <?php
 
-session_start();
-require_once 'config.php';      
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/config.php';      
 
 
 
@@ -62,7 +64,7 @@ if (!isset($_SESSION['user_id']) || !ims_allowed('hub_visitors.manage', ['Admini
 }
 
 $user_id = (int) $_SESSION['user_id'];
-$role    = $_SESSION['role'];
+$role    = (string)($_SESSION['role'] ?? '');
 
 // -----------------------------------------------------------------------------
 // ADD VISITOR
@@ -508,11 +510,51 @@ if (isset($_POST['send_welcome_email'])) {
     }
     $chk->close();
 
-    if (empty($v_email)) {
-        hv_redirect("$v_name has no email address on record.", false);
+    if (empty($v_email) || !filter_var($v_email, FILTER_VALIDATE_EMAIL)) {
+        hv_redirect("$v_name has no valid email address on record.", false);
     }
 
-  
+    if (!function_exists('sendEmail')) {
+        require_once __DIR__ . '/mail-function.php';
+    }
+
+    $brand   = function_exists('ims_brand') ? ims_brand() : [];
+    $org     = (string)($brand['name'] ?? 'our hub');
+    $esc     = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+    $subject = 'Welcome to ' . $org;
+    $text    = "Dear $v_name,
+
+Thank you for visiting $org. It was a pleasure to welcome you, and we hope to see you again soon.
+
+"
+             . "If you would like to know more about membership, co-working space, events or programmes, simply reply to this email.
+
+"
+             . "Kind regards,
+$org";
+    $contact = array_filter([
+        !empty($brand['phone']) ? 'Phone: ' . $esc($brand['phone']) : '',
+        !empty($brand['email']) ? 'Email: ' . $esc($brand['email']) : '',
+        !empty($brand['website']) ? '<a href="' . $esc($brand['website']) . '">' . $esc($brand['website_label'] ?? $brand['website']) . '</a>' : '',
+    ]);
+    $html    = '<p>Dear ' . $esc($v_name) . ',</p>'
+             . '<p>Thank you for visiting <strong>' . $esc($org) . '</strong>. It was a pleasure to welcome you, and we hope to see you again soon.</p>'
+             . '<p>If you would like to know more about membership, co-working space, events or programmes, simply reply to this email.</p>'
+             . '<p>Kind regards,<br>' . $esc($org) . '</p>'
+             . ($contact ? '<p style="color:#6b7280;font-size:13px">' . implode(' &middot; ', $contact) . '</p>' : '');
+    if (function_exists('email_wrapper')) {
+        $html = email_wrapper($html);
+    }
+
+    try {
+        $sent = function_exists('sendEmail') ? sendEmail($v_email, $subject, $html, $text) : 'Email is not available on this server.';
+    } catch (Throwable $e) {
+        $sent = $e->getMessage();
+    }
+    if ($sent !== true) {
+        error_log('[hub-visitors] welcome email to ' . $v_email . ': ' . (is_string($sent) ? $sent : 'failed'));
+        hv_redirect('The welcome email could not be sent' . (is_string($sent) && $sent !== '' ? ': ' . $sent : '.') . ' Check Settings > Email.', false);
+    }
 
     log_action($user_id, 'Send Welcome Email', 'hub_visitors', $visitor_id,
         "Sent welcome email to $v_name ($v_email)");
