@@ -704,6 +704,7 @@ elseif ($memberId > 0):
                                     <?= !empty($device['label']) ? '<span>' . ht_e($device['label']) . '</span>' : '' ?>
                                     <?= ht_state_badge($device) ?>
                                     <span class="cell-muted"><?= ht_e(ht_mode_label((string)$device['access_mode'])) ?></span>
+                                    <?= hubinet_speed_cell($device, $canControl, 'member_id=' . $memberId) ?>
                                     <?php if ($canControl): ?>
                                         <?php if ($device['access_mode'] !== 'block'): ?>
                                             <?= ht_access_form('device', (int)$device['device_id'], 'block', 'Disconnect', 'fa-ban', 'btn-danger', $memberId) ?>
@@ -1029,10 +1030,10 @@ else:
 
             <div class="table-responsive">
                 <table class="table">
-                    <thead><tr><th>Person</th><th>Company / type</th><th>Device</th><th>Mode</th><th>pfSense</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Person</th><th>Company / type</th><th>Device</th><th>Mode</th><th>Speed</th><th>pfSense</th><th>Actions</th></tr></thead>
                     <tbody>
                     <?php if ($devices === []): ?>
-                        <tr><td colspan="6"><div class="empty-state"><i class="fas fa-laptop" aria-hidden="true"></i><p>No devices registered<?= $hasDeviceFilter ? ' match the filter' : ' yet. Open a company\'s Team page to add people and devices' ?>.</p></div></td></tr>
+                        <tr><td colspan="7"><div class="empty-state"><i class="fas fa-laptop" aria-hidden="true"></i><p>No devices registered<?= $hasDeviceFilter ? ' match the filter' : ' yet. Open a company\'s Team page to add people and devices' ?>.</p></div></td></tr>
                     <?php endif; ?>
                     <?php foreach ($devices as $device): $expected = hubnet_state_for_mode(hubnet_desired_mode($device)); ?>
                         <tr>
@@ -1045,6 +1046,7 @@ else:
                             <?php endif; ?>
                             <td><code><?= ht_e($device['mac_address']) ?></code><?= !empty($device['label']) ? '<small class="cell-muted">' . ht_e($device['label']) . '</small>' : '' ?></td>
                             <td><?= ht_e(ht_mode_label((string)$device['access_mode'])) ?></td>
+                            <td><?= hubinet_speed_cell($device, $canControl, 'view=companies&tab=devices') ?></td>
                             <td><?= ht_state_badge($device) ?><?= $device['pf_state'] !== $expected ? '<small class="cell-muted">Should be ' . ht_e($expected) . '</small>' : '' ?></td>
                             <td>
                                 <div class="ht-actions">
@@ -1068,6 +1070,66 @@ else:
         </section>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if ($canControl && $ready): ?>
+<!-- Speed limit for one device or several (hubinet_speed_cell / hiSpeedBulk) -->
+<div id="hiSpeedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hiSpeedTitle" aria-hidden="true">
+    <div class="modal-content" style="max-width:460px">
+        <div class="modal-header"><h3 id="hiSpeedTitle">Speed limit</h3><button type="button" class="close" aria-label="Close" onclick="closeModal('hiSpeedModal')">&times;</button></div>
+        <form method="post" action="includes/hub-internet-process.php" id="hiSpeedForm">
+            <div class="modal-body">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="device_speed">
+                <input type="hidden" name="return_query" id="hiSpeedReturn" value="">
+                <div id="hiSpeedIds"></div>
+                <p class="cell-muted" id="hiSpeedFor" style="margin-top:0"></p>
+                <div class="form-row">
+                    <div class="form-group"><label for="hiSpeedDown"><i class="fas fa-arrow-down" aria-hidden="true"></i> Download (Mbps)</label><input id="hiSpeedDown" name="bw_down" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
+                    <div class="form-group"><label for="hiSpeedUp"><i class="fas fa-arrow-up" aria-hidden="true"></i> Upload (Mbps)</label><input id="hiSpeedUp" name="bw_up" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+                    <?php foreach ([[2, 1], [5, 2], [10, 5], [20, 10], [50, 20]] as [$pd, $pu]): ?>
+                        <button type="button" class="btn btn-sm btn-soft" onclick="hiSpeedPreset(<?= $pd ?>, <?= $pu ?>)"><?= $pd ?>/<?= $pu ?></button>
+                    <?php endforeach; ?>
+                    <button type="button" class="btn btn-sm btn-soft" onclick="hiSpeedPreset('', '')">No limit</button>
+                </div>
+                <p class="form-hint">Leave a box empty for no limit in that direction. pfSense applies the change at its next check-in (about a minute). Needs pfSense agent 2.2.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('hiSpeedModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save speed</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function () {
+    function open(ids, name, down, up, ret) {
+        var box = document.getElementById('hiSpeedIds');
+        box.innerHTML = '';
+        ids.forEach(function (id) { var i = document.createElement('input'); i.type = 'hidden'; i.name = 'ids[]'; i.value = id; box.appendChild(i); });
+        document.getElementById('hiSpeedFor').textContent = name;
+        document.getElementById('hiSpeedDown').value = down || '';
+        document.getElementById('hiSpeedUp').value = up || '';
+        document.getElementById('hiSpeedReturn').value = ret || '';
+        openModal('hiSpeedModal');
+    }
+    window.hiSpeed = function (btn) {
+        open([btn.dataset.ids], 'Device ' + btn.dataset.name, btn.dataset.down, btn.dataset.up, btn.dataset.return);
+    };
+    window.hiSpeedBulk = function (btn, ret) {
+        var form = btn.closest('form');
+        var ids = Array.prototype.map.call(form.querySelectorAll('input.hr-sel[name="ids[]"]:checked'), function (c) { return c.value; });
+        if (!ids.length) return;
+        open(ids, ids.length + ' selected device' + (ids.length === 1 ? '' : 's'), '', '', ret);
+    };
+    window.hiSpeedPreset = function (down, up) {
+        document.getElementById('hiSpeedDown').value = down;
+        document.getElementById('hiSpeedUp').value = up;
+    };
+})();
+</script>
 <?php endif; ?>
 
 <?php if ($canRemind && ($view === 'settings' || $memberId > 0)): ?>

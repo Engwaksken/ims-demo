@@ -144,6 +144,14 @@ if (!function_exists('hubnet_ensure_schema')) {
                 ['hub_network_settings', 'hotspot_help_phone', 'VARCHAR(40) NULL'],
                 ['hub_network_settings', 'hotspot_help_email', 'VARCHAR(190) NULL'],
                 ['hub_network_settings', 'hotspot_help_whatsapp', 'VARCHAR(40) NULL'],
+                // Speed limits (Kbit/s, NULL = no limit): per device, the default for new
+                // hotspot guests, and per voucher batch.
+                ['hub_network_devices', 'bw_down_kbps', 'INT UNSIGNED NULL'],
+                ['hub_network_devices', 'bw_up_kbps', 'INT UNSIGNED NULL'],
+                ['hub_network_settings', 'hotspot_bw_down_kbps', 'INT UNSIGNED NULL'],
+                ['hub_network_settings', 'hotspot_bw_up_kbps', 'INT UNSIGNED NULL'],
+                ['hub_network_vouchers', 'bw_down_kbps', 'INT UNSIGNED NULL'],
+                ['hub_network_vouchers', 'bw_up_kbps', 'INT UNSIGNED NULL'],
             ];
 
             foreach ($addColumns as [$table, $column, $definition]) {
@@ -220,6 +228,8 @@ if (!function_exists('hubnet_ensure_schema')) {
                     used_at DATETIME NULL,
                     valid_until DATETIME NULL,
                     revoked_at DATETIME NULL,
+                    bw_down_kbps INT UNSIGNED NULL,
+                    bw_up_kbps INT UNSIGNED NULL,
                     created_by INT NULL,
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (voucher_id),
@@ -488,6 +498,48 @@ if (!function_exists('hubnet_device_sql')) {
     }
 }
 
+if (!function_exists('hubnet_device_bw')) {
+    /**
+     * Speed limit sent to pfSense with a "pass" entry, in Kbit/s (pfSense's
+     * MAC entry "Bandwidth up/down" fields). Empty = no limit.
+     */
+    function hubnet_device_bw(array $device, string $mode): array
+    {
+        if ($mode !== 'pass') {
+            return [];
+        }
+        $down = (int)($device['bw_down_kbps'] ?? 0);
+        $up = (int)($device['bw_up_kbps'] ?? 0);
+        return array_filter(['bw_down' => $down, 'bw_up' => $up], fn($v) => $v > 0);
+    }
+}
+
+if (!function_exists('hubnet_mbps_label')) {
+    /** "10" / "0.5" Mbps from Kbit/s; '' for no limit. */
+    function hubnet_mbps_label(?int $kbps): string
+    {
+        if (!$kbps) {
+            return '';
+        }
+        return rtrim(rtrim(number_format($kbps / 1000, 2, '.', ''), '0'), '.');
+    }
+}
+
+if (!function_exists('hubnet_parse_mbps')) {
+    /** Mbps typed by a user ("10", "0.5", "") to Kbit/s; null = no limit, false = invalid. */
+    function hubnet_parse_mbps(mixed $value): int|null|false
+    {
+        $value = trim(str_replace(',', '.', (string)$value));
+        if ($value === '' || $value === '0') {
+            return null;
+        }
+        if (!is_numeric($value) || (float)$value < 0.064 || (float)$value > 10000) {
+            return false;
+        }
+        return (int)round((float)$value * 1000);
+    }
+}
+
 /* ---------------------------------------------------------------------
 | Settings and the pfSense agent
 --------------------------------------------------------------------- */
@@ -528,6 +580,8 @@ if (!function_exists('hubnet_settings')) {
             'hotspot_help_phone' => (string)($row['hotspot_help_phone'] ?? ''),
             'hotspot_help_email' => (string)($row['hotspot_help_email'] ?? ''),
             'hotspot_help_whatsapp' => (string)($row['hotspot_help_whatsapp'] ?? ''),
+            'hotspot_bw_down_kbps' => (int)($row['hotspot_bw_down_kbps'] ?? 0),
+            'hotspot_bw_up_kbps' => (int)($row['hotspot_bw_up_kbps'] ?? 0),
         ];
     }
 }
@@ -671,7 +725,7 @@ if (!function_exists('hubnet_apply')) {
                 'mac' => $mac,
                 'mode' => $mode,
                 'descr' => hubnet_device_descr($device),
-            ];
+            ] + hubnet_device_bw($device, $mode);
             $byMac[$mac] = ['device' => $device, 'mode' => $mode];
         }
 
@@ -861,7 +915,8 @@ if (!function_exists('hubnet_feed')) {
             $mac = hubnet_normalize_mac((string)$device['mac_address']);
 
             if ($mac !== '') {
-                $items[] = ['mac' => $mac, 'mode' => hubnet_desired_mode($device), 'descr' => hubnet_device_descr($device)];
+                $mode = hubnet_desired_mode($device);
+                $items[] = ['mac' => $mac, 'mode' => $mode, 'descr' => hubnet_device_descr($device)] + hubnet_device_bw($device, $mode);
             }
         }
 

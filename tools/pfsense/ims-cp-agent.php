@@ -10,6 +10,9 @@
  * Entries the IMS created have a description starting with "IMS "; entries
  * you add by hand in pfSense are never touched.
  *
+ * 2.2 adds: per-device speed limits. "pass" entries carry the Bandwidth
+ *   down/up (Kbit/s) set in the IMS; pfSense applies them with limiters.
+ *
  * 2.1 adds:
  *   - the internet switch: the IMS can enforce the captive portal ("on") or
  *     switch it off for open internet ("off"); empty leaves it as configured
@@ -52,7 +55,7 @@ const IMS_ALLOWED_IPS = ['192.168.1.1'];                          // push mode o
 const IMS_DEFAULT_ZONE = 'lan';
 // ---------------------------------------------------------------------------
 
-const IMS_AGENT_VERSION = '2.1';
+const IMS_AGENT_VERSION = '2.2';
 const IMS_MAX_ITEMS = 5000;
 const IMS_STATE_FILE = '/var/db/ims-cp-agent-state.json';
 const IMS_DESCR_PREFIX = 'IMS ';
@@ -241,7 +244,15 @@ function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string
             if (strpos($descr, $prefix) !== 0) {
                 $descr = substr($prefix . $descr, 0, 120);
             }
-            $wanted[$mac] = ['mode' => $mode, 'descr' => $descr];
+            // 2.2: speed limit in Kbit/s for "pass" entries (pfSense MAC entry bw_down / bw_up).
+            $bw = [];
+            foreach (['bw_down', 'bw_up'] as $key) {
+                $kbit = (int)($item[$key] ?? 0);
+                if ($mode === 'pass' && $kbit > 0 && $kbit <= 10000000) {
+                    $bw[$key] = (string)$kbit;
+                }
+            }
+            $wanted[$mac] = ['mode' => $mode, 'descr' => $descr, 'bw' => $bw];
         }
     }
 
@@ -265,8 +276,12 @@ function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string
 
         if (isset($wanted[$mac]) && $wanted[$mac]['mode'] !== 'remove' && !isset($seen[$mac])) {
             $target = ['action' => $wanted[$mac]['mode'], 'mac' => $mac, 'descr' => $wanted[$mac]['descr']];
-            if (($entry['action'] ?? 'pass') !== $target['action'] || ($entry['descr'] ?? '') !== $target['descr']) {
-                $entry = array_merge($entry, $target);
+            $bw = $wanted[$mac]['bw'];
+            $bwChanged = (string)($entry['bw_down'] ?? '') !== ($bw['bw_down'] ?? '')
+                || (string)($entry['bw_up'] ?? '') !== ($bw['bw_up'] ?? '');
+            if (($entry['action'] ?? 'pass') !== $target['action'] || ($entry['descr'] ?? '') !== $target['descr'] || $bwChanged) {
+                unset($entry['bw_down'], $entry['bw_up']);
+                $entry = array_merge($entry, $target, $bw);
                 $changed = true;
             }
             $kept[] = $entry;
@@ -284,7 +299,7 @@ function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string
 
     foreach ($wanted as $mac => $want) {
         if ($want['mode'] !== 'remove' && !isset($seen[$mac])) {
-            $kept[] = ['action' => $want['mode'], 'mac' => $mac, 'descr' => $want['descr']];
+            $kept[] = ['action' => $want['mode'], 'mac' => $mac, 'descr' => $want['descr']] + $want['bw'];
             $changed = true;
         }
 

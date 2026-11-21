@@ -384,8 +384,20 @@ function hubinet_add_devices(mysqli $conn, int $personId, array $devices, int $u
 }
 
 /** Registers a device (MAC) for a staff member or guest. $apply=false when the caller applies a batch. */
-function hubinet_add_device(mysqli $conn, int $personId, string $mac, string $label, int $uid, string $mode = 'auto', bool $apply = true): array
+function hubinet_add_device(mysqli $conn, int $personId, string $mac, string $label, int $uid, string $mode = 'auto', bool $apply = true, ?array $bw = null): array
 {
+    if ($bw !== null) {
+        // Speed limit for the new device ([down, up] in Kbit/s): register without applying, set it, then apply.
+        $r = hubinet_add_device($conn, $personId, $mac, $label, $uid, $mode, false);
+        if (!$r['ok']) {
+            return $r;
+        }
+        hubinet_set_device_bw($conn, [(int)$r['device_id']], $bw[0] ?? null, $bw[1] ?? null);
+        if ($apply) {
+            hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [(int)$r['device_id']]), $uid, 'add');
+        }
+        return $r;
+    }
     $person = hubinet_person($conn, $personId);
     if (!$person) {
         return hubinet_result(false, 'Person not found.');
@@ -419,6 +431,55 @@ function hubinet_add_device(mysqli $conn, int $personId, string $mac, string $la
     }
     $applied = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $uid, 'add');
     return hubinet_result(true, 'Device ' . $mac . ' registered. ' . $applied['message'], ['device_id' => $deviceId]);
+}
+
+/** Sets the speed limit (Kbit/s, null = no limit) of devices. Returns the number changed. */
+function hubinet_set_device_bw(mysqli $conn, array $deviceIds, ?int $downKbps, ?int $upKbps): int
+{
+    $ids = array_values(array_unique(array_filter(array_map('intval', $deviceIds), fn($i) => $i > 0)));
+    if (!$ids) {
+        return 0;
+    }
+    $marks = implode(',', array_fill(0, count($ids), '?'));
+    $stmt = $conn->prepare("UPDATE hub_network_devices SET bw_down_kbps = NULLIF(?, 0), bw_up_kbps = NULLIF(?, 0) WHERE device_id IN ($marks)");
+    $down = (int)$downKbps;
+    $up = (int)$upKbps;
+    $stmt->bind_param('ii' . str_repeat('i', count($ids)), $down, $up, ...$ids);
+    $stmt->execute();
+    $n = $stmt->affected_rows;
+    $stmt->close();
+    return $n;
+}
+
+/** "↓ 10 / ↑ 5 Mbps", or "No limit". */
+function hubinet_speed_label(array $device): string
+{
+    $down = hubnet_mbps_label(isset($device['bw_down_kbps']) ? (int)$device['bw_down_kbps'] : null);
+    $up = hubnet_mbps_label(isset($device['bw_up_kbps']) ? (int)$device['bw_up_kbps'] : null);
+    if ($down === '' && $up === '') {
+        return 'No limit';
+    }
+    return '↓ ' . ($down !== '' ? $down : '∞') . ' / ↑ ' . ($up !== '' ? $up : '∞') . ' Mbps';
+}
+
+/**
+ * Speed shown in device tables; with $canEdit a button that opens the speed
+ * modal (hub-team.php, #hiSpeedModal). $returnQuery: where to come back to.
+ */
+function hubinet_speed_cell(array $device, bool $canEdit, string $returnQuery): string
+{
+    $label = hubinet_speed_label($device);
+    $text = $label === 'No limit' ? '<span class="cell-muted">No limit</span>' : hubinet_h($label);
+    if (!$canEdit || empty($device['device_id'])) {
+        return $text;
+    }
+    return '<button type="button" class="btn btn-sm btn-soft hi-speed-btn" onclick="hiSpeed(this)" title="Set speed limit"'
+        . ' data-ids="' . (int)$device['device_id'] . '"'
+        . ' data-name="' . hubinet_h((string)$device['mac_address']) . '"'
+        . ' data-down="' . hubinet_h(hubnet_mbps_label(isset($device['bw_down_kbps']) ? (int)$device['bw_down_kbps'] : null)) . '"'
+        . ' data-up="' . hubinet_h(hubnet_mbps_label(isset($device['bw_up_kbps']) ? (int)$device['bw_up_kbps'] : null)) . '"'
+        . ' data-return="' . hubinet_h($returnQuery) . '">'
+        . '<i class="fas fa-gauge-high" aria-hidden="true"></i> ' . $text . '</button>';
 }
 
 /** Deletes a person and their devices (pfSense entries are removed first in push mode). */
@@ -567,12 +628,19 @@ function hubinet_save_hotspot(mysqli $conn, array $post, int $uid): array
     if ($helpEmail !== '' && !filter_var($helpEmail, FILTER_VALIDATE_EMAIL)) {
         return hubinet_result(false, 'The help email address is not valid.');
     }
+    // Default speed limit for devices that sign in on the hotspot (Mbps in the form).
+    $guestDown = hubnet_parse_mbps($post['hotspot_bw_down'] ?? '');
+    $guestUp = hubnet_parse_mbps($post['hotspot_bw_up'] ?? '');
+    if ($guestDown === false || $guestUp === false) {
+        return hubinet_result(false, 'Guest speed limits must be in Mbps (e.g. 5 or 0.5), or empty for no limit.');
+    }
 
     $sets = ['hotspot_enabled = ?', 'hotspot_hours = ?', 'hotspot_require_phone = ?', 'hotspot_terms = ?', 'wifi_ssid = ?', 'wifi_security = ?',
         'hotspot_landing_url = NULLIF(?, \'\')', 'hotspot_verify = ?',
-        'hotspot_help = NULLIF(?, \'\')', 'hotspot_help_phone = NULLIF(?, \'\')', 'hotspot_help_email = NULLIF(?, \'\')', 'hotspot_help_whatsapp = NULLIF(?, \'\')'];
-    $types = 'iiissssissss';
-    $params = [$enabled, $hours, $requirePhone, $terms, $ssid, $security, $landing, $verify, $help, $helpPhone, $helpEmail, $helpWhatsapp];
+        'hotspot_help = NULLIF(?, \'\')', 'hotspot_help_phone = NULLIF(?, \'\')', 'hotspot_help_email = NULLIF(?, \'\')', 'hotspot_help_whatsapp = NULLIF(?, \'\')',
+        'hotspot_bw_down_kbps = NULLIF(?, 0)', 'hotspot_bw_up_kbps = NULLIF(?, 0)'];
+    $types = 'iiissssissssii';
+    $params = [$enabled, $hours, $requirePhone, $terms, $ssid, $security, $landing, $verify, $help, $helpPhone, $helpEmail, $helpWhatsapp, (int)$guestDown, (int)$guestUp];
     // Passwords change only when a new one is typed (or cleared explicitly).
     $newPass = (string)($post['hotspot_password'] ?? '');
     if ($newPass !== '' || !empty($post['clear_hotspot_password'])) {
@@ -1016,7 +1084,7 @@ function hubinet_hotspot_signin(mysqli $conn, array $post, string $mac, string $
     }
     $personId = (int)$stmt->insert_id;
     $stmt->close();
-    $dev = hubinet_add_device($conn, $personId, $mac, 'Hotspot', 0);
+    $dev = hubinet_add_device($conn, $personId, $mac, 'Hotspot', 0, 'auto', true, [$settings['hotspot_bw_down_kbps'], $settings['hotspot_bw_up_kbps']]);
     if (!$dev['ok']) {
         return $dev;
     }
@@ -1235,10 +1303,17 @@ function hubinet_create_vouchers(mysqli $conn, array $post, int $uid): array
     if ($days < 1 || $days > 365) {
         return hubinet_result(false, 'Vouchers must be usable for 1 to 365 days.');
     }
+    $bwDown = hubnet_parse_mbps($post['bw_down'] ?? '');
+    $bwUp = hubnet_parse_mbps($post['bw_up'] ?? '');
+    if ($bwDown === false || $bwUp === false) {
+        return hubinet_result(false, 'Speed limits must be in Mbps (e.g. 5 or 0.5), or empty for the hotspot default.');
+    }
+    $bwDown = (int)$bwDown;
+    $bwUp = (int)$bwUp;
     $batch = date('ymd-His');
     $expires = date('Y-m-d 23:59:59', strtotime('+' . ($days - 1) . ' days'));
-    $stmt = $conn->prepare('INSERT IGNORE INTO hub_network_vouchers (code, batch, hours, max_devices, note, expires_at, created_by)
-                            VALUES (?, ?, ?, ?, NULLIF(?, \'\'), ?, ?)');
+    $stmt = $conn->prepare('INSERT IGNORE INTO hub_network_vouchers (code, batch, hours, max_devices, note, expires_at, bw_down_kbps, bw_up_kbps, created_by)
+                            VALUES (?, ?, ?, ?, NULLIF(?, \'\'), ?, NULLIF(?, 0), NULLIF(?, 0), ?)');
     $made = 0;
     $alphabet = HUBINET_VOUCHER_ALPHABET;
     for ($tries = 0; $made < $qty && $tries < $qty * 5; $tries++) {
@@ -1246,7 +1321,7 @@ function hubinet_create_vouchers(mysqli $conn, array $post, int $uid): array
         for ($i = 0; $i < 8; $i++) {
             $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
         }
-        $stmt->bind_param('ssiissi', $code, $batch, $hours, $devices, $note, $expires, $uid);
+        $stmt->bind_param('ssiissiii', $code, $batch, $hours, $devices, $note, $expires, $bwDown, $bwUp, $uid);
         if ($stmt->execute() && $stmt->affected_rows === 1) {
             $made++;
         }
@@ -1425,9 +1500,10 @@ function hubinet_redeem_voucher(mysqli $conn, array $voucher, string $mac, strin
             $stmt->bind_param('isi', $pid, $label, $devId);
             $stmt->execute();
             $stmt->close();
+            hubinet_set_device_bw($conn, [$devId], ...hubinet_voucher_bw($conn, $voucher));
             hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$devId]), 0, 'voucher');
         } else {
-            $r = hubinet_add_device($conn, $pid, $mac, $label, 0);
+            $r = hubinet_add_device($conn, $pid, $mac, $label, 0, 'auto', true, hubinet_voucher_bw($conn, $voucher));
             if (!$r['ok']) {
                 return $r;
             }
@@ -1470,15 +1546,26 @@ function hubinet_redeem_voucher(mysqli $conn, array $voucher, string $mac, strin
     }
 
     if ($dev) {
+        hubinet_set_device_bw($conn, [(int)$dev['device_id']], ...hubinet_voucher_bw($conn, $voucher));
         hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [(int)$dev['device_id']]), 0, 'voucher');
     } else {
-        $r = hubinet_add_device($conn, $pid, $mac, $label, 0);
+        $r = hubinet_add_device($conn, $pid, $mac, $label, 0, 'auto', true, hubinet_voucher_bw($conn, $voucher));
         if (!$r['ok']) {
             return $r;
         }
     }
     hubnet_log($conn, null, $mac, 'voucher:signin', true, $label . ' ' . $name . ' ' . $ip, 0);
     return hubinet_result(true, 'Welcome, ' . $name . '!', ['until' => $until]);
+}
+
+/** Speed limit for voucher devices: the voucher's own, else the hotspot default. [down, up] Kbit/s. */
+function hubinet_voucher_bw(mysqli $conn, array $voucher): array
+{
+    if ((int)($voucher['bw_down_kbps'] ?? 0) > 0 || (int)($voucher['bw_up_kbps'] ?? 0) > 0) {
+        return [(int)($voucher['bw_down_kbps'] ?? 0) ?: null, (int)($voucher['bw_up_kbps'] ?? 0) ?: null];
+    }
+    $settings = hubnet_settings($conn);
+    return [$settings['hotspot_bw_down_kbps'] ?: null, $settings['hotspot_bw_up_kbps'] ?: null];
 }
 
 /** Forget unknown devices from the online list (they come back if still connected). */

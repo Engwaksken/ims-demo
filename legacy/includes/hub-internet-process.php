@@ -26,6 +26,10 @@ function hip_back(string $query, bool $ok, string $message): never
 $views = ['overview', 'staff', 'guests', 'devices', 'online', 'hotspot', 'vouchers'];
 $returnView = in_array($_POST['return_view'] ?? '', $views, true) ? (string)$_POST['return_view'] : 'overview';
 $returnQuery = 'view=' . $returnView . ((int)($_POST['return_person'] ?? 0) > 0 ? '&person=' . (int)$_POST['return_person'] : '');
+// Forms used on several pages (the speed modal) say where to come back to.
+if (preg_match('/\A[A-Za-z0-9_]+=[A-Za-z0-9_=&-]{0,150}\z/', (string)($_POST['return_query'] ?? ''))) {
+    $returnQuery = (string)$_POST['return_query'];
+}
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' || empty($_SESSION['user_id'])) {
     hip_back('', false, 'Unauthorized request.');
@@ -61,6 +65,7 @@ $needs = [
     'download_pfsense_page' => $canSettings,
     'register_online' => $canManage,
     'unknown_bulk' => $canControl,
+    'device_speed' => $canControl,
     'create_vouchers' => $canVouchers,
     'vouchers_bulk' => $canVouchers,
 ];
@@ -137,7 +142,7 @@ try {
 
         case 'save_hotspot':
             $r = hubinet_save_hotspot($conn, $_POST, $uid);
-            hip_back('view=hotspot', $r['ok'], $r['message']);
+            hip_back('view=hotspot&tab=settings', $r['ok'], $r['message']);
 
         case 'download_pfsense_page':
             // Branded portal / error page to upload to the pfSense captive portal zone.
@@ -183,6 +188,23 @@ try {
             hip_back($returnQuery, $failed === [], $blocked . ' device(s) blocked and disconnected.'
                 . ($failed ? ' Could not block: ' . implode(', ', $failed) . '.' : '')
                 . ' To let one back in, find "Blocked device" under Guests and remove it.');
+
+        case 'device_speed':
+            // Speed limit (Mbps in the form, Kbit/s stored) for one or more devices.
+            $ids = array_values(array_unique(array_filter(array_map('intval', (array)($_POST['ids'] ?? [])), fn($i) => $i > 0)));
+            $down = hubnet_parse_mbps($_POST['bw_down'] ?? '');
+            $up = hubnet_parse_mbps($_POST['bw_up'] ?? '');
+            if (!$ids) {
+                hip_back($returnQuery, false, 'Select devices first.');
+            }
+            if ($down === false || $up === false) {
+                hip_back($returnQuery, false, 'Enter the speed in Mbps (at least 0.064, e.g. 5 or 0.5), or leave it empty for no limit.');
+            }
+            hubinet_set_device_bw($conn, $ids, $down, $up);
+            $marks = implode(',', array_fill(0, count($ids), '?'));
+            $net = hubnet_apply($conn, hubnet_devices_where($conn, "d.device_id IN ($marks)", str_repeat('i', count($ids)), $ids), $uid, 'speed');
+            $what = $down === null && $up === null ? 'no limit' : 'down ' . ($down ? hubnet_mbps_label($down) . ' Mbps' : 'no limit') . ', up ' . ($up ? hubnet_mbps_label($up) . ' Mbps' : 'no limit');
+            hip_back($returnQuery, true, 'Speed set to ' . $what . ' for ' . count($ids) . ' device(s). ' . $net['message']);
 
         case 'create_vouchers':
             $r = hubinet_create_vouchers($conn, $_POST, $uid);
