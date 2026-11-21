@@ -236,37 +236,6 @@ elseif ($view === 'staff' || $view === 'guests'):
         </div>
         <?php endif; ?>
     </div>
-    <?php if ($canManage && $kind === 'guest'): $hiMembers = hubinet_member_options($conn); ?>
-    <div id="hiToMemberModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hiToMemberTitle" aria-hidden="true">
-        <div class="modal-content" style="max-width:560px">
-            <div class="modal-header"><h3 id="hiToMemberTitle"><i class="fas fa-building-user" aria-hidden="true"></i> Make <?= ht_e($person['full_name']) ?> a member</h3><button type="button" class="close" aria-label="Close" onclick="closeModal('hiToMemberModal')">&times;</button></div>
-            <form method="post" action="<?= $hiAction ?>">
-                <div class="modal-body">
-                    <?= $hiHidden('person_to_member', $view, $personId) ?>
-                    <input type="hidden" name="person_id" value="<?= $personId ?>">
-                    <p class="form-hint" style="margin-top:0">Moves this guest and their devices to a hub member. Their internet access then follows the membership (subscription and seats) instead of the guest access period. The guest record is removed.</p>
-                    <div class="form-group"><label for="hiToMember" class="required">Hub member / company</label>
-                        <select id="hiToMember" name="member_id" class="form-control" required>
-                            <option value="">Choose a member…</option>
-                            <?php foreach ($hiMembers as $hm): ?>
-                                <option value="<?= (int)$hm['member_id'] ?>"><?= ht_e(trim(($hm['company_name'] ?: $hm['full_name'] ?: 'Member #' . $hm['member_id']) . ($hm['company_name'] && $hm['full_name'] ? ' - ' . $hm['full_name'] : ''))) ?><?= $hm['membership_number'] ? ' (' . ht_e($hm['membership_number']) . ')' : '' ?><?= $hm['membership_status'] !== 'Active' ? ' - ' . ht_e($hm['membership_status']) : '' ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <p class="form-hint">Not registered yet? Add the member in <a href="hub-operations">Hub Operations</a> first, then come back here.</p></div>
-                    <fieldset class="form-group"><legend>Add as</legend>
-                        <label class="hr-check" style="display:flex"><input type="radio" name="as" value="team" checked onchange="document.getElementById('hiToMemberJob').hidden=false"> A team member of that company (uses one seat of its package)</label>
-                        <label class="hr-check" style="display:flex"><input type="radio" name="as" value="primary" onchange="document.getElementById('hiToMemberJob').hidden=true"> The member themself (their devices become the member's own)</label>
-                    </fieldset>
-                    <div class="form-group" id="hiToMemberJob"><label for="hiToMemberTitleIn">Job title <span class="cell-muted">(optional)</span></label><input id="hiToMemberTitleIn" name="job_title" maxlength="120" class="form-control"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('hiToMemberModal')">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Make member</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <?php endif; ?>
     <div class="card-body">
         <form method="post" action="<?= $hiAction ?>" class="hr-form-grid">
             <?= $hiHidden('save_person', $view, $personId) ?>
@@ -437,6 +406,103 @@ elseif ($view === 'staff' || $view === 'guests'):
         </form>
     </div>
 </div>
+<?php endif; ?>
+
+<?php if (!empty($person) && $canManage && $kind === 'guest'):
+    $hiMembers = hubinet_member_options($conn);
+    $hiPackages = function_exists('hubnet_packages') ? array_filter(hubnet_packages($conn), fn($pk) => !isset($pk['is_active']) || (int)$pk['is_active'] === 1) : [];
+    $hiCanNewMember = ims_allowed('hub_operations.manage', ['Administrator', 'Operations/Admin'], 'Add and edit hub members, subscriptions and receipts');
+?>
+<style>
+.hi-choice { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.hi-choice label { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-lg, 12px); cursor: pointer; background: var(--surface-card); }
+.hi-choice label:has(input:checked) { border-color: var(--brand-600); background: var(--brand-50); }
+.hi-choice input { margin-top: 3px; }
+.hi-choice strong { display: block; color: var(--ink-900); }
+.hi-choice span { color: var(--ink-400); font-size: 13px; }
+.hi-section-title { font-size: 12px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-400); margin: 4px 0 8px; }
+#hiToMemberModal .modal-content { max-width: 680px; }
+#hiToMemberModal .modal-body { max-height: calc(100vh - 200px); overflow-y: auto; }
+@media (max-width: 560px) { .hi-choice { grid-template-columns: 1fr; } }
+</style>
+<div id="hiToMemberModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hiToMemberTitle" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="hiToMemberTitle"><i class="fas fa-building-user" aria-hidden="true"></i> Make <?= ht_e($person['full_name']) ?> a member</h3>
+            <button type="button" class="close" aria-label="Close" onclick="closeModal('hiToMemberModal')">&times;</button>
+        </div>
+        <form method="post" action="<?= $hiAction ?>" id="hiToMemberForm">
+            <div class="modal-body">
+                <?= $hiHidden('person_to_member', $view, $personId) ?>
+                <input type="hidden" name="person_id" value="<?= $personId ?>">
+                <p class="form-hint" style="margin-top:0">The guest and their devices move to a member company. Internet access then follows the membership (subscription and seats) instead of the guest access period.</p>
+
+                <div class="hi-section-title">1. Company</div>
+                <div class="hi-choice">
+                    <label><input type="radio" name="company_choice" value="existing" checked> <div><strong>Existing company</strong><span>Already registered in Hub Operations</span></div></label>
+                    <?php if ($hiCanNewMember): ?>
+                    <label><input type="radio" name="company_choice" value="new"> <div><strong>New company</strong><span>Register it now as a hub member</span></div></label>
+                    <?php endif; ?>
+                </div>
+
+                <div data-company="existing">
+                    <div class="form-group"><label for="hiToMember" class="required">Member company</label>
+                        <select id="hiToMember" name="member_id" class="form-control">
+                            <option value="">Choose a company…</option>
+                            <?php foreach ($hiMembers as $hm): ?>
+                                <option value="<?= (int)$hm['member_id'] ?>"><?= ht_e(($hm['company_name'] ?: $hm['full_name'] ?: 'Member #' . $hm['member_id']) . ($hm['company_name'] && $hm['full_name'] ? ' - ' . $hm['full_name'] : '') . ($hm['membership_number'] ? ' (' . $hm['membership_number'] . ')' : '') . ($hm['membership_status'] !== 'Active' ? ' - ' . $hm['membership_status'] : '')) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php if (!$hiMembers): ?><p class="form-hint">No member companies yet: choose "New company".</p><?php endif; ?>
+                    </div>
+                </div>
+
+                <?php if ($hiCanNewMember): ?>
+                <div data-company="new" hidden>
+                    <div class="hr-form-grid">
+                        <div class="form-group"><label for="hiNewCompany" class="required">Company name</label><input id="hiNewCompany" name="new_company_name" class="form-control" maxlength="190" value="<?= ht_e((string)($person['organisation'] ?? '')) ?>"></div>
+                        <div class="form-group"><label for="hiNewType">Member type</label><select id="hiNewType" name="new_member_type" class="form-control"><?php foreach (['Startup', 'Corporate', 'Individual', 'Freelancer', 'Student'] as $mt): ?><option><?= $mt ?></option><?php endforeach; ?></select></div>
+                        <div class="form-group"><label for="hiNewName" class="required">Contact person</label><input id="hiNewName" name="new_full_name" class="form-control" maxlength="150" value="<?= ht_e((string)$person['full_name']) ?>"></div>
+                        <div class="form-group"><label for="hiNewEmail" class="required">Email (member login)</label><input id="hiNewEmail" type="email" name="new_email" class="form-control" maxlength="190" value="<?= ht_e((string)($person['email'] ?? '')) ?>"></div>
+                        <div class="form-group"><label for="hiNewPhone">Phone</label><input id="hiNewPhone" type="tel" name="new_phone" class="form-control" maxlength="40" value="<?= ht_e((string)($person['phone'] ?? '')) ?>"></div>
+                        <div class="form-group"><label for="hiNewPlan" class="required">Subscription plan</label><select id="hiNewPlan" name="new_plan" class="form-control"><option value="">Choose…</option><?php foreach (['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Annual'] as $pl): ?><option<?= $pl === 'Monthly' ? ' selected' : '' ?>><?= $pl ?></option><?php endforeach; ?></select></div>
+                        <div class="form-group"><label for="hiNewStart">Start date</label><input id="hiNewStart" type="date" name="new_start" class="form-control" value="<?= date('Y-m-d') ?>"></div>
+                        <div class="form-group"><label for="hiNewEnd">End date</label><input id="hiNewEnd" type="date" name="new_end" class="form-control" value="<?= date('Y-m-d', strtotime('+1 month -1 day')) ?>"></div>
+                        <div class="form-group is-wide"><label for="hiNewPackage">Workspace package <span class="cell-muted">(seats)</span></label><select id="hiNewPackage" name="new_package_id" class="form-control"><option value="0">None yet</option><?php foreach ($hiPackages as $pk): ?><option value="<?= (int)$pk['package_id'] ?>"><?= ht_e($pk['name']) ?> (<?= (int)$pk['max_seats'] ?> seat<?= (int)$pk['max_seats'] === 1 ? '' : 's' ?>)</option><?php endforeach; ?></select><p class="form-hint">Needed to add people as team members. The member gets a login with a temporary password by email; amounts and receipts are managed in Hub Operations.</p></div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <div class="hi-section-title">2. Add <?= ht_e($person['full_name']) ?> as</div>
+                <div class="hi-choice">
+                    <label><input type="radio" name="as" value="primary" checked> <div><strong>The member themself</strong><span>Their devices become the company's own</span></div></label>
+                    <label><input type="radio" name="as" value="team"> <div><strong>A team member</strong><span>Uses one seat of the company's package</span></div></label>
+                </div>
+                <div class="form-group" data-as="team" hidden><label for="hiToMemberJob">Job title <span class="cell-muted">(optional)</span></label><input id="hiToMemberJob" name="job_title" maxlength="120" class="form-control"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('hiToMemberModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Make member</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function () {
+    var form = document.getElementById('hiToMemberForm');
+    if (!form) return;
+    function sync() {
+        var company = (form.querySelector('input[name=company_choice]:checked') || {}).value || 'existing';
+        var as = (form.querySelector('input[name=as]:checked') || {}).value || 'primary';
+        form.querySelectorAll('[data-company]').forEach(function (el) { el.hidden = el.dataset.company !== company; });
+        form.querySelectorAll('[data-as]').forEach(function (el) { el.hidden = el.dataset.as !== as; });
+        document.getElementById('hiToMember').required = company === 'existing';
+        ['hiNewCompany', 'hiNewName', 'hiNewEmail', 'hiNewPlan'].forEach(function (id) { var f = document.getElementById(id); if (f) f.required = company === 'new'; });
+    }
+    form.addEventListener('change', sync);
+    sync();
+})();
+</script>
 <?php endif; ?>
 
 <?php

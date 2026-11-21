@@ -283,9 +283,37 @@ try {
 
         case 'person_to_member':
             // Guests > person > Make member: move the guest and their devices to a hub member.
-            $r = hubinet_person_to_member($conn, (int)($_POST['person_id'] ?? 0), (int)($_POST['member_id'] ?? 0),
+            $memberId = (int)($_POST['member_id'] ?? 0);
+            $created = '';
+            if (($_POST['company_choice'] ?? '') === 'new') {
+                // New company: same rules as Hub Operations > Add member.
+                if (!ims_allowed('hub_operations.manage', ['Administrator', 'Operations/Admin'], 'Add and edit hub members, subscriptions and receipts')) {
+                    hip_back($returnQuery, false, 'You do not have permission to register member companies.');
+                }
+                require_once __DIR__ . '/hub-member-create.php';
+                $new = hubmem_create($conn, [
+                    'company_name' => $_POST['new_company_name'] ?? '',
+                    'member_type' => $_POST['new_member_type'] ?? '',
+                    'full_name' => $_POST['new_full_name'] ?? '',
+                    'email' => $_POST['new_email'] ?? '',
+                    'phone' => $_POST['new_phone'] ?? '',
+                    'subscription_plan' => $_POST['new_plan'] ?? '',
+                    'subscription_start_date' => $_POST['new_start'] ?? '',
+                    'subscription_end_date' => $_POST['new_end'] ?? '',
+                    'space_package_id' => $_POST['new_package_id'] ?? 0,
+                ], $uid);
+                if (!$new['ok']) {
+                    hip_back($returnQuery, false, $new['message']);
+                }
+                $memberId = (int)$new['member_id'];
+                $created = $new['message'] . ' ';
+            }
+            $r = hubinet_person_to_member($conn, (int)($_POST['person_id'] ?? 0), $memberId,
                 (string)($_POST['as'] ?? 'team'), (string)($_POST['job_title'] ?? ''), $uid);
-            hip_back($r['ok'] ? 'member_id=' . (int)$r['member_id'] : $returnQuery, $r['ok'], $r['message']);
+            if (!$r['ok'] && $created !== '') {
+                hip_back('member_id=' . $memberId, false, $created . 'Moving the guest failed: ' . $r['message']);
+            }
+            hip_back($r['ok'] ? 'member_id=' . (int)$r['member_id'] : $returnQuery, $r['ok'], $created . $r['message']);
 
         case 'create_vouchers':
             $r = hubinet_create_vouchers($conn, $_POST, $uid);
