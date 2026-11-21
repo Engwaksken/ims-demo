@@ -469,17 +469,21 @@ function hubinet_speed_label(array $device): string
 function hubinet_speed_cell(array $device, bool $canEdit, string $returnQuery): string
 {
     $label = hubinet_speed_label($device);
-    $text = $label === 'No limit' ? '<span class="cell-muted">No limit</span>' : hubinet_h($label);
+    $limited = $label !== 'No limit';
+    $text = $limited ? '<small class="hi-speed-val">' . hubinet_h($label) . '</small>' : '<span class="cell-muted">No limit</span>';
     if (!$canEdit || empty($device['device_id'])) {
         return $text;
     }
-    return '<button type="button" class="btn btn-sm btn-soft hi-speed-btn" onclick="hiSpeed(this)" title="Set speed limit"'
+    // Icon-only button; the current limit is in the tooltip and, when set, beside it.
+    $tip = 'Speed limit: ' . $label . ' (click to change)';
+    return '<span class="hi-speed"><button type="button" class="btn btn-sm ' . ($limited ? 'btn-info' : 'btn-soft') . ' hi-speed-btn" onclick="hiSpeed(this)"'
+        . ' title="' . hubinet_h($tip) . '" aria-label="' . hubinet_h($tip) . '"'
         . ' data-ids="' . (int)$device['device_id'] . '"'
         . ' data-name="' . hubinet_h((string)$device['mac_address']) . '"'
         . ' data-down="' . hubinet_h(hubnet_mbps_label(isset($device['bw_down_kbps']) ? (int)$device['bw_down_kbps'] : null)) . '"'
         . ' data-up="' . hubinet_h(hubnet_mbps_label(isset($device['bw_up_kbps']) ? (int)$device['bw_up_kbps'] : null)) . '"'
         . ' data-return="' . hubinet_h($returnQuery) . '">'
-        . '<i class="fas fa-gauge-high" aria-hidden="true"></i> ' . $text . '</button>';
+        . '<i class="fas fa-gauge-high" aria-hidden="true"></i></button>' . ($limited ? ' ' . $text : '') . '</span>';
 }
 
 /** Deletes a person and their devices (pfSense entries are removed first in push mode). */

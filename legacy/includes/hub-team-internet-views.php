@@ -353,7 +353,7 @@ elseif ($view === 'staff' || $view === 'guests'):
                         <td data-label="Devices"><?= (int)$p['device_count'] ?><?= (int)$p['online_count'] ? ' <span class="badge badge-success">' . (int)$p['online_count'] . ' online</span>' : '' ?></td>
                         <td data-label="Status"><?= $hiPersonBadge($p) ?></td>
                         <?php if ($kind === 'guest'): ?><td data-label="Access until"><?= $p['valid_until'] ? ht_e(date('j M Y, H:i', strtotime((string)$p['valid_until']))) : '<span class="cell-muted">No expiry</span>' ?></td><?php endif; ?>
-                        <td data-label=""><a class="btn btn-sm btn-soft" href="hub-team?view=<?= $view ?>&amp;person=<?= (int)$p['person_id'] ?>">Manage</a></td>
+                        <td data-label=""><a class="btn btn-sm btn-soft" href="hub-team?view=<?= $view ?>&amp;person=<?= (int)$p['person_id'] ?>" title="Manage" aria-label="Manage <?= ht_e($p['full_name']) ?>"><i class="fas fa-sliders" aria-hidden="true"></i></a></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -558,7 +558,7 @@ elseif ($view === 'online'):
                 <tbody>
                 <?php foreach ($online as $o): $d = $o['device']; ?>
                     <tr>
-                        <?php if ($canControl): ?><td data-label="Select"><?php if ($d): ?><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$d['device_id'] ?>" aria-label="Select <?= ht_e($o['mac_address']) ?>"><?php else: ?><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($o['mac_address']) ?>" aria-label="Select unknown device <?= ht_e($o['mac_address']) ?>"><?php endif; ?></td><?php endif; ?>
+                        <?php if ($canControl): ?><td data-label="Select"><?php if ($d): ?><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$d['device_id'] ?>" aria-label="Select <?= ht_e($o['mac_address']) ?>" data-name="<?= ht_e((trim((string)($d['label'] ?? '')) !== '' ? $d['label'] : $o['mac_address']) . ' (' . $d['person_name'] . ')') ?>" data-down="<?= ht_e(hubnet_mbps_label(isset($d['bw_down_kbps']) ? (int)$d['bw_down_kbps'] : null)) ?>" data-up="<?= ht_e(hubnet_mbps_label(isset($d['bw_up_kbps']) ? (int)$d['bw_up_kbps'] : null)) ?>"><?php else: ?><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($o['mac_address']) ?>" aria-label="Select unknown device <?= ht_e($o['mac_address']) ?>"><?php endif; ?></td><?php endif; ?>
                         <?php
                             $oName = trim((string)($d['label'] ?? '')) ?: trim((string)($o['hostname'] ?? '')) ?: trim((string)($o['pf']['descr'] ?? ''));
                             $oMeta = array_filter([trim((string)($o['vendor'] ?? '')), trim((string)($o['iface'] ?? ''))]);
@@ -594,19 +594,19 @@ elseif ($view === 'online'):
                             <?php endif; ?>
                             <?php if ($d && !empty($d['created_at'])): ?><small class="cell-muted">registered <?= ht_e(date('d M Y', strtotime((string)$d['created_at']))) ?></small><?php endif; ?>
                         </td>
-                        <td data-label="">
+                        <td data-label=""><span class="hi-row-actions">
                             <?php if ($d && $canControl): ?>
-                                <button type="button" class="btn btn-sm btn-soft" onclick="hiEditDevice(this)" title="Edit device"
+                                <button type="button" class="btn btn-sm btn-soft" onclick="hiEditDevice(this)" title="Edit device" aria-label="Edit device"
                                     data-id="<?= (int)$d['device_id'] ?>" data-mac="<?= ht_e($o['mac_address']) ?>" data-label="<?= ht_e((string)$d['label']) ?>"
                                     data-mode="<?= ht_e((string)$d['access_mode']) ?>" data-down="<?= ht_e(hubnet_mbps_label(isset($d['bw_down_kbps']) ? (int)$d['bw_down_kbps'] : null)) ?>"
                                     data-up="<?= ht_e(hubnet_mbps_label(isset($d['bw_up_kbps']) ? (int)$d['bw_up_kbps'] : null)) ?>"
                                     data-type="<?= ht_e((string)($d['device_type'] ?? '')) ?>"
-                                    data-owner="<?= ht_e((string)$d['person_name']) ?>"><i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
+                                    data-owner="<?= ht_e((string)$d['person_name']) ?>"><i class="fas fa-pen" aria-hidden="true"></i></button>
                             <?php endif; ?>
                             <?php if (!$d && $canManage): ?>
-                                <button type="button" class="btn btn-sm btn-primary" onclick="hiRegister(<?= ht_e(json_encode($o['mac_address'])) ?>, <?= ht_e(json_encode(trim((string)($o['pf']['descr'] ?? '')) ?: trim((string)($o['hostname'] ?? '')) ?: trim((string)($o['vendor'] ?? '')))) ?>)"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</button>
+                                <button type="button" class="btn btn-sm btn-primary" title="Register device" aria-label="Register device" onclick="hiRegister(<?= ht_e(json_encode($o['mac_address'])) ?>, <?= ht_e(json_encode(trim((string)($o['pf']['descr'] ?? '')) ?: trim((string)($o['hostname'] ?? '')) ?: trim((string)($o['vendor'] ?? '')))) ?>)"><i class="fas fa-user-plus" aria-hidden="true"></i></button>
                             <?php endif; ?>
-                        </td>
+                        </span></td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -624,7 +624,7 @@ elseif ($view === 'online'):
                 <button type="submit" name="mode" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select registered devices first (unknown devices: use Register)." data-confirm="Disconnect the selected devices?" data-confirm-title="Disconnect" data-confirm-ok="Disconnect" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Disconnect</button>
                 <button type="submit" name="mode" value="allow" class="btn btn-sm btn-secondary" data-bulk-required>Always on</button>
                 <button type="submit" name="mode" value="auto" class="btn btn-sm btn-secondary" data-bulk-required>Automatic</button>
-                <button type="button" class="btn btn-sm btn-secondary" data-bulk-required="Select registered devices first." onclick="hiSpeedBulk(this, <?= ht_e(json_encode($onlineReturn)) ?>)"><i class="fas fa-gauge-high" aria-hidden="true"></i> Speed limit</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bulk-required="Select the devices to limit first." onclick="hiSpeedBulk(this, <?= ht_e(json_encode($onlineReturn)) ?>)"><i class="fas fa-gauge-high" aria-hidden="true"></i> Speed limit for selected</button>
                 <span class="cell-muted" style="margin-left:8px;flex-basis:100%">Unknown devices<?= $unknownMatching ? ' (' . number_format($unknownMatching) . ' matching)' : '' ?>:</span>
                 <input type="hidden" name="q" value="<?= ht_e($onlineQ) ?>">
                 <?php if ($unknownMatching > 0): ?>

@@ -100,13 +100,18 @@ function ht_access_form(string $scope, int $targetId, string $mode, string $labe
         . '<input type="hidden" name="member_id" value="' . $memberId . '">'
         . '<input type="hidden" name="mode" value="' . ht_e($mode) . '">'
         . ($toDashboard ? '<input type="hidden" name="return" value="dashboard">' : '')
-        . '<button type="submit" class="btn btn-sm ' . $class . '" title="' . ht_e($label) . '"><i class="fas ' . $icon . '" aria-hidden="true"></i> ' . ht_e($label) . '</button>'
+        // Rows in tables (devices, people) show the icon only; company-wide buttons keep their text.
+        . '<button type="submit" class="btn btn-sm ' . $class . '" title="' . ht_e($label) . '" aria-label="' . ht_e($label) . '"><i class="fas ' . $icon . '" aria-hidden="true"></i>' . ($scope === 'member' ? ' ' . ht_e($label) : '') . '</button>'
         . '</form>';
 }
 ?>
 
 <style>
 .ht-inline { display: inline; margin: 0; }
+.hi-speed { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.hi-speed-val { font-size: 11px; }
+.hi-row-actions { display: inline-flex; gap: 4px; flex-wrap: nowrap; }
+#hiSpeedList { margin: 0 0 8px; padding-left: 18px; max-height: 120px; overflow: auto; font-size: 12px; }
 .ht-mainnav { padding: 0; overflow: hidden; }
 .ht-mainnav .tab-nav { margin: 0; border-bottom: 0; }
 .ht-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -1207,6 +1212,8 @@ else:
                 <input type="hidden" name="return_query" id="hiSpeedReturn" value="">
                 <div id="hiSpeedIds"></div>
                 <p class="cell-muted" id="hiSpeedFor" style="margin-top:0"></p>
+                <ul id="hiSpeedList" hidden></ul>
+                <p class="form-hint" id="hiSpeedSkipped" hidden></p>
                 <div class="form-row">
                     <div class="form-group"><label for="hiSpeedDown"><i class="fas fa-arrow-down" aria-hidden="true"></i> Download (Mbps)</label><input id="hiSpeedDown" name="bw_down" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
                     <div class="form-group"><label for="hiSpeedUp"><i class="fas fa-arrow-up" aria-hidden="true"></i> Upload (Mbps)</label><input id="hiSpeedUp" name="bw_up" type="number" min="0.064" max="10000" step="any" class="form-control" placeholder="No limit"></div>
@@ -1228,11 +1235,20 @@ else:
 </div>
 <script>
 (function () {
-    function open(ids, name, down, up, ret) {
+    function open(ids, name, down, up, ret, names, skipped) {
         var box = document.getElementById('hiSpeedIds');
         box.innerHTML = '';
         ids.forEach(function (id) { var i = document.createElement('input'); i.type = 'hidden'; i.name = 'ids[]'; i.value = id; box.appendChild(i); });
+        document.getElementById('hiSpeedTitle').textContent = ids.length > 1 ? 'Speed limit for ' + ids.length + ' devices' : 'Speed limit';
         document.getElementById('hiSpeedFor').textContent = name;
+        var list = document.getElementById('hiSpeedList');
+        list.innerHTML = '';
+        (names || []).slice(0, 8).forEach(function (n) { var li = document.createElement('li'); li.textContent = n; list.appendChild(li); });
+        if (names && names.length > 8) { var more = document.createElement('li'); more.textContent = 'and ' + (names.length - 8) + ' more'; list.appendChild(more); }
+        list.hidden = !(names && names.length > 1);
+        var skip = document.getElementById('hiSpeedSkipped');
+        skip.textContent = skipped ? skipped + ' unregistered device' + (skipped === 1 ? ' is' : 's are') + ' skipped: register them first to limit their speed.' : '';
+        skip.hidden = !skipped;
         document.getElementById('hiSpeedDown').value = down || '';
         document.getElementById('hiSpeedUp').value = up || '';
         document.getElementById('hiSpeedReturn').value = ret || '';
@@ -1241,11 +1257,20 @@ else:
     window.hiSpeed = function (btn) {
         open([btn.dataset.ids], 'Device ' + btn.dataset.name, btn.dataset.down, btn.dataset.up, btn.dataset.return);
     };
+    /* Speed limit for the selected rows: registered devices only (unknown ones are reported as skipped). */
     window.hiSpeedBulk = function (btn, ret) {
-        var form = btn.closest('form');
-        var ids = Array.prototype.map.call(form.querySelectorAll('input.hr-sel[name="ids[]"]:checked'), function (c) { return c.value; });
-        if (!ids.length) return;
-        open(ids, ids.length + ' selected device' + (ids.length === 1 ? '' : 's'), '', '', ret);
+        var scope = btn.closest('[data-bulk-scope]') || btn.closest('form') || document;
+        var picked = Array.prototype.slice.call(scope.querySelectorAll('input.hr-sel[name="ids[]"]:checked'));
+        var skipped = scope.querySelectorAll('input.hr-sel[name="macs[]"]:checked').length;
+        if (!picked.length) {
+            hrAlert('Speed limits apply to registered devices. ' + (skipped ? 'The selected device' + (skipped === 1 ? ' is' : 's are') + ' not registered: use Register first.' : 'Select at least one registered device.'), { title: 'No registered devices selected' });
+            return;
+        }
+        var ids = picked.map(function (c) { return c.value; });
+        var names = picked.map(function (c) { return c.dataset.name || (c.getAttribute('aria-label') || '').replace(/^Select /, ''); });
+        // Pre-fill when every selected device has the same limit.
+        var same = function (k) { var v = picked[0].dataset[k] || ''; return picked.every(function (c) { return (c.dataset[k] || '') === v; }) ? v : ''; };
+        open(ids, ids.length + ' selected device' + (ids.length === 1 ? '' : 's') + ' will get this limit:', same('down'), same('up'), ret, names, skipped);
     };
     window.hiEditDevice = function (btn) {
         var d = btn.dataset;
