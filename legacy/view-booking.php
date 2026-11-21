@@ -321,11 +321,14 @@ $vbStatusClass = [
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-door-open" aria-hidden="true"></i> Booking Information</h3>
+    <div class="tab-shell vb-tabs" data-vb-tabs>
+        <div class="tab-nav" role="tablist" aria-label="Booking details">
+            <button type="button" class="tab-btn active" role="tab" id="vb-tab-booking" aria-controls="vb-booking" aria-selected="true" data-tab="booking"><i class="fas fa-door-open" aria-hidden="true"></i> Booking Information</button>
+            <button type="button" class="tab-btn" role="tab" id="vb-tab-member" aria-controls="vb-member" aria-selected="false" tabindex="-1" data-tab="member"><i class="fas fa-user" aria-hidden="true"></i> Member Information</button>
+            <button type="button" class="tab-btn" role="tab" id="vb-tab-workflow" aria-controls="vb-workflow" aria-selected="false" tabindex="-1" data-tab="workflow"><i class="fas fa-route" aria-hidden="true"></i> Workflow</button>
         </div>
-        <div class="card-body">
+        <div class="tab-panels">
+        <div class="tab-panel active" role="tabpanel" id="vb-booking" aria-labelledby="vb-tab-booking">
             <div class="vb-grid">
                 <div class="vb-field">
                     <small>Space</small>
@@ -371,13 +374,8 @@ $vbStatusClass = [
                 <?php endif; ?>
             </div>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-user" aria-hidden="true"></i> Member Information</h3>
-        </div>
-        <div class="card-body">
+        <div class="tab-panel" role="tabpanel" id="vb-member" aria-labelledby="vb-tab-member" hidden>
             <div class="vb-grid">
                 <div class="vb-field">
                     <small>Name</small>
@@ -408,13 +406,8 @@ $vbStatusClass = [
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3><i class="fas fa-route" aria-hidden="true"></i> Workflow</h3>
-        </div>
-        <div class="card-body">
+        <div class="tab-panel" role="tabpanel" id="vb-workflow" aria-labelledby="vb-tab-workflow" hidden>
             <div class="vb-grid">
                 <div class="vb-field">
                     <small>Created</small>
@@ -475,7 +468,45 @@ $vbStatusClass = [
                 <?php endif; ?>
             </div>
         </div>
-    </div>
+        </div><!-- /.tab-panels -->
+    </div><!-- /.tab-shell -->
 </div><!-- /.page-stack -->
+
+<script>
+/* Booking / Member / Workflow tabs; ?tab= keeps the open tab on reload. */
+(function () {
+    var shell = document.querySelector('[data-vb-tabs]');
+    if (!shell) return;
+    var tabs = Array.prototype.slice.call(shell.querySelectorAll('[role="tab"]'));
+    function show(name, focus) {
+        tabs.forEach(function (t) {
+            var on = t.dataset.tab === name;
+            t.classList.toggle('active', on);
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+            t.tabIndex = on ? 0 : -1;
+            var panel = document.getElementById(t.getAttribute('aria-controls'));
+            panel.classList.toggle('active', on);
+            panel.hidden = !on;
+            if (on && focus) t.focus();
+        });
+        try {
+            var url = new URL(location.href);
+            if (name === 'booking') url.searchParams.delete('tab'); else url.searchParams.set('tab', name);
+            history.replaceState(null, '', url);
+        } catch (e) {}
+    }
+    tabs.forEach(function (t, i) {
+        t.addEventListener('click', function () { show(t.dataset.tab, false); });
+        t.addEventListener('keydown', function (e) {
+            var next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : null;
+            if (next === null) return;
+            e.preventDefault();
+            show(tabs[(next + tabs.length) % tabs.length].dataset.tab, true);
+        });
+    });
+    var start = new URLSearchParams(location.search).get('tab');
+    if (start && tabs.some(function (t) { return t.dataset.tab === start; })) show(start, false);
+})();
+</script>
 
 <?php include 'includes/footer.php'; ?>

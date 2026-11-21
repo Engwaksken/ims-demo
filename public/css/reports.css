@@ -1204,3 +1204,35 @@ tr.is-selected > td { background: var(--brand-50); }
 .hr-dialog-icon.is-info { background: var(--blue-bg); color: var(--blue-fg); }
 .hr-dialog-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .hr-dialog-actions .btn { min-width: 110px; justify-content: center; }
+
+/* ----------------------------------------------------------------------
+   VIEW MODALS: compact label/value cards (all pages)
+   Pages give their detail cards their own names (vp-info-item, va-detail-item,
+   info-card, ...). Inside any modal or <dialog> they get one compact size so
+   more fits on screen without scrolling.
+---------------------------------------------------------------------- */
+:is(.modal, dialog) :is([class*="info-grid"], [class*="detail-grid"], .vb-grid) {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px;
+}
+:is(.modal, dialog) :is([class*="info-item"], [class*="detail-item"], [class*="info-card"], .vb-field) {
+  padding: 8px 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+:is(.modal, dialog) :is([class*="info-item"], [class*="detail-item"], [class*="info-card"], .vb-field) :is(label, small, .label, [class*="-label"]) {
+  font-size: 10.5px;
+  margin-bottom: 2px;
+}
+:is(.modal, dialog) :is([class*="info-item"], [class*="detail-item"], [class*="info-card"], .vb-field) :is(h3, h4) {
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+@media (max-width: 520px) {
+  :is(.modal, dialog) :is([class*="info-grid"], [class*="detail-grid"], .vb-grid) { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 380px) {
+  :is(.modal, dialog) :is([class*="info-grid"], [class*="detail-grid"], .vb-grid) { grid-template-columns: 1fr; }
+}
