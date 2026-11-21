@@ -67,6 +67,7 @@ $needs = [
     'unknown_bulk' => $canControl,
     'device_speed' => $canControl,
     'edit_device' => $canControl,
+    'person_to_member' => $canManage,
     'create_vouchers' => $canVouchers,
     'vouchers_bulk' => $canVouchers,
 ];
@@ -236,6 +237,12 @@ try {
             hubinet_set_device_bw($conn, [$deviceId], $down, $up);
             $net = hubnet_apply($conn, hubnet_devices_where($conn, 'd.device_id = ?', 'i', [$deviceId]), $uid, 'edit');
             hip_back($returnQuery, true, 'Device updated. ' . $net['message']);
+
+        case 'person_to_member':
+            // Guests > person > Make member: move the guest and their devices to a hub member.
+            $r = hubinet_person_to_member($conn, (int)($_POST['person_id'] ?? 0), (int)($_POST['member_id'] ?? 0),
+                (string)($_POST['as'] ?? 'team'), (string)($_POST['job_title'] ?? ''), $uid);
+            hip_back($r['ok'] ? 'member_id=' . (int)$r['member_id'] : $returnQuery, $r['ok'], $r['message']);
 
         case 'create_vouchers':
             $r = hubinet_create_vouchers($conn, $_POST, $uid);

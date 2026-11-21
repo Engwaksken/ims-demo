@@ -1583,3 +1583,83 @@ function hubinet_forget_online(mysqli $conn, array $macs): int
     $stmt->close();
     return $n;
 }
+
+/* ======================================================================
+ | Guest -> hub member (Guests > person > Make member)
+ * ==================================================================== */
+
+/** Hub members for the "Make member" picker. */
+function hubinet_member_options(mysqli $conn): array
+{
+    $res = $conn->query("SELECT m.member_id, m.company_name, m.membership_number, m.membership_status, u.full_name
+                           FROM members m LEFT JOIN users u ON u.user_id = m.user_id
+                          ORDER BY (m.membership_status = 'Active') DESC, COALESCE(NULLIF(m.company_name, ''), u.full_name) LIMIT 2000");
+    return $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
+}
+
+/**
+ * Moves a guest (or staff entry) and their devices to a hub member: as a team
+ * member of that company (uses a seat), or as the member's own devices.
+ * The guest record is removed; internet access then follows the membership.
+ */
+function hubinet_person_to_member(mysqli $conn, int $personId, int $memberId, string $as, string $jobTitle, int $uid): array
+{
+    $person = hubinet_person($conn, $personId);
+    if (!$person) {
+        return hubinet_result(false, 'Guest not found.');
+    }
+    $member = hubnet_member($conn, $memberId);
+    if (!$member) {
+        return hubinet_result(false, 'Choose the hub member (company) to add them to.');
+    }
+    $asTeam = $as !== 'primary';
+    $company = (string)($member['company_name'] ?: $member['full_name'] ?: 'the member');
+    if ($asTeam) {
+        if ($member['seats_max'] === null) {
+            return hubinet_result(false, 'Set a workspace package for ' . $company . ' first (Hub Operations > Edit member), or add the devices as the member\'s own.');
+        }
+        if (!hubnet_seat_available($member)) {
+            return hubinet_result(false, 'All ' . $member['seats_max'] . ' seat(s) of ' . $company . ' are taken. Upgrade the package or suspend someone first.');
+        }
+    }
+
+    $conn->begin_transaction();
+    try {
+        $teamId = null;
+        if ($asTeam) {
+            $name = (string)$person['full_name'];
+            $email = (string)($person['email'] ?? '');
+            $phone = (string)($person['phone'] ?? '');
+            $job = mb_substr(trim($jobTitle), 0, 120);
+            $stmt = $conn->prepare("INSERT INTO hub_team_members (member_id, full_name, email, phone, job_title, created_by)
+                                    VALUES (?, ?, NULLIF(?, ''), NULLIF(?, ''), NULLIF(?, ''), ?)");
+            $stmt->bind_param('issssi', $memberId, $name, $email, $phone, $job, $uid);
+            $stmt->execute();
+            $teamId = (int)$stmt->insert_id;
+            $stmt->close();
+        }
+        $stmt = $conn->prepare('UPDATE hub_network_devices SET member_id = ?, team_member_id = ?, person_id = NULL WHERE person_id = ?');
+        $stmt->bind_param('iii', $memberId, $teamId, $personId);
+        $stmt->execute();
+        $moved = $stmt->affected_rows;
+        $stmt->close();
+        $stmt = $conn->prepare('DELETE FROM hub_network_people WHERE person_id = ?');
+        $stmt->bind_param('i', $personId);
+        $stmt->execute();
+        $stmt->close();
+        $conn->commit();
+    } catch (Throwable $e) {
+        $conn->rollback();
+        error_log('[hub-internet] person_to_member: ' . $e->getMessage());
+        return hubinet_result(false, 'The guest could not be moved. Nothing was changed.');
+    }
+
+    hubnet_log($conn, null, '', 'guest:to-member', true, $person['full_name'] . ' -> member #' . $memberId . ($asTeam ? ' (team)' : ' (primary)'), $uid);
+    $net = $moved > 0 ? hubnet_apply_member($conn, $memberId, $uid, 'guest-to-member') : ['message' => ''];
+    if (function_exists('log_action')) {
+        log_action($uid, 'Guest To Member', 'hub_network_people', $personId, $person['full_name'] . ' moved to ' . $company);
+    }
+    return hubinet_result(true, $person['full_name'] . ' is now ' . ($asTeam ? 'a team member of ' : 'part of ') . $company
+        . ($moved ? ' with ' . $moved . ' device(s)' : '') . '. Internet access now follows the membership. ' . $net['message'],
+        ['member_id' => $memberId]);
+}

@@ -195,14 +195,48 @@ elseif ($view === 'staff' || $view === 'guests'):
 <div class="card">
     <div class="card-header hi-person-head">
         <h3><i class="fas <?= $kind === 'staff' ? 'fa-id-badge' : 'fa-user-clock' ?>" aria-hidden="true"></i> <?= ht_e($person['full_name']) ?> <?= $hiPersonBadge($person) ?></h3>
-        <?php if ($canControl): ?>
+        <?php if ($canControl || ($canManage && $kind === 'guest')): ?>
         <div class="ht-actions">
-            <?php foreach (['block' => ['Disconnect all', 'fa-ban', 'btn-danger'], 'auto' => ['Automatic', 'fa-wifi', 'btn-soft'], 'allow' => ['Always on', 'fa-check', 'btn-soft']] as $m => [$t, $i, $c]): ?>
+            <?php if ($canManage && $kind === 'guest'): ?>
+                <button type="button" class="btn btn-sm btn-primary" onclick="openModal('hiToMemberModal')"><i class="fas fa-building-user" aria-hidden="true"></i> Make member</button>
+            <?php endif; ?>
+            <?php if ($canControl): foreach (['block' => ['Disconnect all', 'fa-ban', 'btn-danger'], 'auto' => ['Automatic', 'fa-wifi', 'btn-soft'], 'allow' => ['Always on', 'fa-check', 'btn-soft']] as $m => [$t, $i, $c]): ?>
                 <form method="post" action="<?= $hiAction ?>" class="ht-inline"><?= $hiHidden('person_access', $view, $personId) ?><input type="hidden" name="person_id" value="<?= $personId ?>"><input type="hidden" name="mode" value="<?= $m ?>"><button class="btn btn-sm <?= $c ?>"><i class="fas <?= $i ?>" aria-hidden="true"></i> <?= $t ?></button></form>
-            <?php endforeach; ?>
+            <?php endforeach; endif; ?>
         </div>
         <?php endif; ?>
     </div>
+    <?php if ($canManage && $kind === 'guest'): $hiMembers = hubinet_member_options($conn); ?>
+    <div id="hiToMemberModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="hiToMemberTitle" aria-hidden="true">
+        <div class="modal-content" style="max-width:560px">
+            <div class="modal-header"><h3 id="hiToMemberTitle"><i class="fas fa-building-user" aria-hidden="true"></i> Make <?= ht_e($person['full_name']) ?> a member</h3><button type="button" class="close" aria-label="Close" onclick="closeModal('hiToMemberModal')">&times;</button></div>
+            <form method="post" action="<?= $hiAction ?>">
+                <div class="modal-body">
+                    <?= $hiHidden('person_to_member', $view, $personId) ?>
+                    <input type="hidden" name="person_id" value="<?= $personId ?>">
+                    <p class="form-hint" style="margin-top:0">Moves this guest and their devices to a hub member. Their internet access then follows the membership (subscription and seats) instead of the guest access period. The guest record is removed.</p>
+                    <div class="form-group"><label for="hiToMember" class="required">Hub member / company</label>
+                        <select id="hiToMember" name="member_id" class="form-control" required>
+                            <option value="">Choose a member…</option>
+                            <?php foreach ($hiMembers as $hm): ?>
+                                <option value="<?= (int)$hm['member_id'] ?>"><?= ht_e(trim(($hm['company_name'] ?: $hm['full_name'] ?: 'Member #' . $hm['member_id']) . ($hm['company_name'] && $hm['full_name'] ? ' - ' . $hm['full_name'] : ''))) ?><?= $hm['membership_number'] ? ' (' . ht_e($hm['membership_number']) . ')' : '' ?><?= $hm['membership_status'] !== 'Active' ? ' - ' . ht_e($hm['membership_status']) : '' ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="form-hint">Not registered yet? Add the member in <a href="hub-operations">Hub Operations</a> first, then come back here.</p></div>
+                    <fieldset class="form-group"><legend>Add as</legend>
+                        <label class="hr-check" style="display:flex"><input type="radio" name="as" value="team" checked onchange="document.getElementById('hiToMemberJob').hidden=false"> A team member of that company (uses one seat of its package)</label>
+                        <label class="hr-check" style="display:flex"><input type="radio" name="as" value="primary" onchange="document.getElementById('hiToMemberJob').hidden=true"> The member themself (their devices become the member's own)</label>
+                    </fieldset>
+                    <div class="form-group" id="hiToMemberJob"><label for="hiToMemberTitleIn">Job title <span class="cell-muted">(optional)</span></label><input id="hiToMemberTitleIn" name="job_title" maxlength="120" class="form-control"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('hiToMemberModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check" aria-hidden="true"></i> Make member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
     <div class="card-body">
         <form method="post" action="<?= $hiAction ?>" class="hr-form-grid">
             <?= $hiHidden('save_person', $view, $personId) ?>
