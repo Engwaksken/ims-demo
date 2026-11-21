@@ -48,7 +48,7 @@ $canSwitch = ims_allowed('hub_network.switch', ['Administrator', 'IT Officer'], 
 $canVouchers = ims_allowed('hub_network.vouchers', ['Administrator', 'Operations/Admin'], 'Create, print and cancel internet vouchers for day clients');
 
 // The online list's bulk bar posts devices_bulk; its "unknown devices" buttons carry unknown_op.
-if ($action === 'devices_bulk' && in_array($_POST['unknown_op'] ?? '', ['block', 'forget', 'equipment'], true)) {
+if ($action === 'devices_bulk' && in_array($_POST['unknown_op'] ?? '', ['block', 'forget', 'equipment', 'assign', 'delete'], true)) {
     $action = 'unknown_bulk';
 }
 
@@ -159,11 +159,32 @@ try {
             exit;
 
         case 'unknown_bulk':
-            // Unknown devices selected in Online now: block (disconnect) or forget them.
-            $macs = array_values(array_unique(array_filter(array_map(
-                static fn($m) => hubnet_normalize_mac((string)$m), (array)($_POST['macs'] ?? [])))));
+            // Unknown devices in Online now (seen online or from the pfSense MAC list):
+            // assign, block or delete. "All matching" acts on every unknown device matching
+            // the current filter and search, not only the rows ticked on this page.
+            if (!empty($_POST['all_matching'])) {
+                $macs = array_column(array_filter(
+                    hubinet_online_filtered($conn, 'unknown', mb_substr((string)($_POST['q'] ?? ''), 0, 60)),
+                    static fn($o) => empty($o['device'])
+                ), 'mac_address');
+            } else {
+                $macs = array_values(array_unique(array_filter(array_map(
+                    static fn($m) => hubnet_normalize_mac((string)$m), (array)($_POST['macs'] ?? [])))));
+            }
             if (!$macs) {
                 hip_back($returnQuery, false, 'Select unknown devices first.');
+            }
+            if (in_array($_POST['unknown_op'], ['assign', 'delete'], true) && !$canManage) {
+                hip_back($returnQuery, false, 'Only administrators and operations staff can assign or delete devices.');
+            }
+            if ($_POST['unknown_op'] === 'assign') {
+                $r = hubinet_import_pf_macs($conn, $macs, (string)($_POST['import_as'] ?? ''), (string)($_POST['equipment_type'] ?? ''),
+                    (int)($_POST['person_id'] ?? 0), $uid, (int)($_POST['member_id'] ?? 0));
+                hip_back($returnQuery, $r['ok'], $r['message']);
+            }
+            if ($_POST['unknown_op'] === 'delete') {
+                $r = hubinet_delete_unknown($conn, $macs, $uid);
+                hip_back($returnQuery, $r['ok'], $r['message']);
             }
             if ($_POST['unknown_op'] === 'equipment') {
                 $r = hubinet_register_equipment($conn, $macs, (string)($_POST['equipment_type'] ?? 'access_point'), [], $uid);

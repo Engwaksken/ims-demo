@@ -83,6 +83,8 @@ switch ((string)($request['action'] ?? '')) {
             'descr_prefix' => HUBNET_DESCR_PREFIX,
             // Agent 2.4+: replace manual pfSense MAC entries of devices the IMS now manages.
             'adopt' => true,
+            // Agent 2.6+: manual pfSense MAC entries deleted in the IMS (Online now > Delete).
+            'delete_manual' => $active ? hubinet_pf_delete_queue($conn) : [],
             'items' => $active ? hubnet_feed($conn) : [],
             // Internet switch for agent 2.1+: on = enforce the captive portal, off = open internet.
             'portal' => $active && $settings['portal_control'] !== 'unmanaged' ? $settings['portal_control'] : '',
@@ -95,6 +97,8 @@ switch ((string)($request['action'] ?? '')) {
         // Agent 2.4+: MAC entries added by hand in pfSense, for import (Online now).
         if (is_array($request['manual_macs'] ?? null)) {
             hubinet_record_pf_macs($conn, $request['manual_macs']);
+            // Queued deletions that pfSense no longer lists are done.
+            hubinet_pf_delete_done($conn, array_column($request['manual_macs'], 'mac'));
         }
         // Who is online is tracked even while access control is off.
         $online = 0;

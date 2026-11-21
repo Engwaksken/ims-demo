@@ -233,6 +233,13 @@ if (!function_exists('hubnet_ensure_schema')) {
                     seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (mac_address)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+                // Manual pfSense MAC entries to delete on pfSense (agent 2.6), cleared when reported done.
+                "CREATE TABLE IF NOT EXISTS hub_network_pfdelete (
+                    mac_address CHAR(17) NOT NULL,
+                    requested_by INT NULL,
+                    requested_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (mac_address)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
                 // Internet vouchers for day clients: redeemed on the hotspot page. The access
                 // period starts at first use; expires_at is the last day it can be first used.
                 "CREATE TABLE IF NOT EXISTS hub_network_vouchers (

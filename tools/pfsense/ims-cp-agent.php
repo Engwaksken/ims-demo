@@ -10,6 +10,9 @@
  * Entries the IMS created have a description starting with "IMS "; entries
  * you add by hand in pfSense are never touched.
  *
+ * 2.6 adds: deletes manual MAC entries that were deleted in the IMS
+ *   (Online now > Delete); entries the IMS manages are never touched by this.
+ *
  * 2.4 adds: reports MAC entries added by hand in pfSense so the IMS can import
  *   them, and takes them over ("adopt") once the IMS manages those devices.
  *
@@ -69,7 +72,7 @@ defined('IMS_ALLOWED_IPS') || define('IMS_ALLOWED_IPS', ['192.168.1.1']);       
 defined('IMS_DEFAULT_ZONE') || define('IMS_DEFAULT_ZONE', 'lan');
 // ---------------------------------------------------------------------------
 
-const IMS_AGENT_VERSION = '2.5';
+const IMS_AGENT_VERSION = '2.6';
 const IMS_MAX_ITEMS = 5000;
 const IMS_STATE_FILE = '/var/db/ims-cp-agent-state.json';
 const IMS_DESCR_PREFIX = 'IMS ';
@@ -238,11 +241,12 @@ function ims_state_save(array $state): void
  * $removeUnlisted: drop IMS-managed entries that are not in $items (pull mode
  * sends the full list, so a device deleted in the IMS disappears here too).
  */
-function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string $prefix, bool $adopt = false): array
+function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string $prefix, bool $adopt = false, array $deleteManual = []): array
 {
     global $cpzone;
 
     $entries = array_values((array)($zoneConfig['passthrumac'] ?? []));
+    $deleteManual = array_flip(array_filter(array_map(static fn($m) => ims_normalize_mac((string)$m), $deleteManual)));
     $sessions = ims_sessions();
     $state = ims_state_load();
     $results = [];
@@ -280,6 +284,11 @@ function ims_apply(array $zoneConfig, array $items, bool $removeUnlisted, string
         $managed = strpos((string)($entry['descr'] ?? ''), $prefix) === 0 || ($adopt && isset($wanted[$mac]));
 
         if (!$managed) {
+            // 2.6: manual entries deleted in the IMS (only ones the IMS does not manage).
+            if (!isset($wanted[$mac]) && isset($deleteManual[$mac])) {
+                $changed = true;
+                continue;
+            }
             if (isset($wanted[$mac])) {
                 $results[$mac] = ['ok' => false, 'mode' => $wanted[$mac]['mode'],
                     'message' => 'A manual MAC entry for this device exists in pfSense; remove it there to let the IMS manage it.'];
@@ -644,7 +653,8 @@ if ($imsCli) {
     }
 
     $prefix = (string)($feed['descr_prefix'] ?? IMS_DESCR_PREFIX) ?: IMS_DESCR_PREFIX;
-    $applied = ims_apply($zoneConfig, is_array($feed['items'] ?? null) ? $feed['items'] : [], true, $prefix, !empty($feed['adopt']));
+    $applied = ims_apply($zoneConfig, is_array($feed['items'] ?? null) ? $feed['items'] : [], true, $prefix, !empty($feed['adopt']),
+        is_array($feed['delete_manual'] ?? null) ? $feed['delete_manual'] : []);
 
     $finalZone = ims_cfg_get("captiveportal/{$GLOBALS['cpzone']}", []);
     $online = ims_online_payload($finalZone);

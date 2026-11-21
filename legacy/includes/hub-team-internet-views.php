@@ -416,33 +416,33 @@ elseif ($view === 'staff' || $view === 'guests'):
 ===================================================================== */
 elseif ($view === 'online'):
     $kindFilter = in_array($_GET['kind'] ?? '', ['member', 'staff', 'guest', 'equipment', 'unknown'], true) ? (string)$_GET['kind'] : '';
-    $online = hubinet_online($conn, $kindFilter);
-    $counts = hubinet_online_counts($conn);
-    // Search: MAC, IP, name, company, device label or portal login.
+    // Search: name, MAC, IP, maker, company, device label, portal login, pfSense description.
     $onlineQ = mb_substr(trim((string)($_GET['q'] ?? '')), 0, 60);
-    if ($onlineQ !== '') {
-        $needle = mb_strtolower($onlineQ);
-        $macNeedle = preg_replace('/[^a-f0-9]/', '', $needle);
-        $online = array_values(array_filter($online, static function (array $o) use ($needle, $macNeedle): bool {
-            $d = $o['device'] ?? [];
-            $hay = mb_strtolower(implode(' ', [$o['mac_address'], $o['ip_address'], $o['portal_user'], $o['hostname'] ?? '', $o['vendor'] ?? '', $o['iface'] ?? '',
-                $d['person_name'] ?? '', $d['company_name'] ?? '', $d['label'] ?? '', $d['person_organisation'] ?? '']));
-            return str_contains($hay, $needle)
-                || (strlen($macNeedle) >= 4 && str_contains(str_replace(':', '', (string)$o['mac_address']), $macNeedle));
-        }));
-    }
+    // Manual pfSense MAC entries are listed as unknown devices too (agent 2.4+).
+    $online = hubinet_online_filtered($conn, $kindFilter, $onlineQ);
+    $counts = hubinet_online_counts($conn);
+    $pfOffline = count(array_filter(hubinet_online($conn, 'unknown', true), static fn($o) => !empty($o['offline'])));
+    $counts['unknown'] += $pfOffline;
+    $counts['total'] += $pfOffline;
+    $onlineTotal = count($online);
+    $unknownMatching = count(array_filter($online, static fn($o) => empty($o['device'])));
+    $onPerPage = 200;
+    $onPages = max(1, (int)ceil($onlineTotal / $onPerPage));
+    $onPage = min($onPages, max(1, (int)($_GET['p'] ?? 1)));
+    $online = array_slice($online, ($onPage - 1) * $onPerPage, $onPerPage);
+    $hiMemberOpts = $canManage ? hubinet_member_options($conn) : [];
     $onlineReturn = 'view=online' . ($kindFilter !== '' ? '&kind=' . $kindFilter : '') . ($onlineQ !== '' ? '&q=' . rawurlencode($onlineQ) : '');
     $peopleForSelect = $canManage ? array_merge(hubinet_people($conn, 'staff', ['status' => 'active']), hubinet_people($conn, 'guest', ['status' => 'active'])) : [];
     $staffCandidates = $canManage ? hubinet_staff_candidates($conn) : [];
 ?>
 <div class="card">
-    <div class="card-header"><h3><i class="fas fa-signal" aria-hidden="true"></i> Online now (<?= count($online) ?>)</h3>
+    <div class="card-header"><h3><i class="fas fa-signal" aria-hidden="true"></i> Online now (<?= number_format($onlineTotal) ?>)</h3>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <span class="cell-muted"><?= $settings['last_checkin_at'] ? 'As of pfSense check-in at ' . ht_e(date('H:i', strtotime((string)$settings['last_checkin_at']))) : 'pfSense has not checked in yet' ?></span>
             <form method="get" action="hub-team" style="display:flex;gap:6px">
                 <input type="hidden" name="view" value="online">
                 <?php if ($kindFilter !== ''): ?><input type="hidden" name="kind" value="<?= ht_e($kindFilter) ?>"><?php endif; ?>
-                <input type="search" name="q" value="<?= ht_e($onlineQ) ?>" class="form-control" placeholder="Name, MAC, IP, maker or company" aria-label="Search devices online" style="min-width:210px">
+                <input type="search" name="q" value="<?= ht_e($onlineQ) ?>" class="form-control" placeholder="Name, MAC, IP, maker, company or pfSense description" aria-label="Search devices online" style="min-width:210px">
                 <button class="btn btn-soft" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></button>
                 <?php if ($onlineQ !== ''): ?><a class="btn btn-soft" href="hub-team?view=online<?= $kindFilter !== '' ? '&amp;kind=' . $kindFilter : '' ?>" aria-label="Clear search"><i class="fas fa-times" aria-hidden="true"></i></a><?php endif; ?>
             </form>
@@ -465,12 +465,13 @@ elseif ($view === 'online'):
                     <tr>
                         <?php if ($canControl): ?><td data-label="Select"><?php if ($d): ?><input type="checkbox" class="hr-sel" name="ids[]" value="<?= (int)$d['device_id'] ?>" aria-label="Select <?= ht_e($o['mac_address']) ?>"><?php else: ?><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($o['mac_address']) ?>" aria-label="Select unknown device <?= ht_e($o['mac_address']) ?>"><?php endif; ?></td><?php endif; ?>
                         <?php
-                            $oName = trim((string)($d['label'] ?? '')) ?: trim((string)($o['hostname'] ?? ''));
+                            $oName = trim((string)($d['label'] ?? '')) ?: trim((string)($o['hostname'] ?? '')) ?: trim((string)($o['pf']['descr'] ?? ''));
                             $oMeta = array_filter([trim((string)($o['vendor'] ?? '')), trim((string)($o['iface'] ?? ''))]);
                         ?>
                         <td data-label="Device">
                             <strong><?= ht_e($oName !== '' ? $oName : (($o['vendor'] ?? '') !== '' ? $o['vendor'] . ' device' : 'Unnamed device')) ?></strong>
                             <?= hubinet_is_random_mac($o['mac_address']) ? ' <span class="badge badge-secondary" title="Private / random MAC address: the device may show a different address on other days or networks">Private MAC</span>' : '' ?>
+                            <?= !empty($o['pf']) ? ' <span class="badge badge-info" title="Added by hand on pfSense (Captive Portal &gt; MACs)">pfSense list</span>' . ($o['pf']['action'] === 'block' ? ' <span class="badge badge-danger">Blocked on pfSense</span>' : '') : '' ?>
                             <small class="cell-muted"><code><?= ht_e($o['mac_address']) ?></code><?= $oMeta ? ' &middot; ' . ht_e(implode(' / ', $oMeta)) : '' ?></small>
                             <?php if ($d && ($o['hostname'] ?? '') !== '' && $o['hostname'] !== $d['label']): ?><small class="cell-muted">Device name: <?= ht_e($o['hostname']) ?></small><?php endif; ?>
                             <?= $d ? '<div style="margin-top:4px">' . hubinet_speed_cell($d, $canControl, $onlineReturn) . '</div>' : '' ?>
@@ -488,7 +489,7 @@ elseif ($view === 'online'):
                         </td>
                         <td data-label="Type"><?= $hiKindBadge($o['owner_kind']) ?><?= $d && !empty($d['device_type']) ? ' <small class="cell-muted">' . ht_e(HUBINET_DEVICE_TYPES[$d['device_type']] ?? 'Equipment') . '</small>' : '' ?><?= (int)$o['in_portal'] ? ' <span class="badge badge-secondary" title="Signed in through the captive portal">Portal</span>' : '' ?><?= $d && $d['access_mode'] === 'block' ? ' <span class="badge badge-danger">Blocked</span>' : '' ?></td>
                         <td data-label="IP"><?= ht_e($o['ip_address'] ?: '-') ?></td>
-                        <td data-label="Seen">since <?= ht_e(date('H:i', strtotime((string)($o['session_started'] ?: $o['first_seen'])))) ?></td>
+                        <td data-label="Seen"><?= !empty($o['offline']) ? '<span class="cell-muted">Not online</span>' : 'since ' . ht_e(date('H:i', strtotime((string)($o['session_started'] ?: $o['first_seen'])))) ?></td>
                         <td data-label="">
                             <?php if ($d && $canControl): ?>
                                 <button type="button" class="btn btn-sm btn-soft" onclick="hiEditDevice(this)" title="Edit device"
@@ -499,142 +500,88 @@ elseif ($view === 'online'):
                                     data-owner="<?= ht_e((string)$d['person_name']) ?>"><i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
                             <?php endif; ?>
                             <?php if (!$d && $canManage): ?>
-                                <button type="button" class="btn btn-sm btn-primary" onclick="hiRegister(<?= ht_e(json_encode($o['mac_address'])) ?>, <?= ht_e(json_encode(trim((string)($o['hostname'] ?? '')) ?: trim((string)($o['vendor'] ?? '')))) ?>)"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="hiRegister(<?= ht_e(json_encode($o['mac_address'])) ?>, <?= ht_e(json_encode(trim((string)($o['pf']['descr'] ?? '')) ?: trim((string)($o['hostname'] ?? '')) ?: trim((string)($o['vendor'] ?? '')))) ?>)"><i class="fas fa-user-plus" aria-hidden="true"></i> Register</button>
                             <?php endif; ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table></div>
+            <?php if ($onPages > 1): $onUrl = static fn(int $pg) => 'hub-team?' . http_build_query(array_filter(['view' => 'online', 'kind' => $kindFilter, 'q' => $onlineQ, 'p' => $pg > 1 ? $pg : ''], fn($v) => $v !== '')); ?>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0">
+                <span class="cell-muted">Page <?= $onPage ?> of <?= $onPages ?> (<?= number_format($onlineTotal) ?> devices)</span>
+                <?php if ($onPage > 1): ?><a class="btn btn-sm btn-soft" href="<?= ht_e($onUrl($onPage - 1)) ?>">&laquo; Previous</a><?php endif; ?>
+                <?php if ($onPage < $onPages): ?><a class="btn btn-sm btn-soft" href="<?= ht_e($onUrl($onPage + 1)) ?>">Next &raquo;</a><?php endif; ?>
+            </div>
+            <?php endif; ?>
             <?php if ($canControl): ?>
-            <div class="hr-bulkbar" data-bulk-bar>
+            <div class="hr-bulkbar" data-bulk-bar style="flex-wrap:wrap;gap:6px">
                 <span data-bulk-count>None selected</span>
                 <button type="submit" name="mode" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select registered devices first (unknown devices: use Register)." data-confirm="Disconnect the selected devices?" data-confirm-title="Disconnect" data-confirm-ok="Disconnect" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Disconnect</button>
                 <button type="submit" name="mode" value="allow" class="btn btn-sm btn-secondary" data-bulk-required>Always on</button>
                 <button type="submit" name="mode" value="auto" class="btn btn-sm btn-secondary" data-bulk-required>Automatic</button>
                 <button type="button" class="btn btn-sm btn-secondary" data-bulk-required="Select registered devices first." onclick="hiSpeedBulk(this, <?= ht_e(json_encode($onlineReturn)) ?>)"><i class="fas fa-gauge-high" aria-hidden="true"></i> Speed limit</button>
-                <span class="cell-muted" style="margin-left:8px">Unknown devices:</span>
-                <select name="equipment_type" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Equipment type">
-                    <?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?>
-                </select>
-                <button type="submit" name="unknown_op" value="equipment" class="btn btn-sm btn-success" data-bulk-required="Select unknown devices first." title="Register the selected unknown devices as network equipment (always online)"><i class="fas fa-tower-broadcast" aria-hidden="true"></i> Equipment</button>
-                <button type="submit" name="unknown_op" value="block" class="btn btn-sm btn-danger" data-bulk-required="Select unknown devices first." data-confirm="Block and disconnect the selected unknown devices? They stay blocked until you remove them under Guests (&quot;Blocked device&quot;)." data-confirm-title="Block unknown devices" data-confirm-ok="Block" data-confirm-danger><i class="fas fa-ban" aria-hidden="true"></i> Block</button>
-                <button type="submit" name="unknown_op" value="forget" class="btn btn-sm btn-secondary" data-bulk-required="Select unknown devices first." data-confirm="Remove the selected unknown devices from this list? Devices that are still connected appear again at the next check-in." data-confirm-title="Remove from list" data-confirm-ok="Remove"><i class="fas fa-trash" aria-hidden="true"></i> Remove from list</button>
-            </div>
-            <?php endif; ?>
-        </form>
-        <?php endif; ?>
-    </div>
-</div>
-
-<?php
-    // Manual pfSense MAC entries (agent 2.4+): searchable, 100 per page.
-    $pfQ = mb_substr(trim((string)($_GET['pfq'] ?? '')), 0, 80);
-    $pfPage = max(1, (int)($_GET['pfp'] ?? 1));
-    $pfList = hubinet_pf_macs($conn, $pfQ, 100, ($pfPage - 1) * 100);
-    $pfMacs = $pfList['rows'];
-    $pfTotal = $pfList['total'];
-    $pfPages = max(1, (int)ceil($pfTotal / 100));
-    $pfReturn = $onlineReturn . ($pfQ !== '' ? '&pfq=' . rawurlencode($pfQ) : '') . '#pfmacs';
-    $pfUrl = static function (array $over) use ($kindFilter, $onlineQ, $pfQ): string {
-        $q = array_filter(array_merge(['view' => 'online', 'kind' => $kindFilter, 'q' => $onlineQ, 'pfq' => $pfQ], $over), fn($v) => $v !== '' && $v !== null && $v !== 1);
-        return 'hub-team?' . http_build_query($q) . '#pfmacs';
-    };
-    $pfMembers = $pfTotal > 0 || $pfQ !== '' ? hubinet_member_options($conn) : [];
-?>
-<?php if ($pfTotal > 0 || $pfQ !== ''): ?>
-<div class="card" id="pfmacs">
-    <div class="card-header"><h3><i class="fas fa-list-check" aria-hidden="true"></i> pfSense MAC list: <?= number_format($pfTotal) ?> entr<?= $pfTotal === 1 ? 'y' : 'ies' ?> not managed by the IMS<?= $pfQ !== '' ? ' matching &ldquo;' . ht_e($pfQ) . '&rdquo;' : '' ?></h3>
-        <form method="get" action="hub-team" style="display:flex;gap:6px">
-            <input type="hidden" name="view" value="online">
-            <?php if ($kindFilter !== ''): ?><input type="hidden" name="kind" value="<?= ht_e($kindFilter) ?>"><?php endif; ?>
-            <?php if ($onlineQ !== ''): ?><input type="hidden" name="q" value="<?= ht_e($onlineQ) ?>"><?php endif; ?>
-            <input type="search" name="pfq" value="<?= ht_e($pfQ) ?>" class="form-control" placeholder="Description, MAC, name, maker" aria-label="Search the pfSense MAC list" style="min-width:220px">
-            <button class="btn btn-soft" aria-label="Search"><i class="fas fa-search" aria-hidden="true"></i></button>
-            <?php if ($pfQ !== ''): ?><a class="btn btn-soft" href="<?= ht_e($pfUrl(['pfq' => ''])) ?>" aria-label="Clear search"><i class="fas fa-times" aria-hidden="true"></i></a><?php endif; ?>
-        </form>
-    </div>
-    <div class="card-body">
-        <p class="form-hint" style="margin-top:0">Entries added by hand under Services &gt; Captive Portal &gt; MACs on pfSense. Import them to manage them here; speed limits are kept and "Block" entries stay blocked. Tip: search a company name used in the descriptions, tick <em>all matching</em> and import them to that member company in one go. At the next check-in pfSense replaces its manual entries with IMS-managed ones.</p>
-        <?php if (!$pfMacs): ?>
-            <div class="empty-state"><i class="fas fa-search" aria-hidden="true"></i><p>No pfSense entries match this search.</p></div>
-        <?php else: ?>
-        <form method="post" action="<?= $hiAction ?>" data-bulk-scope>
-            <?= $hiHidden('import_pfmacs', 'online') ?>
-            <input type="hidden" name="return_query" value="<?= ht_e(strtok($pfReturn, '#')) ?>">
-            <input type="hidden" name="pfq" value="<?= ht_e($pfQ) ?>">
-            <div class="table-responsive"><table class="table table-stack hr-table">
-                <thead><tr><?php if ($canManage): ?><th class="hr-sel-col"><input type="checkbox" class="hr-sel-all" aria-label="Select all entries on this page"></th><?php endif; ?><th>Device</th><th>pfSense</th><th>Speed</th><th>Last seen online</th></tr></thead>
-                <tbody>
-                <?php foreach ($pfMacs as $pm): ?>
-                    <tr>
-                        <?php if ($canManage): ?><td data-label="Select"><input type="checkbox" class="hr-sel" name="macs[]" value="<?= ht_e($pm['mac_address']) ?>" aria-label="Select <?= ht_e($pm['mac_address']) ?>"></td><?php endif; ?>
-                        <td data-label="Device"><strong><?= ht_e(($pm['descr'] ?? '') ?: ($pm['hostname'] ?? '') ?: (($pm['vendor'] ?? '') ? $pm['vendor'] . ' device' : 'No description')) ?></strong>
-                            <small class="cell-muted"><code><?= ht_e($pm['mac_address']) ?></code><?= ($pm['vendor'] ?? '') !== '' ? ' &middot; ' . ht_e($pm['vendor']) : '' ?><?= ($pm['hostname'] ?? '') !== '' && $pm['hostname'] !== $pm['descr'] ? ' &middot; ' . ht_e($pm['hostname']) : '' ?></small></td>
-                        <td data-label="pfSense"><?= $pm['action'] === 'block' ? '<span class="badge badge-danger">Block</span>' : '<span class="badge badge-success">Pass</span>' ?></td>
-                        <td data-label="Speed"><?= ht_e(hubinet_speed_label(['bw_down_kbps' => $pm['bw_down_kbps'], 'bw_up_kbps' => $pm['bw_up_kbps']])) ?></td>
-                        <td data-label="Last seen online"><?= $pm['last_seen'] ? ht_e(date('d M H:i', strtotime((string)$pm['last_seen']))) . (($pm['ip_address'] ?? '') ? '<small class="cell-muted">' . ht_e($pm['ip_address']) . '</small>' : '') : '<span class="cell-muted">Not seen</span>' ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table></div>
-            <?php if ($pfPages > 1): ?>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0">
-                <span class="cell-muted">Page <?= $pfPage ?> of <?= $pfPages ?> (<?= number_format($pfTotal) ?> entries)</span>
-                <?php if ($pfPage > 1): ?><a class="btn btn-sm btn-soft" href="<?= ht_e($pfUrl(['pfp' => $pfPage - 1])) ?>">&laquo; Previous</a><?php endif; ?>
-                <?php if ($pfPage < $pfPages): ?><a class="btn btn-sm btn-soft" href="<?= ht_e($pfUrl(['pfp' => $pfPage + 1])) ?>">Next &raquo;</a><?php endif; ?>
-            </div>
-            <?php endif; ?>
-            <?php if ($canManage): ?>
-            <div class="hr-bulkbar" data-bulk-bar style="flex-wrap:wrap;gap:6px">
-                <span data-bulk-count>None selected</span>
-                <label class="hr-check" style="display:inline-flex;gap:4px;align-items:center" title="Import every entry matching the search, on all pages">
-                    <input type="checkbox" name="all_matching" value="1" id="pfAllMatching"> all <?= number_format($pfTotal) ?> matching
+                <span class="cell-muted" style="margin-left:8px;flex-basis:100%">Unknown devices<?= $unknownMatching ? ' (' . number_format($unknownMatching) . ' matching)' : '' ?>:</span>
+                <input type="hidden" name="q" value="<?= ht_e($onlineQ) ?>">
+                <?php if ($unknownMatching > 0): ?>
+                <label class="hr-check" style="display:inline-flex;gap:4px;align-items:center" title="Act on every unknown device matching the filter and search, on all pages">
+                    <input type="checkbox" name="all_matching" value="1" id="hiAllUnknown"> all <?= number_format($unknownMatching) ?> unknown matching
                 </label>
-                <label class="cell-muted" for="pfImportAs">Import as</label>
-                <select id="pfImportAs" name="import_as" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto"
-                        onchange="var v=this.value;document.getElementById('pfImportType').hidden=v!=='equipment';document.getElementById('pfImportPerson').hidden=v!=='existing';document.getElementById('pfImportMember').hidden=v!=='member';">
+                <?php endif; ?>
+                <?php if ($canManage): ?>
+                <select id="hiAssignAs" name="import_as" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Assign to"
+                        onchange="var v=this.value;document.getElementById('hiAssignMember').hidden=v!=='member';document.getElementById('hiAssignType').hidden=v!=='equipment';document.getElementById('hiAssignPerson').hidden=v!=='existing';">
                     <option value="member">Member company</option>
                     <option value="equipment">Network equipment</option>
                     <option value="guest">Guests (one per device)</option>
                     <option value="staff">Staff (one per device)</option>
                     <option value="existing">Devices of one person</option>
                 </select>
-                <select id="pfImportMember" name="member_id" class="form-control" style="width:auto;max-width:280px;display:inline-block;padding:4px 8px;height:auto" aria-label="Member company">
+                <select id="hiAssignMember" name="member_id" class="form-control" style="width:auto;max-width:260px;display:inline-block;padding:4px 8px;height:auto" aria-label="Member company">
                     <option value="">Choose a member company…</option>
-                    <?php foreach ($pfMembers as $hm): ?>
+                    <?php foreach ($hiMemberOpts as $hm): ?>
                         <option value="<?= (int)$hm['member_id'] ?>"><?= ht_e(($hm['company_name'] ?: $hm['full_name'] ?: 'Member #' . $hm['member_id']) . ($hm['membership_number'] ? ' (' . $hm['membership_number'] . ')' : '') . ($hm['membership_status'] !== 'Active' ? ' - ' . $hm['membership_status'] : '')) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <select id="pfImportType" name="equipment_type" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Equipment type" hidden>
+                <select id="hiAssignType" name="equipment_type" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Equipment type" hidden>
                     <?php foreach (HUBINET_DEVICE_TYPES as $tk => $tl): ?><option value="<?= $tk ?>"><?= ht_e($tl) ?></option><?php endforeach; ?>
                 </select>
-                <select id="pfImportPerson" name="person_id" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Person" hidden>
+                <select id="hiAssignPerson" name="person_id" class="form-control" style="width:auto;display:inline-block;padding:4px 8px;height:auto" aria-label="Person" hidden>
                     <?php foreach ($peopleForSelect as $pp): ?><option value="<?= (int)$pp['person_id'] ?>"><?= ht_e($pp['full_name']) ?> (<?= $pp['kind'] === 'staff' ? 'staff' : 'guest' ?>)</option><?php endforeach; ?>
                 </select>
-                <button type="submit" class="btn btn-sm btn-primary" id="pfImportBtn"><i class="fas fa-file-import" aria-hidden="true"></i> Import</button>
+                <button type="submit" name="unknown_op" value="assign" class="btn btn-sm btn-primary" data-unknown-op="Assign"><i class="fas fa-user-tag" aria-hidden="true"></i> Assign</button>
+                <?php endif; ?>
+                <button type="submit" name="unknown_op" value="block" class="btn btn-sm btn-danger" data-unknown-op="Block and disconnect"><i class="fas fa-ban" aria-hidden="true"></i> Block</button>
+                <?php if ($canManage): ?>
+                <button type="submit" name="unknown_op" value="delete" class="btn btn-sm btn-outline-danger btn-secondary" data-unknown-op="Delete"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
+                <?php endif; ?>
             </div>
             <script>
+            /* Unknown-device buttons: work with ticked unknown rows or "all matching"; confirm with the count. */
             (function () {
-                var btn = document.getElementById('pfImportBtn'), all = document.getElementById('pfAllMatching');
-                btn.addEventListener('click', function (e) {
-                    var form = btn.form;
-                    var picked = form.querySelectorAll('input.hr-sel[name="macs[]"]:checked').length;
-                    var n = all.checked ? <?= (int)$pfTotal ?> : picked;
-                    var as = document.getElementById('pfImportAs');
-                    if (!n) { e.preventDefault(); (window.hrAlert || alert)('Tick entries, or "all matching".'); return; }
-                    if (as.value === 'member' && !document.getElementById('pfImportMember').value) { e.preventDefault(); (window.hrAlert || alert)('Choose the member company.'); return; }
-                    if (!confirm('Import ' + n + ' pfSense entr' + (n === 1 ? 'y' : 'ies') + ' as "' + as.options[as.selectedIndex].text + '"?')) e.preventDefault();
+                var all = document.getElementById('hiAllUnknown');
+                document.querySelectorAll('[data-unknown-op]').forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        var form = btn.form;
+                        var picked = form.querySelectorAll('input.hr-sel[name="macs[]"]:checked').length;
+                        var n = all && all.checked ? <?= (int)$unknownMatching ?> : picked;
+                        if (!n) { e.preventDefault(); (window.hrAlert || alert)('Tick unknown devices, or "all unknown matching".'); return; }
+                        if (btn.value === 'assign') {
+                            var as = document.getElementById('hiAssignAs');
+                            if (as.value === 'member' && !document.getElementById('hiAssignMember').value) { e.preventDefault(); (window.hrAlert || alert)('Choose the member company.'); return; }
+                        }
+                        var extra = btn.value === 'delete' ? '\n\nThey are removed from the IMS, and devices from the pfSense list are also deleted on pfSense.' : '';
+                        if (!confirm(btn.dataset.unknownOp + ' ' + n + ' unknown device' + (n === 1 ? '' : 's') + '?' + extra)) e.preventDefault();
+                    });
                 });
-
             })();
             </script>
+            </div>
             <?php endif; ?>
         </form>
         <?php endif; ?>
     </div>
 </div>
-<?php endif; ?>
 
 <script>
 /* Online now: reload every minute (pfSense checks in every minute) unless rows are selected or a dialog is open. */
@@ -652,7 +599,7 @@ elseif ($view === 'online'):
     }
     setInterval(function () {
         if (!on || document.hidden) return;
-        if (document.querySelector('input.hr-sel:checked, #pfAllMatching:checked') || document.querySelector('.modal.show, .modal[aria-hidden="false"], .modal.active')) return;
+        if (document.querySelector('input.hr-sel:checked, #hiAllUnknown:checked') || document.querySelector('.modal.show, .modal[aria-hidden="false"], .modal.active')) return;
         var a = document.activeElement;
         if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && a.type !== 'checkbox') return;
         location.reload();

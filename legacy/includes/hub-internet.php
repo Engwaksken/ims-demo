@@ -1166,31 +1166,123 @@ function hubinet_record_online(mysqli $conn, array $clients, array $sessions): i
     return $count;
 }
 
-/** Devices online now, identified against registered devices. Filter: kind (member|staff|guest|unknown). */
-function hubinet_online(mysqli $conn, string $kind = ''): array
+/**
+ * Devices online now, identified against registered devices. Filter: kind
+ * (member|staff|guest|equipment|unknown). With $withPfList, manual pfSense
+ * MAC entries the IMS does not manage are added as "unknown" too ('pf' holds
+ * the pfSense entry, 'offline' => true when the device is not connected), so
+ * they can be assigned or deleted like any unknown device.
+ */
+function hubinet_online(mysqli $conn, string $kind = '', bool $withPfList = false): array
 {
     $rows = [];
     $res = $conn->query('SELECT o.* FROM hub_network_online o
                           WHERE o.last_seen >= DATE_SUB(NOW(), INTERVAL ' . HUBINET_ONLINE_STALE_MINUTES . ' MINUTE)
-                          ORDER BY o.first_seen DESC LIMIT 3000');
+                          ORDER BY o.first_seen DESC LIMIT 5000');
     $online = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
-    if (!$online) {
+    $pf = [];
+    if ($withPfList) {
+        $pres = $conn->query('SELECT p.* FROM hub_network_pfmacs p
+                               LEFT JOIN hub_network_pfdelete x ON x.mac_address = p.mac_address
+                              WHERE x.mac_address IS NULL ORDER BY p.descr IS NULL, p.descr, p.mac_address LIMIT 5000');
+        foreach ($pres ? $pres->fetch_all(MYSQLI_ASSOC) : [] as $p) {
+            $pf[$p['mac_address']] = $p;
+        }
+    }
+    if (!$online && !$pf) {
         return [];
     }
     $byMac = [];
     foreach (hubnet_devices_where($conn, '1=1') as $d) {
         $byMac[hubnet_normalize_mac((string)$d['mac_address'])] = $d;
     }
+    $seen = [];
     foreach ($online as $o) {
         $d = $byMac[$o['mac_address']] ?? null;
         $o['device'] = $d;
         $o['owner_kind'] = $d ? (!empty($d['device_type']) ? 'equipment' : (string)$d['owner_kind']) : 'unknown';
+        $o['pf'] = $d ? null : ($pf[$o['mac_address']] ?? null);
+        $o['offline'] = false;
+        $seen[$o['mac_address']] = true;
         if ($kind !== '' && $o['owner_kind'] !== $kind) {
             continue;
         }
         $rows[] = $o;
     }
+    if ($kind === '' || $kind === 'unknown') {
+        foreach ($pf as $mac => $p) {
+            if (isset($seen[$mac]) || isset($byMac[$mac])) {
+                continue;
+            }
+            $rows[] = ['mac_address' => $mac, 'ip_address' => null, 'portal_user' => null, 'in_portal' => 0,
+                'session_started' => null, 'first_seen' => null, 'last_seen' => null, 'hostname' => null, 'vendor' => null,
+                'iface' => null, 'device' => null, 'owner_kind' => 'unknown', 'pf' => $p, 'offline' => true];
+        }
+    }
     return $rows;
+}
+
+/** Online now rows filtered by kind and search text (name, MAC, IP, maker, company, pfSense description). */
+function hubinet_online_filtered(mysqli $conn, string $kind, string $q): array
+{
+    $rows = hubinet_online($conn, $kind, true);
+    $q = trim($q);
+    if ($q === '') {
+        return $rows;
+    }
+    $needle = mb_strtolower($q);
+    $macNeedle = preg_replace('/[^a-f0-9]/', '', $needle);
+    return array_values(array_filter($rows, static function (array $o) use ($needle, $macNeedle): bool {
+        $d = $o['device'] ?? [];
+        $hay = mb_strtolower(implode(' ', [$o['mac_address'], $o['ip_address'], $o['portal_user'], $o['hostname'] ?? '', $o['vendor'] ?? '',
+            $o['iface'] ?? '', $o['pf']['descr'] ?? '', $d['person_name'] ?? '', $d['company_name'] ?? '', $d['label'] ?? '', $d['person_organisation'] ?? '']));
+        return str_contains($hay, $needle)
+            || (strlen($macNeedle) >= 4 && str_contains(str_replace(':', '', (string)$o['mac_address']), $macNeedle));
+    }));
+}
+
+/**
+ * Deletes unknown devices: forgets them in the IMS and, for manual pfSense
+ * MAC entries, asks the agent (2.6+) to delete those entries on pfSense.
+ */
+function hubinet_delete_unknown(mysqli $conn, array $macs, int $uid): array
+{
+    $macs = array_values(array_unique(array_filter(array_map(static fn($m) => hubnet_normalize_mac((string)$m), $macs))));
+    $macs = array_values(array_filter($macs, static fn($m) => !hubnet_devices_where($conn, 'd.mac_address = ?', 's', [$m])));
+    if (!$macs) {
+        return hubinet_result(false, 'Select unknown devices first (registered devices are removed from their owner\'s page).');
+    }
+    $queued = 0;
+    foreach (array_chunk($macs, 500) as $chunk) {
+        $marks = implode(',', array_fill(0, count($chunk), '?'));
+        $types = str_repeat('s', count($chunk));
+        $stmt = $conn->prepare("SELECT mac_address FROM hub_network_pfmacs WHERE mac_address IN ($marks)");
+        $stmt->bind_param($types, ...$chunk);
+        $stmt->execute();
+        $inPf = array_column($stmt->get_result()->fetch_all(MYSQLI_ASSOC), 'mac_address');
+        $stmt->close();
+        if ($inPf) {
+            $q = $conn->prepare('INSERT IGNORE INTO hub_network_pfdelete (mac_address, requested_by) VALUES (?, ?)');
+            foreach ($inPf as $mac) {
+                $q->bind_param('si', $mac, $uid);
+                $q->execute();
+                $queued += $q->affected_rows > 0 ? 1 : 0;
+            }
+            $q->close();
+        }
+        foreach (['hub_network_online', 'hub_network_pfmacs'] as $table) {
+            $del = $conn->prepare("DELETE FROM $table WHERE mac_address IN ($marks)");
+            $del->bind_param($types, ...$chunk);
+            $del->execute();
+            $del->close();
+        }
+    }
+    if (function_exists('log_action')) {
+        log_action($uid, 'Delete Unknown Devices', 'hub_network_online', null, count($macs) . ' device(s), ' . $queued . ' pfSense MAC entr(ies) queued for deletion');
+    }
+    return hubinet_result(true, count($macs) . ' device(s) deleted.'
+        . ($queued ? ' ' . $queued . ' manual pfSense MAC entr' . ($queued === 1 ? 'y is' : 'ies are') . ' deleted on pfSense at its next check-in (agent 2.6).' : '')
+        . ' Devices that are still connected appear again at the next check-in.');
 }
 
 /** Counts of devices online now by owner kind. */
@@ -1870,7 +1962,7 @@ function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $t
 {
     $macs = array_values(array_unique(array_filter(array_map(static fn($m) => hubnet_normalize_mac((string)$m), $macs))));
     if (!$macs) {
-        return hubinet_result(false, 'Select pfSense entries first.');
+        return hubinet_result(false, 'Select unknown devices first.');
     }
     if (!in_array($as, ['equipment', 'guest', 'staff', 'existing', 'member'], true)) {
         return hubinet_result(false, 'Choose how to import the devices.');
@@ -1887,13 +1979,36 @@ function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $t
     }
     $type = array_key_exists($type, HUBINET_DEVICE_TYPES) ? $type : 'access_point';
     $marks = implode(',', array_fill(0, count($macs), '?'));
-    $stmt = $conn->prepare("SELECT p.*, o.hostname, o.vendor FROM hub_network_pfmacs p
-                             LEFT JOIN hub_network_online o ON o.mac_address = p.mac_address
-                            WHERE p.mac_address IN ($marks)");
+    // Works for pfSense-list entries and for unknown devices only seen online:
+    // pfSense entry first (pass/block, description, speed), else what pfSense saw online.
+    $byMac = array_fill_keys($macs, null);
+    $stmt = $conn->prepare("SELECT * FROM hub_network_pfmacs WHERE mac_address IN ($marks)");
     $stmt->bind_param(str_repeat('s', count($macs)), ...$macs);
     $stmt->execute();
-    $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $p) {
+        $byMac[$p['mac_address']] = $p;
+    }
     $stmt->close();
+    $stmt = $conn->prepare("SELECT mac_address, hostname, vendor FROM hub_network_online WHERE mac_address IN ($marks)");
+    $stmt->bind_param(str_repeat('s', count($macs)), ...$macs);
+    $stmt->execute();
+    $seenOnline = [];
+    foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $o) {
+        $seenOnline[$o['mac_address']] = $o;
+    }
+    $stmt->close();
+    $rows = [];
+    foreach ($byMac as $mac => $p) {
+        $rows[] = [
+            'mac_address' => $mac,
+            'action' => $p['action'] ?? 'pass',
+            'descr' => $p['descr'] ?? null,
+            'bw_down_kbps' => $p['bw_down_kbps'] ?? null,
+            'bw_up_kbps' => $p['bw_up_kbps'] ?? null,
+            'hostname' => $seenOnline[$mac]['hostname'] ?? null,
+            'vendor' => $seenOnline[$mac]['vendor'] ?? null,
+        ];
+    }
 
     $equipmentPid = $as === 'equipment' ? hubinet_equipment_person($conn, $uid) : 0;
     $ids = [];
@@ -1960,8 +2075,29 @@ function hubinet_import_pf_macs(mysqli $conn, array $macs, string $as, string $t
     $del->bind_param(str_repeat('s', count($macs)), ...$macs);
     $del->execute();
     $del->close();
-    return hubinet_result(true, count($ids) . ' device(s) imported from pfSense'
+    return hubinet_result(true, count($ids) . ' device(s) assigned'
         . ($member ? ' to ' . ($member['company_name'] ?: $member['full_name']) . ' (online while the membership is active)' : '')
         . ($failed ? '; ' . count($failed) . ' failed' : '')
         . '. pfSense switches them to IMS management at its next check-in. ' . $net['message'], ['member_id' => $member ? $memberId : 0]);
+}
+
+/** MACs of manual pfSense entries waiting to be deleted on pfSense. */
+function hubinet_pf_delete_queue(mysqli $conn): array
+{
+    $res = $conn->query('SELECT mac_address FROM hub_network_pfdelete ORDER BY requested_at LIMIT 5000');
+    return $res ? array_column($res->fetch_all(MYSQLI_ASSOC), 'mac_address') : [];
+}
+
+/** Clears queued deletions that pfSense no longer has in its manual MAC list. */
+function hubinet_pf_delete_done(mysqli $conn, array $stillListed): void
+{
+    $still = array_flip(array_filter(array_map(static fn($m) => hubnet_normalize_mac((string)$m), $stillListed)));
+    $del = $conn->prepare('DELETE FROM hub_network_pfdelete WHERE mac_address = ?');
+    foreach (hubinet_pf_delete_queue($conn) as $mac) {
+        if (!isset($still[$mac])) {
+            $del->bind_param('s', $mac);
+            $del->execute();
+        }
+    }
+    $del->close();
 }
