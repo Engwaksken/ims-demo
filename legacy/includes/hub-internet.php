@@ -46,7 +46,7 @@ function hubinet_result(bool $ok, string $message, array $extra = []): array
  * device_mac[] / device_label[] (read with hubnet_device_rows_text()).
  * $required: the first row's MAC must be filled in.
  */
-function hubinet_device_rows(string $id, bool $required = false, string $legend = 'Devices', int $rows = 1): string
+function hubinet_device_rows(string $id, bool $required = false, string $legend = 'Devices', int $rows = 1, ?array $online = null): string
 {
     static $assets = false;
     $h = 'hubinet_h';
@@ -69,7 +69,8 @@ function hubinet_device_rows(string $id, bool $required = false, string $legend 
     }
     $html .= '</div>'
         . '<button type="button" class="btn btn-sm btn-secondary dr-add"><i class="fas fa-plus" aria-hidden="true"></i> Add device</button>'
-        . '<p class="form-hint">Add as many devices as needed. Every address is checked first; nothing is saved if one is invalid or already registered.</p>'
+        . ($online !== null ? hubinet_online_picker($online) : '')
+        . '<p class="form-hint">Type the MAC address' . ($online !== null ? ' or pick a device that is online now' : '') . '. Add as many devices as needed. Every address is checked first; nothing is saved if one is invalid or already registered.</p>'
         . '</fieldset>';
 
     if (!$assets) {
@@ -81,6 +82,17 @@ function hubinet_device_rows(string $id, bool $required = false, string $legend 
             . '.dr-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto;gap:8px;align-items:center}'
             . '.dr-row .form-control{margin:0}'
             . '.dr-mac{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}'
+            . '.dr-pick{margin:8px 0 0;border:1px solid var(--border);border-radius:var(--radius-md,8px)}'
+            . '.dr-pick>summary{cursor:pointer;padding:8px 12px;font-weight:600;font-size:13px;list-style-position:inside}'
+            . '.dr-pick[open]>summary{border-bottom:1px solid var(--border)}'
+            . '.dr-pick-search{margin:8px 12px;width:calc(100% - 24px)}'
+            . '.dr-pick-list{max-height:220px;overflow-y:auto;border-top:1px solid var(--border)}'
+            . '.dr-pick-dev{display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;border:0;border-bottom:1px solid var(--border);background:transparent;text-align:left;cursor:pointer;font:inherit;color:inherit}'
+            . '.dr-pick-dev:last-child{border-bottom:0}'
+            . '.dr-pick-dev:hover,.dr-pick-dev:focus-visible{background:var(--brand-50)}'
+            . '.dr-pick-dev small{display:block;color:var(--ink-400);font-size:12px}'
+            . '.dr-pick-dev.is-added{opacity:.45}'
+            . '.dr-pick-empty{padding:10px 12px;margin:0;color:var(--ink-400);font-size:13px}'
             . '@media(max-width:560px){.dr-row{grid-template-columns:minmax(0,1fr) auto}.dr-row .dr-label{grid-column:1}.dr-row .dr-remove{grid-row:1/span 2;grid-column:2}}'
             . '</style>'
             . '<script>(function(){'
@@ -96,6 +108,18 @@ function hubinet_device_rows(string $id, bool $required = false, string $legend 
             . 'if(req){var first=list2.querySelector(".dr-mac");if(first)first.required=true;}}else{clear(r);}}'
             . '});'
             // Enter in a MAC field adds the next row instead of submitting.
+            // Online-now picker: fill the first empty row (else add one) with the device's MAC and name.
+            . 'document.addEventListener("click",function(e){var b=e.target.closest(".dr-pick-dev");if(!b)return;'
+            . 'var f=b.closest("[data-device-rows]"),norm=function(v){return v.toLowerCase().replace(/[^0-9a-f]/g,"");},dup=null,empty=null;'
+            . 'f.querySelectorAll(".dr-row").forEach(function(r){var v=r.querySelector(".dr-mac").value.trim();if(!v&&!empty)empty=r;if(v&&norm(v)===norm(b.dataset.mac))dup=r;});'
+            . 'if(dup){dup.querySelector(".dr-mac").focus();return;}'
+            . 'if(!empty){f.querySelector(".dr-add").click();var all=f.querySelectorAll(".dr-row");empty=all[all.length-1];}'
+            . 'empty.querySelector(".dr-mac").value=b.dataset.mac;var l=empty.querySelector(".dr-label");if(l&&!l.value)l.value=b.dataset.label||"";'
+            . 'b.classList.add("is-added");b.setAttribute("aria-pressed","true");});'
+            . 'document.addEventListener("input",function(e){if(!e.target.matches||!e.target.matches(".dr-pick-search"))return;'
+            . 'var q=e.target.value.trim().toLowerCase().replace(/[:\\-.]/g,""),box=e.target.closest(".dr-pick"),n=0;'
+            . 'box.querySelectorAll(".dr-pick-dev").forEach(function(b){var hit=q===""||b.dataset.search.replace(/[:\\-.]/g,"").indexOf(q)>-1;b.hidden=!hit;if(hit)n++;});'
+            . 'var none=box.querySelector(".dr-pick-empty");if(none)none.hidden=n>0;});'
             . 'document.addEventListener("keydown",function(e){'
             . 'if(e.key!=="Enter"||!e.target.matches||!e.target.matches(".dr-mac,.dr-label"))return;'
             . 'var f=e.target.closest("[data-device-rows]");if(!f)return;e.preventDefault();f.querySelector(".dr-add").click();});'
@@ -103,6 +127,47 @@ function hubinet_device_rows(string $id, bool $required = false, string $legend 
     }
 
     return $html;
+}
+
+/** Devices online now that are not registered to anyone (cached per request). */
+function hubinet_unregistered_online(mysqli $conn): array
+{
+    static $cache = null;
+    if ($cache === null) {
+        try {
+            $cache = array_values(array_filter(hubinet_online($conn, 'unknown'), static fn($o) => empty($o['device'])));
+        } catch (Throwable $e) {
+            $cache = [];
+        }
+    }
+    return $cache;
+}
+
+/** "Pick from devices online now" list for hubinet_device_rows(); a click fills a device row. */
+function hubinet_online_picker(array $online): string
+{
+    $h = 'hubinet_h';
+    $html = '<details class="dr-pick"><summary><i class="fas fa-wifi" aria-hidden="true"></i> Pick from devices online now'
+        . ' <span class="cell-muted">(' . count($online) . ' not registered)</span></summary>';
+    if (!$online) {
+        return $html . '<p class="dr-pick-empty">No unregistered devices are online right now. Type the MAC address above.</p></details>';
+    }
+    $html .= '<input type="search" class="form-control dr-pick-search" placeholder="Search name, maker, IP or MAC…" aria-label="Search devices online now" autocomplete="off">'
+        . '<div class="dr-pick-list">';
+    foreach ($online as $o) {
+        $mac = (string)$o['mac_address'];
+        $host = trim((string)($o['hostname'] ?? ''));
+        $vendor = trim((string)($o['vendor'] ?? ''));
+        $pfName = trim((string)($o['pf']['descr'] ?? ''));
+        $name = $host ?: $pfName ?: ($vendor !== '' ? $vendor . ' device' : 'Unnamed device');
+        $ip = (string)($o['ip_address'] ?? '');
+        $meta = $mac . ($ip !== '' ? ' · ' . $ip : '') . ($vendor !== '' ? ' · ' . $vendor : '') . (hubinet_is_random_mac($mac) ? ' · private MAC' : '');
+        $search = mb_strtolower($name . ' ' . $vendor . ' ' . $ip . ' ' . str_replace([':', '-', '.'], '', $mac) . ' ' . $pfName);
+        $html .= '<button type="button" class="dr-pick-dev" aria-pressed="false" data-mac="' . $h($mac) . '" data-label="' . $h($host ?: $pfName ?: $vendor) . '" data-search="' . $h($search) . '">'
+            . '<span><strong>' . $h($name) . '</strong><small>' . $h($meta) . '</small></span>'
+            . '<i class="fas fa-plus" aria-hidden="true"></i></button>';
+    }
+    return $html . '</div><p class="dr-pick-empty" hidden>No device matches the search.</p></details>';
 }
 
 /* ======================================================================

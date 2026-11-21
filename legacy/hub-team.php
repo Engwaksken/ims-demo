@@ -786,7 +786,7 @@ elseif ($memberId > 0):
                 <?php
                     // Pick an existing guest (details + their devices move here) or devices online now.
                     $tmGuests = hubinet_people($conn, 'guest');
-                    $tmOnline = array_values(array_filter(hubinet_online($conn, 'unknown'), static fn($o) => empty($o['device'])));
+                    $tmOnline = hubinet_unregistered_online($conn);
                 ?>
                 <?php if ($tmGuests): ?>
                 <div class="form-group tm-pick">
@@ -815,27 +815,10 @@ elseif ($memberId > 0):
                     <div class="form-group"><label for="tm_email">Email</label><input id="tm_email" type="email" class="form-control" name="email"></div>
                     <div class="form-group"><label for="tm_phone">Phone</label><input id="tm_phone" class="form-control" name="phone" maxlength="40"></div>
                 </div>
-                <?= hubinet_device_rows('tm_devices', false, 'Devices (optional)') ?>
-                <?php if ($tmOnline): ?>
-                <div class="form-group tm-pick">
-                    <label for="tm_dev_search">Add from devices online now <span class="cell-muted">(<?= count($tmOnline) ?> not registered)</span></label>
-                    <input id="tm_dev_search" class="form-control" placeholder="Search name, maker, IP or MAC…" autocomplete="off">
-                    <div class="tm-devlist" id="tm_dev_list">
-                        <?php foreach ($tmOnline as $o):
-                            $tmName = trim((string)($o['hostname'] ?? '')) ?: (($o['vendor'] ?? '') ? $o['vendor'] . ' device' : 'Unnamed device'); ?>
-                            <button type="button" class="tm-dev" data-mac="<?= ht_e($o['mac_address']) ?>" data-label="<?= ht_e(trim((string)($o['hostname'] ?? '')) ?: (string)($o['vendor'] ?? '')) ?>"
-                                    data-search="<?= ht_e(mb_strtolower($tmName . ' ' . ($o['vendor'] ?? '') . ' ' . ($o['ip_address'] ?? '') . ' ' . $o['mac_address'] . ' ' . str_replace(':', '', $o['mac_address']))) ?>">
-                                <span><strong><?= ht_e($tmName) ?></strong><small><?= ht_e($o['mac_address']) ?><?= ($o['ip_address'] ?? '') ? ' · ' . ht_e($o['ip_address']) : '' ?><?= ($o['vendor'] ?? '') ? ' · ' . ht_e($o['vendor']) : '' ?><?= hubinet_is_random_mac($o['mac_address']) ? ' · private MAC' : '' ?></small></span>
-                                <i class="fas fa-plus" aria-hidden="true"></i>
-                            </button>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <?= hubinet_device_rows('tm_devices', false, 'Devices (optional)', 1, $tmOnline) ?>
                 <div class="ht-help">Laptop and phone Wi-Fi addresses. Ask them to turn off "private / random MAC address" for the hub Wi-Fi so the address stays the same.</div>
                 <style>
                 .tm-pick { margin-bottom: 12px; }
-                .tm-devlist { max-height: 210px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-md, 8px); margin-top: 6px; }
                 .tm-dev { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--border); background: transparent; text-align: left; cursor: pointer; font: inherit; }
                 .tm-dev:last-child { border-bottom: 0; }
                 .tm-dev:hover { background: var(--brand-50); }
@@ -859,23 +842,6 @@ elseif ($memberId > 0):
                             document.getElementById('tm_guest_note').textContent = g.name + "'s " + g.devices + ' registered device' + (g.devices === 1 ? '' : 's') + ' will move to this team member; the guest record is removed.';
                         });
                     }
-                    // Online device picker: fill the first empty device row, else add a row.
-                    var ds = document.getElementById('tm_dev_search'), list = document.getElementById('tm_dev_list');
-                    if (!ds || !list) return;
-                    ds.addEventListener('input', function () {
-                        var q = ds.value.trim().toLowerCase().replace(/[:\-]/g, '');
-                        list.querySelectorAll('.tm-dev').forEach(function (b) { b.hidden = q !== '' && b.dataset.search.replace(/[:\-]/g, '').indexOf(q) === -1; });
-                    });
-                    list.addEventListener('click', function (e) {
-                        var b = e.target.closest('.tm-dev');
-                        if (!b) return;
-                        var rows = form.querySelector('#tm_devices'), empty = null;
-                        rows.querySelectorAll('.dr-row').forEach(function (r) { if (!empty && !r.querySelector('.dr-mac').value.trim()) empty = r; });
-                        if (!empty) { rows.querySelector('.dr-add').click(); var all = rows.querySelectorAll('.dr-row'); empty = all[all.length - 1]; }
-                        empty.querySelector('.dr-mac').value = b.dataset.mac;
-                        empty.querySelector('.dr-label').value = b.dataset.label || '';
-                        b.classList.add('is-added');
-                    });
                 })();
                 </script>
                 <div class="modal-footer">
@@ -944,7 +910,7 @@ elseif ($memberId > 0):
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <?= hubinet_device_rows('dv_devices', true, 'Devices') ?>
+                <?= hubinet_device_rows('dv_devices', true, 'Devices', 1, hubinet_unregistered_online($conn)) ?>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('addDeviceModal')">Cancel</button>
                     <button type="submit" class="btn btn-primary"><i class="fas fa-plus" aria-hidden="true"></i> Add devices</button>

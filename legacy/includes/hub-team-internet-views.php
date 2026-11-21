@@ -262,7 +262,7 @@ elseif ($view === 'staff' || $view === 'guests'):
         <form method="post" action="<?= $hiAction ?>" style="margin-bottom:12px">
             <?= $hiHidden('add_person_device', $view, $personId) ?>
             <input type="hidden" name="person_id" value="<?= $personId ?>">
-            <?= hubinet_device_rows('hiAddDevices', true, 'Add devices') ?>
+            <?= hubinet_device_rows('hiAddDevices', true, 'Add devices', 1, hubinet_unregistered_online($conn)) ?>
             <button class="btn btn-primary"><i class="fas fa-save" aria-hidden="true"></i> Save devices</button>
         </form>
         <?php endif; ?>
@@ -398,9 +398,9 @@ elseif ($view === 'staff' || $view === 'guests'):
                         <div class="form-group"><label for="hiUntil">Access until</label><input id="hiUntil" type="datetime-local" name="valid_until" class="form-control" value="<?= date('Y-m-d') ?>T23:59"></div>
                         <div class="form-group"><label class="hr-check" style="margin-top:28px"><input type="checkbox" name="no_expiry" value="1" onchange="document.getElementById('hiUntil').disabled=this.checked"> No expiry</label></div>
                     <?php endif; ?>
-                    <div class="form-group is-wide"><?= hubinet_device_rows('hiDevices', false, 'Devices (optional)') ?></div>
+                    <div class="form-group is-wide"><?= hubinet_device_rows('hiDevices', false, 'Devices (optional)', 1, hubinet_unregistered_online($conn)) ?></div>
                 </div>
-                <p class="form-hint">Find a device's MAC address under <a href="hub-team?view=online&amp;kind=unknown">Online now</a> (unknown devices) and register it from there.</p>
+                <p class="form-hint">Type the MAC address, or open "Pick from devices online now" and click the device.</p>
             </div>
             <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('hiAddPerson')">Cancel</button><button class="btn btn-primary">Add</button></div>
         </form>
