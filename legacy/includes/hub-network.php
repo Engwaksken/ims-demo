@@ -1037,7 +1037,8 @@ if (!function_exists('hubnet_record_report')) {
     function hubnet_record_report(mysqli $conn, array $results): int
     {
         $changed = 0;
-        $select = $conn->prepare('SELECT device_id, pf_state, pf_last_error FROM hub_network_devices WHERE mac_address = ? LIMIT 1');
+        // Every row with the MAC: a leftover row (e.g. of a deleted company) must not hide the live device.
+        $select = $conn->prepare('SELECT device_id, pf_state, pf_last_error FROM hub_network_devices WHERE mac_address = ?');
         $update = $conn->prepare('UPDATE hub_network_devices SET pf_state = ?, pf_last_error = ?, pf_synced_at = NOW() WHERE device_id = ?');
         $touch = $conn->prepare('UPDATE hub_network_devices SET pf_synced_at = NOW() WHERE device_id = ?');
 
@@ -1054,9 +1055,9 @@ if (!function_exists('hubnet_record_report')) {
 
             $select->bind_param('s', $mac);
             $select->execute();
-            $device = $select->get_result()->fetch_assoc();
+            $rows = $select->get_result()->fetch_all(MYSQLI_ASSOC);
 
-            if (!$device) {
+            if (!$rows) {
                 continue; // deleted in the IMS; the agent has removed its entry
             }
 
@@ -1064,18 +1065,21 @@ if (!function_exists('hubnet_record_report')) {
             $mode = in_array($result['mode'] ?? '', ['pass', 'block', 'remove'], true) ? (string)$result['mode'] : 'remove';
             $state = $ok ? hubnet_state_for_mode($mode) : 'error';
             $error = $ok ? null : mb_substr((string)($result['message'] ?? 'pfSense could not apply this device.'), 0, 255);
-            $deviceId = (int)$device['device_id'];
 
-            if ($state === $device['pf_state'] && $error === $device['pf_last_error']) {
-                $touch->bind_param('i', $deviceId);
-                $touch->execute();
-                continue;
+            foreach ($rows as $device) {
+                $deviceId = (int)$device['device_id'];
+
+                if ($state === $device['pf_state'] && $error === $device['pf_last_error']) {
+                    $touch->bind_param('i', $deviceId);
+                    $touch->execute();
+                    continue;
+                }
+
+                $update->bind_param('ssi', $state, $error, $deviceId);
+                $update->execute();
+                hubnet_log($conn, $deviceId, $mac, 'pull:' . $mode, $ok, $ok ? $state : (string)$error, 0);
+                $changed++;
             }
-
-            $update->bind_param('ssi', $state, $error, $deviceId);
-            $update->execute();
-            hubnet_log($conn, $deviceId, $mac, 'pull:' . $mode, $ok, $ok ? $state : (string)$error, 0);
-            $changed++;
         }
 
         $select->close();
@@ -1083,6 +1087,42 @@ if (!function_exists('hubnet_record_report')) {
         $touch->close();
 
         return $changed;
+    }
+}
+
+if (!function_exists('hubnet_flag_unreported')) {
+    /**
+     * Pull mode: devices the IMS sent to pfSense that its report did not
+     * mention (registered more than 5 minutes ago, so not just added) get a
+     * sync error saying so, instead of staying "Not synced" with no reason.
+     */
+    function hubnet_flag_unreported(mysqli $conn, array $results): int
+    {
+        $reported = [];
+        foreach (array_keys($results) as $mac) {
+            $mac = hubnet_normalize_mac((string)$mac);
+            if ($mac !== '') {
+                $reported[$mac] = true;
+            }
+        }
+        $stmt = $conn->prepare("UPDATE hub_network_devices SET pf_state = 'error', pf_last_error = ?, pf_synced_at = NOW() WHERE device_id = ?");
+        if (!$stmt) {
+            return 0;
+        }
+        $message = 'pfSense did not report this device at its last check-in. Run the agent by hand on pfSense (php -f /root/ims-cp-agent.php pull) and check its output.';
+        $n = 0;
+        foreach (hubnet_devices_where($conn, "d.created_at < DATE_SUB(NOW(), INTERVAL 5 MINUTE) AND (d.pf_state IS NULL OR d.pf_state IN ('unknown', 'pending', ''))") as $device) {
+            $mac = hubnet_normalize_mac((string)$device['mac_address']);
+            if ($mac === '' || isset($reported[$mac])) {
+                continue;
+            }
+            $id = (int)$device['device_id'];
+            $stmt->bind_param('si', $message, $id);
+            $stmt->execute();
+            $n++;
+        }
+        $stmt->close();
+        return $n;
     }
 }
 

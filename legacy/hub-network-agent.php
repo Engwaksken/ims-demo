@@ -94,6 +94,10 @@ switch ((string)($request['action'] ?? '')) {
     case 'report':
         $results = is_array($request['results'] ?? null) ? $request['results'] : [];
         $changed = $active ? hubnet_record_report($conn, $results) : 0;
+        // Devices the agent applied nothing for get a reason instead of "Not synced".
+        if ($active && $results !== []) {
+            hubnet_flag_unreported($conn, $results);
+        }
         // Agent 2.4+: MAC entries added by hand in pfSense, for import (Online now).
         if (is_array($request['manual_macs'] ?? null)) {
             hubinet_record_pf_macs($conn, $request['manual_macs']);

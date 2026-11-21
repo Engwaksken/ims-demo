@@ -80,7 +80,10 @@ function ht_state_badge(array $device): string
         'unknown' => ['info', 'Not synced'],
     ];
     [$class, $label] = $map[$device['pf_state'] ?? 'unknown'] ?? $map['unknown'];
-    $title = ($device['pf_state'] ?? '') === 'error' ? (string)($device['pf_last_error'] ?? '') : (string)($device['pf_synced_at'] ?? '');
+    $state = (string)($device['pf_state'] ?? '');
+    $title = $state === 'error' ? (string)($device['pf_last_error'] ?? '')
+        : (isset($map[$state]) && $state !== 'unknown' ? 'Confirmed by pfSense ' . (string)($device['pf_synced_at'] ?? '')
+        : 'Waiting for pfSense: applied at its next check-in (about a minute).');
 
     return '<span class="badge badge-' . $class . '" title="' . ht_e($title) . '">' . $label . '</span>';
 }
