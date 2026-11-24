@@ -18,6 +18,9 @@ emails and PDF/print views.
 3. Import the database, then run every file in `database/migrations/` (idempotent).
 4. Optional cron for carrying pending daily tasks to the next day:
    `5 0 * * * php /path/to/legacy/cron/carry-over-pending-tasks.php`
+5. Optional daily cron for automatic reminders to applicants with unsubmitted draft applications
+   (days before the deadline set under Manage Applications > Draft reminders):
+   `0 8 * * * php /path/to/legacy/cron/application-draft-reminders.php`
 
 ## Notes
 

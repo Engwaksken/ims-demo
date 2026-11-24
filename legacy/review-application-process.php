@@ -548,6 +548,69 @@ switch ($action) {
     }
 
     /* ------------------------------------------------------------
+       REMIND DRAFTS (POST)
+       action=remind_drafts, opportunity_id, [selected_applications[]], [reminder_note]
+       No selection = every open draft of the opportunity. Non-draft
+       selections are ignored.
+    ------------------------------------------------------------ */
+    case 'remind_drafts': {
+        require_once __DIR__ . '/includes/application-reminders.php';
+
+        $opportunity_id = (int)($_POST['opportunity_id'] ?? 0);
+        $back = $opportunity_id > 0 ? "manage-applications?opportunity_id={$opportunity_id}" : 'application-opportunities';
+        if ($opportunity_id < 1) failTo($back, 'Invalid opportunity.');
+        if (!apprem_ensure_schema($conn)) failTo($back, 'Reminder tables are unavailable.');
+
+        $selected = $_POST['selected_applications'] ?? [];
+        $ids = is_array($selected) ? array_values(array_filter(array_map('intval', $selected), static fn($x) => $x > 0)) : [];
+        if (($_POST['remind_scope'] ?? '') === 'selected' && !$ids) {
+            failTo($back, 'Select the draft applications to remind.');
+        }
+        $note = mb_substr(trim((string)($_POST['reminder_note'] ?? '')), 0, 1000);
+
+        if (!apprem_fetch_drafts($conn, $opportunity_id, $ids)) {
+            failTo($back, $ids
+                ? 'None of the selected applications is an open draft (the opportunity must be Published and before its deadline).'
+                : 'There are no open drafts to remind (the opportunity must be Published and before its deadline).');
+        }
+
+        $r = apprem_send_manual($conn, $opportunity_id, $ids, $user_id, $note);
+        log_activity($conn, $user_id, 'Draft Reminders', "Reminded draft applicants of opportunity #{$opportunity_id}: sent {$r['sent']}, failed {$r['failed']}, skipped {$r['skipped']}");
+
+        $msg = "Reminder sent to {$r['sent']} draft applicant(s).";
+        if ($r['skipped'] > 0) $msg .= " {$r['skipped']} skipped (already reminded in the last hour).";
+        if ($r['failed'] > 0) {
+            $_SESSION['error'] = "{$r['failed']} reminder(s) could not be emailed. Check the applicant email addresses and the email settings.";
+            if ($r['sent'] === 0) {
+                header("Location: {$back}");
+                exit();
+            }
+        }
+        okTo($back, $msg);
+    }
+
+    /* ------------------------------------------------------------
+       DRAFT REMINDER SETTINGS (POST, Administrator)
+       action=save_draft_reminder_settings, enabled, days_before, opportunity_id
+    ------------------------------------------------------------ */
+    case 'save_draft_reminder_settings': {
+        require_once __DIR__ . '/includes/application-reminders.php';
+
+        $opportunity_id = (int)($_POST['opportunity_id'] ?? 0);
+        $back = $opportunity_id > 0 ? "manage-applications?opportunity_id={$opportunity_id}" : 'application-opportunities';
+        if (($_SESSION['role'] ?? '') !== 'Administrator') failTo($back, 'Only administrators can change automatic reminders.');
+        if (!apprem_ensure_schema($conn)) failTo($back, 'Reminder tables are unavailable.');
+
+        $enabled = !empty($_POST['enabled']);
+        $days = (string)($_POST['days_before'] ?? '');
+        if (!apprem_parse_days($days)) failTo($back, 'Enter one or more whole numbers of days, e.g. 7,3,1 (0 = deadline day).');
+        if (!apprem_save_settings($conn, $enabled, $days, $user_id)) failTo($back, 'Could not save reminder settings.');
+
+        log_activity($conn, $user_id, 'Draft Reminder Settings', 'Automatic draft reminders ' . ($enabled ? 'on' : 'off') . ', days: ' . implode(',', apprem_parse_days($days)));
+        okTo($back, 'Automatic draft reminder settings saved.');
+    }
+
+    /* ------------------------------------------------------------
        SEND EMAIL (POST)
        action=send_email, application_id, subject, message
     ------------------------------------------------------------ */

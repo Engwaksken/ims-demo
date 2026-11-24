@@ -176,6 +176,26 @@ $avg_score = !empty($scored)
     : 0;
 
 $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Waitlisted','Shortlisted','Accepted'];
+
+/*
+|--------------------------------------------------------------------------
+| DRAFT REMINDERS
+|--------------------------------------------------------------------------
+*/
+require_once __DIR__ . '/includes/application-reminders.php';
+$rem_ready     = apprem_ensure_schema($conn);
+$rem_settings  = $rem_ready ? apprem_settings($conn) : ['enabled' => false, 'days_before' => [], 'updated_at' => null];
+$rem_last      = $rem_ready ? apprem_last_reminded($conn, $opportunity_id) : [];
+$rem_open      = $rem_ready ? apprem_fetch_drafts($conn, $opportunity_id) : [];
+$rem_open_ids  = array_fill_keys(array_map(fn($d) => (int)$d['application_id'], $rem_open), true);
+$rem_no_email  = count(array_filter($rem_open, fn($d) => !filter_var(trim((string)($d['email'] ?? '')), FILTER_VALIDATE_EMAIL)));
+$rem_deadline  = (string)($opportunity['deadline'] ?? '');
+$rem_opp_open  = ($opportunity['status'] ?? '') === 'Published' && $rem_deadline !== '' && substr($rem_deadline, 0, 10) >= date('Y-m-d');
+$rem_days_left = $rem_opp_open ? apprem_days_left($rem_deadline) : null;
+$rem_is_admin  = ($_SESSION['role'] ?? '') === 'Administrator';
+$rem_days_text = $rem_settings['days_before']
+    ? implode(', ', array_map(fn($d) => $d === 0 ? 'on the deadline day' : $d . ' day' . ($d === 1 ? '' : 's'), $rem_settings['days_before']))
+    : 'no days set';
 ?>
 
 <style>
@@ -235,6 +255,14 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
 .ma-bulk-divider { width: 1px; height: 20px; background: var(--brand-200); flex-shrink: 0; }
 .ma-selected-count { font-weight: 700; color: var(--brand-600); white-space: nowrap; }
 .ma-bulk-bar .form-control { width: auto; min-width: 200px; margin: 0; }
+
+.ma-reminded { display: block; font-size: 11px; color: var(--ink-300); margin-top: 4px; white-space: nowrap; }
+.ma-rem-body { display: grid; gap: 14px; }
+.ma-rem-summary { margin: 0; font-size: 13.5px; color: var(--ink-600); }
+.ma-rem-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.ma-rem-box { border: 1px solid var(--ink-50); border-radius: 10px; padding: 14px; }
+.ma-rem-box h4 { margin: 0 0 8px; font-size: 13.5px; }
+.ma-rem-box .form-group { margin-bottom: 10px; }
 
 @media (max-width: 640px) {
     .ma-bulk-bar { flex-direction: column; align-items: stretch; }
@@ -367,12 +395,82 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
     </div>
 </div>
 
+<!-- -- Draft reminders ---------------------------------------- -->
+<?php if ($rem_ready): ?>
+<div class="card" id="draft-reminders">
+    <div class="card-header">
+        <h3><i class="fas fa-bell" aria-hidden="true"></i> Draft reminders</h3>
+    </div>
+    <div class="card-body ma-rem-body">
+        <p class="ma-rem-summary">
+            <?php if ($rem_opp_open): ?>
+                <strong><?= count($rem_open) ?></strong> unsubmitted draft<?= count($rem_open) === 1 ? '' : 's' ?>.
+                The deadline is <?= h(date('d M Y', strtotime($rem_deadline))) ?>
+                (<?= $rem_days_left === 0 ? 'today' : ($rem_days_left === 1 ? 'tomorrow' : 'in ' . (int)$rem_days_left . ' days') ?>).
+                <?php if ($rem_no_email > 0): ?><?= (int)$rem_no_email ?> draft<?= $rem_no_email === 1 ? ' has' : 's have' ?> no valid email address and can't be reminded.<?php endif; ?>
+            <?php else: ?>
+                Reminders are only sent while the opportunity is Published and its deadline has not passed.
+            <?php endif; ?>
+            Automatic reminders are <strong><?= $rem_settings['enabled'] ? 'on' : 'off' ?></strong><?php if ($rem_settings['enabled']): ?>: <?= h($rem_days_text) ?> before the deadline<?php endif; ?> (all opportunities).
+        </p>
+
+        <div class="ma-rem-forms">
+            <form method="POST" action="review-application-process" class="ma-rem-box"
+                  onsubmit="return confirm('Email a reminder to all <?= count($rem_open) ?> draft applicant(s) now?');">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="remind_drafts">
+                <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+                <h4>Remind now</h4>
+                <div class="form-group">
+                    <label for="rem_note">Personal note (optional)</label>
+                    <textarea id="rem_note" name="reminder_note" class="form-control" rows="2" maxlength="1000"
+                              placeholder="Added to the standard reminder email"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm" <?= ($rem_opp_open && $rem_open) ? '' : 'disabled' ?>>
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i> Remind all drafts (<?= count($rem_open) ?>)
+                </button>
+                <p class="form-hint">To remind only some, tick them in the table and use <em>Remind selected drafts</em>. Anyone reminded in the last hour is skipped.</p>
+            </form>
+
+            <?php if ($rem_is_admin): ?>
+            <form method="POST" action="review-application-process" class="ma-rem-box">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="save_draft_reminder_settings">
+                <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+                <h4>Automatic reminders</h4>
+                <div class="form-group">
+                    <label class="hr-check"><input type="checkbox" name="enabled" value="1" <?= $rem_settings['enabled'] ? 'checked' : '' ?>> Email draft applicants automatically</label>
+                </div>
+                <div class="form-group">
+                    <label for="rem_days">Days before the deadline</label>
+                    <input id="rem_days" type="text" name="days_before" class="form-control" required
+                           pattern="\s*\d{1,2}(\s*,\s*\d{1,2})*\s*"
+                           value="<?= h(implode(',', $rem_settings['days_before'])) ?>">
+                    <p class="form-hint">Comma-separated, e.g. 7,3,1. Use 0 for the deadline day. Applies to every published opportunity and needs the daily <code>cron/application-draft-reminders.php</code> job.</p>
+                </div>
+                <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-save" aria-hidden="true"></i> Save</button>
+            </form>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<form method="POST" action="review-application-process" id="remindOneForm" hidden>
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="remind_drafts">
+    <input type="hidden" name="remind_scope" value="selected">
+    <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+    <input type="hidden" name="selected_applications[]" id="remindOneId" value="">
+</form>
+<?php endif; ?>
+
 <!-- -- Applications table (or empty state) --------------------- -->
 <?php if (!empty($applications)): ?>
 
 <form method="POST" action="review-application-process" id="bulkForm">
     <input type="hidden" name="action" value="bulk_status_change">
     <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+    <input type="hidden" name="remind_scope" value="selected">
 
     <div class="card">
 
@@ -396,6 +494,11 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
             <button type="submit" class="btn btn-primary btn-sm" onclick="return confirmBulkAction()">
                 <i class="fas fa-check"></i> Apply
             </button>
+            <?php if ($rem_ready && $rem_opp_open && $rem_open): ?>
+                <button type="submit" name="action" value="remind_drafts" formnovalidate class="btn btn-secondary btn-sm" onclick="return confirmRemindSelected()">
+                    <i class="fas fa-bell" aria-hidden="true"></i> Remind selected drafts
+                </button>
+            <?php endif; ?>
             <?php if (($_SESSION['role'] ?? '') === 'Administrator'): ?>
                 <button type="submit" name="action" value="bulk_delete_applications" formnovalidate class="btn btn-danger btn-sm" onclick="return confirmBulkDelete()">
                     <i class="fas fa-trash" aria-hidden="true"></i> Delete selected
@@ -489,6 +592,12 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
 
                         <td>
                             <span class="badge <?= $appBadge ?>"><?= h($st) ?></span>
+                            <?php if ($st === 'Draft' && isset($rem_last[(int)$app['application_id']])):
+                                $rl = $rem_last[(int)$app['application_id']]; ?>
+                                <span class="ma-reminded" title="<?= (int)$rl['count'] ?> reminder(s) sent">
+                                    <i class="fas fa-bell" aria-hidden="true"></i> Reminded <?= h(date('d M', strtotime($rl['sent_at']))) ?>
+                                </span>
+                            <?php endif; ?>
                         </td>
 
                         <td class="cell-muted ma-cell-sm text-nowrap">
@@ -504,6 +613,13 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
                                     <i class="fas fa-eye"></i>
                                 </a>
 
+                                <?php if ($st === 'Draft' && isset($rem_open_ids[(int)$app['application_id']])): ?>
+                                    <button type="button"
+                                            onclick="remindOne(<?= (int)$app['application_id'] ?>)"
+                                            class="btn btn-secondary btn-sm" title="Email a reminder to finish this draft">
+                                        <i class="fas fa-bell" aria-hidden="true"></i>
+                                    </button>
+                                <?php endif; ?>
                                 <?php if (in_array($st, ['Submitted', 'Under Review'], true)): ?>
                                     <button type="button"
                                             onclick="quickShortlist(<?= (int)$app['application_id'] ?>)"
@@ -589,6 +705,19 @@ function confirmBulkDelete() {
     const checked = document.querySelectorAll('.app-checkbox:checked').length;
     if (checked === 0) { alert('Please select at least one application.'); return false; }
     return confirm(`Permanently delete selected Draft or Submitted application(s) for this opportunity? Other statuses will be kept.`);
+}
+
+function confirmRemindSelected() {
+    const checked = document.querySelectorAll('.app-checkbox:checked').length;
+    if (checked === 0) { alert('Please select at least one draft application.'); return false; }
+    return confirm('Email a reminder to the selected draft applicant(s)? Selected applications that are not drafts are skipped.');
+}
+
+function remindOne(id) {
+    const form = document.getElementById('remindOneForm');
+    if (!form || !confirm('Email this applicant a reminder to finish and submit their draft?')) return;
+    document.getElementById('remindOneId').value = id;
+    form.submit();
 }
 
 function sortBy(column) {
