@@ -193,6 +193,21 @@ $rem_deadline  = (string)($opportunity['deadline'] ?? '');
 $rem_opp_open  = ($opportunity['status'] ?? '') === 'Published' && $rem_deadline !== '' && substr($rem_deadline, 0, 10) >= date('Y-m-d');
 $rem_days_left = $rem_opp_open ? apprem_days_left($rem_deadline) : null;
 $rem_is_admin  = ($_SESSION['role'] ?? '') === 'Administrator';
+$rem_recent    = $rem_ready ? apprem_recent_ids($conn, $opportunity_id, 3600) : [];
+$rem_modal_data = [];
+foreach ($rem_open as $d) {
+    $did = (int)$d['application_id'];
+    $rem_modal_data[] = [
+        'id'       => $did,
+        'startup'  => (string)($d['startup_name'] ?? ''),
+        'contact'  => (string)($d['contact_name'] ?? ''),
+        'email'    => (string)($d['email'] ?? ''),
+        'hasEmail' => (bool)filter_var(trim((string)($d['email'] ?? '')), FILTER_VALIDATE_EMAIL),
+        'recent'   => isset($rem_recent[$did]),
+        'last'     => isset($rem_last[$did]) ? date('d M Y, H:i', strtotime($rem_last[$did]['sent_at'])) : '',
+        'count'    => (int)($rem_last[$did]['count'] ?? 0),
+    ];
+}
 $rem_days_text = $rem_settings['days_before']
     ? implode(', ', array_map(fn($d) => $d === 0 ? 'on the deadline day' : $d . ' day' . ($d === 1 ? '' : 's'), $rem_settings['days_before']))
     : 'no days set';
@@ -263,6 +278,16 @@ $rem_days_text = $rem_settings['days_before']
 .ma-rem-box { border: 1px solid var(--ink-50); border-radius: 10px; padding: 14px; }
 .ma-rem-box h4 { margin: 0 0 8px; font-size: 13.5px; }
 .ma-rem-box .form-group { margin-bottom: 10px; }
+.ma-rem-intro { margin: 0 0 12px; font-size: 13.5px; }
+.ma-rem-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--ink-50); border-radius: 8px; margin-bottom: 14px; }
+.ma-rem-list table { width: 100%; margin: 0; font-size: 12.5px; }
+.ma-rem-list th { position: sticky; top: 0; background: var(--surface, #fff); }
+.ma-rem-list td, .ma-rem-list th { padding: 7px 10px; vertical-align: top; }
+.ma-rem-list tr.is-skipped td { color: var(--ink-300); }
+.ma-rem-sub { display: block; font-size: 11.5px; color: var(--ink-300); }
+.ma-rem-flag { display: inline-block; font-size: 11px; font-weight: 700; }
+.ma-rem-flag.ok { color: var(--green-fg); }
+.ma-rem-flag.skip { color: var(--amber-fg); }
 
 @media (max-width: 640px) {
     .ma-bulk-bar { flex-direction: column; align-items: stretch; }
@@ -415,22 +440,14 @@ $rem_days_text = $rem_settings['days_before']
         </p>
 
         <div class="ma-rem-forms">
-            <form method="POST" action="review-application-process" class="ma-rem-box"
-                  onsubmit="return confirm('Email a reminder to all <?= count($rem_open) ?> draft applicant(s) now?');">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="remind_drafts">
-                <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+            <div class="ma-rem-box">
                 <h4>Remind now</h4>
-                <div class="form-group">
-                    <label for="rem_note">Personal note (optional)</label>
-                    <textarea id="rem_note" name="reminder_note" class="form-control" rows="2" maxlength="1000"
-                              placeholder="Added to the standard reminder email"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary btn-sm" <?= ($rem_opp_open && $rem_open) ? '' : 'disabled' ?>>
+                <p class="form-hint">Email every unsubmitted draft for this opportunity, with an optional personal note. You'll see the full list before anything is sent.</p>
+                <button type="button" class="btn btn-primary btn-sm" onclick="openRemindModal('all')" <?= ($rem_opp_open && $rem_open) ? '' : 'disabled' ?>>
                     <i class="fas fa-paper-plane" aria-hidden="true"></i> Remind all drafts (<?= count($rem_open) ?>)
                 </button>
-                <p class="form-hint">To remind only some, tick them in the table and use <em>Remind selected drafts</em>. Anyone reminded in the last hour is skipped.</p>
-            </form>
+                <p class="form-hint">To remind only some, tick them in the table and use <em>Remind selected drafts</em>, or use the <i class="fas fa-bell" aria-hidden="true"></i> button on a row.</p>
+            </div>
 
             <?php if ($rem_is_admin): ?>
             <form method="POST" action="review-application-process" class="ma-rem-box">
@@ -455,13 +472,46 @@ $rem_days_text = $rem_settings['days_before']
     </div>
 </div>
 
-<form method="POST" action="review-application-process" id="remindOneForm" hidden>
-    <?= csrf_field() ?>
-    <input type="hidden" name="action" value="remind_drafts">
-    <input type="hidden" name="remind_scope" value="selected">
-    <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
-    <input type="hidden" name="selected_applications[]" id="remindOneId" value="">
-</form>
+<div id="remindDraftsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="remindDraftsTitle" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="remindDraftsTitle"><i class="fas fa-bell" aria-hidden="true"></i> Send draft reminder</h3>
+            <button type="button" class="modal-close" onclick="closeModal('remindDraftsModal')" aria-label="Close">&times;</button>
+        </div>
+
+        <form method="POST" action="review-application-process" id="remindDraftsForm">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="remind_drafts">
+            <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+            <input type="hidden" name="remind_scope" id="remindScope" value="">
+            <div id="remindIds"></div>
+
+            <div class="modal-body">
+                <p class="ma-rem-intro" id="remindIntro"></p>
+
+                <div class="ma-rem-list">
+                    <table class="table">
+                        <thead><tr><th>Applicant</th><th>Email</th><th>Last reminded</th><th></th></tr></thead>
+                        <tbody id="remindRows"></tbody>
+                    </table>
+                </div>
+
+                <div class="form-group">
+                    <label for="rem_note">Personal note (optional)</label>
+                    <textarea id="rem_note" name="reminder_note" class="form-control" rows="3" maxlength="1000"
+                              placeholder="e.g. Remember to upload your pitch deck before submitting."></textarea>
+                    <p class="form-hint">Added to the standard reminder, which states the deadline<?= $rem_deadline !== '' ? ' (' . h(date('d M Y', strtotime($rem_deadline))) . ')' : '' ?>, the draft reference and a link to My Applications.</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('remindDraftsModal')" class="btn btn-secondary"><i class="fas fa-times" aria-hidden="true"></i> Cancel</button>
+                <button type="submit" class="btn btn-primary" id="remindSubmit"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span>Send reminder</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+<script type="application/json" id="remindDraftsData"><?= json_encode($rem_modal_data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
 <?php endif; ?>
 
 <!-- -- Applications table (or empty state) --------------------- -->
@@ -470,7 +520,6 @@ $rem_days_text = $rem_settings['days_before']
 <form method="POST" action="review-application-process" id="bulkForm">
     <input type="hidden" name="action" value="bulk_status_change">
     <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
-    <input type="hidden" name="remind_scope" value="selected">
 
     <div class="card">
 
@@ -495,7 +544,7 @@ $rem_days_text = $rem_settings['days_before']
                 <i class="fas fa-check"></i> Apply
             </button>
             <?php if ($rem_ready && $rem_opp_open && $rem_open): ?>
-                <button type="submit" name="action" value="remind_drafts" formnovalidate class="btn btn-secondary btn-sm" onclick="return confirmRemindSelected()">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="openRemindModal('selected')">
                     <i class="fas fa-bell" aria-hidden="true"></i> Remind selected drafts
                 </button>
             <?php endif; ?>
@@ -615,7 +664,7 @@ $rem_days_text = $rem_settings['days_before']
 
                                 <?php if ($st === 'Draft' && isset($rem_open_ids[(int)$app['application_id']])): ?>
                                     <button type="button"
-                                            onclick="remindOne(<?= (int)$app['application_id'] ?>)"
+                                            onclick="openRemindModal('one', <?= (int)$app['application_id'] ?>)"
                                             class="btn btn-secondary btn-sm" title="Email a reminder to finish this draft">
                                         <i class="fas fa-bell" aria-hidden="true"></i>
                                     </button>
@@ -707,18 +756,68 @@ function confirmBulkDelete() {
     return confirm(`Permanently delete selected Draft or Submitted application(s) for this opportunity? Other statuses will be kept.`);
 }
 
-function confirmRemindSelected() {
-    const checked = document.querySelectorAll('.app-checkbox:checked').length;
-    if (checked === 0) { alert('Please select at least one draft application.'); return false; }
-    return confirm('Email a reminder to the selected draft applicant(s)? Selected applications that are not drafts are skipped.');
+const remindDrafts = (() => {
+    try { return JSON.parse(document.getElementById('remindDraftsData')?.textContent || '[]'); }
+    catch (e) { return []; }
+})();
+
+function remindEsc(v) {
+    const d = document.createElement('div');
+    d.textContent = v == null ? '' : String(v);
+    return d.innerHTML;
 }
 
-function remindOne(id) {
-    const form = document.getElementById('remindOneForm');
-    if (!form || !confirm('Email this applicant a reminder to finish and submit their draft?')) return;
-    document.getElementById('remindOneId').value = id;
-    form.submit();
+/* mode: 'all' | 'selected' | 'one' (with id). */
+function openRemindModal(mode, id) {
+    let list = remindDrafts;
+    if (mode === 'one') {
+        list = remindDrafts.filter(d => d.id === id);
+    } else if (mode === 'selected') {
+        const picked = new Set([...document.querySelectorAll('.app-checkbox:checked')].map(cb => parseInt(cb.value, 10)));
+        if (picked.size === 0) { alert('Please select at least one draft application.'); return; }
+        list = remindDrafts.filter(d => picked.has(d.id));
+        if (list.length === 0) { alert('None of the selected applications is an unsubmitted draft.'); return; }
+    }
+    if (list.length === 0) return;
+
+    const sendable = list.filter(d => d.hasEmail && !d.recent);
+    const skipped = list.length - sendable.length;
+
+    document.getElementById('remindScope').value = mode === 'all' ? '' : 'selected';
+    document.getElementById('remindIds').innerHTML = mode === 'all' ? '' :
+        list.map(d => `<input type="hidden" name="selected_applications[]" value="${d.id}">`).join('');
+
+    const who = mode === 'one' ? 'this applicant' : (mode === 'all' ? 'all draft applicants' : 'the selected draft applicants');
+    document.getElementById('remindIntro').innerHTML =
+        `Email ${who} a reminder to finish and submit their application. ` +
+        `<strong>${sendable.length}</strong> will be emailed` +
+        (skipped ? `, <strong>${skipped}</strong> skipped.` : '.');
+
+    document.getElementById('remindRows').innerHTML = list.map(d => {
+        const flag = !d.hasEmail ? '<span class="ma-rem-flag skip">No email &middot; skipped</span>'
+                   : d.recent   ? '<span class="ma-rem-flag skip">Reminded &lt;1h ago &middot; skipped</span>'
+                   : '<span class="ma-rem-flag ok">Will send</span>';
+        const skip = !d.hasEmail || d.recent;
+        return `<tr class="${skip ? 'is-skipped' : ''}">
+            <td>${remindEsc(d.startup || '-')}<span class="ma-rem-sub">${remindEsc(d.contact)}</span></td>
+            <td>${remindEsc(d.email || '-')}</td>
+            <td>${d.last ? remindEsc(d.last) + (d.count > 1 ? `<span class="ma-rem-sub">${d.count} sent</span>` : '') : 'Never'}</td>
+            <td>${flag}</td>
+        </tr>`;
+    }).join('');
+
+    const btn = document.getElementById('remindSubmit');
+    btn.disabled = sendable.length === 0;
+    btn.querySelector('span').textContent = sendable.length === 1 ? 'Send 1 reminder' : `Send ${sendable.length} reminders`;
+
+    openModal('remindDraftsModal');
 }
+
+document.getElementById('remindDraftsForm')?.addEventListener('submit', function () {
+    const btn = document.getElementById('remindSubmit');
+    btn.disabled = true;
+    btn.querySelector('span').textContent = 'Sending...';
+});
 
 function sortBy(column) {
     const currentSort  = '<?= $sort ?>';

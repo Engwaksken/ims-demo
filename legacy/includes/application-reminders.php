@@ -13,6 +13,7 @@ declare(strict_types=1);
 |   the deadline is that many days away (0 = on the deadline day). A missed
 |   day is caught up with the nearest threshold only, never several at once.
 |   Drafts saved in the last 12 hours are left for the next run.
+|   --dry-run on the cron script lists what would be sent, sending nothing.
 | Manual (Manage Applications): remind every draft of an opportunity, the
 |   selected ones, or a single draft, with an optional personal note.
 |
@@ -345,32 +346,51 @@ if (!function_exists('apprem_send')) {
 }
 
 if (!function_exists('apprem_dispatch')) {
-    /** Automatic run. Returns ['sent','failed','skipped'=>bool]. */
-    function apprem_dispatch(mysqli $conn, ?string $today = null): array
+    /**
+     * Automatic run. Returns ['sent','failed','skipped'=>bool,'plan'=>[]].
+     * $dryRun: send and log nothing; 'plan' lists every open draft with what
+     * a real run would do ('send', 'already sent', 'saved recently',
+     * 'not due yet', 'no email'). A dry run ignores the on/off switch.
+     */
+    function apprem_dispatch(mysqli $conn, ?string $today = null, bool $dryRun = false): array
     {
         $settings = apprem_settings($conn);
-        if (!$settings['enabled'] || !$settings['days_before']) {
-            return ['sent' => 0, 'failed' => 0, 'skipped' => true];
+        if (!$dryRun && (!$settings['enabled'] || !$settings['days_before'])) {
+            return ['sent' => 0, 'failed' => 0, 'skipped' => true, 'plan' => []];
         }
 
         $sent = 0;
         $failed = 0;
+        $plan = [];
         $freshCutoff = time() - 12 * 3600;
+        $logged = $dryRun ? apprem_auto_keys($conn) : [];
 
         foreach (apprem_fetch_drafts($conn) as $draft) {
             $daysLeft = apprem_days_left((string)$draft['deadline'], $today);
             $threshold = apprem_threshold_for($settings['days_before'], $daysLeft);
-            if ($threshold === null) {
-                continue;
-            }
+            $key = $threshold === null ? '' : 'before-' . $threshold;
             // Someone who saved within the last 12 hours is working on it;
             // leave them until the next run (except on the deadline day).
             $saved = !empty($draft['last_saved_at']) ? strtotime((string)$draft['last_saved_at']) : false;
-            if ($daysLeft > 0 && $saved !== false && $saved > $freshCutoff) {
+            $fresh = $daysLeft > 0 && $saved !== false && $saved > $freshCutoff;
+
+            if ($dryRun) {
+                $action = match (true) {
+                    $threshold === null => 'not due yet',
+                    isset($logged[(int)$draft['application_id'] . '|' . $key]) => 'already sent',
+                    $fresh => 'saved recently',
+                    !filter_var(trim((string)($draft['email'] ?? '')), FILTER_VALIDATE_EMAIL) => 'no email',
+                    default => 'send',
+                };
+                $plan[] = $draft + ['days_left' => $daysLeft, 'reminder_key' => $key, 'action' => $action];
                 continue;
             }
 
-            $outcome = apprem_send($conn, $draft, 'auto', 'before-' . $threshold);
+            if ($threshold === null || $fresh) {
+                continue;
+            }
+
+            $outcome = apprem_send($conn, $draft, 'auto', $key);
             if ($outcome === 'sent') {
                 $sent++;
             } elseif ($outcome === 'failed') {
@@ -378,7 +398,21 @@ if (!function_exists('apprem_dispatch')) {
             }
         }
 
-        return ['sent' => $sent, 'failed' => $failed, 'skipped' => false];
+        return ['sent' => $sent, 'failed' => $failed, 'skipped' => false, 'plan' => $plan];
+    }
+}
+
+if (!function_exists('apprem_auto_keys')) {
+    /** "application_id|reminder_key" => true for automatic reminders already logged. */
+    function apprem_auto_keys(mysqli $conn): array
+    {
+        $out = [];
+        $res = $conn->query("SELECT application_id, reminder_key FROM application_reminder_log WHERE kind = 'auto'");
+        while ($res && ($row = $res->fetch_assoc())) {
+            $out[(int)$row['application_id'] . '|' . $row['reminder_key']] = true;
+        }
+
+        return $out;
     }
 }
 
