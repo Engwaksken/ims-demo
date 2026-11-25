@@ -274,6 +274,10 @@ $rem_days_text = $rem_settings['days_before']
 .ma-selected-count { font-weight: 700; color: var(--brand-600); white-space: nowrap; }
 .ma-bulk-bar .form-control { width: auto; min-width: 200px; margin: 0; }
 
+/* Tabs */
+.ma-tabs { margin-bottom: 0; }
+.ma-tab-panel.active { display: flex; flex-direction: column; gap: 20px; }
+
 .ma-reminded { display: block; font-size: 11px; color: var(--ink-300); margin-top: 4px; white-space: nowrap; }
 .ma-rem-body { display: grid; gap: 14px; }
 .ma-rem-summary { margin: 0; font-size: 13.5px; color: var(--ink-600); }
@@ -379,6 +383,32 @@ $rem_days_text = $rem_settings['days_before']
     </div>
 </div>
 
+<!-- -- Tabs ---------------------------------------------------- -->
+<?php
+$ma_tabs = ['applications' => ['fa-list', 'Applications', (int)$stats['total']]];
+if ($rem_ready) {
+    $ma_tabs['reminders'] = ['fa-bell', 'Draft reminders', count($rem_open)];
+    if ($rem_stats !== null) {
+        $ma_tabs['stats'] = ['fa-chart-bar', 'Reminder statistics', (int)$rem_stats['totals']['attempts']];
+    }
+}
+$ma_tab = (string)($_GET['tab'] ?? 'applications');
+if (!isset($ma_tabs[$ma_tab])) $ma_tab = 'applications';
+?>
+<div class="tab-shell ma-tabs">
+<nav class="tab-nav" role="tablist" aria-label="Manage applications sections">
+    <?php foreach ($ma_tabs as $key => [$ico, $lbl, $cnt]): ?>
+    <button class="tab-btn<?= $ma_tab === $key ? ' active' : '' ?>" type="button" role="tab"
+            id="ma-tabbtn-<?= h($key) ?>" aria-controls="ma-tab-<?= h($key) ?>"
+            aria-selected="<?= $ma_tab === $key ? 'true' : 'false' ?>" data-ma-tab="<?= h($key) ?>">
+        <i class="fas <?= h($ico) ?>" aria-hidden="true"></i> <?= h($lbl) ?>
+        <span class="badge badge-secondary"><?= (int)$cnt ?></span>
+    </button>
+    <?php endforeach; ?>
+</nav>
+</div>
+
+<div id="ma-tab-applications" class="tab-panel ma-tab-panel<?= $ma_tab === 'applications' ? ' active' : '' ?>" role="tabpanel" aria-labelledby="ma-tabbtn-applications">
 <!-- -- Filter bar ---------------------------------------------- -->
 <div class="card">
     <div class="card-body">
@@ -435,218 +465,6 @@ $rem_days_text = $rem_settings['days_before']
         </form>
     </div>
 </div>
-
-<!-- -- Draft reminders ---------------------------------------- -->
-<?php if ($rem_ready): ?>
-<div class="card" id="draft-reminders">
-    <div class="card-header">
-        <h3><i class="fas fa-bell" aria-hidden="true"></i> Draft reminders</h3>
-    </div>
-    <div class="card-body ma-rem-body">
-        <p class="ma-rem-summary">
-            <?php if ($rem_opp_open): ?>
-                <strong><?= count($rem_open) ?></strong> unsubmitted draft<?= count($rem_open) === 1 ? '' : 's' ?>.
-                The deadline is <?= h(date('d M Y', strtotime($rem_deadline))) ?>
-                (<?= $rem_days_left === 0 ? 'today' : ($rem_days_left === 1 ? 'tomorrow' : 'in ' . (int)$rem_days_left . ' days') ?>).
-                <?php if ($rem_no_email > 0): ?><?= (int)$rem_no_email ?> draft<?= $rem_no_email === 1 ? ' has' : 's have' ?> no valid email address and can't be reminded.<?php endif; ?>
-            <?php else: ?>
-                Reminders are only sent while the opportunity is Published and its deadline has not passed.
-            <?php endif; ?>
-            Automatic reminders are <strong><?= $rem_settings['enabled'] ? 'on' : 'off' ?></strong><?php if ($rem_settings['enabled']): ?>: <?= h($rem_days_text) ?> before the deadline<?php endif; ?> (all opportunities).
-        </p>
-
-        <div class="ma-rem-forms">
-            <div class="ma-rem-box">
-                <h4>Remind now</h4>
-                <p class="form-hint">Email every unsubmitted draft for this opportunity, with an optional personal note. You'll see the full list before anything is sent.</p>
-                <button type="button" class="btn btn-primary btn-sm" onclick="openRemindModal('all')" <?= ($rem_opp_open && $rem_open) ? '' : 'disabled' ?>>
-                    <i class="fas fa-paper-plane" aria-hidden="true"></i> Remind all drafts (<?= count($rem_open) ?>)
-                </button>
-                <p class="form-hint">To remind only some, tick them in the table and use <em>Remind selected drafts</em>, or use the <i class="fas fa-bell" aria-hidden="true"></i> button on a row.</p>
-            </div>
-
-            <?php if ($rem_is_admin): ?>
-            <form method="POST" action="review-application-process" class="ma-rem-box">
-                <?= csrf_field() ?>
-                <input type="hidden" name="action" value="save_draft_reminder_settings">
-                <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
-                <h4>Automatic reminders</h4>
-                <div class="form-group">
-                    <label class="hr-check"><input type="checkbox" name="enabled" value="1" <?= $rem_settings['enabled'] ? 'checked' : '' ?>> Email draft applicants automatically</label>
-                </div>
-                <div class="form-group">
-                    <label for="rem_days">Days before the deadline</label>
-                    <input id="rem_days" type="text" name="days_before" class="form-control" required
-                           pattern="\s*\d{1,2}(\s*,\s*\d{1,2})*\s*"
-                           value="<?= h(implode(',', $rem_settings['days_before'])) ?>">
-                    <p class="form-hint">Comma-separated, e.g. 7,3,1. Use 0 for the deadline day. Applies to every published opportunity and needs the daily <code>cron/application-draft-reminders.php</code> job.</p>
-                </div>
-                <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-save" aria-hidden="true"></i> Save</button>
-            </form>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
-
-<?php if ($rem_stats !== null):
-    $rt = $rem_stats['totals'];
-    $rate = $rt['attempts'] > 0 ? round($rt['sent'] / $rt['attempts'] * 100) : 0;
-?>
-<div class="card" id="reminder-stats">
-    <div class="card-header">
-        <h3><i class="fas fa-chart-bar" aria-hidden="true"></i> Reminder statistics</h3>
-        <?php if ($rem_is_admin): ?>
-            <span class="ma-rs-scope">
-                <?php if ($rem_scope_all): ?>
-                    All opportunities &middot; <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>#reminder-stats">This opportunity only</a>
-                <?php else: ?>
-                    This opportunity &middot; <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>&amp;rem_scope=all#reminder-stats">All opportunities</a>
-                <?php endif; ?>
-            </span>
-        <?php endif; ?>
-    </div>
-    <div class="card-body ma-rem-body">
-        <div class="ma-rs-tiles">
-            <div class="ma-rs-tile"><span>Attempts</span><strong><?= (int)$rt['attempts'] ?></strong></div>
-            <div class="ma-rs-tile ok"><span>Sent</span><strong><?= (int)$rt['sent'] ?></strong></div>
-            <div class="ma-rs-tile bad"><span>Failed</span><strong><?= (int)$rt['failed'] ?></strong></div>
-            <div class="ma-rs-tile"><span>Success rate</span><strong><?= $rate ?>%</strong></div>
-            <div class="ma-rs-tile"><span>Applicants reached</span><strong><?= (int)$rt['applicants'] ?></strong></div>
-            <div class="ma-rs-tile"><span>Automatic</span><strong><?= (int)$rt['auto'] ?></strong></div>
-            <div class="ma-rs-tile"><span>Manual</span><strong><?= (int)$rt['manual'] ?></strong></div>
-        </div>
-        <p class="ma-rs-meta">
-            <?php if ($rt['attempts'] > 0): ?>
-                First reminder <?= h($rem_dt($rt['first_at'])) ?> &middot; last reminder <?= h($rem_dt($rt['last_at'])) ?>.
-            <?php else: ?>
-                No reminders have been sent yet.
-            <?php endif; ?>
-        </p>
-
-        <?php if ($rem_stats['senders']): ?>
-        <details class="ma-rs-section" open>
-            <summary>Who sent them (<?= count($rem_stats['senders']) ?>)</summary>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead><tr><th>Sent by</th><th>Attempts</th><th>Sent</th><th>Failed</th><th>Last sent</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($rem_stats['senders'] as $sr): ?>
-                        <tr>
-                            <td><strong><?= h($sr['name']) ?></strong><?php if (!empty($sr['role'])): ?><div class="form-hint"><?= h($sr['role']) ?></div><?php endif; ?></td>
-                            <td><?= (int)$sr['attempts'] ?></td>
-                            <td><span class="badge badge-success"><?= (int)$sr['sent'] ?></span></td>
-                            <td><?php if ((int)$sr['failed'] > 0): ?><span class="badge badge-danger"><?= (int)$sr['failed'] ?></span><?php else: ?>0<?php endif; ?></td>
-                            <td><?= h($rem_dt($sr['last_at'])) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </details>
-        <?php endif; ?>
-
-        <?php if ($rem_stats['applicants']): ?>
-        <details class="ma-rs-section">
-            <summary>Per applicant (<?= count($rem_stats['applicants']) ?>)</summary>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead><tr><th>Applicant</th><th>Status</th><th>Times reminded</th><th>Sent</th><th>Failed</th><th>Auto / manual</th><th>Last attempt</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($rem_stats['applicants'] as $ar): ?>
-                        <tr>
-                            <td>
-                                <strong><?= h($ar['startup_name'] ?: ('#' . (int)$ar['application_id'])) ?></strong>
-                                <div class="form-hint"><?= h($ar['contact']) ?><?= !empty($ar['email']) ? ' &middot; ' . h($ar['email']) : '' ?></div>
-                                <?php if (!empty($ar['last_error'])): ?><div class="ma-rs-err"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> <?= h($ar['last_error']) ?></div><?php endif; ?>
-                            </td>
-                            <td><?= h($ar['status'] ?? '-') ?></td>
-                            <td><?= (int)$ar['attempts'] ?></td>
-                            <td><span class="badge badge-success"><?= (int)$ar['sent'] ?></span></td>
-                            <td><?php if ((int)$ar['failed'] > 0): ?><span class="badge badge-danger"><?= (int)$ar['failed'] ?></span><?php else: ?>0<?php endif; ?></td>
-                            <td><?= (int)$ar['auto'] ?> / <?= (int)$ar['manual'] ?></td>
-                            <td><?= h($rem_dt($ar['last_at'])) ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </details>
-        <?php endif; ?>
-
-        <?php if ($rem_stats['recent']): ?>
-        <details class="ma-rs-section">
-            <summary>Recent activity (last <?= count($rem_stats['recent']) ?>)</summary>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead><tr><th>When</th><th>Applicant</th><th>Email</th><th>Type</th><th>Sent by</th><th>Result</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($rem_stats['recent'] as $lr): ?>
-                        <tr>
-                            <td><?= h($rem_dt($lr['sent_at'])) ?></td>
-                            <td><?= h($lr['startup_name'] ?: ('#' . (int)$lr['application_id'])) ?></td>
-                            <td><?= h($lr['email'] ?: '-') ?></td>
-                            <td><?= $lr['kind'] === 'auto' ? 'Automatic' : 'Manual' ?></td>
-                            <td><?= h($lr['sent_by_name']) ?></td>
-                            <td>
-                                <?php if ((int)$lr['emailed'] === 1): ?>
-                                    <span class="badge badge-success">Sent</span>
-                                <?php else: ?>
-                                    <span class="badge badge-danger">Failed</span>
-                                    <?php if (!empty($lr['error'])): ?><div class="ma-rs-err"><?= h($lr['error']) ?></div><?php endif; ?>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </details>
-        <?php endif; ?>
-    </div>
-</div>
-<?php endif; ?>
-
-<div id="remindDraftsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="remindDraftsTitle" aria-hidden="true">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="remindDraftsTitle"><i class="fas fa-bell" aria-hidden="true"></i> Send draft reminder</h3>
-            <button type="button" class="modal-close" onclick="closeModal('remindDraftsModal')" aria-label="Close">&times;</button>
-        </div>
-
-        <form method="POST" action="review-application-process" id="remindDraftsForm">
-            <?= csrf_field() ?>
-            <input type="hidden" name="action" value="remind_drafts">
-            <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
-            <input type="hidden" name="remind_scope" id="remindScope" value="">
-            <div id="remindIds"></div>
-
-            <div class="modal-body">
-                <p class="ma-rem-intro" id="remindIntro"></p>
-
-                <div class="ma-rem-list">
-                    <table class="table">
-                        <thead><tr><th>Applicant</th><th>Email</th><th>Last reminded</th><th></th></tr></thead>
-                        <tbody id="remindRows"></tbody>
-                    </table>
-                </div>
-
-                <div class="form-group">
-                    <label for="rem_note">Personal note (optional)</label>
-                    <textarea id="rem_note" name="reminder_note" class="form-control" rows="3" maxlength="1000"
-                              placeholder="e.g. Remember to upload your pitch deck before submitting."></textarea>
-                    <p class="form-hint">Added to the standard reminder, which states the deadline<?= $rem_deadline !== '' ? ' (' . h(date('d M Y', strtotime($rem_deadline))) . ')' : '' ?>, the draft reference and a link to My Applications.</p>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" onclick="closeModal('remindDraftsModal')" class="btn btn-secondary"><i class="fas fa-times" aria-hidden="true"></i> Cancel</button>
-                <button type="submit" class="btn btn-primary" id="remindSubmit"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span>Send reminder</span></button>
-            </div>
-        </form>
-    </div>
-</div>
-<script type="application/json" id="remindDraftsData"><?= json_encode($rem_modal_data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
-<?php endif; ?>
 
 <!-- -- Applications table (or empty state) --------------------- -->
 <?php if (!empty($applications)): ?>
@@ -850,11 +668,275 @@ $rem_days_text = $rem_settings['days_before']
 
 <?php endif; ?>
 
+</div><!-- /#ma-tab-applications -->
+
+<?php if ($rem_ready): ?>
+<div id="ma-tab-reminders" class="tab-panel ma-tab-panel<?= $ma_tab === 'reminders' ? ' active' : '' ?>" role="tabpanel" aria-labelledby="ma-tabbtn-reminders">
+<!-- -- Draft reminders ---------------------------------------- -->
+<div class="card" id="draft-reminders">
+    <div class="card-header">
+        <h3><i class="fas fa-bell" aria-hidden="true"></i> Draft reminders</h3>
+    </div>
+    <div class="card-body ma-rem-body">
+        <p class="ma-rem-summary">
+            <?php if ($rem_opp_open): ?>
+                <strong><?= count($rem_open) ?></strong> unsubmitted draft<?= count($rem_open) === 1 ? '' : 's' ?>.
+                The deadline is <?= h(date('d M Y', strtotime($rem_deadline))) ?>
+                (<?= $rem_days_left === 0 ? 'today' : ($rem_days_left === 1 ? 'tomorrow' : 'in ' . (int)$rem_days_left . ' days') ?>).
+                <?php if ($rem_no_email > 0): ?><?= (int)$rem_no_email ?> draft<?= $rem_no_email === 1 ? ' has' : 's have' ?> no valid email address and can't be reminded.<?php endif; ?>
+            <?php else: ?>
+                Reminders are only sent while the opportunity is Published and its deadline has not passed.
+            <?php endif; ?>
+            Automatic reminders are <strong><?= $rem_settings['enabled'] ? 'on' : 'off' ?></strong><?php if ($rem_settings['enabled']): ?>: <?= h($rem_days_text) ?> before the deadline<?php endif; ?> (all opportunities).
+        </p>
+
+        <div class="ma-rem-forms">
+            <div class="ma-rem-box">
+                <h4>Remind now</h4>
+                <p class="form-hint">Email every unsubmitted draft for this opportunity, with an optional personal note. You'll see the full list before anything is sent.</p>
+                <button type="button" class="btn btn-primary btn-sm" onclick="openRemindModal('all')" <?= ($rem_opp_open && $rem_open) ? '' : 'disabled' ?>>
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i> Remind all drafts (<?= count($rem_open) ?>)
+                </button>
+                <p class="form-hint">To remind only some, tick them in the table and use <em>Remind selected drafts</em>, or use the <i class="fas fa-bell" aria-hidden="true"></i> button on a row.</p>
+            </div>
+
+            <?php if ($rem_is_admin): ?>
+            <form method="POST" action="review-application-process" class="ma-rem-box">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="save_draft_reminder_settings">
+                <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+                <h4>Automatic reminders</h4>
+                <div class="form-group">
+                    <label class="hr-check"><input type="checkbox" name="enabled" value="1" <?= $rem_settings['enabled'] ? 'checked' : '' ?>> Email draft applicants automatically</label>
+                </div>
+                <div class="form-group">
+                    <label for="rem_days">Days before the deadline</label>
+                    <input id="rem_days" type="text" name="days_before" class="form-control" required
+                           pattern="\s*\d{1,2}(\s*,\s*\d{1,2})*\s*"
+                           value="<?= h(implode(',', $rem_settings['days_before'])) ?>">
+                    <p class="form-hint">Comma-separated, e.g. 7,3,1. Use 0 for the deadline day. Applies to every published opportunity and needs the daily <code>cron/application-draft-reminders.php</code> job.</p>
+                </div>
+                <button type="submit" class="btn btn-secondary btn-sm"><i class="fas fa-save" aria-hidden="true"></i> Save</button>
+            </form>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+</div><!-- /#ma-tab-reminders -->
+
+<?php if ($rem_stats !== null): ?>
+<div id="ma-tab-stats" class="tab-panel ma-tab-panel<?= $ma_tab === 'stats' ? ' active' : '' ?>" role="tabpanel" aria-labelledby="ma-tabbtn-stats">
+<?php if ($rem_stats !== null):
+    $rt = $rem_stats['totals'];
+    $rate = $rt['attempts'] > 0 ? round($rt['sent'] / $rt['attempts'] * 100) : 0;
+?>
+<div class="card" id="reminder-stats">
+    <div class="card-header">
+        <h3><i class="fas fa-chart-bar" aria-hidden="true"></i> Reminder statistics</h3>
+        <?php if ($rem_is_admin): ?>
+            <span class="ma-rs-scope">
+                <?php if ($rem_scope_all): ?>
+                    All opportunities &middot; <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>&amp;tab=stats">This opportunity only</a>
+                <?php else: ?>
+                    This opportunity &middot; <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>&amp;rem_scope=all&amp;tab=stats">All opportunities</a>
+                <?php endif; ?>
+            </span>
+        <?php endif; ?>
+    </div>
+    <div class="card-body ma-rem-body">
+        <div class="ma-rs-tiles">
+            <div class="ma-rs-tile"><span>Attempts</span><strong><?= (int)$rt['attempts'] ?></strong></div>
+            <div class="ma-rs-tile ok"><span>Sent</span><strong><?= (int)$rt['sent'] ?></strong></div>
+            <div class="ma-rs-tile bad"><span>Failed</span><strong><?= (int)$rt['failed'] ?></strong></div>
+            <div class="ma-rs-tile"><span>Success rate</span><strong><?= $rate ?>%</strong></div>
+            <div class="ma-rs-tile"><span>Applicants reached</span><strong><?= (int)$rt['applicants'] ?></strong></div>
+            <div class="ma-rs-tile"><span>Automatic</span><strong><?= (int)$rt['auto'] ?></strong></div>
+            <div class="ma-rs-tile"><span>Manual</span><strong><?= (int)$rt['manual'] ?></strong></div>
+        </div>
+        <p class="ma-rs-meta">
+            <?php if ($rt['attempts'] > 0): ?>
+                First reminder <?= h($rem_dt($rt['first_at'])) ?> &middot; last reminder <?= h($rem_dt($rt['last_at'])) ?>.
+            <?php else: ?>
+                No reminders have been sent yet.
+            <?php endif; ?>
+        </p>
+
+        <?php if ($rem_stats['senders']): ?>
+        <details class="ma-rs-section" open>
+            <summary>Who sent them (<?= count($rem_stats['senders']) ?>)</summary>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Sent by</th><th>Attempts</th><th>Sent</th><th>Failed</th><th>Last sent</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($rem_stats['senders'] as $sr): ?>
+                        <tr>
+                            <td><strong><?= h($sr['name']) ?></strong><?php if (!empty($sr['role'])): ?><div class="form-hint"><?= h($sr['role']) ?></div><?php endif; ?></td>
+                            <td><?= (int)$sr['attempts'] ?></td>
+                            <td><span class="badge badge-success"><?= (int)$sr['sent'] ?></span></td>
+                            <td><?php if ((int)$sr['failed'] > 0): ?><span class="badge badge-danger"><?= (int)$sr['failed'] ?></span><?php else: ?>0<?php endif; ?></td>
+                            <td><?= h($rem_dt($sr['last_at'])) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <?php endif; ?>
+
+        <?php if ($rem_stats['applicants']): ?>
+        <details class="ma-rs-section">
+            <summary>Per applicant (<?= count($rem_stats['applicants']) ?>)</summary>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Applicant</th><th>Status</th><th>Times reminded</th><th>Sent</th><th>Failed</th><th>Auto / manual</th><th>Last attempt</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($rem_stats['applicants'] as $ar): ?>
+                        <tr>
+                            <td>
+                                <strong><?= h($ar['startup_name'] ?: ('#' . (int)$ar['application_id'])) ?></strong>
+                                <div class="form-hint"><?= h($ar['contact']) ?><?= !empty($ar['email']) ? ' &middot; ' . h($ar['email']) : '' ?></div>
+                                <?php if (!empty($ar['last_error'])): ?><div class="ma-rs-err"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> <?= h($ar['last_error']) ?></div><?php endif; ?>
+                            </td>
+                            <td><?= h($ar['status'] ?? '-') ?></td>
+                            <td><?= (int)$ar['attempts'] ?></td>
+                            <td><span class="badge badge-success"><?= (int)$ar['sent'] ?></span></td>
+                            <td><?php if ((int)$ar['failed'] > 0): ?><span class="badge badge-danger"><?= (int)$ar['failed'] ?></span><?php else: ?>0<?php endif; ?></td>
+                            <td><?= (int)$ar['auto'] ?> / <?= (int)$ar['manual'] ?></td>
+                            <td><?= h($rem_dt($ar['last_at'])) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <?php endif; ?>
+
+        <?php if ($rem_stats['recent']): ?>
+        <details class="ma-rs-section">
+            <summary>Recent activity (last <?= count($rem_stats['recent']) ?>)</summary>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>When</th><th>Applicant</th><th>Email</th><th>Type</th><th>Sent by</th><th>Result</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($rem_stats['recent'] as $lr): ?>
+                        <tr>
+                            <td><?= h($rem_dt($lr['sent_at'])) ?></td>
+                            <td><?= h($lr['startup_name'] ?: ('#' . (int)$lr['application_id'])) ?></td>
+                            <td><?= h($lr['email'] ?: '-') ?></td>
+                            <td><?= $lr['kind'] === 'auto' ? 'Automatic' : 'Manual' ?></td>
+                            <td><?= h($lr['sent_by_name']) ?></td>
+                            <td>
+                                <?php if ((int)$lr['emailed'] === 1): ?>
+                                    <span class="badge badge-success">Sent</span>
+                                <?php else: ?>
+                                    <span class="badge badge-danger">Failed</span>
+                                    <?php if (!empty($lr['error'])): ?><div class="ma-rs-err"><?= h($lr['error']) ?></div><?php endif; ?>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
+</div><!-- /#ma-tab-stats -->
+
+<?php endif; ?>
+
+<!-- Reminder modal lives outside the panels so it opens from any tab. -->
+<div id="remindDraftsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="remindDraftsTitle" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="remindDraftsTitle"><i class="fas fa-bell" aria-hidden="true"></i> Send draft reminder</h3>
+            <button type="button" class="modal-close" onclick="closeModal('remindDraftsModal')" aria-label="Close">&times;</button>
+        </div>
+
+        <form method="POST" action="review-application-process" id="remindDraftsForm">
+            <?= csrf_field() ?>
+            <input type="hidden" name="action" value="remind_drafts">
+            <input type="hidden" name="opportunity_id" value="<?= $opportunity_id ?>">
+            <input type="hidden" name="remind_scope" id="remindScope" value="">
+            <div id="remindIds"></div>
+
+            <div class="modal-body">
+                <p class="ma-rem-intro" id="remindIntro"></p>
+
+                <div class="ma-rem-list">
+                    <table class="table">
+                        <thead><tr><th>Applicant</th><th>Email</th><th>Last reminded</th><th></th></tr></thead>
+                        <tbody id="remindRows"></tbody>
+                    </table>
+                </div>
+
+                <div class="form-group">
+                    <label for="rem_note">Personal note (optional)</label>
+                    <textarea id="rem_note" name="reminder_note" class="form-control" rows="3" maxlength="1000"
+                              placeholder="e.g. Remember to upload your pitch deck before submitting."></textarea>
+                    <p class="form-hint">Added to the standard reminder, which states the deadline<?= $rem_deadline !== '' ? ' (' . h(date('d M Y', strtotime($rem_deadline))) . ')' : '' ?>, the draft reference and a link to My Applications.</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('remindDraftsModal')" class="btn btn-secondary"><i class="fas fa-times" aria-hidden="true"></i> Cancel</button>
+                <button type="submit" class="btn btn-primary" id="remindSubmit"><i class="fas fa-paper-plane" aria-hidden="true"></i> <span>Send reminder</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+<script type="application/json" id="remindDraftsData"><?= json_encode($rem_modal_data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
+<?php endif; ?>
+
 </div><!-- /.page-stack -->
 
 <?php include 'includes/footer.php'; ?>
 
 <script>
+/* -- Tabs: Applications / Draft reminders / Reminder statistics -- */
+(function () {
+    const buttons = Array.from(document.querySelectorAll('[data-ma-tab]'));
+    if (!buttons.length) return;
+
+    function show(key, updateUrl) {
+        const btn = buttons.find(b => b.dataset.maTab === key);
+        if (!btn) return;
+        buttons.forEach(b => {
+            const on = b === btn;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('.ma-tab-panel').forEach(p => p.classList.toggle('active', p.id === 'ma-tab-' + key));
+        if (updateUrl) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', key);
+            url.hash = '';
+            history.replaceState(null, '', url);
+        }
+    }
+
+    buttons.forEach(b => b.addEventListener('click', () => show(b.dataset.maTab, true)));
+
+    // Arrow keys move between tabs.
+    document.querySelector('.ma-tabs .tab-nav')?.addEventListener('keydown', e => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        const i = buttons.findIndex(b => b.classList.contains('active'));
+        const next = buttons[(i + (e.key === 'ArrowRight' ? 1 : buttons.length - 1)) % buttons.length];
+        show(next.dataset.maTab, true);
+        next.focus();
+    });
+
+    // Old links such as #draft-reminders / #reminder-stats open the right tab.
+    const hashTabs = { '#draft-reminders': 'reminders', '#reminder-stats': 'stats' };
+    if (hashTabs[window.location.hash]) show(hashTabs[window.location.hash], false);
+
+    window.maShowTab = show;
+})();
+
 function toggleSelectAll(checkbox) {
     document.querySelectorAll('.app-checkbox').forEach(cb => cb.checked = checkbox.checked);
     const a = document.getElementById('selectAll');

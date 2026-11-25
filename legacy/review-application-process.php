@@ -597,7 +597,7 @@ switch ($action) {
         require_once __DIR__ . '/includes/application-reminders.php';
 
         $opportunity_id = (int)($_POST['opportunity_id'] ?? 0);
-        $back = $opportunity_id > 0 ? "manage-applications?opportunity_id={$opportunity_id}" : 'application-opportunities';
+        $back = $opportunity_id > 0 ? "manage-applications?opportunity_id={$opportunity_id}&tab=reminders" : 'application-opportunities';
         if (($_SESSION['role'] ?? '') !== 'Administrator') failTo($back, 'Only administrators can change automatic reminders.');
         if (!apprem_ensure_schema($conn)) failTo($back, 'Reminder tables are unavailable.');
 
