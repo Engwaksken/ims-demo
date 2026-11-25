@@ -4,7 +4,8 @@ declare(strict_types=1);
 session_start();
 require_once 'config.php';
 
-if (!ims_allowed('reviews.submit', ['Reviewer', 'MEAL Lead', 'Programs Lead', 'Program Director', 'Consultant', 'Project Officer', 'Administrator'], 'Submit application reviews')) {
+require_once __DIR__ . '/reviewer-pool.php';
+if (!(isset($conn) && $conn instanceof mysqli && ims_is_designated_reviewer($conn, (int)($_SESSION['user_id'] ?? 0))) && !ims_allowed('reviews.submit', ['Reviewer', 'MEAL Lead', 'Programs Lead', 'Program Director', 'Consultant', 'Project Officer', 'Administrator'], 'Submit application reviews')) {
     $_SESSION['error'] = 'Access denied.';
     header('Location: ../dashboard');
     exit();

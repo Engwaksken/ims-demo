@@ -69,22 +69,46 @@ $remaining_seconds = max(0, strtotime($_SESSION['verification_expiry']) - time()
     <?php echo ims_theme_style_tag((array)($siteBranding['theme'] ?? [])); ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous" referrerpolicy="no-referrer">
     <style>
+        /* Six boxes that always fit their container: they share the row
+           width, cap at 50px wide, and keep a 5:6 shape on every phone. */
         .code-input-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 50px));
             justify-content: center;
-            gap: 10px;
+            gap: clamp(4px, 2vw, 10px);
+            width: 100%;
             margin: 20px 0;
         }
 
         .code-input {
-            width: 50px;
-            height: 60px;
+            width: 100%;
+            min-width: 0;
+            height: auto;
+            min-height: 44px; /* fallback where aspect-ratio is unsupported */
+            aspect-ratio: 5 / 6;
+            padding: 0;
+            box-sizing: border-box;
             text-align: center;
-            font-size: 24px;
+            /* 16px minimum stops iOS Safari zooming in on focus */
+            font-size: clamp(16px, 6vw, 24px);
             font-weight: bold;
+            line-height: 1;
             border: 2px solid #ddd;
             border-radius: 8px;
             transition: all 0.3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        @media (max-width: 480px) {
+            .login-container { padding-left: 12px; padding-right: 12px; }
+            .login-card { padding-left: 16px; padding-right: 16px; }
+            .code-input { border-radius: 6px; }
+        }
+
+        @media (max-width: 340px) {
+            .login-card { padding-left: 12px; padding-right: 12px; }
+            .code-input { border-width: 1.5px; }
         }
 
         .code-input:focus {

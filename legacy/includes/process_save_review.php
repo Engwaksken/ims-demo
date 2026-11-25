@@ -19,7 +19,8 @@ function jsonResponse(int $status, array $payload): never
 /* ==========================
    AUTH
 ========================== */
-if (!ims_allowed('reviews.save_scores', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'], 'Save review scores and comments')) {
+require_once __DIR__ . '/reviewer-pool.php';
+if (!(isset($conn) && $conn instanceof mysqli && ims_is_designated_reviewer($conn, (int)($_SESSION['user_id'] ?? 0))) && !ims_allowed('reviews.save_scores', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Reviewer', 'Project Officer'], 'Save review scores and comments')) {
     jsonResponse(403, ['message' => 'Access denied']);
 }
 

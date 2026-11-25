@@ -149,7 +149,8 @@ function status_color(string $status): string
 | ACCESS CONTROL
 |--------------------------------------------------------------------------
 */
-if (!ims_allowed('reviews.open', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Donor/Partner', 'Staff', 'Reviewer'], 'Open the application review page')) {
+require_once __DIR__ . '/includes/reviewer-pool.php';
+if (!(isset($conn) && $conn instanceof mysqli && ims_is_designated_reviewer($conn, (int)($_SESSION['user_id'] ?? 0))) && !ims_allowed('reviews.open', ['Administrator', 'Programs Lead', 'MEAL Lead', 'Operations/Admin', 'Project Officer', 'Donor/Partner', 'Staff', 'Reviewer'], 'Open the application review page')) {
     redirect_with_error('Access denied.');
 }
 

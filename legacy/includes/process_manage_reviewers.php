@@ -5,6 +5,7 @@ ob_start();
 session_start();
 
 require_once 'config.php';
+require_once __DIR__ . '/reviewer-pool.php';
 
 if (!ims_allowed('reviewers.manage', ['Administrator', 'MEAL Lead', 'Programs Lead', 'Program Director'], 'Manage reviewers, review types and assignments')) {
     $_SESSION['error'] = 'Access denied.';
@@ -208,6 +209,68 @@ function cleanText(?string $value): string
 
 try {
     /* ────────────────────────────────────────────────────────────────────── */
+    /* 0) REVIEWERS LIST (add / remove users)                                */
+    /* ────────────────────────────────────────────────────────────────────── */
+    if ($action === 'add_pool_reviewers' || $action === 'remove_pool_reviewer') {
+        if (!ims_reviewer_pool_can_manage()) {
+            $_SESSION['error'] = 'Only Administrators and Program Directors can change the Reviewers list.';
+            redirectTo('reviewers');
+        }
+        if (!ims_reviewer_pool_ensure($conn)) {
+            throw new RuntimeException('reviewer_pool table unavailable');
+        }
+    }
+
+    if ($action === 'add_pool_reviewers') {
+        $user_ids = postIntArray('user_ids');
+        if (empty($user_ids)) {
+            $_SESSION['error'] = 'Select at least one user to add.';
+            redirectTo('reviewers');
+        }
+
+        $stmt = $conn->prepare("
+            INSERT IGNORE INTO reviewer_pool (user_id, added_by, added_at)
+            SELECT user_id, ?, NOW() FROM users WHERE user_id = ? AND is_active = 1
+        ");
+        if (!$stmt) {
+            throw new RuntimeException('Prepare failed (pool add): ' . $conn->error);
+        }
+
+        $added = 0;
+        foreach ($user_ids as $uid) {
+            $stmt->bind_param('ii', $current_user_id, $uid);
+            $stmt->execute();
+            $added += max(0, $stmt->affected_rows);
+        }
+        $stmt->close();
+
+        $_SESSION['success'] = $added === 1 ? '1 user added as a reviewer.' : $added . ' users added as reviewers.';
+        redirectTo('reviewers');
+    }
+
+    if ($action === 'remove_pool_reviewer') {
+        $uid = (int)($_POST['user_id'] ?? 0);
+        if ($uid <= 0) {
+            $_SESSION['error'] = 'Invalid user.';
+            redirectTo('reviewers');
+        }
+
+        $stmt = $conn->prepare('DELETE FROM reviewer_pool WHERE user_id = ? LIMIT 1');
+        if (!$stmt) {
+            throw new RuntimeException('Prepare failed (pool remove): ' . $conn->error);
+        }
+        $stmt->bind_param('i', $uid);
+        $stmt->execute();
+        $removed = $stmt->affected_rows > 0;
+        $stmt->close();
+
+        $_SESSION[$removed ? 'success' : 'error'] = $removed
+            ? 'Removed from reviewers. Existing assignments were kept.'
+            : 'That user was not on the Reviewers list.';
+        redirectTo('reviewers');
+    }
+
+    /* ────────────────────────────────────────────────────────────────────── */
     /* 1) ASSIGN REVIEWERS                                                   */
     /* ────────────────────────────────────────────────────────────────────── */
     if ($action === 'assign_reviewers') {
@@ -216,6 +279,16 @@ try {
 
         if (empty($reviewer_ids) || empty($application_ids)) {
             $_SESSION['error'] = 'Please select at least one reviewer and one application.';
+            redirectTo('assign');
+        }
+
+        // Only people on the Reviewers list can be assigned.
+        $reviewer_ids = array_values(array_filter(
+            $reviewer_ids,
+            fn(int $id) => ims_is_designated_reviewer($conn, $id)
+        ));
+        if (empty($reviewer_ids)) {
+            $_SESSION['error'] = 'The selected users are not on the Reviewers list.';
             redirectTo('assign');
         }
 
@@ -970,6 +1043,10 @@ try {
 
     if (in_array($action, ['send_reminders', 'remove_assignment'], true)) {
         redirectTo('status');
+    }
+
+    if (in_array($action, ['add_pool_reviewers', 'remove_pool_reviewer'], true)) {
+        redirectTo('reviewers');
     }
 
     redirectTo('assign');

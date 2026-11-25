@@ -18,7 +18,7 @@ $error_msg   = $_SESSION['error']   ?? '';
 unset($_SESSION['success'], $_SESSION['error']);
 
 $tab        = $_GET['tab'] ?? 'assign';
-$active_tab = in_array($tab, ['assign', 'status', 'review_types', 'criteria'], true) ? $tab : 'assign';
+$active_tab = in_array($tab, ['assign', 'reviewers', 'status', 'review_types', 'criteria'], true) ? $tab : 'assign';
 
 $edit_criteria = null;
 $edit_id       = isset($_GET['edit_criteria'])    ? (int)$_GET['edit_criteria']    : 0;
@@ -77,18 +77,27 @@ if ($edit_rt_id > 0) {
 }
 
 /* -- Reviewers ------------------------------------------------- */
-$reviewers = [];
-$stmt = $conn->prepare("
-    SELECT user_id, full_name, email, role
-    FROM users
-    WHERE role IN ('Reviewer','MEAL Lead','Administrator','Programs Lead')
-      AND is_active = 1
-    ORDER BY full_name
-");
-$stmt->execute();
-$res = $stmt->get_result();
-while ($row = $res->fetch_assoc()) $reviewers[] = $row;
-$stmt->close();
+require_once __DIR__ . '/includes/reviewer-pool.php';
+
+$can_manage_pool = ims_reviewer_pool_can_manage();
+$reviewers       = ims_reviewer_pool_list($conn);
+
+// Active users not yet on the reviewer list, for the "Add reviewers" picker.
+$pool_candidates = [];
+if ($can_manage_pool) {
+    $onList = array_map(fn($r) => (int)$r['user_id'], $reviewers);
+    $res = $conn->query("
+        SELECT user_id, full_name, email, role
+        FROM users
+        WHERE is_active = 1
+        ORDER BY full_name
+    ");
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            if (!in_array((int)$row['user_id'], $onList, true)) $pool_candidates[] = $row;
+        }
+    }
+}
 
 /* -- Applications ---------------------------------------------- */
 $applications = [];
@@ -249,6 +258,28 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 .mr-inline-form { display: inline; }
 .mr-sent { color: var(--red-fg); }
 .mr-mt-4 { margin-top: 4px; }
+
+/* Reviewers tab: user picker */
+.pool-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.pool-toolbar .form-control { flex: 1 1 260px; max-width: 420px; }
+.pool-all { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-500); cursor: pointer; }
+.pool-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px;
+    max-height: 340px; overflow-y: auto; padding: 4px;
+    border: 1px solid var(--ink-100); border-radius: var(--radius-sm);
+}
+.pool-item {
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; cursor: pointer;
+    border: 1px solid var(--ink-100); border-radius: var(--radius-sm); min-width: 0;
+}
+.pool-item[hidden] { display: none; }
+.pool-item:hover { border-color: var(--brand-400); }
+.pool-item:has(.pool-check:checked) { border-color: var(--brand-500); background: var(--brand-50, rgba(0,0,0,.03)); }
+.pool-item .mr-check { margin-top: 2px; flex-shrink: 0; }
+.pool-item-text { display: flex; flex-direction: column; min-width: 0; }
+.pool-item-name { font-weight: 600; font-size: 13px; }
+.pool-item-meta { font-size: 12px; color: var(--ink-400); overflow-wrap: anywhere; }
+.pool-empty { grid-column: 1 / -1; margin: 8px; }
 
 /* Step indicator */
 .assign-steps { display: flex; align-items: center; margin-bottom: 24px; }
@@ -508,6 +539,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
     <?php
     $tabs_cfg = [
         'assign'       => ['fa-user-plus',     'Assign Reviewers',  null],
+        'reviewers'    => ['fa-users',          'Reviewers',          count($reviewers)],
         'status'       => ['fa-tasks',          'Status & Reminders', $total_assignments],
         'review_types' => ['fa-layer-group',    'Review Types',       $rt_total],
         'criteria'     => ['fa-clipboard-list', 'Scoring Criteria',   $total_criteria_records],
@@ -704,6 +736,120 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
         </div>
     </div>
 </div><!-- /#tab-assign -->
+
+<!-- --------------------------------------------------------------
+     TAB - REVIEWERS (who can be assigned reviews)
+--------------------------------------------------------------- -->
+<div id="tab-reviewers" class="tab-panel mr-tab-panel<?= $active_tab==='reviewers'?' active':'' ?>">
+
+    <?php if ($can_manage_pool): ?>
+    <div class="panel">
+        <div class="panel-head">
+            <h3><i class="fas fa-user-plus"></i> Add Reviewers</h3>
+            <span class="note"><?= count($pool_candidates) ?> user<?= count($pool_candidates) !== 1 ? 's' : '' ?> available</span>
+        </div>
+        <div class="panel-body">
+            <?php if (empty($pool_candidates)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-users" aria-hidden="true"></i>
+                    <p>Every active user is already a reviewer.</p>
+                </div>
+            <?php else: ?>
+            <form method="POST" action="includes/process_manage_reviewers.php" id="poolAddForm">
+                <input type="hidden" name="action" value="add_pool_reviewers">
+                <div class="pool-toolbar">
+                    <input type="search" class="form-control" id="poolSearch" placeholder="Search by name, email or role" aria-label="Search users">
+                    <label class="pool-all"><input type="checkbox" class="mr-check" id="poolSelectAll"> Select all shown</label>
+                </div>
+                <div class="pool-list" id="poolList">
+                    <?php foreach ($pool_candidates as $u): ?>
+                    <label class="pool-item" data-search="<?= h(mb_strtolower($u['full_name'].' '.$u['email'].' '.$u['role'], 'UTF-8')) ?>">
+                        <input type="checkbox" class="mr-check pool-check" name="user_ids[]" value="<?= (int)$u['user_id'] ?>">
+                        <span class="pool-item-text">
+                            <span class="pool-item-name"><?= h($u['full_name']) ?></span>
+                            <span class="pool-item-meta"><?= h($u['role']) ?> &middot; <?= h($u['email']) ?></span>
+                        </span>
+                    </label>
+                    <?php endforeach; ?>
+                    <p class="form-hint pool-empty" id="poolNoMatch" hidden>No users match your search.</p>
+                </div>
+                <div class="mr-form-actions">
+                    <button type="submit" class="btn btn-primary" id="poolAddBtn" disabled>
+                        <i class="fas fa-user-check"></i> Add as Reviewer<span id="poolAddCount"></span>
+                    </button>
+                    <span class="form-hint"><i class="fas fa-info-circle"></i> Added users appear in the reviewer list and can be assigned applications.</span>
+                </div>
+            </form>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <div class="panel">
+        <div class="panel-head">
+            <h3><i class="fas fa-users"></i> Reviewers List</h3>
+            <span class="note"><?= count($reviewers) ?> reviewer<?= count($reviewers) !== 1 ? 's' : '' ?></span>
+        </div>
+        <?php if (empty($reviewers)): ?>
+            <div class="panel-body">
+                <div class="empty-state">
+                    <i class="fas fa-user-slash" aria-hidden="true"></i>
+                    <p>No reviewers yet.<?= $can_manage_pool ? ' Add users above.' : '' ?></p>
+                </div>
+            </div>
+        <?php else: ?>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Assignments</th>
+                        <th>Added</th>
+                        <?php if ($can_manage_pool): ?><th class="text-right">Actions</th><?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($reviewers as $rev):
+                    $ra    = array_filter($assignments, fn($a) => (int)$a['reviewer_id'] === (int)$rev['user_id']);
+                    $rTot  = count($ra);
+                    $rDone = count(array_filter($ra, fn($a) => !empty($a['review_id'])));
+                    $byRole = ($rev['role'] === 'Reviewer');
+                ?>
+                    <tr>
+                        <td><strong><?= h($rev['full_name']) ?></strong></td>
+                        <td><?= h($rev['email']) ?></td>
+                        <td><span class="badge badge-secondary"><?= h($rev['role']) ?></span></td>
+                        <td><?= $rTot ?> assigned &middot; <?= $rDone ?> done</td>
+                        <td>
+                            <?php if ($rev['in_pool']): ?>
+                                <?= !empty($rev['added_at']) ? h(date('d M Y', strtotime((string)$rev['added_at']))) : '' ?>
+                                <?php if (!empty($rev['added_by_name'])): ?><div class="form-hint">by <?= h($rev['added_by_name']) ?></div><?php endif; ?>
+                            <?php else: ?>
+                                <span class="form-hint">By role</span>
+                            <?php endif; ?>
+                        </td>
+                        <?php if ($can_manage_pool): ?>
+                        <td class="text-right">
+                            <?php if ($rev['in_pool'] && !$byRole): ?>
+                                <?= af('remove_pool_reviewer','class="mr-inline-form" onsubmit="return confirm(\'Remove '.addslashes(h($rev['full_name'])).' from reviewers? Existing assignments are kept.\')"') ?>
+                                    <input type="hidden" name="user_id" value="<?= (int)$rev['user_id'] ?>">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Remove from reviewers"><i class="fas fa-user-minus"></i></button>
+                                </form>
+                            <?php else: ?>
+                                <span class="form-hint" title="Change this user's role to remove them">Role-based</span>
+                            <?php endif; ?>
+                        </td>
+                        <?php endif; ?>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+</div><!-- /#tab-reviewers -->
 
 <!-- --------------------------------------------------------------
      TAB 2 - STATUS & REMINDERS
@@ -1286,6 +1432,44 @@ document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
         history.replaceState(null, '', '?tab=' + encodeURIComponent(key));
     });
 });
+
+/* -- Reviewers tab: search + select users to add -------------- */
+(function () {
+    const list = document.getElementById('poolList');
+    if (!list) return;
+    const search  = document.getElementById('poolSearch');
+    const all     = document.getElementById('poolSelectAll');
+    const btn     = document.getElementById('poolAddBtn');
+    const countEl = document.getElementById('poolAddCount');
+    const noMatch = document.getElementById('poolNoMatch');
+    const items   = Array.from(list.querySelectorAll('.pool-item'));
+
+    function refresh() {
+        const n = list.querySelectorAll('.pool-check:checked').length;
+        btn.disabled = n === 0;
+        countEl.textContent = n > 0 ? ' (' + n + ')' : '';
+        const shown = items.filter(i => !i.hidden);
+        all.checked = shown.length > 0 && shown.every(i => i.querySelector('.pool-check').checked);
+    }
+
+    search.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        let visible = 0;
+        items.forEach(i => {
+            i.hidden = q !== '' && !i.dataset.search.includes(q);
+            if (!i.hidden) visible++;
+        });
+        noMatch.hidden = visible > 0;
+        refresh();
+    });
+
+    all.addEventListener('change', () => {
+        items.forEach(i => { if (!i.hidden) i.querySelector('.pool-check').checked = all.checked; });
+        refresh();
+    });
+
+    list.addEventListener('change', e => { if (e.target.classList.contains('pool-check')) refresh(); });
+})();
 
 /* -- Assign tab: Review Type as Step 1 ------------------------ */
 function rtSelected() {
