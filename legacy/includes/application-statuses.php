@@ -94,3 +94,33 @@ if (!function_exists('app_status_ensure')) {
         return $checked[$status];
     }
 }
+
+if (!function_exists('app_status_repair_rejected')) {
+    /**
+     * The old Reject action did not check the status column first, so where the
+     * column lacked 'Rejected' MySQL stored a blank status instead. Those rows
+     * still carry their rejection reason: put them back to Rejected.
+     */
+    function app_status_repair_rejected(mysqli $conn, int $opportunity_id): void
+    {
+        try {
+            if (!app_status_ensure($conn, 'Rejected')) {
+                return;
+            }
+            $stmt = $conn->prepare("
+                UPDATE applications
+                SET status = 'Rejected'
+                WHERE opportunity_id = ?
+                  AND (status = '' OR status IS NULL)
+                  AND rejection_reason IS NOT NULL AND rejection_reason <> ''
+            ");
+            if ($stmt) {
+                $stmt->bind_param('i', $opportunity_id);
+                $stmt->execute();
+                $stmt->close();
+            }
+        } catch (Throwable $e) {
+            error_log('[application-statuses] rejected repair failed: ' . $e->getMessage());
+        }
+    }
+}

@@ -64,6 +64,9 @@ if (!in_array($sort, $valid_sorts, true)) $sort = 'submitted_at';
 | QUERY
 |--------------------------------------------------------------------------
 */
+require_once __DIR__ . '/includes/application-statuses.php';
+app_status_repair_rejected($conn, $opportunity_id);
+
 $where  = ['a.opportunity_id = ?'];
 $types  = 'i';
 $params = [$opportunity_id];

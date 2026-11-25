@@ -324,6 +324,11 @@ switch ($action) {
 
         $old_status = $application['status'] ?? null;
         $new_status = 'Rejected';
+        // Without this a status column that lacks 'Rejected' silently stores ''
+        // and the application vanishes from the Rejected filter and stats.
+        if (!app_status_ensure($conn, $new_status)) {
+            failTo("view-application?id={$application_id}", "The database does not accept the status \"{$new_status}\" yet. Ask an administrator to check the applications table.");
+        }
 
         $stmt = $conn->prepare("
             UPDATE applications
@@ -363,6 +368,9 @@ switch ($action) {
         $old_status = $application['status'] ?? null;
         $new_status = 'Accepted';
         $comments   = sanitize_input($_POST['comments'] ?? '');
+        if (!app_status_ensure($conn, $new_status)) {
+            failTo("view-application?id={$application_id}", "The database does not accept the status \"{$new_status}\" yet. Ask an administrator to check the applications table.");
+        }
 
         $stmt = $conn->prepare("
             UPDATE applications
