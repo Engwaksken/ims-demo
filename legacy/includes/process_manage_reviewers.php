@@ -327,7 +327,7 @@ try {
             FROM applications a
             INNER JOIN application_opportunities ao ON ao.opportunity_id = a.opportunity_id
             WHERE a.application_id IN ($ids)
-              AND a.status IN ('Pending','Shortlisted')
+              AND a.status IN ('Submitted','Under Review','Pending','Shortlisted')
               AND COALESCE(a.cohort_id, ao.cohort_id, 0) = {$cohort_id}
         ");
         $application_ids = [];
@@ -400,6 +400,7 @@ try {
 
         $assigned = 0;
         $skipped  = 0;
+        $appsWithNewAssignment = [];
         $newAssignmentsByReviewer = [];
 
         foreach ($application_ids as $app_id) {
@@ -424,6 +425,7 @@ try {
 
                 if ($insert->affected_rows > 0) {
                     $assigned++;
+                    $appsWithNewAssignment[$app_id] = true;
                     if (isset($applicationInfo[$app_id])) {
                         $newAssignmentsByReviewer[$rev_id][] = $applicationInfo[$app_id];
                     }
@@ -435,6 +437,35 @@ try {
         $insert->close();
         $exists->close();
         $backfill->close();
+
+        // A reviewer is now on it: Submitted/Pending applications move to Under Review.
+        $movedToReview = 0;
+        if ($appsWithNewAssignment) {
+            $ids = implode(',', array_map('intval', array_keys($appsWithNewAssignment)));
+            $res = $conn->query("SELECT application_id, status FROM applications WHERE application_id IN ($ids) AND status IN ('Submitted','Pending')");
+            $toMove = [];
+            while ($res && ($row = $res->fetch_assoc())) {
+                $toMove[(int)$row['application_id']] = (string)$row['status'];
+            }
+            if ($toMove) {
+                $up   = $conn->prepare("UPDATE applications SET status = 'Under Review' WHERE application_id = ? AND status = ?");
+                $hist = $conn->prepare("INSERT INTO application_status_history (application_id, old_status, new_status, changed_by, comments) VALUES (?, ?, 'Under Review', ?, 'Reviewer assigned')");
+                foreach ($toMove as $aid => $old) {
+                    if (!$up) break;
+                    $up->bind_param('is', $aid, $old);
+                    $up->execute();
+                    if ($up->affected_rows > 0) {
+                        $movedToReview++;
+                        if ($hist) {
+                            $hist->bind_param('isi', $aid, $old, $current_user_id);
+                            $hist->execute();
+                        }
+                    }
+                }
+                if ($up) $up->close();
+                if ($hist) $hist->close();
+            }
+        }
 
         $loginUrl  = buildLoginUrl('dashboard');
         $reviewUrl = buildReviewListUrl();
@@ -486,7 +517,8 @@ try {
             $assigned . ' assignment(s) created.'
             . ($skipped ? ' ' . $skipped . ' duplicate(s) skipped.' : '')
             . ($assigned ? ' ' . $emailsSent . ' notification email(s) sent.' : '')
-            . ($emailsFail ? ' ' . $emailsFail . ' email(s) failed.' : '');
+            . ($emailsFail ? ' ' . $emailsFail . ' email(s) failed.' : '')
+            . ($movedToReview ? ' ' . $movedToReview . ' application(s) moved to Under Review.' : '');
 
         redirectTo('assign');
     }

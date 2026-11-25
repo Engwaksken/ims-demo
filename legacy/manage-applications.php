@@ -274,6 +274,8 @@ $rem_days_text = $rem_settings['days_before']
 .ma-selected-count { font-weight: 700; color: var(--brand-600); white-space: nowrap; }
 .ma-bulk-bar .form-control { width: auto; min-width: 200px; margin: 0; }
 
+.ma-notify { font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+
 /* Tabs */
 .ma-tabs { margin-bottom: 0; }
 .ma-tab-panel.active { display: flex; flex-direction: column; gap: 20px; }
@@ -484,8 +486,11 @@ if (!isset($ma_tabs[$ma_tab])) $ma_tab = 'applications';
                 <option value="Shortlisted">Shortlisted</option>
                 <option value="Accepted">Accepted</option>
                 <option value="Rejected">Rejected</option>
-                <option value="Waitlisted">Waitlisted</option>
             </select>
+            <label class="ma-bulk-label ma-notify" title="Shortlisted, Accepted and Rejected applicants get an email about their new status">
+                <input type="hidden" name="notify_applicant" value="0">
+                <input type="checkbox" name="notify_applicant" value="1" id="bulkNotify" checked> Email applicants
+            </label>
             <button type="submit" class="btn btn-primary btn-sm" onclick="return confirmBulkAction()">
                 <i class="fas fa-check"></i> Apply
             </button>
@@ -967,7 +972,10 @@ function confirmBulkAction() {
     const status  = document.querySelector('select[name="new_status"]').value;
     if (checked === 0) { alert('Please select at least one application.'); return false; }
     if (!status)       { alert('Please choose a target status.');           return false; }
-    return confirm(`Change status of ${checked} application(s) to "${status}"?`);
+    const emails  = ['Shortlisted', 'Accepted', 'Rejected'].includes(status);
+    const notify  = document.getElementById('bulkNotify')?.checked;
+    const note    = emails ? (notify ? '\n\nEach applicant will be emailed about their new status.' : '\n\nApplicants will NOT be emailed.') : '';
+    return confirm(`Change status of ${checked} application(s) to "${status}"?${note}`);
 }
 
 function confirmBulkDelete() {

@@ -1,6 +1,27 @@
 <?php
 session_start();
 require_once 'includes/config.php';
+require_once __DIR__ . '/includes/application-status-emails.php';
+
+// Applicants are emailed when they become Shortlisted / Accepted / Rejected,
+// unless the form sends notify_applicant=0.
+$GLOBALS['appstatus_notify'] = (string)($_REQUEST['notify_applicant'] ?? '1') !== '0';
+$GLOBALS['appstatus_mail']   = ['sent' => 0, 'failed' => 0, 'failed_names' => []];
+
+/** " 2 applicants emailed." style suffix for success messages. */
+function appstatus_mail_summary(): string {
+    $m = $GLOBALS['appstatus_mail'];
+    $out = '';
+    if ($m['sent'] > 0) {
+        $out .= ' ' . ($m['sent'] === 1 ? 'The applicant was' : $m['sent'] . ' applicants were') . ' emailed.';
+    }
+    if ($m['failed'] > 0) {
+        $out .= ' ' . $m['failed'] . ' email(s) could not be sent'
+              . ($m['failed_names'] ? ' (' . implode(', ', array_slice($m['failed_names'], 0, 5)) . ')' : '')
+              . '; check the email address and email settings.';
+    }
+    return $out;
+}
 
 /**
  * review-application-process.php
@@ -72,6 +93,18 @@ function log_status_change(mysqli $conn, int $application_id, ?string $old_statu
     $stmt->bind_param("issis", $application_id, $old, $new, $user_id, $comments);
     $stmt->execute();
     $stmt->close();
+
+    // Email the applicant (never includes the comments).
+    if (!empty($GLOBALS['appstatus_notify']) && appstatus_should_email($old_status, $new_status)) {
+        $result = appstatus_notify($conn, $application_id, $new_status);
+        if ($result === true) {
+            $GLOBALS['appstatus_mail']['sent']++;
+        } else {
+            $GLOBALS['appstatus_mail']['failed']++;
+            $GLOBALS['appstatus_mail']['failed_names'][] = '#' . $application_id;
+            error_log("[application-status-emails] #{$application_id} {$new_status}: {$result}");
+        }
+    }
 }
 
 function calculate_overall_score($innovation, $market, $team, $financial): ?float {
@@ -265,7 +298,7 @@ switch ($action) {
             $stmt->close();
             log_status_change($conn, $application_id, $old_status, $new_status, $user_id, "Status changed from {$old_status} to {$new_status}");
             log_activity($conn, $user_id, 'Change Application Status', "Changed status of application #{$application_id} from {$old_status} to {$new_status}");
-            okTo("view-application?id={$application_id}", "Application status changed to {$new_status} successfully!");
+            okTo("view-application?id={$application_id}", "Application status changed to {$new_status} successfully!" . appstatus_mail_summary());
         }
 
         $err = $stmt->error;
@@ -307,12 +340,8 @@ switch ($action) {
             log_status_change($conn, $application_id, $old_status, $new_status, $user_id, "Rejection reason: {$rejection_reason}");
             log_activity($conn, $user_id, 'Reject Application', "Rejected application #{$application_id} (" . ($application['startup_name'] ?? 'N/A') . ")");
 
-            // Optional email hooks (only call if they exist)
-            if (function_exists('send_rejection_email')) {
-                @send_rejection_email(($application['email'] ?? $application['applicant_email'] ?? ''), ($application['startup_name'] ?? ''), $rejection_reason);
-            }
 
-            okTo("view-application?id={$application_id}", "Application rejected successfully.");
+            okTo("view-application?id={$application_id}", "Application rejected successfully." . appstatus_mail_summary());
         }
 
         $err = $stmt->error;
@@ -348,11 +377,7 @@ switch ($action) {
             log_status_change($conn, $application_id, $old_status, $new_status, $user_id, $comments);
             log_activity($conn, $user_id, 'Accept Application', "Accepted application #{$application_id} (" . ($application['startup_name'] ?? 'N/A') . ")");
 
-            if (function_exists('send_acceptance_email')) {
-                @send_acceptance_email(($application['email'] ?? $application['applicant_email'] ?? ''), ($application['startup_name'] ?? ''));
-            }
-
-            okTo("view-application?id={$application_id}", "Application accepted successfully!");
+            okTo("view-application?id={$application_id}", "Application accepted successfully!" . appstatus_mail_summary());
         }
 
         $err = $stmt->error;
@@ -482,7 +507,7 @@ switch ($action) {
             }
 
             log_activity($conn, $user_id, 'Bulk Status Change', "Changed status of {$count} applications to {$new_status}");
-            okTo($redirectBack, "{$count} application(s) status changed to {$new_status} successfully!");
+            okTo($redirectBack, "{$count} application(s) status changed to {$new_status} successfully!" . appstatus_mail_summary());
         }
 
         $err = $up->error;

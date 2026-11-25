@@ -111,7 +111,7 @@ $stmt = $conn->prepare("
             WHERE ra.application_id = a.application_id) AS reviewer_count
     FROM applications a
     INNER JOIN application_opportunities ao ON ao.opportunity_id = a.opportunity_id
-    WHERE a.status IN ('Pending','Shortlisted')
+    WHERE a.status IN ('Submitted','Under Review','Pending','Shortlisted')
     ORDER BY a.startup_name ASC, a.submitted_at ASC
 ");
 $stmt->execute();
@@ -721,7 +721,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         <?php endforeach; ?>
                     </select>
                     <div class="form-hint mr-step-hint">
-                        <i class="fas fa-info-circle"></i> Only Pending and Shortlisted applications are listed. Cohorts with none are greyed out.
+                        <i class="fas fa-info-circle"></i> Submitted, Under Review and Shortlisted applications are listed (not drafts or decided ones). Cohorts with none are greyed out.
                     </div>
                 </div>
 
@@ -736,8 +736,10 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         <input type="search" class="form-control" id="appSearch" placeholder="Search by name, opportunity or #ID" aria-label="Search applicants" disabled>
                         <select class="form-control asg-app-filter" id="appStatusFilter" aria-label="Filter by status" disabled>
                             <option value="">All statuses</option>
-                            <option value="Pending">Pending</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Under Review">Under Review</option>
                             <option value="Shortlisted">Shortlisted</option>
+                            <option value="Pending">Pending</option>
                         </select>
                         <label class="pool-all"><input type="checkbox" class="mr-check" id="appUnassignedOnly" disabled> No reviewers yet</label>
                         <span class="asg-app-count" id="appCount"></span>
@@ -766,7 +768,7 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                                     <td><?= (int)$a['application_id'] ?></td>
                                     <td><label for="app_<?= (int)$a['application_id'] ?>" class="asg-app-name"><?= h($a['startup_name']) ?></label></td>
                                     <td><?= h($a['opportunity_title']) ?></td>
-                                    <td><span class="badge <?= $a['status'] === 'Shortlisted' ? 'badge-success' : 'badge-warning' ?>"><?= h($a['status']) ?></span></td>
+                                    <td><span class="badge <?= match ($a['status']) { 'Shortlisted' => 'badge-warning', 'Under Review' => 'badge-info', default => 'badge-secondary' } ?>"><?= h($a['status']) ?></span></td>
                                     <td><?= (int)$a['reviewer_count'] ?></td>
                                     <td><?= !empty($a['submitted_at']) ? h(date('d M Y', strtotime((string)$a['submitted_at']))) : '-' ?></td>
                                 </tr>
