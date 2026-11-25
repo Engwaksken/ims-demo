@@ -73,7 +73,7 @@ if (is_file(__DIR__ . '/ims-cp-agent-config.php')) {
     require __DIR__ . '/ims-cp-agent-config.php';
 }
 defined('IMS_AGENT_SECRET') || define('IMS_AGENT_SECRET', 'CHANGE-ME-to-a-long-random-string');
-defined('IMS_FEED_URL') || define('IMS_FEED_URL', 'https://ims.hivecolab.com/hub-network-agent');  // pull mode
+defined('IMS_FEED_URL') || define('IMS_FEED_URL', 'https://ims.kemmytech.com/hub-network-agent');  // pull mode
 defined('IMS_ALLOWED_IPS') || define('IMS_ALLOWED_IPS', ['192.168.1.1']);                          // push mode only
 defined('IMS_DEFAULT_ZONE') || define('IMS_DEFAULT_ZONE', 'lan');
 // ---------------------------------------------------------------------------
