@@ -511,6 +511,15 @@ if ($stmt) {
                     </div>
                     <?php endif; ?>
 
+                    <?php if (($app['status'] ?? '') === 'Waitlisted'): ?>
+                    <div class="ad-timeline-item">
+                        <div class="ad-timeline-content">
+                            <strong class="is-info">Waitlisted</strong>
+                            <small>Your application is on our waiting list. We will contact you if a place becomes available.</small>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <?php if (($app['status'] ?? '') === 'Accepted'): ?>
                     <div class="ad-timeline-item">
                         <div class="ad-timeline-content">

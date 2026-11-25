@@ -157,12 +157,13 @@ if ($export === 'csv') {
 | STATS
 |--------------------------------------------------------------------------
 */
-$stats = ['total'=>count($applications),'submitted'=>0,'under_review'=>0,'shortlisted'=>0,'accepted'=>0,'rejected'=>0];
+$stats = ['total'=>count($applications),'submitted'=>0,'under_review'=>0,'shortlisted'=>0,'waitlisted'=>0,'accepted'=>0,'rejected'=>0];
 foreach ($applications as $a) {
     $st = strtoupper(trim($a['status'] ?? ''));
     if ($st === 'SUBMITTED')    $stats['submitted']++;
     if ($st === 'UNDER REVIEW') $stats['under_review']++;
     if ($st === 'SHORTLISTED')  $stats['shortlisted']++;
+    if ($st === 'WAITLISTED')   $stats['waitlisted']++;
     if ($st === 'ACCEPTED')     $stats['accepted']++;
     if ($st === 'REJECTED')     $stats['rejected']++;
 }
@@ -183,6 +184,7 @@ $status_options = ['Draft','Submitted','Under Review','Approved','Rejected','Wai
 |--------------------------------------------------------------------------
 */
 require_once __DIR__ . '/includes/application-reminders.php';
+require_once __DIR__ . '/includes/application-statuses.php';
 $rem_ready     = apprem_ensure_schema($conn);
 $rem_settings  = $rem_ready ? apprem_settings($conn) : ['enabled' => false, 'days_before' => [], 'updated_at' => null];
 $rem_last      = $rem_ready ? apprem_last_reminded($conn, $opportunity_id) : [];
@@ -362,6 +364,13 @@ $rem_days_text = $rem_settings['days_before']
         </div>
     </div>
     <div class="stat-card">
+        <div class="stat-icon bg-slate"><i class="fas fa-hourglass-half"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Waitlisted</span>
+            <span class="stat-value"><?= (int)$stats['waitlisted'] ?></span>
+        </div>
+    </div>
+    <div class="stat-card">
         <div class="stat-icon bg-green"><i class="fas fa-check-circle"></i></div>
         <div class="stat-info">
             <span class="stat-label">Accepted</span>
@@ -484,10 +493,11 @@ if (!isset($ma_tabs[$ma_tab])) $ma_tab = 'applications';
                 <option value="">Change status to...</option>
                 <option value="Under Review">Under Review</option>
                 <option value="Shortlisted">Shortlisted</option>
+                <option value="Waitlisted">Waitlisted</option>
                 <option value="Accepted">Accepted</option>
                 <option value="Rejected">Rejected</option>
             </select>
-            <label class="ma-bulk-label ma-notify" title="Shortlisted, Accepted and Rejected applicants get an email about their new status">
+            <label class="ma-bulk-label ma-notify" title="Shortlisted, Waitlisted, Accepted and Rejected applicants get an email about their new status">
                 <input type="hidden" name="notify_applicant" value="0">
                 <input type="checkbox" name="notify_applicant" value="1" id="bulkNotify" checked> Email applicants
             </label>
@@ -620,17 +630,30 @@ if (!isset($ma_tabs[$ma_tab])) $ma_tab = 'applications';
                                         <i class="fas fa-bell" aria-hidden="true"></i>
                                     </button>
                                 <?php endif; ?>
-                                <?php if (in_array($st, ['Submitted', 'Under Review'], true)): ?>
-                                    <button type="button"
-                                            onclick="quickShortlist(<?= (int)$app['application_id'] ?>)"
-                                            class="btn btn-warning btn-sm" title="Shortlist">
-                                        <i class="fas fa-star"></i>
+                                <?php $aid = (int)$app['application_id']; ?>
+                                <?php if (app_status_can('shortlist', $st)): ?>
+                                    <button type="button" onclick="quickStatus(<?= $aid ?>, 'Shortlisted')"
+                                            class="btn btn-warning btn-sm" title="Shortlist" aria-label="Shortlist">
+                                        <i class="fas fa-star" aria-hidden="true"></i>
                                     </button>
-                                    <button type="button"
-                                            onclick="quickAccept(<?= (int)$app['application_id'] ?>)"
-                                            class="btn btn-success btn-sm" title="Accept">
-                                        <i class="fas fa-check"></i>
+                                <?php endif; ?>
+                                <?php if (app_status_can('waitlist', $st)): ?>
+                                    <button type="button" onclick="quickStatus(<?= $aid ?>, 'Waitlisted')"
+                                            class="btn btn-secondary btn-sm" title="Waitlist" aria-label="Waitlist">
+                                        <i class="fas fa-hourglass-half" aria-hidden="true"></i>
                                     </button>
+                                <?php endif; ?>
+                                <?php if (app_status_can('accept', $st)): ?>
+                                    <button type="button" onclick="quickStatus(<?= $aid ?>, 'Accepted')"
+                                            class="btn btn-success btn-sm" title="Accept" aria-label="Accept">
+                                        <i class="fas fa-check" aria-hidden="true"></i>
+                                    </button>
+                                <?php endif; ?>
+                                <?php if (app_status_can('reject', $st)): ?>
+                                    <a href="view-application?id=<?= $aid ?>#reject"
+                                       class="btn btn-danger btn-sm" title="Reject (opens the application to record a reason)" aria-label="Reject">
+                                        <i class="fas fa-times" aria-hidden="true"></i>
+                                    </a>
                                 <?php endif; ?>
                             </div>
                         </td>
@@ -972,7 +995,7 @@ function confirmBulkAction() {
     const status  = document.querySelector('select[name="new_status"]').value;
     if (checked === 0) { alert('Please select at least one application.'); return false; }
     if (!status)       { alert('Please choose a target status.');           return false; }
-    const emails  = ['Shortlisted', 'Accepted', 'Rejected'].includes(status);
+    const emails  = ['Shortlisted', 'Waitlisted', 'Accepted', 'Rejected'].includes(status);
     const notify  = document.getElementById('bulkNotify')?.checked;
     const note    = emails ? (notify ? '\n\nEach applicant will be emailed about their new status.' : '\n\nApplicants will NOT be emailed.') : '';
     return confirm(`Change status of ${checked} application(s) to "${status}"?${note}`);
@@ -1057,15 +1080,15 @@ function sortBy(column) {
     window.location.href = url.toString();
 }
 
-function quickShortlist(id) {
-    if (confirm('Shortlist this application?'))
-        window.location.href = 'review-application-process?action=change_status&csrf_token=<?= h(csrf_token()) ?>&application_id=' + id + '&status=Shortlisted';
+function quickStatus(id, status) {
+    const verb = { Shortlisted: 'Shortlist', Waitlisted: 'Waitlist', Accepted: 'Accept' }[status] || 'Change';
+    if (!confirm(`${verb} this application?\n\nThe applicant will be emailed about their new status.`)) return;
+    window.location.href = 'review-application-process?action=change_status&csrf_token=<?= h(csrf_token()) ?>'
+        + '&application_id=' + encodeURIComponent(id) + '&status=' + encodeURIComponent(status);
 }
-
-function quickAccept(id) {
-    if (confirm('Accept this application?'))
-        window.location.href = 'review-application-process?action=change_status&csrf_token=<?= h(csrf_token()) ?>&application_id=' + id + '&status=Accepted';
-}
+// Older links/bookmarklets may still call these.
+function quickShortlist(id) { quickStatus(id, 'Shortlisted'); }
+function quickAccept(id)    { quickStatus(id, 'Accepted'); }
 
 function exportApplications() {
     const url = new URL(window.location.href);

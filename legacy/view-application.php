@@ -6,6 +6,7 @@ ob_start();
 $page_title = 'Application Details';
 require_once 'includes/header.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/application-statuses.php';
 check_role(IMS_STAFF_ROLES); // was IMS_ALL_ROLES: applicants/members could read any application by id
 
 
@@ -288,11 +289,12 @@ foreach ($doc_fields as $field => $meta) {
 | REVIEW ACTION AVAILABILITY
 |--------------------------------------------------------------------------
 */
-$reviewableStatuses = ['Submitted', 'Under Review', 'Shortlisted'];
-$canReview = in_array($status, $reviewableStatuses, true);
-$canShortlist = in_array($status, ['Submitted', 'Under Review'], true);
-$canSelect = in_array($status, ['Submitted', 'Under Review', 'Shortlisted'], true);
-$canReject = in_array($status, ['Submitted', 'Under Review', 'Shortlisted'], true);
+$reviewableStatuses = APP_STATUSES_UNDECIDED;
+$canReview    = in_array($status, $reviewableStatuses, true);
+$canShortlist = app_status_can('shortlist', (string)$status);
+$canWaitlist  = app_status_can('waitlist', (string)$status);
+$canSelect    = app_status_can('accept', (string)$status);   // "Accept" button
+$canReject    = app_status_can('reject', (string)$status);
 ?>
 
 <style>
@@ -478,9 +480,15 @@ $canReject = in_array($status, ['Submitted', 'Under Review', 'Shortlisted'], tru
                 </button>
             <?php endif; ?>
 
+            <?php if ($canWaitlist): ?>
+                <button type="button" onclick="changeStatus('Waitlisted')" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-hourglass-half" aria-hidden="true"></i> Waitlist
+                </button>
+            <?php endif; ?>
+
             <?php if ($canSelect): ?>
-                <button type="button" onclick="changeStatus('Selected')" class="btn btn-success btn-sm">
-                    <i class="fas fa-check-circle" aria-hidden="true"></i> Select
+                <button type="button" onclick="changeStatus('Accepted')" class="btn btn-success btn-sm">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i> Accept
                 </button>
             <?php endif; ?>
 
@@ -635,7 +643,7 @@ $canReject = in_array($status, ['Submitted', 'Under Review', 'Shortlisted'], tru
                 </div>
             </div>
 
-            <?php if ($canReview || $canShortlist || $canSelect || $canReject): ?>
+            <?php if ($canReview || $canShortlist || $canWaitlist || $canSelect || $canReject): ?>
                 <div class="card">
                     <div class="card-header">
                         <h3><i class="fas fa-bolt" aria-hidden="true"></i> Quick Actions</h3>
@@ -655,9 +663,15 @@ $canReject = in_array($status, ['Submitted', 'Under Review', 'Shortlisted'], tru
                                 </button>
                             <?php endif; ?>
 
+                            <?php if ($canWaitlist): ?>
+                                <button type="button" onclick="changeStatus('Waitlisted')" class="btn btn-secondary">
+                                    <i class="fas fa-hourglass-half" aria-hidden="true"></i> Waitlist
+                                </button>
+                            <?php endif; ?>
+
                             <?php if ($canSelect): ?>
-                                <button type="button" onclick="changeStatus('Selected')" class="btn btn-success">
-                                    <i class="fas fa-check-circle" aria-hidden="true"></i> Select
+                                <button type="button" onclick="changeStatus('Accepted')" class="btn btn-success">
+                                    <i class="fas fa-check-circle" aria-hidden="true"></i> Accept
                                 </button>
                             <?php endif; ?>
 
@@ -1495,7 +1509,9 @@ ob_end_flush();
     });
 
     window.changeStatus = function (status) {
-        if (!window.confirm('Change application status to "' + status + '"?')) {
+        var emails = ['Shortlisted', 'Waitlisted', 'Accepted', 'Rejected'].indexOf(status) !== -1;
+        if (!window.confirm('Change application status to "' + status + '"?'
+                + (emails ? '\n\nThe applicant will be emailed about their new status.' : ''))) {
             return;
         }
 
@@ -1504,5 +1520,14 @@ ob_end_flush();
             + '&application_id=<?= $application_id ?>'
             + '&status=' + encodeURIComponent(status);
     };
+
+    // Arriving from the Reject button on Manage Applications: open the reject form.
+    <?php if ($canReject): ?>
+    window.addEventListener('load', function () {
+        if (window.location.hash === '#reject' && typeof window.openModal === 'function') {
+            window.openModal('rejectModal');
+        }
+    });
+    <?php endif; ?>
 })();
 </script>

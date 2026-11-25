@@ -2,6 +2,7 @@
 session_start();
 require_once 'includes/config.php';
 require_once __DIR__ . '/includes/application-status-emails.php';
+require_once __DIR__ . '/includes/application-statuses.php';
 
 // Applicants are emailed when they become Shortlisted / Accepted / Rejected,
 // unless the form sends notify_applicant=0.
@@ -280,9 +281,12 @@ switch ($action) {
         $new_status = sanitize_input($_GET['status'] ?? '');
         $old_status = $application['status'] ?? null;
 
-        $valid_statuses = ['Draft','Submitted','Under Review','Shortlisted','Accepted','Rejected','Withdrawn'];
+        $valid_statuses = array_merge(['Draft'], APP_STATUSES_SETTABLE);
         if (!in_array($new_status, $valid_statuses, true)) {
             failTo("view-application?id={$application_id}", "Invalid status.");
+        }
+        if (!app_status_ensure($conn, $new_status)) {
+            failTo("view-application?id={$application_id}", "The database does not accept the status \"{$new_status}\" yet. Ask an administrator to check the applications table.");
         }
 
         $stmt = $conn->prepare("
@@ -464,8 +468,8 @@ switch ($action) {
         if ($new_status === '') failTo($redirectBack, "Please select a status.");
         if (!is_array($selected_ids) || empty($selected_ids)) failTo($redirectBack, "No applications selected.");
 
-        $valid_statuses = ['Submitted','Under Review','Shortlisted','Accepted','Rejected','Withdrawn'];
-        if (!in_array($new_status, $valid_statuses, true)) failTo($redirectBack, "Invalid status.");
+        if (!in_array($new_status, APP_STATUSES_SETTABLE, true)) failTo($redirectBack, "Invalid status.");
+        if (!app_status_ensure($conn, $new_status)) failTo($redirectBack, "The database does not accept the status \"{$new_status}\" yet. Ask an administrator to check the applications table.");
 
         $ids = array_values(array_unique(array_map('intval', $selected_ids)));
         $ids = array_filter($ids, fn($x) => $x > 0);

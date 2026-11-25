@@ -5,8 +5,8 @@ declare(strict_types=1);
 |--------------------------------------------------------------------------
 | Application status emails
 |--------------------------------------------------------------------------
-| Tells an applicant when their application becomes Shortlisted, Accepted or
-| Rejected. Used by review-application-process.php (Manage Applications,
+| Tells an applicant when their application becomes Shortlisted, Waitlisted,
+| Accepted or Rejected. Used by review-application-process.php (Manage Applications,
 | View Application). Internal comments, scores and reviewer notes are never
 | included.
 */
@@ -14,7 +14,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/mail-function.php';
 
 /** Statuses that email the applicant. */
-const APPSTATUS_EMAIL_STATUSES = ['Shortlisted', 'Accepted', 'Rejected'];
+const APPSTATUS_EMAIL_STATUSES = ['Shortlisted', 'Waitlisted', 'Accepted', 'Rejected'];
 
 if (!function_exists('appstatus_should_email')) {
     function appstatus_should_email(?string $oldStatus, string $newStatus): bool
@@ -90,6 +90,15 @@ if (!function_exists('appstatus_notify')) {
                  <p>This is not a final decision yet. We will contact you about the next steps, which may include
                     an interview or a request for more information. Please keep your contact details up to date.</p>",
                 "Your application for {$title} has been shortlisted. It has passed the first screening and will now be reviewed in more detail. This is not a final decision yet; we will contact you about next steps.",
+            ],
+            'Waitlisted' => [
+                "Your application is on our waiting list: {$title}",
+                'You are on our waiting list',
+                "<p>Thank you for applying for <strong>{$for}</strong>. Your application was strong, but we could not
+                    offer a place in this round straight away, so it has been put on our <strong>waiting list</strong>.</p>
+                 <p>If a place becomes available, we will contact you. You don't need to do anything for now,
+                    but please keep your contact details up to date.</p>",
+                "Your application for {$title} has been put on our waiting list. We could not offer a place straight away, but if one becomes available we will contact you. You don't need to do anything for now.",
             ],
             'Accepted' => [
                 "Congratulations! Your application has been accepted: {$title}",
