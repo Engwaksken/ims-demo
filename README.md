@@ -25,7 +25,7 @@ emails and PDF/print views.
    suspended members, reconnect active ones). Needs `tools/pfsense/ims-cp-agent.php` installed
    on the firewall and configured under Hub Team & Internet > Packages & pfSense:
    `*/5 * * * * php /path/to/legacy/cron/hub-internet-sync.php`
-6. Optional daily cron for automatic hub member subscription reminders (schedule and message
+7. Optional daily cron for automatic hub member subscription reminders (schedule and message
    under Hub Team & Internet > Settings & reminders > Reminders):
    `0 8 * * * php /path/to/legacy/cron/hub-member-reminders.php`
 
