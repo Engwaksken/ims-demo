@@ -84,7 +84,7 @@ $hrEmbedSelected = (int)($hrEmbedSelected ?? 0);
                 <?php if ($hrEmbedOrigins): ?>
                     The widget may be shown on: <strong><?= hr_h(implode(', ', $hrEmbedOrigins)) ?></strong>.
                 <?php else: ?>
-                    <br><strong>Before it will display:</strong> ask your system administrator to add the website's address (e.g. https://www.example.org) to <code>EMBED_ALLOWED_ORIGINS</code> in the server's .env file. Until then browsers block the widget; the direct apply link works everywhere.
+                    The widget can be shown on any website.
                 <?php endif; ?>
             </div>
         </div>
