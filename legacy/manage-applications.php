@@ -381,6 +381,13 @@ $rem_days_text = $rem_settings['days_before']
         </div>
     </div>
     <div class="stat-card">
+        <div class="stat-icon bg-red"><i class="fas fa-times-circle"></i></div>
+        <div class="stat-info">
+            <span class="stat-label">Rejected</span>
+            <span class="stat-value"><?= (int)$stats['rejected'] ?></span>
+        </div>
+    </div>
+    <div class="stat-card">
         <div class="stat-icon bg-teal">
             <i class="fas fa-chart-line"></i>
         </div>
