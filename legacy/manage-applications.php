@@ -288,12 +288,6 @@ $rem_days_text = $rem_settings['days_before']
 .ma-rem-intro { margin: 0 0 12px; font-size: 13.5px; }
 .ma-rem-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--ink-50); border-radius: 8px; margin-bottom: 14px; }
 .ma-rem-list table { width: 100%; margin: 0; font-size: 12.5px; }
-.ma-rs-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-.ma-rs-tile { border: 1px solid var(--ink-50); border-radius: 10px; padding: 10px 12px; }
-.ma-rs-tile span { display: block; font-size: 11.5px; color: var(--ink-400); text-transform: uppercase; letter-spacing: .03em; }
-.ma-rs-tile strong { font-size: 20px; }
-.ma-rs-tile.ok strong { color: var(--green-fg, #1e8e3e); }
-.ma-rs-tile.bad strong { color: var(--red-fg, #c0392b); }
 .ma-rs-meta { margin: 0; font-size: 12.5px; color: var(--ink-400); }
 .ma-rs-section { border: 1px solid var(--ink-50); border-radius: 10px; }
 .ma-rs-section > summary { cursor: pointer; padding: 10px 14px; font-weight: 600; font-size: 13.5px; }
@@ -745,14 +739,24 @@ if (!isset($ma_tabs[$ma_tab])) $ma_tab = 'applications';
         <?php endif; ?>
     </div>
     <div class="card-body ma-rem-body">
-        <div class="ma-rs-tiles">
-            <div class="ma-rs-tile"><span>Attempts</span><strong><?= (int)$rt['attempts'] ?></strong></div>
-            <div class="ma-rs-tile ok"><span>Sent</span><strong><?= (int)$rt['sent'] ?></strong></div>
-            <div class="ma-rs-tile bad"><span>Failed</span><strong><?= (int)$rt['failed'] ?></strong></div>
-            <div class="ma-rs-tile"><span>Success rate</span><strong><?= $rate ?>%</strong></div>
-            <div class="ma-rs-tile"><span>Applicants reached</span><strong><?= (int)$rt['applicants'] ?></strong></div>
-            <div class="ma-rs-tile"><span>Automatic</span><strong><?= (int)$rt['auto'] ?></strong></div>
-            <div class="ma-rs-tile"><span>Manual</span><strong><?= (int)$rt['manual'] ?></strong></div>
+        <div class="stats-grid reports-stats">
+            <?php foreach ([
+                ['bg-primary', 'fa-envelope',        'Attempts',           (string)(int)$rt['attempts']],
+                ['bg-green',   'fa-check-circle',    'Sent',               (string)(int)$rt['sent']],
+                ['bg-red',     'fa-circle-xmark',    'Failed',             (string)(int)$rt['failed']],
+                ['bg-teal',    'fa-percent',         'Success Rate',       $rate . '%'],
+                ['bg-purple',  'fa-user-check',      'Applicants Reached', (string)(int)$rt['applicants']],
+                ['bg-blue',    'fa-robot',           'Automatic',          (string)(int)$rt['auto']],
+                ['bg-amber',   'fa-hand-pointer',    'Manual',             (string)(int)$rt['manual']],
+            ] as [$bg, $ico, $lbl, $val]): ?>
+            <div class="stat-card">
+                <div class="stat-icon <?= $bg ?>"><i class="fas <?= $ico ?>" aria-hidden="true"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label"><?= h($lbl) ?></span>
+                    <span class="stat-value"><?= h($val) ?></span>
+                </div>
+            </div>
+            <?php endforeach; ?>
         </div>
         <p class="ma-rs-meta">
             <?php if ($rt['attempts'] > 0): ?>
