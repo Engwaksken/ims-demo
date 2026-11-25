@@ -228,45 +228,60 @@ try {
             redirectTo('reviewers');
         }
 
-        $stmt = $conn->prepare("
-            INSERT IGNORE INTO reviewer_pool (user_id, added_by, added_at)
-            SELECT user_id, ?, NOW() FROM users WHERE user_id = ? AND is_active = 1
-        ");
-        if (!$stmt) {
-            throw new RuntimeException('Prepare failed (pool add): ' . $conn->error);
+        // Members, visitors, event attendees and applicants are refused.
+        $blocked = [];
+        $ids = implode(',', array_map('intval', $user_ids));
+        $res = $conn->query("SELECT user_id, full_name, role FROM users WHERE user_id IN ($ids)");
+        $allowed_ids = [];
+        while ($res && ($row = $res->fetch_assoc())) {
+            if (ims_reviewer_role_allowed($row['role'])) {
+                $allowed_ids[] = (int)$row['user_id'];
+            } else {
+                $blocked[] = $row['full_name'] . ' (' . $row['role'] . ')';
+            }
         }
 
         $added = 0;
-        foreach ($user_ids as $uid) {
-            $stmt->bind_param('ii', $current_user_id, $uid);
-            $stmt->execute();
-            $added += max(0, $stmt->affected_rows);
+        foreach ($allowed_ids as $uid) {
+            if (ims_reviewer_pool_add($conn, $uid, $current_user_id)) {
+                $added++;
+            }
         }
-        $stmt->close();
 
-        $_SESSION['success'] = $added === 1 ? '1 user added as a reviewer.' : $added . ' users added as reviewers.';
+        if ($blocked) {
+            $_SESSION['error'] = 'Members, visitors, event attendees and applicants cannot be reviewers. Not added: ' . implode(', ', $blocked) . '.';
+        }
+        if ($added > 0 || !$blocked) {
+            $_SESSION['success'] = $added === 1 ? '1 user added as a reviewer.' : $added . ' users added as reviewers.';
+        }
         redirectTo('reviewers');
     }
 
     if ($action === 'remove_pool_reviewer') {
-        $uid = (int)($_POST['user_id'] ?? 0);
-        if ($uid <= 0) {
-            $_SESSION['error'] = 'Invalid user.';
+        $user_ids = postIntArray('user_ids');
+        $single   = (int)($_POST['user_id'] ?? 0);
+        if ($single > 0) {
+            $user_ids[] = $single;
+        }
+        $user_ids = array_values(array_unique($user_ids));
+        if (empty($user_ids)) {
+            $_SESSION['error'] = 'Select at least one reviewer to remove.';
             redirectTo('reviewers');
         }
 
-        $stmt = $conn->prepare('DELETE FROM reviewer_pool WHERE user_id = ? LIMIT 1');
-        if (!$stmt) {
-            throw new RuntimeException('Prepare failed (pool remove): ' . $conn->error);
+        $removed = 0;
+        foreach ($user_ids as $uid) {
+            if (ims_reviewer_pool_remove($conn, $uid, $current_user_id)) {
+                $removed++;
+            }
         }
-        $stmt->bind_param('i', $uid);
-        $stmt->execute();
-        $removed = $stmt->affected_rows > 0;
-        $stmt->close();
 
-        $_SESSION[$removed ? 'success' : 'error'] = $removed
-            ? 'Removed from reviewers. Existing assignments were kept.'
-            : 'That user was not on the Reviewers list.';
+        if ($removed > 0) {
+            $_SESSION['success'] = ($removed === 1 ? '1 reviewer' : $removed . ' reviewers')
+                . ' removed from the list. Their existing assignments were kept.';
+        } else {
+            $_SESSION['error'] = 'None of the selected users were on the Reviewers list.';
+        }
         redirectTo('reviewers');
     }
 
@@ -292,13 +307,56 @@ try {
             redirectTo('assign');
         }
 
+        $review_type_id = (int)($_POST['review_type_id'] ?? 0);
+        if ($review_type_id <= 0 || !isValidReviewType($conn, $review_type_id, true)) {
+            $_SESSION['error'] = 'Please choose an active review type.';
+            redirectTo('assign');
+        }
+
+        // Keep only Pending/Shortlisted applications in the chosen cohort
+        // (cohort 0 = applications with no cohort).
+        $cohort_raw = trim((string)($_POST['cohort_id'] ?? ''));
+        if ($cohort_raw === '' || !ctype_digit($cohort_raw)) {
+            $_SESSION['error'] = 'Please choose a cohort.';
+            redirectTo('assign');
+        }
+        $cohort_id = (int)$cohort_raw;
+        $ids = implode(',', array_map('intval', $application_ids));
+        $res = $conn->query("
+            SELECT a.application_id
+            FROM applications a
+            INNER JOIN application_opportunities ao ON ao.opportunity_id = a.opportunity_id
+            WHERE a.application_id IN ($ids)
+              AND a.status IN ('Pending','Shortlisted')
+              AND COALESCE(a.cohort_id, ao.cohort_id, 0) = {$cohort_id}
+        ");
+        $application_ids = [];
+        while ($res && ($row = $res->fetch_assoc())) {
+            $application_ids[] = (int)$row['application_id'];
+        }
+        if (empty($application_ids)) {
+            $_SESSION['error'] = 'None of the selected applicants belong to that cohort.';
+            redirectTo('assign');
+        }
+
+        // Same reviewer + application + review type already assigned -> skip.
+        $exists = $conn->prepare("
+            SELECT assignment_id, review_type_id
+            FROM reviewer_assignments
+            WHERE application_id = ? AND reviewer_id = ?
+              AND (review_type_id = ? OR review_type_id IS NULL)
+            ORDER BY review_type_id IS NULL ASC
+            LIMIT 1
+        ");
+        // Older assignments were saved without a review type; give them this one.
+        $backfill = $conn->prepare("UPDATE reviewer_assignments SET review_type_id = ? WHERE assignment_id = ? AND review_type_id IS NULL");
         $insert = $conn->prepare("
             INSERT IGNORE INTO reviewer_assignments
-                (application_id, reviewer_id, assigned_by, assigned_at, status, reminder_count)
-            VALUES (?, ?, ?, NOW(), 'Pending', 0)
+                (application_id, reviewer_id, review_type_id, assigned_by, assigned_at, status, reminder_count)
+            VALUES (?, ?, ?, ?, NOW(), 'Pending', 0)
         ");
-        if (!$insert) {
-            throw new RuntimeException('Prepare failed (assign insert): ' . $conn->error);
+        if (!$insert || !$exists || !$backfill) {
+            throw new RuntimeException('Prepare failed (assign): ' . $conn->error);
         }
 
         $reviewerInfo = [];
@@ -346,7 +404,20 @@ try {
 
         foreach ($application_ids as $app_id) {
             foreach ($reviewer_ids as $rev_id) {
-                $insert->bind_param('iii', $app_id, $rev_id, $current_user_id);
+                $exists->bind_param('iii', $app_id, $rev_id, $review_type_id);
+                $exists->execute();
+                $found = $exists->get_result()->fetch_assoc();
+                if ($found) {
+                    if ($found['review_type_id'] === null) {
+                        $aid = (int)$found['assignment_id'];
+                        $backfill->bind_param('ii', $review_type_id, $aid);
+                        $backfill->execute();
+                    }
+                    $skipped++;
+                    continue;
+                }
+
+                $insert->bind_param('iiii', $app_id, $rev_id, $review_type_id, $current_user_id);
                 if (!$insert->execute()) {
                     throw new RuntimeException('Execute failed (assign insert): ' . $insert->error);
                 }
@@ -362,6 +433,8 @@ try {
             }
         }
         $insert->close();
+        $exists->close();
+        $backfill->close();
 
         $loginUrl  = buildLoginUrl('dashboard');
         $reviewUrl = buildReviewListUrl();

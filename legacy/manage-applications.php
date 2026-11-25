@@ -194,6 +194,9 @@ $rem_opp_open  = ($opportunity['status'] ?? '') === 'Published' && $rem_deadline
 $rem_days_left = $rem_opp_open ? apprem_days_left($rem_deadline) : null;
 $rem_is_admin  = ($_SESSION['role'] ?? '') === 'Administrator';
 $rem_recent    = $rem_ready ? apprem_recent_ids($conn, $opportunity_id, 3600) : [];
+$rem_scope_all = $rem_is_admin && (($_GET['rem_scope'] ?? '') === 'all');
+$rem_stats     = $rem_ready ? apprem_stats($conn, $rem_scope_all ? 0 : $opportunity_id) : null;
+$rem_dt        = fn($v) => $v ? date('d M Y, H:i', strtotime((string)$v)) : '-';
 $rem_modal_data = [];
 foreach ($rem_open as $d) {
     $did = (int)$d['application_id'];
@@ -281,6 +284,19 @@ $rem_days_text = $rem_settings['days_before']
 .ma-rem-intro { margin: 0 0 12px; font-size: 13.5px; }
 .ma-rem-list { max-height: 260px; overflow-y: auto; border: 1px solid var(--ink-50); border-radius: 8px; margin-bottom: 14px; }
 .ma-rem-list table { width: 100%; margin: 0; font-size: 12.5px; }
+.ma-rs-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.ma-rs-tile { border: 1px solid var(--ink-50); border-radius: 10px; padding: 10px 12px; }
+.ma-rs-tile span { display: block; font-size: 11.5px; color: var(--ink-400); text-transform: uppercase; letter-spacing: .03em; }
+.ma-rs-tile strong { font-size: 20px; }
+.ma-rs-tile.ok strong { color: var(--green-fg, #1e8e3e); }
+.ma-rs-tile.bad strong { color: var(--red-fg, #c0392b); }
+.ma-rs-meta { margin: 0; font-size: 12.5px; color: var(--ink-400); }
+.ma-rs-section { border: 1px solid var(--ink-50); border-radius: 10px; }
+.ma-rs-section > summary { cursor: pointer; padding: 10px 14px; font-weight: 600; font-size: 13.5px; }
+.ma-rs-section .table-responsive { max-height: 360px; overflow: auto; }
+.ma-rs-section table { width: 100%; margin: 0; font-size: 12.5px; }
+.ma-rs-err { color: var(--red-fg, #c0392b); font-size: 11.5px; overflow-wrap: anywhere; }
+.ma-rs-scope { font-size: 12.5px; font-weight: 400; }
 .ma-rem-list th { position: sticky; top: 0; background: var(--surface, #fff); }
 .ma-rem-list td, .ma-rem-list th { padding: 7px 10px; vertical-align: top; }
 .ma-rem-list tr.is-skipped td { color: var(--ink-300); }
@@ -471,6 +487,124 @@ $rem_days_text = $rem_settings['days_before']
         </div>
     </div>
 </div>
+
+<?php if ($rem_stats !== null):
+    $rt = $rem_stats['totals'];
+    $rate = $rt['attempts'] > 0 ? round($rt['sent'] / $rt['attempts'] * 100) : 0;
+?>
+<div class="card" id="reminder-stats">
+    <div class="card-header">
+        <h3><i class="fas fa-chart-bar" aria-hidden="true"></i> Reminder statistics</h3>
+        <?php if ($rem_is_admin): ?>
+            <span class="ma-rs-scope">
+                <?php if ($rem_scope_all): ?>
+                    All opportunities &middot; <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>#reminder-stats">This opportunity only</a>
+                <?php else: ?>
+                    This opportunity &middot; <a href="manage-applications?opportunity_id=<?= $opportunity_id ?>&amp;rem_scope=all#reminder-stats">All opportunities</a>
+                <?php endif; ?>
+            </span>
+        <?php endif; ?>
+    </div>
+    <div class="card-body ma-rem-body">
+        <div class="ma-rs-tiles">
+            <div class="ma-rs-tile"><span>Attempts</span><strong><?= (int)$rt['attempts'] ?></strong></div>
+            <div class="ma-rs-tile ok"><span>Sent</span><strong><?= (int)$rt['sent'] ?></strong></div>
+            <div class="ma-rs-tile bad"><span>Failed</span><strong><?= (int)$rt['failed'] ?></strong></div>
+            <div class="ma-rs-tile"><span>Success rate</span><strong><?= $rate ?>%</strong></div>
+            <div class="ma-rs-tile"><span>Applicants reached</span><strong><?= (int)$rt['applicants'] ?></strong></div>
+            <div class="ma-rs-tile"><span>Automatic</span><strong><?= (int)$rt['auto'] ?></strong></div>
+            <div class="ma-rs-tile"><span>Manual</span><strong><?= (int)$rt['manual'] ?></strong></div>
+        </div>
+        <p class="ma-rs-meta">
+            <?php if ($rt['attempts'] > 0): ?>
+                First reminder <?= h($rem_dt($rt['first_at'])) ?> &middot; last reminder <?= h($rem_dt($rt['last_at'])) ?>.
+            <?php else: ?>
+                No reminders have been sent yet.
+            <?php endif; ?>
+        </p>
+
+        <?php if ($rem_stats['senders']): ?>
+        <details class="ma-rs-section" open>
+            <summary>Who sent them (<?= count($rem_stats['senders']) ?>)</summary>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Sent by</th><th>Attempts</th><th>Sent</th><th>Failed</th><th>Last sent</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($rem_stats['senders'] as $sr): ?>
+                        <tr>
+                            <td><strong><?= h($sr['name']) ?></strong><?php if (!empty($sr['role'])): ?><div class="form-hint"><?= h($sr['role']) ?></div><?php endif; ?></td>
+                            <td><?= (int)$sr['attempts'] ?></td>
+                            <td><span class="badge badge-success"><?= (int)$sr['sent'] ?></span></td>
+                            <td><?php if ((int)$sr['failed'] > 0): ?><span class="badge badge-danger"><?= (int)$sr['failed'] ?></span><?php else: ?>0<?php endif; ?></td>
+                            <td><?= h($rem_dt($sr['last_at'])) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <?php endif; ?>
+
+        <?php if ($rem_stats['applicants']): ?>
+        <details class="ma-rs-section">
+            <summary>Per applicant (<?= count($rem_stats['applicants']) ?>)</summary>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>Applicant</th><th>Status</th><th>Times reminded</th><th>Sent</th><th>Failed</th><th>Auto / manual</th><th>Last attempt</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($rem_stats['applicants'] as $ar): ?>
+                        <tr>
+                            <td>
+                                <strong><?= h($ar['startup_name'] ?: ('#' . (int)$ar['application_id'])) ?></strong>
+                                <div class="form-hint"><?= h($ar['contact']) ?><?= !empty($ar['email']) ? ' &middot; ' . h($ar['email']) : '' ?></div>
+                                <?php if (!empty($ar['last_error'])): ?><div class="ma-rs-err"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> <?= h($ar['last_error']) ?></div><?php endif; ?>
+                            </td>
+                            <td><?= h($ar['status'] ?? '-') ?></td>
+                            <td><?= (int)$ar['attempts'] ?></td>
+                            <td><span class="badge badge-success"><?= (int)$ar['sent'] ?></span></td>
+                            <td><?php if ((int)$ar['failed'] > 0): ?><span class="badge badge-danger"><?= (int)$ar['failed'] ?></span><?php else: ?>0<?php endif; ?></td>
+                            <td><?= (int)$ar['auto'] ?> / <?= (int)$ar['manual'] ?></td>
+                            <td><?= h($rem_dt($ar['last_at'])) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <?php endif; ?>
+
+        <?php if ($rem_stats['recent']): ?>
+        <details class="ma-rs-section">
+            <summary>Recent activity (last <?= count($rem_stats['recent']) ?>)</summary>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead><tr><th>When</th><th>Applicant</th><th>Email</th><th>Type</th><th>Sent by</th><th>Result</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($rem_stats['recent'] as $lr): ?>
+                        <tr>
+                            <td><?= h($rem_dt($lr['sent_at'])) ?></td>
+                            <td><?= h($lr['startup_name'] ?: ('#' . (int)$lr['application_id'])) ?></td>
+                            <td><?= h($lr['email'] ?: '-') ?></td>
+                            <td><?= $lr['kind'] === 'auto' ? 'Automatic' : 'Manual' ?></td>
+                            <td><?= h($lr['sent_by_name']) ?></td>
+                            <td>
+                                <?php if ((int)$lr['emailed'] === 1): ?>
+                                    <span class="badge badge-success">Sent</span>
+                                <?php else: ?>
+                                    <span class="badge badge-danger">Failed</span>
+                                    <?php if (!empty($lr['error'])): ?><div class="ma-rs-err"><?= h($lr['error']) ?></div><?php endif; ?>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <div id="remindDraftsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="remindDraftsTitle" aria-hidden="true">
     <div class="modal-content">

@@ -83,6 +83,7 @@ $can_manage_pool = ims_reviewer_pool_can_manage();
 $reviewers       = ims_reviewer_pool_list($conn);
 
 // Active users not yet on the reviewer list, for the "Add reviewers" picker.
+// Members, visitors, event attendees and applicants can never be reviewers.
 $pool_candidates = [];
 if ($can_manage_pool) {
     $onList = array_map(fn($r) => (int)$r['user_id'], $reviewers);
@@ -90,6 +91,7 @@ if ($can_manage_pool) {
         SELECT user_id, full_name, email, role
         FROM users
         WHERE is_active = 1
+          AND " . ims_reviewer_role_sql('role') . "
         ORDER BY full_name
     ");
     if ($res) {
@@ -104,17 +106,44 @@ $applications = [];
 $stmt = $conn->prepare("
     SELECT a.application_id, a.startup_name, a.status, a.submitted_at,
            ao.opportunity_title,
+           COALESCE(a.cohort_id, ao.cohort_id, 0) AS cohort_id,
            (SELECT COUNT(*) FROM reviewer_assignments ra
             WHERE ra.application_id = a.application_id) AS reviewer_count
     FROM applications a
     INNER JOIN application_opportunities ao ON ao.opportunity_id = a.opportunity_id
     WHERE a.status IN ('Pending','Shortlisted')
-    ORDER BY a.submitted_at ASC
+    ORDER BY a.startup_name ASC, a.submitted_at ASC
 ");
 $stmt->execute();
 $res = $stmt->get_result();
-while ($row = $res->fetch_assoc()) $applications[] = $row;
+while ($row = $res->fetch_assoc()) {
+    $row['cohort_id'] = (int)$row['cohort_id'];
+    $applications[] = $row;
+}
 $stmt->close();
+
+/* -- Cohorts (Step 2 of assigning) ------------------------------ */
+$app_count_by_cohort = [];
+foreach ($applications as $a) {
+    $app_count_by_cohort[$a['cohort_id']] = ($app_count_by_cohort[$a['cohort_id']] ?? 0) + 1;
+}
+$cohorts = [];
+$res = $conn->query("
+    SELECT id, name, status, start_date
+    FROM cohorts
+    ORDER BY CASE WHEN LOWER(status) = 'active' THEN 0 ELSE 1 END, sort_order ASC, start_date DESC, id DESC
+");
+if ($res) {
+    while ($row = $res->fetch_assoc()) {
+        $cid = (int)$row['id'];
+        $row['id'] = $cid;
+        $row['app_count'] = $app_count_by_cohort[$cid] ?? 0;
+        $cohorts[] = $row;
+    }
+}
+if (!empty($app_count_by_cohort[0])) {
+    $cohorts[] = ['id' => 0, 'name' => 'No cohort', 'status' => '', 'start_date' => null, 'app_count' => $app_count_by_cohort[0]];
+}
 
 /* -- Assignments ----------------------------------------------- */
 $assignments = [];
@@ -325,6 +354,17 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 .rt-tile-desc { font-size: 11px; color: var(--ink-400); line-height: 1.4; }
 .rt-tile-meta { font-size: 10px; font-weight: 700; color: var(--brand-600); letter-spacing: .04em; text-transform: uppercase; }
 
+/* Reviewers list: bulk remove */
+.rev-bulk-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--ink-100); }
+.rev-bulk-bar .form-control { flex: 1 1 220px; max-width: 360px; }
+.rev-col-check { width: 36px; }
+
+/* Assign steps 2-4 */
+.asg-step[data-locked="1"] { opacity: .45; }
+.asg-step[data-locked="1"] .pool-list { pointer-events: none; }
+.asg-cohort { max-width: 520px; }
+.asg-list { max-height: 300px; }
+.asg-list .pool-item[hidden] { display: none; }
 /* Reviewer / application multi-selects */
 .select-panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; position: relative; }
 .multi-select-wrap { display: flex; flex-direction: column; gap: 8px; }
@@ -509,8 +549,9 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 <!-- -- Alerts --------------------------------------------------- -->
 <?php if ($success_msg !== ''): ?>
     <div class="alert alert-success" id="flashAlert"><i class="fas fa-check-circle"></i> <?= h($success_msg) ?></div>
-<?php elseif ($error_msg !== ''): ?>
-    <div class="alert alert-danger"  id="flashAlert"><i class="fas fa-exclamation-circle"></i> <?= h($error_msg) ?></div>
+<?php endif; ?>
+<?php if ($error_msg !== ''): ?>
+    <div class="alert alert-danger"<?= $success_msg === '' ? ' id="flashAlert"' : '' ?>><i class="fas fa-exclamation-circle"></i> <?= h($error_msg) ?></div>
 <?php endif; ?>
 
 <!-- -- Stats ---------------------------------------------------- -->
@@ -570,20 +611,13 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 
                 <!-- -- Step indicator ------------------------------- -->
                 <div class="assign-steps">
-                    <div class="assign-step active" id="si1">
-                        <div class="assign-step-num">1</div>
-                        <div class="assign-step-label">Review Type</div>
-                    </div>
-                    <div class="assign-step-connector" id="sc12"></div>
-                    <div class="assign-step" id="si2">
-                        <div class="assign-step-num">2</div>
-                        <div class="assign-step-label">Reviewer(s)</div>
-                    </div>
-                    <div class="assign-step-connector" id="sc23"></div>
-                    <div class="assign-step" id="si3">
-                        <div class="assign-step-num">3</div>
-                        <div class="assign-step-label">Application(s)</div>
-                    </div>
+                    <?php foreach ([1 => 'Review Type', 2 => 'Cohort', 3 => 'Applicants', 4 => 'Reviewer(s)'] as $sn => $sl): ?>
+                        <?php if ($sn > 1): ?><div class="assign-step-connector" id="sc<?= $sn ?>"></div><?php endif; ?>
+                        <div class="assign-step<?= $sn === 1 ? ' active' : '' ?>" id="si<?= $sn ?>">
+                            <div class="assign-step-num"><?= $sn ?></div>
+                            <div class="assign-step-label"><?= $sl ?></div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
 
                 <!-- -- STEP 1: Review Type tile grid ---------------- -->
@@ -629,53 +663,93 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     <?php endif; ?>
 
                     <div class="form-hint mr-step-hint" id="rtHint">
-                        <i class="fas fa-arrow-up"></i> Choose a review type to unlock steps 2 and 3.
+                        <i class="fas fa-arrow-up"></i> Choose a review type to continue.
                     </div>
                 </div>
 
-                <!-- -- STEPS 2 + 3: Reviewers & Applications -------- -->
-                <div class="select-panels select-panels-disabled" id="selectPanels">
-
-                    <!-- Reviewer(s) -->
-                    <div class="multi-select-wrap">
-                        <label class="form-label">
-                            <i class="fas fa-users mr-field-icon"></i>
-                            Step 2 - Reviewer(s)
-                            <span class="required-mark"></span>
-                        </label>
-                        <select name="reviewer_ids[]" multiple class="form-control multi-select" id="reviewerSelect" required>
-                            <?php foreach ($reviewers as $r): ?>
-                                <option value="<?= (int)$r['user_id'] ?>">
-                                    <?= h($r['full_name']) ?> (<?= h($r['role']) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <span class="select-hint">
-                            <i class="fas fa-info-circle"></i>
-                            Hold <kbd>Ctrl</kbd> / <kbd><i class="fas fa-keyboard"></i></kbd> to select multiple reviewers.
-                        </span>
+                <!-- -- STEP 2: Cohort -------------------------------- -->
+                <div class="form-group mr-step-group asg-step" id="stepCohort" data-locked="1">
+                    <label class="form-label" for="cohortSelect">
+                        <i class="fas fa-users-rectangle mr-field-icon"></i>
+                        Step 2 - Select Cohort
+                        <span class="required-mark"></span>
+                    </label>
+                    <select name="cohort_id" id="cohortSelect" class="form-control asg-cohort" required disabled>
+                        <option value="">Choose a cohort...</option>
+                        <?php foreach ($cohorts as $co): ?>
+                            <option value="<?= (int)$co['id'] ?>" <?= (int)$co['app_count'] === 0 ? 'disabled' : '' ?>>
+                                <?= h($co['name']) ?><?= !empty($co['status']) ? ' (' . h(ucfirst(strtolower((string)$co['status']))) . ')' : '' ?>
+                                - <?= (int)$co['app_count'] ?> applicant<?= (int)$co['app_count'] !== 1 ? 's' : '' ?> to review
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <div class="form-hint mr-step-hint">
+                        <i class="fas fa-info-circle"></i> Only Pending and Shortlisted applications are listed. Cohorts with none are greyed out.
                     </div>
+                </div>
 
-                    <!-- Application(s) -->
-                    <div class="multi-select-wrap">
-                        <label class="form-label">
-                            <i class="fas fa-file-alt mr-field-icon"></i>
-                            Step 3 - Application(s)
-                            <span class="required-mark"></span>
+                <!-- -- STEP 3: Applicants ---------------------------- -->
+                <div class="form-group mr-step-group asg-step" id="stepApps" data-locked="1">
+                    <label class="form-label">
+                        <i class="fas fa-file-alt mr-field-icon"></i>
+                        Step 3 - Select Applicants
+                        <span class="required-mark"></span>
+                    </label>
+                    <div class="pool-toolbar">
+                        <input type="search" class="form-control" id="appSearch" placeholder="Search applicants" aria-label="Search applicants" disabled>
+                        <label class="pool-all"><input type="checkbox" class="mr-check" id="appSelectAll" disabled> Select all shown</label>
+                    </div>
+                    <div class="pool-list asg-list" id="appList">
+                        <?php foreach ($applications as $a): ?>
+                        <label class="pool-item asg-app" hidden
+                               data-cohort="<?= (int)$a['cohort_id'] ?>"
+                               data-search="<?= h(mb_strtolower($a['startup_name'].' '.$a['opportunity_title'].' #'.$a['application_id'], 'UTF-8')) ?>">
+                            <input type="checkbox" class="mr-check asg-app-check" name="application_ids[]" value="<?= (int)$a['application_id'] ?>" disabled>
+                            <span class="pool-item-text">
+                                <span class="pool-item-name">#<?= (int)$a['application_id'] ?> - <?= h($a['startup_name']) ?></span>
+                                <span class="pool-item-meta">
+                                    <?= h($a['opportunity_title']) ?> &middot; <?= h($a['status']) ?>
+                                    &middot; <?= (int)$a['reviewer_count'] ?> reviewer<?= (int)$a['reviewer_count'] !== 1 ? 's' : '' ?>
+                                </span>
+                            </span>
                         </label>
-                        <select name="application_ids[]" multiple class="form-control multi-select" id="appSelect" required>
-                            <?php foreach ($applications as $a): ?>
-                                <option value="<?= (int)$a['application_id'] ?>">
-                                    #<?= (int)$a['application_id'] ?> - <?= h($a['startup_name']) ?>
-                                    [<?= h($a['opportunity_title']) ?>]
-                                    . <?= (int)$a['reviewer_count'] ?> reviewer<?= (int)$a['reviewer_count'] !== 1 ? 's' : '' ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <span class="select-hint">
-                            <i class="fas fa-info-circle"></i>
-                            Duplicate assignments (same reviewer + application + type) are skipped.
-                        </span>
+                        <?php endforeach; ?>
+                        <p class="form-hint pool-empty" id="appEmpty">Choose a cohort to see its applicants.</p>
+                    </div>
+                </div>
+
+                <!-- -- STEP 4: Reviewers ----------------------------- -->
+                <div class="form-group mr-step-group asg-step" id="stepRevs" data-locked="1">
+                    <label class="form-label">
+                        <i class="fas fa-users mr-field-icon"></i>
+                        Step 4 - Select Reviewer(s)
+                        <span class="required-mark"></span>
+                    </label>
+                    <?php if (empty($reviewers)): ?>
+                        <div class="alert alert-danger mr-step-hint">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            No reviewers yet. Add some in the <strong>Reviewers</strong> tab first.
+                        </div>
+                    <?php else: ?>
+                    <div class="pool-toolbar">
+                        <input type="search" class="form-control" id="revSearch" placeholder="Search reviewers" aria-label="Search reviewers" disabled>
+                    </div>
+                    <div class="pool-list asg-list" id="revList">
+                        <?php foreach ($reviewers as $r):
+                            $rLoad = count(array_filter($assignments, fn($x) => (int)$x['reviewer_id'] === (int)$r['user_id'] && empty($x['review_id'])));
+                        ?>
+                        <label class="pool-item asg-rev" data-search="<?= h(mb_strtolower($r['full_name'].' '.$r['email'].' '.$r['role'], 'UTF-8')) ?>">
+                            <input type="checkbox" class="mr-check asg-rev-check" name="reviewer_ids[]" value="<?= (int)$r['user_id'] ?>" disabled>
+                            <span class="pool-item-text">
+                                <span class="pool-item-name"><?= h($r['full_name']) ?></span>
+                                <span class="pool-item-meta"><?= h($r['role']) ?> &middot; <?= $rLoad ?> pending review<?= $rLoad !== 1 ? 's' : '' ?></span>
+                            </span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                    <div class="form-hint mr-step-hint">
+                        <i class="fas fa-info-circle"></i> Each selected reviewer is assigned every selected applicant. Existing assignments for the same review type are skipped.
                     </div>
                 </div>
 
@@ -798,10 +872,22 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                 </div>
             </div>
         <?php else: ?>
+        <?php if ($can_manage_pool): ?>
+        <!-- Bulk remove: row checkboxes join this form through form="revBulkForm". -->
+        <form method="POST" action="includes/process_manage_reviewers.php" id="revBulkForm" class="rev-bulk-bar"
+              onsubmit="return confirm('Remove the selected reviewers from the list? Their existing assignments are kept.')">
+            <input type="hidden" name="action" value="remove_pool_reviewer">
+            <input type="search" class="form-control" id="revListSearch" placeholder="Search reviewers" aria-label="Search reviewers">
+            <button type="submit" class="btn btn-sm btn-danger" id="revBulkBtn" disabled>
+                <i class="fas fa-user-minus"></i> Remove selected<span id="revBulkCount"></span>
+            </button>
+        </form>
+        <?php endif; ?>
         <div class="table-responsive">
-            <table class="table">
+            <table class="table" id="revListTable">
                 <thead>
                     <tr>
+                        <?php if ($can_manage_pool): ?><th class="rev-col-check"><input type="checkbox" class="mr-check" id="revCheckAll" aria-label="Select all reviewers"></th><?php endif; ?>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
@@ -815,9 +901,11 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                     $ra    = array_filter($assignments, fn($a) => (int)$a['reviewer_id'] === (int)$rev['user_id']);
                     $rTot  = count($ra);
                     $rDone = count(array_filter($ra, fn($a) => !empty($a['review_id'])));
-                    $byRole = ($rev['role'] === 'Reviewer');
                 ?>
-                    <tr>
+                    <tr data-search="<?= h(mb_strtolower($rev['full_name'].' '.$rev['email'].' '.$rev['role'], 'UTF-8')) ?>">
+                        <?php if ($can_manage_pool): ?>
+                        <td class="rev-col-check"><input type="checkbox" class="mr-check rev-check" name="user_ids[]" value="<?= (int)$rev['user_id'] ?>" form="revBulkForm" aria-label="Select <?= h($rev['full_name']) ?>"></td>
+                        <?php endif; ?>
                         <td><strong><?= h($rev['full_name']) ?></strong></td>
                         <td><?= h($rev['email']) ?></td>
                         <td><span class="badge badge-secondary"><?= h($rev['role']) ?></span></td>
@@ -832,14 +920,10 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         </td>
                         <?php if ($can_manage_pool): ?>
                         <td class="text-right">
-                            <?php if ($rev['in_pool'] && !$byRole): ?>
-                                <?= af('remove_pool_reviewer','class="mr-inline-form" onsubmit="return confirm(\'Remove '.addslashes(h($rev['full_name'])).' from reviewers? Existing assignments are kept.\')"') ?>
-                                    <input type="hidden" name="user_id" value="<?= (int)$rev['user_id'] ?>">
-                                    <button type="submit" class="btn btn-sm btn-danger" title="Remove from reviewers"><i class="fas fa-user-minus"></i></button>
-                                </form>
-                            <?php else: ?>
-                                <span class="form-hint" title="Change this user's role to remove them">Role-based</span>
-                            <?php endif; ?>
+                            <?= af('remove_pool_reviewer','class="mr-inline-form" onsubmit="return confirm(\'Remove '.addslashes(h($rev['full_name'])).' from reviewers? Existing assignments are kept.\')"') ?>
+                                <input type="hidden" name="user_id" value="<?= (int)$rev['user_id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Remove from reviewers"><i class="fas fa-user-minus"></i> Remove</button>
+                            </form>
                         </td>
                         <?php endif; ?>
                     </tr>
@@ -1471,54 +1555,146 @@ document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
     list.addEventListener('change', e => { if (e.target.classList.contains('pool-check')) refresh(); });
 })();
 
-/* -- Assign tab: Review Type as Step 1 ------------------------ */
-function rtSelected() {
-    const chosen  = document.querySelector('input[name="review_type_id"]:checked');
-    const panels  = document.getElementById('selectPanels');
-    const btn     = document.getElementById('assignBtn');
-    const hint    = document.getElementById('assignHint');
-    const summary = document.getElementById('assignSummary');
-    const si1     = document.getElementById('si1');
-    const si2     = document.getElementById('si2');
-    const si3     = document.getElementById('si3');
-    const sc12    = document.getElementById('sc12');
+/* -- Reviewers list: search + bulk remove ---------------------- */
+(function () {
+    const table = document.getElementById('revListTable');
+    const btn   = document.getElementById('revBulkBtn');
+    if (!table || !btn) return;
+    const all    = document.getElementById('revCheckAll');
+    const count  = document.getElementById('revBulkCount');
+    const search = document.getElementById('revListSearch');
+    const rows   = Array.from(table.querySelectorAll('tbody tr'));
 
-    if (chosen) {
-        panels.classList.remove('select-panels-disabled');
-        btn.disabled = false;
-        hint.style.display = 'none';
-        summary.style.display = 'inline';
-        si1.classList.remove('active');
-        si1.classList.add('done');
-        sc12.style.background = 'var(--green-fg)';
-        si2.classList.add('active');
-        si3.classList.add('active');
-        updateSummary();
-    } else {
-        panels.classList.add('select-panels-disabled');
-        btn.disabled = true;
-        hint.style.display = 'flex';
-        summary.style.display = 'none';
-        si1.classList.add('active');
-        si1.classList.remove('done');
-        sc12.style.background = '';
-        si2.classList.remove('active');
-        si3.classList.remove('active');
+    function refresh() {
+        const n = table.querySelectorAll('.rev-check:checked').length;
+        btn.disabled = n === 0;
+        count.textContent = n ? ' (' + n + ')' : '';
+        const shown = rows.filter(r => r.style.display !== 'none');
+        all.checked = shown.length > 0 && shown.every(r => r.querySelector('.rev-check').checked);
+    }
+    all.addEventListener('change', () => {
+        rows.forEach(r => { if (r.style.display !== 'none') r.querySelector('.rev-check').checked = all.checked; });
+        refresh();
+    });
+    table.addEventListener('change', e => { if (e.target.classList.contains('rev-check')) refresh(); });
+    search?.addEventListener('input', () => {
+        const q = search.value.trim().toLowerCase();
+        rows.forEach(r => { r.style.display = !q || (r.dataset.search || '').includes(q) ? '' : 'none'; });
+        refresh();
+    });
+    search?.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+})();
+
+/* -- Assign tab: Review Type -> Cohort -> Applicants -> Reviewers -- */
+const asg = {
+    cohort:   document.getElementById('cohortSelect'),
+    appSearch: document.getElementById('appSearch'),
+    appAll:   document.getElementById('appSelectAll'),
+    appEmpty: document.getElementById('appEmpty'),
+    apps:     Array.from(document.querySelectorAll('.asg-app')),
+    revSearch: document.getElementById('revSearch'),
+    revs:     Array.from(document.querySelectorAll('.asg-rev')),
+    btn:      document.getElementById('assignBtn'),
+    hint:     document.getElementById('assignHint'),
+    summary:  document.getElementById('assignSummary'),
+};
+
+function setStep(n, state) {           // state: '', 'active', 'done'
+    const si = document.getElementById('si' + n);
+    const sc = document.getElementById('sc' + n);
+    if (!si) return;
+    si.classList.toggle('active', state === 'active');
+    si.classList.toggle('done', state === 'done');
+    if (sc) sc.style.background = (state === 'done' || state === 'active') ? 'var(--green-fg)' : '';
+}
+
+function lockStep(id, locked) {
+    const box = document.getElementById(id);
+    if (!box) return;
+    box.dataset.locked = locked ? '1' : '0';
+    box.querySelectorAll('input, select').forEach(el => {
+        // Applicants outside the chosen cohort stay disabled so they are never submitted.
+        if (el.classList.contains('asg-app-check')) return;
+        el.disabled = locked;
+    });
+}
+
+function filterApps() {
+    const cohort = asg.cohort ? asg.cohort.value : '';
+    const q = (asg.appSearch?.value || '').trim().toLowerCase();
+    let shown = 0;
+    asg.apps.forEach(item => {
+        const cb = item.querySelector('.asg-app-check');
+        const inCohort = cohort !== '' && item.dataset.cohort === cohort;
+        if (!inCohort) { cb.checked = false; }
+        cb.disabled = !inCohort;
+        item.hidden = !inCohort || (q !== '' && !item.dataset.search.includes(q));
+        if (!item.hidden) shown++;
+    });
+    if (asg.appEmpty) {
+        asg.appEmpty.hidden = shown > 0;
+        asg.appEmpty.textContent = cohort === '' ? 'Choose a cohort to see its applicants.' : 'No applicants match.';
     }
 }
 
-function updateSummary() {
-    const rt   = document.querySelector('input[name="review_type_id"]:checked');
-    const revs = document.querySelectorAll('#reviewerSelect option:checked').length;
-    const apps = document.querySelectorAll('#appSelect option:checked').length;
-    const el   = document.getElementById('assignSummary');
-    if (!rt || !el) return;
-    const rtLabel = document.querySelector('label[for="' + rt.id + '"] .rt-tile-name')?.textContent || rt.value;
-    el.textContent = `${rtLabel} . ${revs} reviewer${revs!==1?'s':''} . ${apps} app${apps!==1?'s':''}`;
+function filterRevs() {
+    const q = (asg.revSearch?.value || '').trim().toLowerCase();
+    asg.revs.forEach(item => { item.hidden = q !== '' && !item.dataset.search.includes(q); });
 }
 
-document.getElementById('reviewerSelect')?.addEventListener('change', updateSummary);
-document.getElementById('appSelect')?.addEventListener('change', updateSummary);
+function refreshAssign() {
+    const rt      = document.querySelector('input[name="review_type_id"]:checked');
+    const cohort  = asg.cohort && asg.cohort.value !== '';
+    const nApps   = document.querySelectorAll('.asg-app-check:checked').length;
+    const nRevs   = document.querySelectorAll('.asg-rev-check:checked').length;
+
+    lockStep('stepCohort', !rt);
+    lockStep('stepApps', !(rt && cohort));
+    lockStep('stepRevs', !(rt && cohort && nApps > 0));
+
+    setStep(1, rt ? 'done' : 'active');
+    setStep(2, !rt ? '' : (cohort ? 'done' : 'active'));
+    setStep(3, !(rt && cohort) ? '' : (nApps ? 'done' : 'active'));
+    setStep(4, !(rt && cohort && nApps) ? '' : (nRevs ? 'done' : 'active'));
+
+    const ready = rt && cohort && nApps > 0 && nRevs > 0;
+    asg.btn.disabled = !ready;
+
+    let msg = 'Select a review type to continue.';
+    if (rt && !cohort) msg = 'Now choose a cohort.';
+    else if (rt && cohort && !nApps) msg = 'Tick the applicants to assign.';
+    else if (rt && cohort && nApps && !nRevs) msg = 'Tick at least one reviewer.';
+    asg.hint.style.display = ready ? 'none' : 'flex';
+    asg.hint.lastChild.textContent = ' ' + msg;
+
+    if (ready) {
+        const rtLabel = document.querySelector('label[for="' + rt.id + '"] .rt-tile-name')?.textContent || rt.value;
+        const coLabel = asg.cohort.options[asg.cohort.selectedIndex].text.split(' - ')[0].trim();
+        asg.summary.textContent = `${rtLabel} · ${coLabel} · ${nApps} applicant${nApps !== 1 ? 's' : ''} × ${nRevs} reviewer${nRevs !== 1 ? 's' : ''} = ${nApps * nRevs} assignment${nApps * nRevs !== 1 ? 's' : ''}`;
+        asg.summary.style.display = 'inline';
+    } else {
+        asg.summary.style.display = 'none';
+    }
+
+    if (asg.appAll) {
+        const visible = asg.apps.filter(i => !i.hidden);
+        asg.appAll.checked = visible.length > 0 && visible.every(i => i.querySelector('.asg-app-check').checked);
+    }
+}
+
+function rtSelected() { refreshAssign(); }
+
+asg.cohort?.addEventListener('change', () => { if (asg.appSearch) asg.appSearch.value = ''; filterApps(); refreshAssign(); });
+asg.appSearch?.addEventListener('input', () => { filterApps(); refreshAssign(); });
+asg.revSearch?.addEventListener('input', filterRevs);
+asg.appAll?.addEventListener('change', () => {
+    asg.apps.forEach(i => { if (!i.hidden) i.querySelector('.asg-app-check').checked = asg.appAll.checked; });
+    refreshAssign();
+});
+document.getElementById('appList')?.addEventListener('change', refreshAssign);
+document.getElementById('revList')?.addEventListener('change', refreshAssign);
+filterApps();
+refreshAssign();
 
 /* -- Status tab: filter + checkbox helpers --------------------- */
 function filterAsgn() {

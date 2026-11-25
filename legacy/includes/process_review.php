@@ -196,7 +196,8 @@ try {
          FROM reviewer_assignments
          WHERE application_id = ?
            AND reviewer_id = ?
-           AND review_type_id = ?
+           AND (review_type_id = ? OR review_type_id IS NULL)
+         ORDER BY review_type_id IS NULL ASC
          LIMIT 1",
         'iii',
         [$application_id, $reviewer_id, $review_type_id]

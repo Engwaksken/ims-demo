@@ -332,12 +332,14 @@ if (!function_exists('apprem_send')) {
         }
 
         if (!$ok && $kind === 'auto') {
-            // Free the key so tomorrow's run can retry a failed automatic email.
-            $del = $conn->prepare('DELETE FROM application_reminder_log WHERE log_id = ?');
-            if ($del) {
-                $del->bind_param('i', $logId);
-                $del->execute();
-                $del->close();
+            // Free the key so tomorrow's run can retry, but keep the row so
+            // the failure still counts in the statistics.
+            $failedKey = substr($key . '-failed-' . $logId, 0, 80);
+            $mv = $conn->prepare('UPDATE application_reminder_log SET reminder_key = ? WHERE log_id = ?');
+            if ($mv) {
+                $mv->bind_param('si', $failedKey, $logId);
+                $mv->execute();
+                $mv->close();
             }
         }
 
@@ -407,7 +409,7 @@ if (!function_exists('apprem_auto_keys')) {
     function apprem_auto_keys(mysqli $conn): array
     {
         $out = [];
-        $res = $conn->query("SELECT application_id, reminder_key FROM application_reminder_log WHERE kind = 'auto'");
+        $res = $conn->query("SELECT application_id, reminder_key FROM application_reminder_log WHERE kind = 'auto' AND emailed = 1");
         while ($res && ($row = $res->fetch_assoc())) {
             $out[(int)$row['application_id'] . '|' . $row['reminder_key']] = true;
         }
@@ -488,6 +490,124 @@ if (!function_exists('apprem_last_reminded')) {
             $stmt->close();
         } catch (Throwable $e) {
             error_log('[application-reminders] last reminded: ' . $e->getMessage());
+        }
+
+        return $out;
+    }
+}
+
+if (!function_exists('apprem_stats')) {
+    /**
+     * Reminder statistics for one opportunity ($opportunityId 0 = all).
+     * Every attempt is a row in application_reminder_log, so failures count.
+     *
+     * Returns:
+     *   totals     attempts, sent, failed, auto, manual, applicants, first_at, last_at
+     *   senders    one row per sender (sent_by NULL = automatic): name, role,
+     *              attempts, sent, failed, last_at
+     *   applicants one row per application: startup_name, contact, email, status,
+     *              attempts, sent, failed, auto, manual, last_at, last_error
+     *   recent     latest $recentLimit attempts with who, kind, outcome, error
+     */
+    function apprem_stats(mysqli $conn, int $opportunityId = 0, int $recentLimit = 50): array
+    {
+        $out = [
+            'totals' => ['attempts' => 0, 'sent' => 0, 'failed' => 0, 'auto' => 0, 'manual' => 0, 'applicants' => 0, 'first_at' => null, 'last_at' => null],
+            'senders' => [],
+            'applicants' => [],
+            'recent' => [],
+        ];
+
+        $where = $opportunityId > 0 ? 'WHERE l.opportunity_id = ?' : '';
+        $run = static function (string $sql) use ($conn, $opportunityId, $where): array {
+            $rows = [];
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                error_log('[application-reminders] stats: ' . $conn->error);
+                return $rows;
+            }
+            if ($where !== '') {
+                $stmt->bind_param('i', $opportunityId);
+            }
+            $stmt->execute();
+            $res = $stmt->get_result();
+            while ($res && ($row = $res->fetch_assoc())) {
+                $rows[] = $row;
+            }
+            $stmt->close();
+            return $rows;
+        };
+
+        try {
+            $t = $run("
+                SELECT COUNT(*) AS attempts,
+                       COALESCE(SUM(l.emailed = 1), 0) AS sent,
+                       COALESCE(SUM(l.emailed = 0), 0) AS failed,
+                       COALESCE(SUM(l.kind = 'auto'), 0) AS auto,
+                       COALESCE(SUM(l.kind = 'manual'), 0) AS manual,
+                       COUNT(DISTINCT CASE WHEN l.emailed = 1 THEN l.application_id END) AS applicants,
+                       MIN(l.sent_at) AS first_at, MAX(l.sent_at) AS last_at
+                FROM application_reminder_log l {$where}
+            ");
+            if ($t) {
+                foreach (['attempts', 'sent', 'failed', 'auto', 'manual', 'applicants'] as $k) {
+                    $out['totals'][$k] = (int)$t[0][$k];
+                }
+                $out['totals']['first_at'] = $t[0]['first_at'];
+                $out['totals']['last_at'] = $t[0]['last_at'];
+            }
+
+            $out['senders'] = $run("
+                SELECT l.sent_by,
+                       CASE WHEN l.sent_by IS NULL THEN 'Automatic (system)'
+                            ELSE COALESCE(u.full_name, CONCAT('User #', l.sent_by)) END AS name,
+                       u.role,
+                       COUNT(*) AS attempts,
+                       SUM(l.emailed = 1) AS sent,
+                       SUM(l.emailed = 0) AS failed,
+                       MAX(l.sent_at) AS last_at
+                FROM application_reminder_log l
+                LEFT JOIN users u ON u.user_id = l.sent_by
+                {$where}
+                GROUP BY l.sent_by, u.full_name, u.role
+                ORDER BY attempts DESC
+            ");
+
+            $out['applicants'] = $run("
+                SELECT l.application_id,
+                       a.startup_name, a.status,
+                       COALESCE(NULLIF(TRIM(a.contact_person), ''), u.full_name, a.startup_name) AS contact,
+                       MAX(l.email) AS email,
+                       COUNT(*) AS attempts,
+                       SUM(l.emailed = 1) AS sent,
+                       SUM(l.emailed = 0) AS failed,
+                       SUM(l.kind = 'auto') AS auto,
+                       SUM(l.kind = 'manual') AS manual,
+                       MAX(l.sent_at) AS last_at,
+                       SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN l.emailed = 0 THEN l.error END ORDER BY l.sent_at DESC SEPARATOR '\n'), '\n', 1) AS last_error
+                FROM application_reminder_log l
+                LEFT JOIN applications a ON a.application_id = l.application_id
+                LEFT JOIN users u ON u.user_id = a.submitted_by
+                {$where}
+                GROUP BY l.application_id, a.startup_name, a.status, a.contact_person, u.full_name
+                ORDER BY last_at DESC
+            ");
+
+            $limit = max(1, min(500, $recentLimit));
+            $out['recent'] = $run("
+                SELECT l.log_id, l.application_id, l.kind, l.email, l.emailed, l.error, l.sent_at,
+                       a.startup_name,
+                       CASE WHEN l.sent_by IS NULL THEN 'Automatic (system)'
+                            ELSE COALESCE(u.full_name, CONCAT('User #', l.sent_by)) END AS sent_by_name
+                FROM application_reminder_log l
+                LEFT JOIN applications a ON a.application_id = l.application_id
+                LEFT JOIN users u ON u.user_id = l.sent_by
+                {$where}
+                ORDER BY l.sent_at DESC, l.log_id DESC
+                LIMIT {$limit}
+            ");
+        } catch (Throwable $e) {
+            error_log('[application-reminders] stats failed: ' . $e->getMessage());
         }
 
         return $out;
