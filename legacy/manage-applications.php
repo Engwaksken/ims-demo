@@ -171,6 +171,87 @@ foreach ($applications as $a) {
     if ($st === 'REJECTED')     $stats['rejected']++;
 }
 
+/*
+|--------------------------------------------------------------------------
+| PDF EXPORT (same filters and sort as the list on screen)
+|--------------------------------------------------------------------------
+*/
+if ($export === 'pdf') {
+    require_once __DIR__ . '/../vendor/autoload.php';
+    require_once __DIR__ . '/includes/pdf-branding.php';
+
+    $filters = [];
+    if ($filter_status !== '') $filters[] = 'Status: ' . $filter_status;
+    if ($filter_stage  !== '') $filters[] = 'Stage: ' . $filter_stage;
+    if ($search        !== '') $filters[] = 'Search: "' . $search . '"';
+
+    $summary = [
+        'Total' => $stats['total'], 'Submitted' => $stats['submitted'], 'Under Review' => $stats['under_review'],
+        'Shortlisted' => $stats['shortlisted'], 'Waitlisted' => $stats['waitlisted'],
+        'Accepted' => $stats['accepted'], 'Rejected' => $stats['rejected'],
+    ];
+
+    $rows = '';
+    foreach ($applications as $i => $a) {
+        $submitted = !empty($a['submitted_at']) ? date('d M Y', strtotime((string)$a['submitted_at'])) : '-';
+        $avg = (float)($a['avg_score'] ?? 0) > 0 ? number_format((float)$a['avg_score'], 1) : '-';
+        $rows .= '<tr>'
+            . '<td class="num">' . ($i + 1) . '</td>'
+            . '<td><strong>' . h($a['startup_name'] ?: '-') . '</strong></td>'
+            . '<td>' . h($a['contact_person'] ?: ($a['applicant_name'] ?? '-')) . '</td>'
+            . '<td>' . h($a['email'] ?: '-') . '</td>'
+            . '<td>' . h($a['phone'] ?: '-') . '</td>'
+            . '<td>' . h($a['business_stage'] ?: '-') . '</td>'
+            . '<td>' . h($a['status'] ?: '-') . '</td>'
+            . '<td>' . h($submitted) . '</td>'
+            . '<td class="num">' . (int)$a['review_count'] . '</td>'
+            . '<td class="num">' . h($avg) . '</td>'
+            . '</tr>';
+    }
+    if ($rows === '') {
+        $rows = '<tr><td colspan="10" class="empty">No applications match the current filters.</td></tr>';
+    }
+
+    $summaryHtml = '';
+    foreach ($summary as $label => $count) {
+        $summaryHtml .= '<td><span class="lbl">' . h($label) . '</span><br><span class="val">' . (int)$count . '</span></td>';
+    }
+
+    $html = '<!doctype html><html><head><meta charset="utf-8"><style>
+        @page { margin: 70px 28px 40px 28px; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 9px; color: #1f2937; }
+        h1 { font-size: 15px; margin: 0 0 2px; }
+        .meta { color: #6b7280; margin: 0 0 10px; }
+        table.sum { border-collapse: collapse; margin-bottom: 12px; }
+        table.sum td { border: 1px solid #e5e7eb; padding: 4px 10px; text-align: center; }
+        .lbl { color: #6b7280; font-size: 8px; } .val { font-size: 12px; font-weight: bold; }
+        table.list { width: 100%; border-collapse: collapse; }
+        table.list th { background: #f3f4f6; text-align: left; padding: 5px 4px; border-bottom: 1px solid #d1d5db; }
+        table.list td { padding: 4px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+        table.list thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
+        .num { text-align: right; } .empty { text-align: center; color: #6b7280; padding: 12px; }
+    </style></head><body>'
+        . '<h1>Applications: ' . h($opportunity['opportunity_title'] ?? '') . '</h1>'
+        . '<p class="meta">' . h(ims_brand_name()) . ' &middot; Generated ' . h(date('d M Y H:i'))
+        . ($filters ? ' &middot; ' . h(implode(', ', $filters)) : '') . '</p>'
+        . '<table class="sum"><tr>' . $summaryHtml . '</tr></table>'
+        . '<table class="list"><thead><tr><th>#</th><th>Startup</th><th>Contact</th><th>Email</th><th>Phone</th>'
+        . '<th>Stage</th><th>Status</th><th>Submitted</th><th class="num">Reviews</th><th class="num">Avg</th></tr></thead>'
+        . '<tbody>' . $rows . '</tbody></table></body></html>';
+
+    $pdf = new \Dompdf\Dompdf();
+    $pdf->loadHtml($html);
+    $pdf->setPaper('A4', 'landscape');
+    $pdf->render();
+    ims_brand_pdf($pdf);
+
+    // Drop the page header HTML buffered by ob_start() so only the PDF is sent.
+    while (ob_get_level() > 0) ob_end_clean();
+    $pdf->stream('applications_' . $opportunity_id . '_' . date('Ymd_His') . '.pdf', ['Attachment' => 1]);
+    exit();
+}
+
 $stages = array_values(array_filter(array_unique(array_map(fn($x) => $x['business_stage'] ?? '', $applications))));
 sort($stages);
 
@@ -472,6 +553,9 @@ if (!isset($ma_tabs[$ma_tab])) $ma_tab = 'applications';
             <div class="ma-utility-row">
                 <button type="button" onclick="exportApplications()" class="btn btn-success btn-sm">
                     <i class="fas fa-download"></i> Export CSV
+                </button>
+                <button type="button" onclick="exportApplications('pdf')" class="btn btn-danger btn-sm">
+                    <i class="fas fa-file-pdf"></i> Export PDF
                 </button>
                 <a href="application-csv-import?opportunity_id=<?= $opportunity_id ?>" class="btn btn-secondary btn-sm">
                     <i class="fas fa-file-csv"></i> CSV Import
@@ -1100,9 +1184,9 @@ function quickStatus(id, status) {
 function quickShortlist(id) { quickStatus(id, 'Shortlisted'); }
 function quickAccept(id)    { quickStatus(id, 'Accepted'); }
 
-function exportApplications() {
+function exportApplications(format) {
     const url = new URL(window.location.href);
-    url.searchParams.set('export', 'csv');
+    url.searchParams.set('export', format === 'pdf' ? 'pdf' : 'csv');
     window.location.href = url.toString();
 }
 
