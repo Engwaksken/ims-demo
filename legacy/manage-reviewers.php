@@ -401,11 +401,48 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
 }
 .rc-name { font-size: 14px; font-weight: 800; color: var(--ink-900); }
 .rc-role { font-size: 11px; color: var(--ink-400); }
-.rc-email { font-size: 11px; color: var(--ink-400); font-style: italic; }
-.rc-progress { margin-top: 4px; }
-.rc-progress-bar { height: 6px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 8px; }
-.rc-progress-fill { height: 100%; border-radius: var(--radius-pill); background: var(--green-fg); transition: width .4s ease; }
+.rc-email { font-size: 11px; color: var(--ink-400); font-style: italic; overflow-wrap: anywhere; }
+.rc-progress { display: block; margin-top: 4px; }
+.rc-progress-bar { display: block; height: 6px; background: var(--ink-100); border-radius: var(--radius-pill); overflow: hidden; margin-bottom: 8px; }
+.rc-progress-fill { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--green-fg); transition: width .4s ease; }
 .rc-counts { display: flex; gap: 7px; flex-wrap: wrap; }
+.reviewer-grid { align-items: start; }
+.rc-summary { list-style: none; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.rc-summary::-webkit-details-marker { display: none; }
+.rc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.rc-chevron, .wl-chevron { color: var(--ink-400); font-size: 11px; transition: transform .2s ease; }
+.reviewer-card[open] .rc-chevron, .wl-panel[open] .wl-chevron { transform: rotate(180deg); }
+.rc-body { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; margin-top: 4px; border-top: 1px dashed var(--ink-100); }
+.rc-apps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+.rc-apps li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; font-size: 12px; }
+.rc-apps .badge { grid-row: span 2; }
+.rc-app-name { font-weight: 600; color: var(--ink-900); overflow-wrap: anywhere; }
+.rc-app-meta { font-size: 11px; color: var(--ink-400); }
+.wl-panel > .wl-summary { list-style: none; cursor: pointer; }
+.wl-panel > .wl-summary::-webkit-details-marker { display: none; }
+.wl-panel:not([open]) > .wl-summary { border-bottom: none; }
+.wl-toolbar { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 12px; }
+
+/* Step 3 applicants table */
+.asg-app-filter { flex: 0 0 auto; width: auto; min-width: 150px; }
+.asg-app-count { font-size: 12px; color: var(--ink-400); margin-left: auto; }
+.asg-app-table-wrap { max-height: 420px; overflow: auto; border: 1px solid var(--ink-100); border-radius: var(--radius-sm); }
+.asg-app-table { margin: 0; font-size: 13px; }
+.asg-app-table thead th { position: sticky; top: 0; z-index: 1; background: var(--surface-card, var(--ink-0, #fff)); }
+.asg-app-table tbody tr { cursor: pointer; }
+.asg-app-table tbody tr[hidden] { display: none; }
+.asg-app-table tbody tr:has(.asg-app-check:checked) { background: var(--brand-50, rgba(0,0,0,.04)); }
+.asg-col-check { width: 36px; }
+.asg-app-name { cursor: pointer; font-weight: 600; margin: 0; }
+.asg-step[data-locked="1"] .asg-app-table-wrap { pointer-events: none; }
+#appEmpty { margin: 12px; }
+@media (max-width: 600px) {
+    /* Phones: drop Opportunity and Submitted so the table fits. */
+    .asg-app-table th:nth-child(4), .asg-app-table td:nth-child(4),
+    .asg-app-table th:nth-child(7), .asg-app-table td:nth-child(7) { display: none; }
+    .asg-app-count { margin-left: 0; width: 100%; }
+    .wl-toolbar { justify-content: flex-start; }
+}
 
 /* Status table */
 .mr-toolbar.filters-bar { margin-bottom: 0; }
@@ -696,24 +733,46 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
                         <span class="required-mark"></span>
                     </label>
                     <div class="pool-toolbar">
-                        <input type="search" class="form-control" id="appSearch" placeholder="Search applicants" aria-label="Search applicants" disabled>
-                        <label class="pool-all"><input type="checkbox" class="mr-check" id="appSelectAll" disabled> Select all shown</label>
+                        <input type="search" class="form-control" id="appSearch" placeholder="Search by name, opportunity or #ID" aria-label="Search applicants" disabled>
+                        <select class="form-control asg-app-filter" id="appStatusFilter" aria-label="Filter by status" disabled>
+                            <option value="">All statuses</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Shortlisted">Shortlisted</option>
+                        </select>
+                        <label class="pool-all"><input type="checkbox" class="mr-check" id="appUnassignedOnly" disabled> No reviewers yet</label>
+                        <span class="asg-app-count" id="appCount"></span>
                     </div>
-                    <div class="pool-list asg-list" id="appList">
-                        <?php foreach ($applications as $a): ?>
-                        <label class="pool-item asg-app" hidden
-                               data-cohort="<?= (int)$a['cohort_id'] ?>"
-                               data-search="<?= h(mb_strtolower($a['startup_name'].' '.$a['opportunity_title'].' #'.$a['application_id'], 'UTF-8')) ?>">
-                            <input type="checkbox" class="mr-check asg-app-check" name="application_ids[]" value="<?= (int)$a['application_id'] ?>" disabled>
-                            <span class="pool-item-text">
-                                <span class="pool-item-name">#<?= (int)$a['application_id'] ?> - <?= h($a['startup_name']) ?></span>
-                                <span class="pool-item-meta">
-                                    <?= h($a['opportunity_title']) ?> &middot; <?= h($a['status']) ?>
-                                    &middot; <?= (int)$a['reviewer_count'] ?> reviewer<?= (int)$a['reviewer_count'] !== 1 ? 's' : '' ?>
-                                </span>
-                            </span>
-                        </label>
-                        <?php endforeach; ?>
+                    <div class="table-responsive asg-app-table-wrap" id="appList">
+                        <table class="table asg-app-table">
+                            <thead>
+                                <tr>
+                                    <th class="asg-col-check"><input type="checkbox" class="mr-check" id="appSelectAll" aria-label="Select all shown applicants" disabled></th>
+                                    <th>#</th>
+                                    <th>Applicant</th>
+                                    <th>Opportunity</th>
+                                    <th>Status</th>
+                                    <th>Reviewers</th>
+                                    <th>Submitted</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($applications as $a): ?>
+                                <tr class="asg-app" hidden
+                                    data-cohort="<?= (int)$a['cohort_id'] ?>"
+                                    data-status="<?= h($a['status']) ?>"
+                                    data-reviewers="<?= (int)$a['reviewer_count'] ?>"
+                                    data-search="<?= h(mb_strtolower($a['startup_name'].' '.$a['opportunity_title'].' #'.$a['application_id'], 'UTF-8')) ?>">
+                                    <td class="asg-col-check"><input type="checkbox" class="mr-check asg-app-check" name="application_ids[]" value="<?= (int)$a['application_id'] ?>" id="app_<?= (int)$a['application_id'] ?>" disabled></td>
+                                    <td><?= (int)$a['application_id'] ?></td>
+                                    <td><label for="app_<?= (int)$a['application_id'] ?>" class="asg-app-name"><?= h($a['startup_name']) ?></label></td>
+                                    <td><?= h($a['opportunity_title']) ?></td>
+                                    <td><span class="badge <?= $a['status'] === 'Shortlisted' ? 'badge-success' : 'badge-warning' ?>"><?= h($a['status']) ?></span></td>
+                                    <td><?= (int)$a['reviewer_count'] ?></td>
+                                    <td><?= !empty($a['submitted_at']) ? h(date('d M Y', strtotime((string)$a['submitted_at']))) : '-' ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
                         <p class="form-hint pool-empty" id="appEmpty">Choose a cohort to see its applicants.</p>
                     </div>
                 </div>
@@ -769,46 +828,83 @@ if ($criteria_rt_id > 0)      $crit_base['criteria_review_type_id'] = $criteria_
         </div>
     </div>
 
-    <!-- Reviewer workload cards -->
-    <div class="panel">
-        <div class="panel-head">
+    <!-- Reviewer workload: collapsible panel, each card expands to its assignments -->
+    <?php
+        $wl_pending_total = count(array_filter($assignments, fn($a) => empty($a['review_id'])));
+    ?>
+    <details class="panel wl-panel" id="workloadPanel">
+        <summary class="panel-head wl-summary">
             <h3><i class="fas fa-id-badge"></i> Reviewer Workload</h3>
-            <span class="note"><?= count($reviewers) ?> eligible reviewer<?= count($reviewers) !== 1 ? 's' : '' ?></span>
-        </div>
+            <span class="note">
+                <?= count($reviewers) ?> reviewer<?= count($reviewers) !== 1 ? 's' : '' ?>
+                &middot; <?= $wl_pending_total ?> pending review<?= $wl_pending_total !== 1 ? 's' : '' ?>
+                <i class="fas fa-chevron-down wl-chevron" aria-hidden="true"></i>
+            </span>
+        </summary>
         <div class="panel-body">
             <?php if (empty($reviewers)): ?>
                 <div class="empty-state">
                     <i class="fas fa-user-slash" aria-hidden="true"></i>
-                    <p>No eligible reviewers found.</p>
+                    <p>No reviewers yet.</p>
                 </div>
             <?php else: ?>
+            <div class="wl-toolbar">
+                <button type="button" class="btn btn-sm btn-secondary" data-wl="open"><i class="fas fa-angles-down"></i> Expand all</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-wl="close"><i class="fas fa-angles-up"></i> Collapse all</button>
+            </div>
             <div class="reviewer-grid">
                 <?php foreach ($reviewers as $rev):
-                    $ra    = array_filter($assignments, fn($a) => (int)$a['reviewer_id'] === (int)$rev['user_id']);
+                    $ra    = array_values(array_filter($assignments, fn($a) => (int)$a['reviewer_id'] === (int)$rev['user_id']));
                     $rDone = count(array_filter($ra, fn($a) => !empty($a['review_id'])));
                     $rTot  = count($ra);
                     $pct   = $rTot > 0 ? round(($rDone / $rTot) * 100) : 0;
                 ?>
-                <div class="reviewer-card">
-                    <div class="rc-name"><?= h($rev['full_name']) ?></div>
-                    <div class="rc-role"><?= h($rev['role']) ?></div>
-                    <div class="rc-email"><?= h($rev['email']) ?></div>
-                    <div class="rc-progress">
-                        <div class="rc-progress-bar">
-                            <div class="rc-progress-fill" style="width:<?= $pct ?>%"></div>
-                        </div>
-                        <div class="rc-counts">
-                            <span class="badge badge-info"><i class="fas fa-clipboard"></i> <?= $rTot ?> assigned</span>
-                            <span class="badge badge-success"><i class="fas fa-check"></i> <?= $rDone ?> done</span>
-                            <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> <?= $rTot - $rDone ?> pending</span>
-                        </div>
+                <details class="reviewer-card">
+                    <summary class="rc-summary">
+                        <span class="rc-head">
+                            <span class="rc-name"><?= h($rev['full_name']) ?></span>
+                            <i class="fas fa-chevron-down rc-chevron" aria-hidden="true"></i>
+                        </span>
+                        <span class="rc-progress">
+                            <span class="rc-progress-bar"><span class="rc-progress-fill" style="width:<?= $pct ?>%"></span></span>
+                            <span class="rc-counts">
+                                <span class="badge badge-info"><i class="fas fa-clipboard"></i> <?= $rTot ?> assigned</span>
+                                <span class="badge badge-success"><i class="fas fa-check"></i> <?= $rDone ?> done</span>
+                                <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> <?= $rTot - $rDone ?> pending</span>
+                            </span>
+                        </span>
+                    </summary>
+                    <div class="rc-body">
+                        <div class="rc-role"><?= h($rev['role']) ?></div>
+                        <div class="rc-email"><?= h($rev['email']) ?></div>
+                        <?php if (!$ra): ?>
+                            <p class="form-hint">No applications assigned yet.</p>
+                        <?php else: ?>
+                        <ul class="rc-apps">
+                            <?php foreach ($ra as $x): ?>
+                            <li>
+                                <span class="rc-app-name"><?= h($x['startup_name']) ?></span>
+                                <span class="rc-app-meta">
+                                    <?= h($x['review_type_name'] ?: 'No type') ?> &middot; <?= h(date('d M Y', strtotime((string)$x['assigned_at']))) ?>
+                                </span>
+                                <?php if (!empty($x['review_id'])): ?>
+                                    <span class="badge badge-success">Done</span>
+                                <?php elseif ((int)$x['hours_since_assigned'] >= 5): ?>
+                                    <span class="badge badge-danger">Overdue</span>
+                                <?php else: ?>
+                                    <span class="badge badge-warning">Pending</span>
+                                <?php endif; ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php endif; ?>
                     </div>
-                </div>
+                </details>
                 <?php endforeach; ?>
             </div>
             <?php endif; ?>
         </div>
-    </div>
+    </details>
 </div><!-- /#tab-assign -->
 
 <!-- --------------------------------------------------------------
@@ -1622,19 +1718,36 @@ function lockStep(id, locked) {
 function filterApps() {
     const cohort = asg.cohort ? asg.cohort.value : '';
     const q = (asg.appSearch?.value || '').trim().toLowerCase();
-    let shown = 0;
+    const status = document.getElementById('appStatusFilter')?.value || '';
+    const unassigned = !!document.getElementById('appUnassignedOnly')?.checked;
+    let shown = 0, inCohortCount = 0;
     asg.apps.forEach(item => {
         const cb = item.querySelector('.asg-app-check');
         const inCohort = cohort !== '' && item.dataset.cohort === cohort;
-        if (!inCohort) { cb.checked = false; }
+        if (!inCohort) { cb.checked = false; } else { inCohortCount++; }
         cb.disabled = !inCohort;
-        item.hidden = !inCohort || (q !== '' && !item.dataset.search.includes(q));
+        item.hidden = !inCohort
+            || (q !== '' && !item.dataset.search.includes(q))
+            || (status !== '' && item.dataset.status !== status)
+            || (unassigned && item.dataset.reviewers !== '0');
         if (!item.hidden) shown++;
     });
     if (asg.appEmpty) {
         asg.appEmpty.hidden = shown > 0;
         asg.appEmpty.textContent = cohort === '' ? 'Choose a cohort to see its applicants.' : 'No applicants match.';
     }
+    updateAppCount(shown, inCohortCount);
+}
+
+function updateAppCount(shown, total) {
+    const el = document.getElementById('appCount');
+    if (!el) return;
+    if (shown === undefined) {
+        shown = asg.apps.filter(i => !i.hidden).length;
+        total = asg.apps.filter(i => !i.querySelector('.asg-app-check').disabled).length;
+    }
+    const sel = document.querySelectorAll('.asg-app-check:checked').length;
+    el.textContent = total ? `${shown} of ${total} shown · ${sel} selected` : '';
 }
 
 function filterRevs() {
@@ -1680,6 +1793,7 @@ function refreshAssign() {
         const visible = asg.apps.filter(i => !i.hidden);
         asg.appAll.checked = visible.length > 0 && visible.every(i => i.querySelector('.asg-app-check').checked);
     }
+    updateAppCount();
 }
 
 function rtSelected() { refreshAssign(); }
@@ -1691,10 +1805,36 @@ asg.appAll?.addEventListener('change', () => {
     asg.apps.forEach(i => { if (!i.hidden) i.querySelector('.asg-app-check').checked = asg.appAll.checked; });
     refreshAssign();
 });
+document.getElementById('appStatusFilter')?.addEventListener('change', () => { filterApps(); refreshAssign(); });
+document.getElementById('appUnassignedOnly')?.addEventListener('change', () => { filterApps(); refreshAssign(); });
 document.getElementById('appList')?.addEventListener('change', refreshAssign);
+// Click anywhere on an applicant row to tick it.
+document.getElementById('appList')?.addEventListener('click', e => {
+    const row = e.target.closest('tr.asg-app');
+    if (!row || e.target.closest('input, label, a, button')) return;
+    const cb = row.querySelector('.asg-app-check');
+    if (cb && !cb.disabled) { cb.checked = !cb.checked; refreshAssign(); }
+});
 document.getElementById('revList')?.addEventListener('change', refreshAssign);
 filterApps();
 refreshAssign();
+
+/* -- Reviewer workload: expand / collapse all ------------------- */
+document.querySelectorAll('[data-wl]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const open = btn.dataset.wl === 'open';
+        document.querySelectorAll('#workloadPanel .reviewer-card').forEach(d => { d.open = open; });
+    });
+});
+(function () {
+    // Remember whether the workload panel was left open (per browser).
+    const panel = document.getElementById('workloadPanel');
+    if (!panel) return;
+    try { if (localStorage.getItem('mr.workloadOpen') === '1') panel.open = true; } catch (e) {}
+    panel.addEventListener('toggle', () => {
+        try { localStorage.setItem('mr.workloadOpen', panel.open ? '1' : '0'); } catch (e) {}
+    });
+})();
 
 /* -- Status tab: filter + checkbox helpers --------------------- */
 function filterAsgn() {
