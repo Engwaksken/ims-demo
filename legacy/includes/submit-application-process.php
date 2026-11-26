@@ -4,6 +4,7 @@ declare(strict_types=1);
 // config.php starts the session with the hardened cookie settings.
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/mail-function.php';
+require_once __DIR__ . '/application-uploads.php';
 
 function store_application_old_input(array $source): void
 {
@@ -194,6 +195,34 @@ function validate_word_limit(
 function is_yes(?string $value): bool
 {
     return $value === 'Yes';
+}
+
+/*
+|--------------------------------------------------------------------------
+| OVERSIZED REQUEST
+|--------------------------------------------------------------------------
+| When the whole upload is bigger than post_max_size PHP drops every field,
+| which would otherwise surface as a confusing "invalid form token" error.
+| The form action carries opportunity_id/draft_id in the query string so the
+| applicant can be sent back to the right form.
+*/
+$contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+$postLimit = app_upload_post_limit_bytes();
+
+if (
+    ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' &&
+    empty($_POST) &&
+    $contentLength > 0 &&
+    $postLimit > 0 &&
+    $contentLength > $postLimit
+) {
+    fail_request(
+        'Your files are too large to upload together (the server accepts up to ' .
+        app_upload_format_bytes($postLimit) .
+        ' per save). Please upload fewer or smaller files, then save again. Your typed answers were not received, so check them after reloading.',
+        (int)filter_input(INPUT_GET, 'opportunity_id', FILTER_VALIDATE_INT),
+        (int)filter_input(INPUT_GET, 'draft_id', FILTER_VALIDATE_INT)
+    );
 }
 
 /*
@@ -904,6 +933,9 @@ if ($userInfo['is_new'] && $sessionUserId < 1) {
 */
 $existingApplication = null;
 
+// Adds applications.pitch_deck_path on older schemas (DDL: must run outside the save transaction).
+$hasPitchDeckColumn = app_ensure_pitch_deck_column($conn);
+
 if ($draftId > 0) {
     $stmt = $conn->prepare("
         SELECT
@@ -913,7 +945,8 @@ if ($draftId > 0) {
             status,
             email,
             legal_docs_path,
-            safeguarding_policy_path
+            safeguarding_policy_path" . ($hasPitchDeckColumn ? ",
+            pitch_deck_path" : '') . "
         FROM applications
         WHERE application_id = ?
           AND opportunity_id = ?
@@ -981,140 +1014,126 @@ if ($isSubmit && !empty($opportunity['max_applicants'])) {
 | UPLOADS
 |--------------------------------------------------------------------------
 */
-function upload_application_file(array $file, int $opportunityId, string $type): array
-{
-    $rules = [
-        'legal_docs' => [
-            'extensions' => ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx', 'zip'],
-            'mimes' => [
-                'application/pdf',
-                'image/jpeg',
-                'image/png',
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/zip',
-                'application/x-zip-compressed',
-                'application/octet-stream',
-            ],
-        ],
-        'safeguarding_policy' => [
-            'extensions' => ['pdf', 'doc', 'docx'],
-            'mimes' => [
-                'application/pdf',
-                'application/msword',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'application/octet-stream',
-            ],
-        ],
-    ];
+/*
+ * Validation runs for every file before anything is stored, so a rejected
+ * file never leaves earlier files from the same request behind on disk.
+ * Helpers live in includes/application-uploads.php.
+ */
+$storedThisRequest = [];
 
-    if (!isset($rules[$type])) {
-        return ['success' => false, 'error' => 'Unsupported upload type.'];
+$failUpload = static function (string $message) use (&$storedThisRequest, $opportunityId, $draftId): never {
+    foreach ($storedThisRequest as $storedPath) {
+        app_upload_delete_file($storedPath);
     }
 
-    if (
-        !isset($file['error']) ||
-        $file['error'] !== UPLOAD_ERR_OK ||
-        empty($file['tmp_name']) ||
-        !is_uploaded_file($file['tmp_name'])
-    ) {
-        return ['success' => false, 'error' => 'The uploaded file could not be processed.'];
-    }
-
-    if (($file['size'] ?? 0) > 10 * 1024 * 1024) {
-        return ['success' => false, 'error' => 'Uploaded files must not exceed 10 MB.'];
-    }
-
-    $extension = strtolower(
-        pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION)
-    );
-
-    if (!in_array($extension, $rules[$type]['extensions'], true)) {
-        return ['success' => false, 'error' => "Invalid file type for {$type}."];
-    }
-
-    if (class_exists('finfo')) {
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file($file['tmp_name']) ?: null;
-
-        if ($mime !== null && !in_array($mime, $rules[$type]['mimes'], true)) {
-            return ['success' => false, 'error' => "The uploaded {$type} file format is not allowed."];
-        }
-    }
-
-    $relativeDir = 'uploads/applications/' . $opportunityId . '/';
-    $filesystemDir = dirname(__DIR__) . '/' . $relativeDir;
-
-    if (
-        !is_dir($filesystemDir) &&
-        !mkdir($filesystemDir, 0755, true) &&
-        !is_dir($filesystemDir)
-    ) {
-        return ['success' => false, 'error' => 'Unable to create the application upload folder.'];
-    }
-
-    $filename =
-        $type . '_' .
-        date('Ymd_His') . '_' .
-        bin2hex(random_bytes(8)) . '.' .
-        $extension;
-
-    $destination = $filesystemDir . $filename;
-
-    if (!move_uploaded_file($file['tmp_name'], $destination)) {
-        return ['success' => false, 'error' => "Failed to upload {$type}."];
-    }
-
-    return [
-        'success' => true,
-        'path' => $relativeDir . $filename,
-    ];
-}
+    fail_request($message, $opportunityId, $draftId);
+};
 
 $legalDocsPath = $existingApplication['legal_docs_path'] ?? null;
 $safeguardingPolicyPath = $existingApplication['safeguarding_policy_path'] ?? null;
+$replacedPaths = [];
 
-if (!empty($_FILES['legal_docs']['name'])) {
-    $upload = upload_application_file(
-        $_FILES['legal_docs'],
-        $opportunityId,
-        'legal_docs'
-    );
+// Supporting legal/registration document: any document, image, archive or
+// video format (script/program files are refused by app_upload_store()).
+$legalFile = $_FILES['legal_docs'] ?? null;
+
+if (is_array($legalFile) && !is_array($legalFile['name'] ?? null) && (int)($legalFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+    $upload = app_upload_store($legalFile, $opportunityId, 'legal_docs', 'The supporting legal/registration document');
 
     if (!$upload['success']) {
-        fail_request($upload['error'], $opportunityId, $draftId);
+        $failUpload($upload['error']);
+    }
+
+    $storedThisRequest[] = $upload['path'];
+
+    if (!empty($legalDocsPath)) {
+        $replacedPaths[] = (string)$legalDocsPath;
     }
 
     $legalDocsPath = $upload['path'];
 }
 
-if (!empty($_FILES['safeguarding_policy']['name'])) {
-    $upload = upload_application_file(
-        $_FILES['safeguarding_policy'],
+$policyFile = $_FILES['safeguarding_policy'] ?? null;
+
+if (is_array($policyFile) && !is_array($policyFile['name'] ?? null) && (int)($policyFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+    $upload = app_upload_store(
+        $policyFile,
         $opportunityId,
-        'safeguarding_policy'
+        'safeguarding_policy',
+        'The safeguarding policy',
+        ['pdf', 'doc', 'docx', 'odt', 'rtf', 'jpg', 'jpeg', 'png']
     );
 
     if (!$upload['success']) {
-        fail_request($upload['error'], $opportunityId, $draftId);
+        $failUpload($upload['error']);
+    }
+
+    $storedThisRequest[] = $upload['path'];
+
+    if (!empty($safeguardingPolicyPath)) {
+        $replacedPaths[] = (string)$safeguardingPolicyPath;
     }
 
     $safeguardingPolicyPath = $upload['path'];
 }
 
+// Applicant removed the stored legal document on the form (and chose no new one).
+if (
+    post_string('remove_legal_docs') === '1' &&
+    !empty($legalDocsPath) &&
+    !in_array($legalDocsPath, $storedThisRequest, true)
+) {
+    $replacedPaths[] = (string)$legalDocsPath;
+    $legalDocsPath = null;
+}
+
+// Pitch deck (applications.pitch_deck_path): PDF or presentation formats.
+$pitchDeckPath = $existingApplication['pitch_deck_path'] ?? null;
+$pitchFile = $_FILES['pitch_deck'] ?? null;
+
+if (is_array($pitchFile) && !is_array($pitchFile['name'] ?? null) && (int)($pitchFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+    if (!$hasPitchDeckColumn) {
+        $failUpload('Pitch deck uploads are temporarily unavailable. Please save without the pitch deck and try again later.');
+    }
+
+    $upload = app_upload_store($pitchFile, $opportunityId, 'pitch_deck', 'The pitch deck', APP_UPLOAD_PITCH_DECK_EXTENSIONS);
+
+    if (!$upload['success']) {
+        $failUpload($upload['error']);
+    }
+
+    $storedThisRequest[] = $upload['path'];
+
+    if (!empty($pitchDeckPath)) {
+        $replacedPaths[] = (string)$pitchDeckPath;
+    }
+
+    $pitchDeckPath = $upload['path'];
+}
+
+// Applicant removed the stored pitch deck on the form (and chose no new one).
+if (
+    post_string('remove_pitch_deck') === '1' &&
+    !empty($pitchDeckPath) &&
+    !in_array($pitchDeckPath, $storedThisRequest, true)
+) {
+    $replacedPaths[] = (string)$pitchDeckPath;
+    $pitchDeckPath = null;
+}
+
 $data['legal_docs_path'] = $legalDocsPath;
 $data['safeguarding_policy_path'] = $safeguardingPolicyPath;
+
+if ($hasPitchDeckColumn) {
+    $data['pitch_deck_path'] = $pitchDeckPath;
+}
 
 if (
     $isSubmit &&
     $data['has_safeguarding_policy'] === 'Yes' &&
     empty($data['safeguarding_policy_path'])
 ) {
-    fail_request(
-        'Please upload your Gender, Safeguarding or Child Protection Policy.',
-        $opportunityId,
-        $draftId
-    );
+    $failUpload('Please upload your Gender, Safeguarding or Child Protection Policy.');
 }
 
 /*
@@ -1383,8 +1402,17 @@ try {
     );
 
     $conn->commit();
+
+    // Files replaced or removed on the form are no longer referenced.
+    foreach ($replacedPaths as $oldPath) {
+        app_upload_delete_file($oldPath);
+    }
 } catch (Throwable $e) {
     $conn->rollback();
+
+    foreach ($storedThisRequest as $storedPath) {
+        app_upload_delete_file($storedPath);
+    }
 
     error_log(
         'Application save failed. Opportunity=' . $opportunityId .

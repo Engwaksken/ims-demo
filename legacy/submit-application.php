@@ -73,6 +73,42 @@ if ($draftId > 0) {
 }
 
 /*
+| Uploads: limits shown to the applicant and files already stored on the draft
+| (helpers in includes/application-uploads.php).
+*/
+require_once __DIR__ . '/includes/application-uploads.php';
+$uploadLimitBytes = app_upload_limit_bytes();
+$uploadPostLimitBytes = app_upload_post_limit_bytes();
+$uploadLimitLabel = app_upload_format_bytes($uploadLimitBytes);
+
+/** Preview card for a file already stored on the draft. */
+function storedFilePreview(string $path, string $displayName, string $removeName, string $removeValue): string
+{
+    $url = ims_upload_url($path);
+    $kind = app_upload_kind($displayName !== '' ? $displayName : $path);
+    $media = '';
+
+    if ($kind === 'image') {
+        $media = '<img src="' . e($url) . '" alt="" loading="lazy">';
+    } elseif ($kind === 'video') {
+        $media = '<video src="' . e($url) . '" controls preload="metadata"></video>';
+    } elseif ($kind === 'audio') {
+        $media = '<audio src="' . e($url) . '" controls preload="none"></audio>';
+    } else {
+        $media = '<div class="fp-icon"><i class="fas ' . e(app_upload_icon($displayName ?: $path)) . '"></i></div>';
+    }
+
+    return '<div class="file-preview file-preview--stored" data-kind="' . e($kind) . '">'
+        . '<div class="fp-media">' . $media . '</div>'
+        . '<div class="fp-body">'
+        . '<div class="fp-name" title="' . e($displayName) . '">' . e($displayName !== '' ? $displayName : basename($path)) . '</div>'
+        . '<div class="fp-meta"><span class="fp-badge">Uploaded</span>'
+        . '<a href="' . e($url) . '" target="_blank" rel="noopener"><i class="fas fa-eye"></i> Open</a></div>'
+        . '<label class="fp-remove"><input type="checkbox" name="' . e($removeName) . '" value="' . e($removeValue) . '"> Remove this file when I save</label>'
+        . '</div></div>';
+}
+
+/*
 |--------------------------------------------------------------------------
 | RESTORE UNSAVED INPUT AFTER AN ERROR
 |--------------------------------------------------------------------------
@@ -292,6 +328,34 @@ function safe_saved_html(?string $html): string
 .detail-meta-grid strong{color:var(--ink)}
 .rich-content a{color:var(--brand-dark);text-decoration:none}
 
+/* Uploads: drop zones + previews of chosen and already-uploaded files */
+.form-group label.file-zone{display:block;font-weight:400;margin:0;transition:border-color .15s,background .15s}
+.file-zone p{margin:0;font-weight:700;color:var(--ink)}
+.file-zone:hover,.file-zone.is-dragover{border-color:var(--brand);background:var(--soft)}
+.file-zone:focus-within{outline:2px solid color-mix(in srgb, var(--brand) 30%, transparent)}
+.opt{font-weight:500;color:var(--muted)}
+.file-previews{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+.file-previews:empty{display:none}
+.file-preview{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff}
+.file-preview.is-invalid{border-color:#fca5a5;background:#fef2f2}
+.file-preview.is-removed{opacity:.5}
+.fp-media{height:130px;background:#f3f4f6;display:grid;place-items:center;overflow:hidden}
+.fp-media img,.fp-media video{width:100%;height:100%;object-fit:cover;background:#000}
+.fp-media video{object-fit:contain}
+.fp-media audio{width:92%}
+.fp-media iframe{width:100%;height:100%;border:0;background:#fff}
+.fp-icon{font-size:42px;color:var(--brand-dark)}
+.fp-body{padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.fp-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.fp-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.fp-meta a{color:var(--brand-dark);font-weight:700;text-decoration:none}
+.fp-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#dcfce7;color:#166534}
+.fp-badge--new{background:#dbeafe;color:#1e40af}
+.fp-badge--error{background:#fee2e2;color:#991b1b}
+.fp-error{font-size:12px;color:var(--danger);font-weight:600}
+.form-group .fp-remove{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--danger);margin:0;cursor:pointer}
+.fp-remove-btn{align-self:flex-start;border:0;background:#fef2f2;color:#b91c1c;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer}
+
 @media(max-width:980px){.grid-3,.grid-4{grid-template-columns:1fr 1fr}.repeater-row{grid-template-columns:1fr 1fr}.repeater-row .remove-row{grid-column:2;justify-self:end}}
 @media(max-width:700px){.detail-meta-grid{grid-template-columns:1fr}.grid-2,.grid-3,.grid-4,.choice-grid{grid-template-columns:1fr}.form-section{padding:18px}.stepper{grid-template-columns:repeat(9,90px);overflow-x:auto}.repeater-row{grid-template-columns:1fr}.repeater-row .remove-row{grid-column:1;justify-self:end}.nav-bar{flex-wrap:wrap}.nav-bar .spacer{display:none}.nav-bar .btn{flex:1;justify-content:center}}
 </style>
@@ -412,7 +476,7 @@ body {
     </div>
 <?php else: ?>
 
-<form method="POST" action="/includes/submit-application-process.php" enctype="multipart/form-data" id="applicationForm" novalidate>
+<form method="POST" action="/includes/submit-application-process.php?opportunity_id=<?= $opportunityId ?><?= $draftId > 0 ? '&amp;draft_id=' . $draftId : '' ?>" enctype="multipart/form-data" id="applicationForm" novalidate data-upload-limit="<?= $uploadLimitBytes ?>" data-post-limit="<?= $uploadPostLimitBytes ?>">
 <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
 <input type="hidden" name="opportunity_id" value="<?= $opportunityId ?>">
 <?php if ($draftId > 0): ?><input type="hidden" name="draft_id" value="<?= $draftId ?>"><?php endif; ?>
@@ -854,10 +918,22 @@ body {
             <option value="">Select...</option><option value="Yes" <?= selectedValue('has_safeguarding_policy','Yes',$draft) ?>>Yes</option><option value="No" <?= selectedValue('has_safeguarding_policy','No',$draft) ?>>No</option>
         </select>
         <div class="conditional" data-show-when="has_safeguarding_policy:Yes">
-            <div class="file-zone" onclick="document.getElementById('safeguarding_policy').click()">
+            <label class="file-zone" for="safeguarding_policy">
                 <i class="fas fa-file-shield"></i><p>Upload your policy</p>
-                <input type="file" id="safeguarding_policy" name="safeguarding_policy" accept=".pdf,.doc,.docx">
-                <div class="file-note" id="safeguarding_policy_name"><?= !empty($draft['safeguarding_policy_path']) ? 'Existing file uploaded - choose a file to replace it.' : 'PDF, DOC or DOCX.' ?></div>
+                <input type="file" id="safeguarding_policy" name="safeguarding_policy" class="js-file-input" accept=".pdf,.doc,.docx,.odt,.rtf,.jpg,.jpeg,.png">
+                <div class="file-note">PDF, Word (DOC/DOCX/ODT/RTF) or a scanned image. Max <?= e($uploadLimitLabel) ?>.<?= !empty($draft['safeguarding_policy_path']) ? ' Choosing a new file replaces the uploaded one.' : '' ?></div>
+            </label>
+            <div class="file-previews" id="safeguarding_policy_preview">
+                <?php if (!empty($draft['safeguarding_policy_path'])): ?>
+                    <?php $policyPath = (string)$draft['safeguarding_policy_path']; ?>
+                    <div class="file-preview file-preview--stored" data-kind="<?= e(app_upload_kind($policyPath)) ?>">
+                        <div class="fp-media"><div class="fp-icon"><i class="fas <?= e(app_upload_icon($policyPath)) ?>"></i></div></div>
+                        <div class="fp-body">
+                            <div class="fp-name">Safeguarding policy (<?= e(strtoupper(pathinfo($policyPath, PATHINFO_EXTENSION))) ?>)</div>
+                            <div class="fp-meta"><span class="fp-badge">Uploaded</span><a href="<?= e(ims_upload_url($policyPath)) ?>" target="_blank" rel="noopener"><i class="fas fa-eye"></i> Open</a></div>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -995,13 +1071,43 @@ body {
     </div>
 
     <div class="form-group">
-        <label>Supporting legal/registration document (optional unless required by the opportunity)</label>
-        <div class="file-zone" onclick="document.getElementById('legal_docs').click()">
-            <i class="fas fa-file-arrow-up"></i><p>Upload supporting document</p>
-            <input type="file" id="legal_docs" name="legal_docs" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.zip">
-            <div class="file-note" id="legal_docs_name"><?= !empty($draft['legal_docs_path']) ? 'Existing file uploaded - choose a file to replace it.' : 'PDF, image, Word or ZIP.' ?></div>
+        <label for="legal_docs">Supporting legal/registration document <span class="opt">(optional unless required by the opportunity)</span></label>
+        <p class="help">
+            For example a certificate of registration/incorporation, CR12, KRA PIN or business permit.
+            <?php if (!empty($opportunity['required_documents'])): ?>
+                This opportunity lists required documents under <strong><?= e($opportunity['documents_heading'] ?: 'Required Documents') ?></strong> on the Application Details step: upload them here.
+            <?php endif; ?>
+            Combine several documents into one PDF or ZIP.
+        </p>
+        <label class="file-zone" for="legal_docs">
+            <i class="fas fa-file-arrow-up"></i><p>Choose a file or drag it here</p>
+            <input type="file" id="legal_docs" name="legal_docs" class="js-file-input">
+            <div class="file-note">Any document, image, ZIP or video format (PDF, Word, Excel, JPG, PNG, HEIC, MP4, MOV...). Max <?= e($uploadLimitLabel) ?>.<?= !empty($draft['legal_docs_path']) ? ' Choosing a new file replaces the uploaded one.' : '' ?></div>
+        </label>
+        <div class="file-previews" id="legal_docs_preview">
+            <?php if (!empty($draft['legal_docs_path'])): ?>
+                <?php $legalPath = (string)$draft['legal_docs_path']; ?>
+                <?= storedFilePreview($legalPath, 'Legal/registration document (' . strtoupper(pathinfo($legalPath, PATHINFO_EXTENSION)) . ')', 'remove_legal_docs', '1') ?>
+            <?php endif; ?>
         </div>
     </div>
+
+    <div class="form-group">
+        <label for="pitch_deck">Pitch deck <span class="opt">(optional)</span></label>
+        <p class="help">Your investor or programme pitch deck: problem, solution, market, business model, traction, team and funding ask. Using Google Slides or Canva? Download it as PDF or PPTX first.</p>
+        <label class="file-zone" for="pitch_deck">
+            <i class="fas fa-file-powerpoint"></i><p>Choose your pitch deck or drag it here</p>
+            <input type="file" id="pitch_deck" name="pitch_deck" class="js-file-input" accept="<?= e('.' . implode(',.', APP_UPLOAD_PITCH_DECK_EXTENSIONS)) ?>">
+            <div class="file-note">PDF, PowerPoint (PPT/PPTX/PPS/PPSX), Keynote or ODP. Max <?= e($uploadLimitLabel) ?>.<?= !empty($draft['pitch_deck_path']) ? ' Choosing a new file replaces the uploaded one.' : '' ?></div>
+        </label>
+        <div class="file-previews" id="pitch_deck_preview">
+            <?php if (!empty($draft['pitch_deck_path'])): ?>
+                <?php $pitchPath = (string)$draft['pitch_deck_path']; ?>
+                <?= storedFilePreview($pitchPath, 'Pitch deck (' . strtoupper(pathinfo($pitchPath, PATHINFO_EXTENSION)) . ')', 'remove_pitch_deck', '1') ?>
+            <?php endif; ?>
+        </div>
+    </div>
+    <div class="apply-notice apply-notice--error hidden" id="uploadError" role="alert"></div>
 
     <div class="apply-notice">
         <strong>Before you submit:</strong> incomplete applications and applications that omit financial information may score lower. If a question does not apply, enter <strong>N/A</strong> with a short explanation rather than leaving it blank.
@@ -1175,15 +1281,239 @@ function addFounderRow(){addFromTemplate('founderRowTemplate','foundersRepeater'
 function addTeamRow(){addFromTemplate('teamRowTemplate','teamRepeater')}
 function addFundingRow(){addFromTemplate('fundingRowTemplate','fundingRepeater')}
 
-document.querySelectorAll('input[type="file"]').forEach(input => {
-    input.addEventListener('change', function () {
-        const target = document.getElementById(this.id + '_name');
-        if (target) target.textContent = this.files.length ? this.files[0].name : '';
+/*
+ * File uploads: preview every chosen file (image / video / audio / PDF / icon)
+ * next to the previews of files already stored on the draft, so applicants can
+ * see exactly what will be sent. Multi-file inputs accumulate selections and
+ * each new file can be removed before saving.
+ */
+(function () {
+    const form = document.getElementById('applicationForm');
+    if (!form) return;
+
+    const UPLOAD_LIMIT = parseInt(form.dataset.uploadLimit || '0', 10) || 0;
+    const POST_LIMIT = parseInt(form.dataset.postLimit || '0', 10) || 0;
+    const BLOCKED = /\.(php\d?|phtml|phar|pht|phps|cgi|pl|py|sh|bash|asp|aspx|jsp|exe|msi|com|scr|bat|cmd|vbs|vbe|ps1|jar|dll|htaccess|htpasswd|html?|xhtml|shtml|js|mjs|svgz?|xml|hta)(\.|$)/i;
+    const KINDS = {
+        image: ['jpg','jpeg','png','gif','webp','bmp','avif'],
+        video: ['mp4','mov','m4v','webm','ogv','mkv','avi','3gp','wmv','mpeg','mpg','flv'],
+        audio: ['mp3','m4a','wav','ogg','aac','flac','oga','opus'],
+        pdf: ['pdf']
+    };
+    const ICONS = {
+        image: 'fa-file-image', video: 'fa-file-video', audio: 'fa-file-audio', pdf: 'fa-file-pdf',
+        doc: 'fa-file-word', docx: 'fa-file-word', odt: 'fa-file-word', rtf: 'fa-file-word', txt: 'fa-file-lines',
+        xls: 'fa-file-excel', xlsx: 'fa-file-excel', ods: 'fa-file-excel', csv: 'fa-file-csv',
+        ppt: 'fa-file-powerpoint', pptx: 'fa-file-powerpoint', odp: 'fa-file-powerpoint', key: 'fa-file-powerpoint',
+        zip: 'fa-file-zipper', rar: 'fa-file-zipper', '7z': 'fa-file-zipper', heic: 'fa-file-image', heif: 'fa-file-image', tif: 'fa-file-image', tiff: 'fa-file-image'
+    };
+    const selected = new Map();   // input id -> File[]
+    const objectUrls = new Map(); // input id -> object URLs to revoke
+
+    const ext = name => (name.split('.').length > 1 ? name.split('.').pop() : '').toLowerCase();
+    const kindOf = file => {
+        const e = ext(file.name);
+        const type = file.type || '';
+        for (const [kind, list] of Object.entries(KINDS)) {
+            if (list.includes(e)) return kind;
+        }
+        if (type.startsWith('image/')) return 'image';
+        if (type.startsWith('video/')) return 'video';
+        if (type.startsWith('audio/')) return 'audio';
+        return 'file';
+    };
+    const formatBytes = bytes => {
+        if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+        if (bytes >= 1024) return Math.round(bytes / 1024) + ' KB';
+        return bytes + ' B';
+    };
+    const allowedFor = input => (input.getAttribute('accept') || '')
+        .split(',').map(s => s.trim().replace(/^\./, '').toLowerCase()).filter(Boolean);
+
+    function problemWith(input, file) {
+        if (!ext(file.name)) return 'This file has no extension (for example .pdf or .mp4).';
+        if (BLOCKED.test(file.name)) return 'Script and program files cannot be uploaded.';
+        const allowed = allowedFor(input);
+        if (allowed.length && !allowed.includes(ext(file.name))) return 'Allowed here: ' + allowed.join(', ').toUpperCase() + '.';
+        if (file.size === 0) return 'This file is empty.';
+        if (UPLOAD_LIMIT && file.size > UPLOAD_LIMIT) return 'Too large: the limit is ' + formatBytes(UPLOAD_LIMIT) + ' per file.';
+        return '';
+    }
+
+    function syncInput(input) {
+        const files = selected.get(input.id) || [];
+        try {
+            const transfer = new DataTransfer();
+            files.forEach(f => transfer.items.add(f));
+            input.files = transfer.files;
+        } catch (err) {
+            // Very old browsers: keep the native selection as-is.
+        }
+    }
+
+    function el(tag, className, text) {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    function render(input) {
+        const box = document.getElementById(input.id + '_preview');
+        if (!box) return;
+
+        (objectUrls.get(input.id) || []).forEach(url => URL.revokeObjectURL(url));
+        const urls = [];
+        box.querySelectorAll('.file-preview--new').forEach(n => n.remove());
+
+        const files = selected.get(input.id) || [];
+        // A new single file replaces the stored one: dim the stored preview.
+        if (!input.multiple) {
+            box.querySelectorAll('.file-preview--stored').forEach(n => n.classList.toggle('is-removed', files.length > 0));
+        }
+
+        files.forEach((file, index) => {
+            const problem = problemWith(input, file);
+            const kind = kindOf(file);
+            const card = el('div', 'file-preview file-preview--new' + (problem ? ' is-invalid' : ''));
+            const media = el('div', 'fp-media');
+
+            if (!problem && ['image', 'video', 'audio', 'pdf'].includes(kind)) {
+                const url = URL.createObjectURL(file);
+                urls.push(url);
+                let node;
+                if (kind === 'image') { node = el('img'); node.alt = ''; }
+                else if (kind === 'video') { node = el('video'); node.controls = true; node.muted = true; node.preload = 'metadata'; }
+                else if (kind === 'audio') { node = el('audio'); node.controls = true; }
+                else { node = el('iframe'); node.title = file.name; }
+                node.src = url;
+                // Formats the browser cannot render (e.g. HEIC, AVI) fall back to an icon.
+                node.addEventListener('error', () => {
+                    media.textContent = '';
+                    const icon = el('div', 'fp-icon');
+                    icon.appendChild(el('i', 'fas ' + (ICONS[ext(file.name)] || ICONS[kind] || 'fa-file')));
+                    media.appendChild(icon);
+                });
+                media.appendChild(node);
+            } else {
+                const icon = el('div', 'fp-icon');
+                icon.appendChild(el('i', 'fas ' + (ICONS[ext(file.name)] || ICONS[kind] || 'fa-file')));
+                media.appendChild(icon);
+            }
+
+            const body = el('div', 'fp-body');
+            const name = el('div', 'fp-name', file.name);
+            name.title = file.name;
+            const meta = el('div', 'fp-meta');
+            meta.appendChild(el('span', 'fp-badge ' + (problem ? 'fp-badge--error' : 'fp-badge--new'), problem ? 'Not allowed' : 'Ready to upload'));
+            meta.appendChild(el('span', '', formatBytes(file.size)));
+            body.append(name, meta);
+            if (problem) body.appendChild(el('div', 'fp-error', problem));
+
+            const remove = el('button', 'fp-remove-btn');
+            remove.type = 'button';
+            remove.innerHTML = '<i class="fas fa-xmark"></i> Remove';
+            remove.addEventListener('click', () => {
+                const list = selected.get(input.id) || [];
+                list.splice(index, 1);
+                selected.set(input.id, list);
+                syncInput(input);
+                render(input);
+            });
+            body.appendChild(remove);
+
+            card.append(media, body);
+            box.appendChild(card);
+        });
+
+        objectUrls.set(input.id, urls);
+        updateErrors();
+    }
+
+    function addFiles(input, fileList) {
+        const incoming = Array.from(fileList || []);
+        if (!incoming.length) return;
+        const current = input.multiple ? (selected.get(input.id) || []) : [];
+        incoming.forEach(f => {
+            if (!current.some(c => c.name === f.name && c.size === f.size && c.lastModified === f.lastModified)) current.push(f);
+        });
+        selected.set(input.id, input.multiple ? current : current.slice(-1));
+        syncInput(input);
+        render(input);
+    }
+
+    /** Problems that would stop the save; shown under the uploads and checked before submit. */
+    function uploadProblems() {
+        const problems = [];
+        let total = 0;
+        form.querySelectorAll('input.js-file-input').forEach(input => {
+            (selected.get(input.id) || []).forEach(file => {
+                total += file.size;
+                const problem = problemWith(input, file);
+                if (problem) problems.push(file.name + ': ' + problem);
+            });
+        });
+        if (POST_LIMIT && total > POST_LIMIT * 0.95) {
+            problems.push('The files you chose add up to ' + formatBytes(total) + ', more than the ' + formatBytes(POST_LIMIT) + ' that can be sent in one save. Remove some files, save, then add the rest.');
+        }
+        return problems;
+    }
+
+    function updateErrors() {
+        const box = document.getElementById('uploadError');
+        if (!box) return [];
+        const problems = uploadProblems();
+        box.textContent = problems.length ? 'Please fix your uploads: ' + problems.join(' ') : '';
+        box.classList.toggle('hidden', problems.length === 0);
+        return problems;
+    }
+
+    form.querySelectorAll('input.js-file-input').forEach(input => {
+        input.addEventListener('change', function () {
+            // Copy before syncInput() replaces input.files.
+            addFiles(this, Array.from(this.files || []));
+        });
+
+        const zone = input.closest('.file-zone');
+        if (!zone) return;
+        ['dragenter', 'dragover'].forEach(type => zone.addEventListener(type, e => {
+            e.preventDefault();
+            zone.classList.add('is-dragover');
+        }));
+        ['dragleave', 'drop'].forEach(type => zone.addEventListener(type, e => {
+            e.preventDefault();
+            zone.classList.remove('is-dragover');
+        }));
+        zone.addEventListener('drop', e => addFiles(input, e.dataTransfer ? e.dataTransfer.files : []));
     });
-});
+
+    // Dim a stored file when its "remove" box is ticked.
+    form.addEventListener('change', e => {
+        if (e.target.matches('.fp-remove input')) {
+            e.target.closest('.file-preview').classList.toggle('is-removed', e.target.checked);
+        }
+    });
+
+    // Block saving/submitting while a chosen file would be rejected by the server.
+    window.applicationUploadsOk = function () {
+        const problems = updateErrors();
+        if (problems.length) {
+            const box = document.getElementById('uploadError');
+            const section = box ? box.closest('.form-section') : null;
+            if (section && typeof goToStep === 'function') {
+                goToStep(parseInt(section.id.replace('section-', ''), 10));
+            }
+            if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return false;
+        }
+        return true;
+    };
+})();
 
 function saveDraft() {
     const form = document.getElementById('applicationForm');
+    if (window.applicationUploadsOk && !window.applicationUploadsOk()) return;
     document.getElementById('formAction').value = 'save_draft';
     form.querySelectorAll('[required]').forEach(el => {
         el.dataset.wasRequired = '1';
@@ -1237,6 +1567,8 @@ function submitApplication() {
             return;
         }
     }
+
+    if (window.applicationUploadsOk && !window.applicationUploadsOk()) return;
 
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;

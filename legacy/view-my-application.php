@@ -289,6 +289,18 @@ $doc_fields = [
     'other_documents_path' => ['Other Documents', 'fa-file', 'doc'],
 ];
 
+// Demo videos / extra files uploaded with the application (application_attachments).
+require_once __DIR__ . '/includes/application-uploads.php';
+foreach (app_attachments_for($conn, (int)$application_id) as $attachmentIndex => $attachment) {
+    $attachmentKey = '__attachment_' . $attachmentIndex;
+    $application[$attachmentKey] = $attachment['file_path'];
+    $doc_fields[$attachmentKey] = [
+        $attachment['document_type'] . ': ' . $attachment['document_name'],
+        app_upload_icon($attachment['document_name']),
+        'doc',
+    ];
+}
+
 $has_docs = false;
 
 foreach ($doc_fields as $field => $meta) {

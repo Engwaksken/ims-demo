@@ -417,7 +417,12 @@ if (class_exists('finfo')) {
     $mime = (string) (new finfo(FILEINFO_MIME_TYPE))->file($path);
 }
 
-$inlineTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+$inlineTypes = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf',
+    // Application demo videos / audio play in the browser.
+    'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
+    'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/x-wav', 'audio/mp4', 'audio/webm',
+];
 $inline = !$forceDownload && in_array($mime, $inlineTypes, true);
 
 if ($mime === '' || preg_match('#(?:html|javascript|xml|svg)#i', $mime)) {
